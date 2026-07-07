@@ -413,36 +413,43 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     </TableTd>
                   </tr>
                 ) : (
-                  items.map((it, idx) => (
-                    <tr key={it?.id ?? idx}>
-                      <TableTd className="text-center">{idx + 1}</TableTd>
-                      <TableTd>
-                        <div className="font-semibold">
-                          {it?.itemName || "NA"}
-                        </div>
-                        {it?.description ? (
-                          <div className="mt-0.5 text-[10px] text-gray-500">
-                            {it.description}
-                          </div>
-                        ) : null}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {it?.hsnSacCode || ""}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {toNumber(it?.quantity)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(it?.unitPriceExGst)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {it?.unit || "NOS"}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(it?.lineTotalExGst)}
+                  <>
+                    <tr>
+                      <TableTd colSpan={7} className="font-semibold">
+                        {inv?.solutionName}
                       </TableTd>
                     </tr>
-                  ))
+                    {items.map((it, idx) => (
+                      <tr key={it?.id ?? idx}>
+                        <TableTd className="text-center">{idx + 1}</TableTd>
+                        <TableTd>
+                          <div className="font-semibold">
+                            {it?.itemName || "NA"}
+                          </div>
+                          {it?.description ? (
+                            <div className="mt-0.5 text-[10px] text-gray-500">
+                              {it.description}
+                            </div>
+                          ) : null}
+                        </TableTd>
+                        <TableTd className="text-center">
+                          {it?.hsnSacCode || ""}
+                        </TableTd>
+                        <TableTd className="text-center">
+                          {toNumber(it?.quantity)}
+                        </TableTd>
+                        <TableTd className="text-right">
+                          {inrCurrency(it?.unitPriceExGst)}
+                        </TableTd>
+                        <TableTd className="text-center">
+                          {it?.unit || "NOS"}
+                        </TableTd>
+                        <TableTd className="text-right">
+                          {inrCurrency(it?.lineTotalExGst)}
+                        </TableTd>
+                      </tr>
+                    ))}
+                  </>
                 )}
 
                 <tr>

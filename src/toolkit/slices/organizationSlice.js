@@ -1025,10 +1025,70 @@ export const getAllLedgerGroupType = createAsyncThunk(
   },
 );
 
+export const getLedgerTransactions = createAsyncThunk(
+  "organization/getLedgerTransactions",
+  async (
+    { ledgerId, fromDate = "", toDate = "", page = 1, size = 20 },
+    { rejectWithValue },
+  ) => {
+    try {
+      if (!ledgerId) {
+        return rejectWithValue("Ledger ID is required");
+      }
+
+      const params = {
+        page,
+        size,
+      };
+
+      if (fromDate) {
+        params.fromDate = String(fromDate).trim();
+      }
+
+      if (toDate) {
+        params.toDate = String(toDate).trim();
+      }
+
+      const response = await api.get(
+        `/accountService/api/v1/ledgers/${ledgerId}/transactions`,
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+const initialLedgerStatement = {
+  ledgerId: null,
+  ledgerName: "",
+  ledgerCode: "",
+  ledgerType: "",
+  fromDate: null,
+  toDate: null,
+
+  openingBalanceAmount: 0,
+  openingBalanceType: "DEBIT",
+
+  closingBalanceAmount: 0,
+  closingBalanceType: "DEBIT",
+
+  totalDebit: 0,
+  totalCredit: 0,
+
+  page: 1,
+  size: 20,
+  totalElements: 0,
+  totalPages: 1,
+
+  transactions: [],
+};
+
 const OrganizationSlice = createSlice({
   name: "organization",
   initialState: {
-    loading: "",
     organizationDetail: {},
     groupList: [],
     groupLedgerList: [],
@@ -1121,6 +1181,10 @@ const OrganizationSlice = createSlice({
     accountingVoucherError: "",
 
     ledgerGroupTypeList: [],
+
+    ledgerTransactionLoading: false,
+    ledgerTransactionError: "",
+    ledgerStatement: initialLedgerStatement,
   },
   reducers: {
     setSelectedLedgerId: (state, action) => {
@@ -1153,6 +1217,12 @@ const OrganizationSlice = createSlice({
 
     clearLedgerError: (state) => {
       state.error = "";
+    },
+
+    resetLedgerTransactions: (state) => {
+      state.ledgerTransactionLoading = false;
+      state.ledgerTransactionError = "";
+      state.ledgerStatement = initialLedgerStatement;
     },
   },
 
@@ -1949,6 +2019,35 @@ const OrganizationSlice = createSlice({
       state.loading = "rejected";
       state.ledgerGroupTypeList = [];
     });
+
+    builder.addCase(getLedgerTransactions.pending, (state) => {
+      state.ledgerTransactionLoading = true;
+      state.ledgerTransactionError = "";
+    });
+
+    builder.addCase(getLedgerTransactions.fulfilled, (state, action) => {
+      const data = action.payload || {};
+
+      state.ledgerTransactionLoading = false;
+      state.ledgerTransactionError = "";
+
+      state.ledgerStatement = {
+        ...initialLedgerStatement,
+        ...data,
+        transactions: Array.isArray(data.transactions) ? data.transactions : [],
+      };
+    });
+
+    builder.addCase(getLedgerTransactions.rejected, (state, action) => {
+      state.ledgerTransactionLoading = false;
+      state.ledgerTransactionError =
+        action.payload || "Failed to fetch ledger transactions";
+
+      state.ledgerStatement = {
+        ...initialLedgerStatement,
+        transactions: [],
+      };
+    });
   },
 });
 
@@ -1960,6 +2059,21 @@ export const {
   setActiveFilter,
   setLedgerPage,
   clearLedgerError,
+  resetLedgerTransactions,
 } = OrganizationSlice.actions;
 
+const selectOrganizationState = (state) =>
+  state.organization || state.Organization || state.organizationSlice || {};
+
+export const selectLedgerTransactionsLoading = (state) =>
+  selectOrganizationState(state).ledgerTransactionLoading || false;
+
+export const selectLedgerTransactionsError = (state) =>
+  selectOrganizationState(state).ledgerTransactionError || "";
+
+export const selectLedgerStatement = (state) =>
+  selectOrganizationState(state).ledgerStatement || initialLedgerStatement;
+
+export const selectLedgerTransactions = (state) =>
+  selectOrganizationState(state).ledgerStatement?.transactions || [];
 export default OrganizationSlice.reducer;

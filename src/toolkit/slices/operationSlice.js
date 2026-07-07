@@ -1772,6 +1772,7 @@ export const OperationSlice = createSlice({
     builder.addCase(getProcurementOrderByPurchaseId.pending, (state) => {
       state.procurementOrderByPurchaseIdLoading = true;
       state.procurementOrderByPurchaseIdError = null;
+      state.procurementOrderByPurchaseIdList = [];
     });
     builder.addCase(
       getProcurementOrderByPurchaseId.fulfilled,
@@ -1785,6 +1786,7 @@ export const OperationSlice = createSlice({
       (state, action) => {
         state.procurementOrderByPurchaseIdLoading = false;
         state.procurementOrderByPurchaseIdError = action.payload;
+        state.procurementOrderByPurchaseIdList = [];
       },
     );
 

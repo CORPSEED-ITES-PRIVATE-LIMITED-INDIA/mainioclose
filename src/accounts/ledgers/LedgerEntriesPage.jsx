@@ -1,14 +1,15 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
   CardBody,
   Chip,
-  Divider,
   Input,
+  Pagination,
   ScrollShadow,
   Select,
   SelectItem,
+  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -23,7 +24,6 @@ import {
   ArrowUpRight,
   Building2,
   CalendarDays,
-  FileText,
   Landmark,
   ReceiptText,
   Search,
@@ -31,223 +31,19 @@ import {
   Wallet,
 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-const ledgerEntriesData = [
-  {
-    id: 1,
-    ledgerCode: "LED-0001",
-    name: "Corpseed ITES Pvt. Ltd.",
-    ledgerType: "Company Ledger",
-    ledgerCategory: "COMPANY",
-    groupName: "Sundry Debtors",
-    currentBalance: 245000,
-    currentBalanceType: "DR",
-    entries: [
-      {
-        id: 1,
-        entryDate: "2026-04-05",
-        voucherNo: "INV-001",
-        voucherType: "Sales Invoice",
-        particulars: "Sales Invoice - Project Service",
-        debit: 250000,
-        credit: 0,
-        balance: 250000,
-        balanceType: "DR",
-      },
-      {
-        id: 2,
-        entryDate: "2026-04-12",
-        voucherNo: "RCPT-001",
-        voucherType: "Receipt",
-        particulars: "Payment Received",
-        debit: 0,
-        credit: 100000,
-        balance: 150000,
-        balanceType: "DR",
-      },
-      {
-        id: 3,
-        entryDate: "2026-04-18",
-        voucherNo: "INV-002",
-        voucherType: "Sales Invoice",
-        particulars: "Consultancy Service Invoice",
-        debit: 180000,
-        credit: 0,
-        balance: 330000,
-        balanceType: "DR",
-      },
-      {
-        id: 4,
-        entryDate: "2026-04-25",
-        voucherNo: "RCPT-002",
-        voucherType: "Receipt",
-        particulars: "Part Payment Received",
-        debit: 0,
-        credit: 85000,
-        balance: 245000,
-        balanceType: "DR",
-      },
-    ],
-  },
-  {
-    id: 2,
-    ledgerCode: "LED-0002",
-    name: "Balaji Traders",
-    ledgerType: "Vendor Ledger",
-    ledgerCategory: "VENDOR",
-    groupName: "Sundry Creditors",
-    currentBalance: 185000,
-    currentBalanceType: "CR",
-    entries: [
-      {
-        id: 1,
-        entryDate: "2026-04-08",
-        voucherNo: "PUR-001",
-        voucherType: "Purchase",
-        particulars: "Purchase - Cement Material",
-        debit: 0,
-        credit: 300000,
-        balance: 300000,
-        balanceType: "CR",
-      },
-      {
-        id: 2,
-        entryDate: "2026-04-15",
-        voucherNo: "PAY-001",
-        voucherType: "Payment",
-        particulars: "Vendor Payment",
-        debit: 115000,
-        credit: 0,
-        balance: 185000,
-        balanceType: "CR",
-      },
-      {
-        id: 3,
-        entryDate: "2026-04-21",
-        voucherNo: "PUR-002",
-        voucherType: "Purchase",
-        particulars: "Purchase - Documentation Support",
-        debit: 0,
-        credit: 75000,
-        balance: 260000,
-        balanceType: "CR",
-      },
-      {
-        id: 4,
-        entryDate: "2026-04-28",
-        voucherNo: "PAY-002",
-        voucherType: "Payment",
-        particulars: "Bank Payment To Vendor",
-        debit: 75000,
-        credit: 0,
-        balance: 185000,
-        balanceType: "CR",
-      },
-    ],
-  },
-  {
-    id: 3,
-    ledgerCode: "LED-0003",
-    name: "HDFC Bank",
-    ledgerType: "Bank Ledger",
-    ledgerCategory: "BANK",
-    groupName: "Bank Accounts",
-    currentBalance: 1525000,
-    currentBalanceType: "DR",
-    entries: [
-      {
-        id: 1,
-        entryDate: "2026-04-03",
-        voucherNo: "RCPT-002",
-        voucherType: "Receipt",
-        particulars: "Client Receipt",
-        debit: 750000,
-        credit: 0,
-        balance: 1750000,
-        balanceType: "DR",
-      },
-      {
-        id: 2,
-        entryDate: "2026-04-10",
-        voucherNo: "PAY-002",
-        voucherType: "Payment",
-        particulars: "Vendor Payment",
-        debit: 0,
-        credit: 225000,
-        balance: 1525000,
-        balanceType: "DR",
-      },
-      {
-        id: 3,
-        entryDate: "2026-04-17",
-        voucherNo: "RCPT-003",
-        voucherType: "Receipt",
-        particulars: "Receipt From Customer",
-        debit: 325000,
-        credit: 0,
-        balance: 1850000,
-        balanceType: "DR",
-      },
-      {
-        id: 4,
-        entryDate: "2026-04-24",
-        voucherNo: "PAY-003",
-        voucherType: "Payment",
-        particulars: "Office Expense Payment",
-        debit: 0,
-        credit: 325000,
-        balance: 1525000,
-        balanceType: "DR",
-      },
-    ],
-  },
-  {
-    id: 4,
-    ledgerCode: "LED-0004",
-    name: "Sales Account",
-    ledgerType: "Income Ledger",
-    ledgerCategory: "INCOME",
-    groupName: "Sales Accounts",
-    currentBalance: 890000,
-    currentBalanceType: "CR",
-    entries: [
-      {
-        id: 1,
-        entryDate: "2026-04-05",
-        voucherNo: "INV-001",
-        voucherType: "Sales Invoice",
-        particulars: "Sales Invoice - Project Service",
-        debit: 0,
-        credit: 250000,
-        balance: 250000,
-        balanceType: "CR",
-      },
-      {
-        id: 2,
-        entryDate: "2026-04-20",
-        voucherNo: "INV-002",
-        voucherType: "Sales Invoice",
-        particulars: "Sales Invoice - Consultancy",
-        debit: 0,
-        credit: 640000,
-        balance: 890000,
-        balanceType: "CR",
-      },
-      {
-        id: 3,
-        entryDate: "2026-04-26",
-        voucherNo: "CN-001",
-        voucherType: "Credit Note",
-        particulars: "Sales Adjustment",
-        debit: 50000,
-        credit: 0,
-        balance: 840000,
-        balanceType: "CR",
-      },
-    ],
-  },
-];
+import {
+  getLedgerTransactions,
+  resetLedgerTransactions,
+  selectLedgerStatement,
+  selectLedgerTransactions,
+  selectLedgerTransactionsError,
+  selectLedgerTransactionsLoading,
+} from "../../toolkit/slices/organizationSlice";
+
+const PAGE_SIZE = 50;
 
 const voucherTypeOptions = [
   "ALL",
@@ -267,17 +63,24 @@ const defaultFilterValues = {
 };
 
 const LedgerEntriesPage = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const { ledgerId } = useParams();
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { errors },
-  } = useForm({
+  const ledgerStatement = useSelector(selectLedgerStatement);
+  const transactions = useSelector(selectLedgerTransactions);
+  const loading = useSelector(selectLedgerTransactionsLoading);
+  const error = useSelector(selectLedgerTransactionsError);
+
+  const [expandedEntryId, setExpandedEntryId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [appliedFilters, setAppliedFilters] = useState({
+    fromDate: "",
+    toDate: "",
+  });
+
+  const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: defaultFilterValues,
     mode: "onTouched",
   });
@@ -287,45 +90,144 @@ const LedgerEntriesPage = () => {
   const voucherType = watch("voucherType");
   const search = watch("search");
 
-  const ledger = useMemo(() => {
-    const foundLedger = ledgerEntriesData.find(
-      (item) => String(item.id) === String(ledgerId),
-    );
+  useEffect(() => {
+    if (!ledgerId) return;
 
-    return foundLedger || location?.state?.ledger || ledgerEntriesData[0];
-  }, [ledgerId, location?.state?.ledger]);
+    dispatch(
+      getLedgerTransactions({
+        ledgerId,
+        fromDate: appliedFilters.fromDate,
+        toDate: appliedFilters.toDate,
+        page: currentPage,
+        size: PAGE_SIZE,
+      }),
+    );
+  }, [dispatch, ledgerId, appliedFilters, currentPage]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(resetLedgerTransactions());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      addToast({
+        title: error,
+        color: "danger",
+      });
+    }
+  }, [error]);
+
+  const ledger = useMemo(() => {
+    const stateLedger = location?.state?.ledger || {};
+    const rawLedgerType =
+      ledgerStatement?.ledgerType || stateLedger.ledgerType || "";
+
+    return {
+      id: ledgerStatement?.ledgerId || stateLedger.id || ledgerId,
+      ledgerCode: ledgerStatement?.ledgerCode || stateLedger.ledgerCode || "-",
+      name:
+        ledgerStatement?.ledgerName ||
+        stateLedger.ledgerName ||
+        stateLedger.name ||
+        "Ledger",
+      ledgerType: rawLedgerType || "-",
+      ledgerCategory: resolveLedgerCategory(
+        rawLedgerType,
+        stateLedger.ledgerCategory,
+      ),
+      groupName:
+        stateLedger.groupName ||
+        stateLedger.ledgerGroupName ||
+        stateLedger.ledgerGroup?.name ||
+        "-",
+      currentBalance:
+        ledgerStatement?.closingBalanceAmount ??
+        stateLedger.currentBalance ??
+        stateLedger.currentBalanceAmount ??
+        0,
+      currentBalanceType: formatBalanceType(
+        ledgerStatement?.closingBalanceType ||
+          stateLedger.currentBalanceType ||
+          "",
+      ),
+      entries: transactions.map(mapApiTransactionToEntry),
+    };
+  }, [ledgerStatement, transactions, location?.state?.ledger, ledgerId]);
 
   const filteredEntries = useMemo(() => {
     let rows = [...(ledger?.entries || [])];
-
-    if (fromDate) {
-      rows = rows.filter((entry) => entry.entryDate >= fromDate);
-    }
-
-    if (toDate) {
-      rows = rows.filter((entry) => entry.entryDate <= toDate);
-    }
 
     if (voucherType && voucherType !== "ALL") {
       rows = rows.filter((entry) => entry.voucherType === voucherType);
     }
 
     if (search?.trim()) {
-      const keyword = search.toLowerCase();
+      const keyword = search.trim().toLowerCase();
 
       rows = rows.filter((entry) => {
         return (
-          entry.voucherNo.toLowerCase().includes(keyword) ||
-          entry.voucherType.toLowerCase().includes(keyword) ||
-          entry.particulars.toLowerCase().includes(keyword)
+          String(entry.voucherNo || "")
+            .toLowerCase()
+            .includes(keyword) ||
+          String(entry.voucherType || "")
+            .toLowerCase()
+            .includes(keyword) ||
+          String(entry.particulars || "")
+            .toLowerCase()
+            .includes(keyword)
         );
       });
     }
 
     return rows;
-  }, [ledger, fromDate, toDate, voucherType, search]);
+  }, [ledger, voucherType, search]);
+
+  const tableRows = useMemo(() => {
+    return filteredEntries.flatMap((entry) => {
+      const rows = [
+        {
+          rowType: "ENTRY",
+          rowKey: `entry-${entry.id}`,
+          entry,
+        },
+      ];
+
+      if (expandedEntryId === entry.id && entry.isSalesInvoice) {
+        rows.push({
+          rowType: "GST",
+          rowKey: `gst-${entry.id}`,
+          entry,
+        });
+      }
+
+      return rows;
+    });
+  }, [filteredEntries, expandedEntryId]);
+
+  const handleToggleGstDetails = (entry) => {
+    if (!entry?.isSalesInvoice) return;
+
+    setExpandedEntryId((prevId) => (prevId === entry.id ? null : entry.id));
+  };
 
   const reportSummary = useMemo(() => {
+    const hasLocalFilter =
+      (voucherType && voucherType !== "ALL") || Boolean(search?.trim());
+
+    if (!hasLocalFilter) {
+      return {
+        totalDebit: Number(ledgerStatement?.totalDebit || 0),
+        totalCredit: Number(ledgerStatement?.totalCredit || 0),
+        closingBalance: Number(ledgerStatement?.closingBalanceAmount || 0),
+        closingBalanceType: formatBalanceType(
+          ledgerStatement?.closingBalanceType,
+        ),
+        totalEntries: Number(ledgerStatement?.totalElements || 0),
+      };
+    }
+
     const totalDebit = filteredEntries.reduce(
       (sum, item) => sum + Number(item.debit || 0),
       0,
@@ -346,9 +248,15 @@ const LedgerEntriesPage = () => {
         closingEntry?.balanceType ?? ledger?.currentBalanceType ?? "",
       totalEntries: filteredEntries.length,
     };
-  }, [filteredEntries, ledger]);
+  }, [filteredEntries, ledger, ledgerStatement, voucherType, search]);
 
-  const onApplyFilter = () => {
+  const onApplyFilter = (values) => {
+    setCurrentPage(1);
+    setAppliedFilters({
+      fromDate: values.fromDate || "",
+      toDate: values.toDate || "",
+    });
+
     addToast({
       title: "Filter applied",
       color: "success",
@@ -364,10 +272,39 @@ const LedgerEntriesPage = () => {
 
   const handleClearFilter = () => {
     reset(defaultFilterValues);
+    setCurrentPage(1);
+    setAppliedFilters({
+      fromDate: "",
+      toDate: "",
+    });
   };
+
+  const totalPages = Math.max(Number(ledgerStatement?.totalPages || 1), 1);
+  const totalElements = Number(ledgerStatement?.totalElements || 0);
 
   return (
     <div className="h-[calc(100vh-120px)] min-h-0 w-full overflow-hidden p-4 text-sm">
+      <style>
+        {`
+    @keyframes tallyOpen {
+      from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        max-height: 56px;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-tally-open {
+      animation: tallyOpen 220ms ease-out;
+    }
+  `}
+      </style>
+
       <Card className="h-full border border-slate-200" shadow="none">
         <CardBody className="flex h-full min-h-0 flex-col p-0">
           {/* Header */}
@@ -473,7 +410,7 @@ const LedgerEntriesPage = () => {
                       label="Voucher Type"
                       selectedKeys={field.value ? [field.value] : ["ALL"]}
                       onSelectionChange={(keys) =>
-                        field.onChange(Array.from(keys)[0])
+                        field.onChange(Array.from(keys)[0] || "ALL")
                       }
                     >
                       {voucherTypeOptions.map((item) => (
@@ -505,12 +442,18 @@ const LedgerEntriesPage = () => {
                   <Button
                     type="submit"
                     size="sm"
+                    isLoading={loading}
                     className="bg-emerald-700 font-semibold text-white"
                   >
                     Apply
                   </Button>
 
-                  <Button size="sm" variant="flat" onPress={handleClearFilter}>
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    isDisabled={loading}
+                    onPress={handleClearFilter}
+                  >
                     Clear
                   </Button>
                 </div>
@@ -570,51 +513,168 @@ const LedgerEntriesPage = () => {
               </TableHeader>
 
               <TableBody
-                emptyContent="No ledger entries found for selected filters"
-                items={filteredEntries}
+                isLoading={loading}
+                loadingContent={
+                  <Spinner size="sm" label="Loading entries..." />
+                }
+                emptyContent={
+                  error || "No ledger entries found for selected filters"
+                }
+                items={tableRows}
               >
-                {(entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(entry.entryDate)}
-                    </TableCell>
+                {(row) => {
+                  if (row.rowType === "GST") {
+                    return (
+                      <TableRow key={row.rowKey}>
+                        <TableCell className="whitespace-nowrap align-top">
+                          {formatDate(row.entry?.entryDate)}
+                        </TableCell>
 
-                    <TableCell className="whitespace-nowrap font-semibold">
-                      {entry.voucherNo}
-                    </TableCell>
+                        <TableCell />
+                        <TableCell />
 
-                    <TableCell>
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        className="bg-slate-100 text-xs text-slate-700"
-                      >
-                        {entry.voucherType}
-                      </Chip>
-                    </TableCell>
+                        <TableCell className="py-0">
+                          <TallyGstNestedLine entry={row.entry} />
+                        </TableCell>
 
-                    <TableCell>{entry.particulars}</TableCell>
+                        <TableCell />
+                        <TableCell />
+                        <TableCell />
+                      </TableRow>
+                    );
+                  }
 
-                    <TableCell className="whitespace-nowrap text-right font-semibold">
-                      {entry.debit ? formatCurrency(entry.debit) : "-"}
-                    </TableCell>
+                  const entry = row.entry;
 
-                    <TableCell className="whitespace-nowrap text-right font-semibold">
-                      {entry.credit ? formatCurrency(entry.credit) : "-"}
-                    </TableCell>
+                  return (
+                    <TableRow key={row.rowKey}>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(entry.entryDate)}
+                      </TableCell>
 
-                    <TableCell className="whitespace-nowrap text-right font-bold text-slate-950">
-                      {formatCurrency(entry.balance)} {entry.balanceType}
-                    </TableCell>
-                  </TableRow>
-                )}
+                      <TableCell className="whitespace-nowrap font-semibold">
+                        {entry.isSalesInvoice ? (
+                          <Button
+                            size="sm"
+                            variant="light"
+                            className="h-auto min-w-0 px-0 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                            onPress={() => handleToggleGstDetails(entry)}
+                          >
+                            {entry.voucherNo || "-"}
+                          </Button>
+                        ) : (
+                          entry.voucherNo || "-"
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {entry.isSalesInvoice ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleGstDetails(entry)}
+                            className="cursor-pointer"
+                          >
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              className="bg-slate-100 text-xs text-slate-700 hover:bg-emerald-100 hover:text-emerald-700"
+                            >
+                              {entry.voucherType || "-"}
+                            </Chip>
+                          </button>
+                        ) : (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            className="bg-slate-100 text-xs text-slate-700"
+                          >
+                            {entry.voucherType || "-"}
+                          </Chip>
+                        )}
+                      </TableCell>
+
+                      <TableCell>{entry.particulars || "-"}</TableCell>
+
+                      <TableCell className="whitespace-nowrap text-right font-semibold">
+                        {Number(entry.debit || 0)
+                          ? formatCurrency(entry.debit)
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap text-right font-semibold">
+                        {Number(entry.credit || 0)
+                          ? formatCurrency(entry.credit)
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap text-right font-bold text-slate-950">
+                        {formatCurrency(entry.balance)} {entry.balanceType}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }}
               </TableBody>
             </Table>
           </ScrollShadow>
+
+          {/* Pagination */}
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-5 py-3 sm:flex-row">
+            <p className="text-xs text-slate-500">
+              Showing page {currentPage} of {totalPages} | Total:{" "}
+              {totalElements}
+            </p>
+
+            <Pagination
+              showControls
+              size="sm"
+              page={currentPage}
+              total={totalPages}
+              isDisabled={loading}
+              onChange={setCurrentPage}
+            />
+          </div>
         </CardBody>
       </Card>
     </div>
   );
+};
+
+const mapApiTransactionToEntry = (entry) => {
+  const formattedVoucherType = formatVoucherType(entry.voucherType);
+  const isSalesInvoice = isSalesInvoiceVoucher(entry.voucherType);
+
+  const mappedEntry = {
+    id:
+      entry.entryId ||
+      `${entry.voucherId || "voucher"}-${entry.sourceId || ""}`,
+    entryDate: entry.voucherDate,
+    voucherNo: entry.voucherNumber,
+    voucherType: formattedVoucherType,
+    rawVoucherType: entry.voucherType,
+    particulars: entry.narration || entry.sourceType || "-",
+    debit: entry.debitAmount,
+    credit: entry.creditAmount,
+    balance: entry.runningBalanceAmount,
+    balanceType: formatBalanceType(entry.runningBalanceType),
+    isSalesInvoice,
+    raw: entry,
+  };
+
+  return {
+    ...mappedEntry,
+    gstDetails: getSalesInvoiceGstDetails(mappedEntry),
+  };
+};
+
+const resolveLedgerCategory = (ledgerType, fallbackCategory) => {
+  const type = String(ledgerType || fallbackCategory || "").toUpperCase();
+
+  if (type.includes("BANK")) return "BANK";
+  if (type.includes("VENDOR") || type.includes("SUPPLIER")) return "VENDOR";
+  if (type.includes("CUSTOMER")) return "CUSTOMER";
+  if (type.includes("SALES") || type.includes("INCOME")) return "INCOME";
+
+  return fallbackCategory || "CUSTOMER";
 };
 
 const LedgerIcon = ({ category }) => {
@@ -655,7 +715,11 @@ const SummaryCard = ({ label, value, icon: Icon }) => {
 const formatCurrency = (amount) => {
   if (amount === null || amount === undefined || amount === "") return "-";
 
-  return `₹${Number(amount).toLocaleString("en-IN")}`;
+  const numberValue = Number(amount);
+
+  if (Number.isNaN(numberValue)) return "-";
+
+  return `₹${numberValue.toLocaleString("en-IN")}`;
 };
 
 const formatDate = (date) => {
@@ -670,6 +734,86 @@ const formatDate = (date) => {
     month: "short",
     year: "numeric",
   });
+};
+
+const formatBalanceType = (type) => {
+  if (!type) return "";
+
+  const normalized = String(type).toUpperCase();
+
+  if (normalized === "DEBIT") return "DR";
+  if (normalized === "CREDIT") return "CR";
+
+  return normalized;
+};
+
+const formatVoucherType = (type) => {
+  if (!type) return "-";
+
+  return String(type)
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const TallyGstNestedLine = ({ entry }) => {
+  const gstAmount = Number(entry?.gstDetails?.gstAmount || 0);
+  const suffix = Number(entry?.debit || 0) > 0 ? "Dr" : "Cr";
+
+  return (
+    <div className="animate-tally-open overflow-hidden">
+      <div className="py-1 text-xs text-slate-950">
+        <div className="font-bold">(as per details)</div>
+
+        <div className="mt-0.5 flex max-w-[360px] items-center justify-between gap-8 pl-7 font-semibold">
+          <span>GST</span>
+          <span className="whitespace-nowrap">
+            {formatCurrency(gstAmount)} {suffix}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const isSalesInvoiceVoucher = (type) => {
+  const normalized = String(type || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  return normalized === "SALES_INVOICE";
+};
+
+const getSalesInvoiceGstDetails = (entry = {}) => {
+  const raw = entry.raw || {};
+  const amount = Number(entry.debit || entry.credit || 0);
+
+  const apiGstAmount =
+    raw.gstAmount ??
+    raw.totalGstAmount ??
+    raw.totalTax ??
+    raw.taxAmount ??
+    entry.gstAmount;
+
+  if (
+    apiGstAmount !== null &&
+    apiGstAmount !== undefined &&
+    apiGstAmount !== ""
+  ) {
+    const gstAmount = Number(apiGstAmount);
+
+    return {
+      gstAmount: Number.isNaN(gstAmount) ? 0 : gstAmount,
+    };
+  }
+
+  const gstRate = 18;
+  const gstAmount = amount ? (amount * gstRate) / (100 + gstRate) : 0;
+
+  return {
+    gstAmount: Number(gstAmount.toFixed(2)),
+  };
 };
 
 export default LedgerEntriesPage;

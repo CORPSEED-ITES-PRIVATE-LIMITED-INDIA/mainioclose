@@ -62,6 +62,45 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
+const GST_STATE_OPTIONS = [
+  { code: "01", name: "Jammu & Kashmir" },
+  { code: "02", name: "Himachal Pradesh" },
+  { code: "03", name: "Punjab" },
+  { code: "04", name: "Chandigarh" },
+  { code: "05", name: "Uttarakhand" },
+  { code: "06", name: "Haryana" },
+  { code: "07", name: "Delhi" },
+  { code: "08", name: "Rajasthan" },
+  { code: "09", name: "Uttar Pradesh" },
+  { code: "10", name: "Bihar" },
+  { code: "11", name: "Sikkim" },
+  { code: "12", name: "Arunachal Pradesh" },
+  { code: "13", name: "Nagaland" },
+  { code: "14", name: "Manipur" },
+  { code: "15", name: "Mizoram" },
+  { code: "16", name: "Tripura" },
+  { code: "17", name: "Meghalaya" },
+  { code: "18", name: "Assam" },
+  { code: "19", name: "West Bengal" },
+  { code: "20", name: "Jharkhand" },
+  { code: "21", name: "Odisha" },
+  { code: "22", name: "Chhattisgarh" },
+  { code: "23", name: "Madhya Pradesh" },
+  { code: "24", name: "Gujarat" },
+  { code: "26", name: "Dadra & Nagar Haveli and Daman & Diu" },
+  { code: "27", name: "Maharashtra" },
+  { code: "29", name: "Karnataka" },
+  { code: "30", name: "Goa" },
+  { code: "31", name: "Lakshadweep" },
+  { code: "32", name: "Kerala" },
+  { code: "33", name: "Tamil Nadu" },
+  { code: "34", name: "Puducherry" },
+  { code: "35", name: "Andaman & Nicobar Islands" },
+  { code: "36", name: "Telangana" },
+  { code: "37", name: "Andhra Pradesh" },
+  { code: "38", name: "Ladakh" },
+];
+
 const INITIAL_VISIBLE_COLUMNS = [
   "poNumber",
   "poReferenceNumber",
@@ -175,6 +214,8 @@ const RaiseProcurementPaymentRequestModal = ({
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -182,8 +223,77 @@ const RaiseProcurementPaymentRequestModal = ({
       payableAmount: "",
       completionRemarks: "",
       proofAttachmentUrls: [],
+
+      tdsActive: "NO",
+      tdsPercentage: "",
+
+      gstActive: "NO",
+      gstStateCode: "",
+      gstPercentage: "",
     },
   });
+
+  const tdsActive = watch("tdsActive");
+  const gstActive = watch("gstActive");
+  const gstStateCode = watch("gstStateCode");
+  const gstPercentage = watch("gstPercentage");
+  const invoiceAmount = watch("invoiceAmount");
+
+  const gstCalculation = useMemo(() => {
+    const taxableAmount = Number(invoiceAmount || 0);
+    const gstRate = Number(gstPercentage || 0);
+    const isUpState = String(gstStateCode) === "09";
+
+    if (gstActive !== "YES" || !gstRate) {
+      return {
+        gstAmount: 0,
+        cgstRate: 0,
+        sgstRate: 0,
+        igstRate: 0,
+        cgstAmount: 0,
+        sgstAmount: 0,
+        igstAmount: 0,
+        totalWithGst: taxableAmount,
+      };
+    }
+
+    const gstAmount =
+      taxableAmount > 0
+        ? Number(((taxableAmount * gstRate) / 100).toFixed(2))
+        : 0;
+
+    if (isUpState) {
+      const halfRate = Number((gstRate / 2).toFixed(2));
+      const cgstAmount = Number((gstAmount / 2).toFixed(2));
+      const sgstAmount = Number((gstAmount - cgstAmount).toFixed(2));
+
+      return {
+        gstAmount,
+        cgstRate: halfRate,
+        sgstRate: halfRate,
+        igstRate: 0,
+        cgstAmount,
+        sgstAmount,
+        igstAmount: 0,
+        totalWithGst: Number((taxableAmount + gstAmount).toFixed(2)),
+      };
+    }
+
+    return {
+      gstAmount,
+      cgstRate: 0,
+      sgstRate: 0,
+      igstRate: gstRate,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      igstAmount: gstAmount,
+      totalWithGst: Number((taxableAmount + gstAmount).toFixed(2)),
+    };
+  }, [gstActive, gstPercentage, gstStateCode, invoiceAmount]);
+
+  const selectedState = GST_STATE_OPTIONS.find(
+    (state) => state.code === gstStateCode,
+  );
 
   const handleClose = () => {
     reset();
@@ -201,6 +311,9 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
+    const isTdsActive = values.tdsActive === "YES";
+    const isGstActive = values.gstActive === "YES";
+
     const payload = {
       invoiceAmount: Number(values.invoiceAmount || 0),
       payableAmount: Number(values.payableAmount || 0),
@@ -209,6 +322,28 @@ const RaiseProcurementPaymentRequestModal = ({
         ? values.proofAttachmentUrls
         : [],
       createdBy: Number(createdBy),
+
+      tdsActive: isTdsActive,
+      tdsPercentage: isTdsActive ? Number(values.tdsPercentage || 0) : null,
+
+      gstActive: isGstActive,
+      gstStateCode: isGstActive ? values.gstStateCode : null,
+      gstStateName: isGstActive ? selectedState?.name || null : null,
+      gstPercentage: isGstActive ? Number(values.gstPercentage || 0) : null,
+
+      gstAmount: isGstActive ? gstCalculation.gstAmount : 0,
+
+      cgstRate: isGstActive ? gstCalculation.cgstRate : 0,
+      sgstRate: isGstActive ? gstCalculation.sgstRate : 0,
+      igstRate: isGstActive ? gstCalculation.igstRate : 0,
+
+      cgstAmount: isGstActive ? gstCalculation.cgstAmount : 0,
+      sgstAmount: isGstActive ? gstCalculation.sgstAmount : 0,
+      igstAmount: isGstActive ? gstCalculation.igstAmount : 0,
+
+      totalWithGst: isGstActive
+        ? gstCalculation.totalWithGst
+        : Number(values.invoiceAmount || 0),
     };
 
     const resultAction = await dispatch(
@@ -249,7 +384,6 @@ const RaiseProcurementPaymentRequestModal = ({
       }}
       size="2xl"
       placement="center"
-      scrollBehavior="inside"
       classNames={{
         base: "max-h-[88vh]",
         body: "overflow-y-auto",
@@ -304,6 +438,211 @@ const RaiseProcurementPaymentRequestModal = ({
               isInvalid={Boolean(errors.payableAmount)}
               errorMessage={errors.payableAmount?.message}
             />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Controller
+                name="tdsActive"
+                control={control}
+                rules={{
+                  required: "Please select TDS option",
+                }}
+                render={({ field }) => (
+                  <Select
+                    label="Apply TDS?"
+                    placeholder="Select TDS option"
+                    variant="bordered"
+                    selectedKeys={field.value ? [field.value] : []}
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0] || "NO";
+                      field.onChange(selected);
+                    }}
+                    isInvalid={Boolean(errors.tdsActive)}
+                    errorMessage={errors.tdsActive?.message}
+                  >
+                    <SelectItem key="NO">No</SelectItem>
+                    <SelectItem key="YES">Yes</SelectItem>
+                  </Select>
+                )}
+              />
+
+              {tdsActive === "YES" && (
+                <Controller
+                  name="tdsPercentage"
+                  control={control}
+                  rules={{
+                    required: "Please select TDS percentage",
+                  }}
+                  render={({ field }) => (
+                    <Select
+                      label="TDS Percentage"
+                      placeholder="Select TDS percentage"
+                      variant="bordered"
+                      selectedKeys={field.value ? [String(field.value)] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] || "";
+                        field.onChange(selected);
+                      }}
+                      isInvalid={Boolean(errors.tdsPercentage)}
+                      errorMessage={errors.tdsPercentage?.message}
+                    >
+                      <SelectItem key="1">1%</SelectItem>
+                      <SelectItem key="2">2%</SelectItem>
+                      <SelectItem key="5">5%</SelectItem>
+                      <SelectItem key="10">10%</SelectItem>
+                    </Select>
+                  )}
+                />
+              )}
+            </div>
+
+            <div className="rounded-xl border border-default-200 p-4">
+              <div className="mb-3 text-sm font-medium">GST Details</div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="gstActive"
+                  control={control}
+                  rules={{
+                    required: "Please select GST option",
+                  }}
+                  render={({ field }) => (
+                    <Select
+                      label="Apply GST?"
+                      placeholder="Select GST option"
+                      variant="bordered"
+                      selectedKeys={new Set(field.value ? [field.value] : [])}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] || "NO";
+                        field.onChange(selected);
+
+                        if (selected === "NO") {
+                          setValue("gstStateCode", "");
+                          setValue("gstPercentage", "");
+                        }
+                      }}
+                      isInvalid={Boolean(errors.gstActive)}
+                      errorMessage={errors.gstActive?.message}
+                    >
+                      <SelectItem key="NO">No</SelectItem>
+                      <SelectItem key="YES">Yes</SelectItem>
+                    </Select>
+                  )}
+                />
+
+                {gstActive === "YES" && (
+                  <Controller
+                    name="gstStateCode"
+                    control={control}
+                    rules={{
+                      required: "Please select state code",
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        label="State Code"
+                        placeholder="Select state"
+                        variant="bordered"
+                        selectedKeys={
+                          new Set(field.value ? [String(field.value)] : [])
+                        }
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] || "";
+                          field.onChange(String(selected));
+                        }}
+                        isInvalid={Boolean(errors.gstStateCode)}
+                        errorMessage={errors.gstStateCode?.message}
+                      >
+                        {GST_STATE_OPTIONS.map((state) => (
+                          <SelectItem
+                            key={state.code}
+                            textValue={`${state.code} - ${state.name}`}
+                          >
+                            {state.code} - {state.name}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                )}
+
+                {gstActive === "YES" && (
+                  <Controller
+                    name="gstPercentage"
+                    control={control}
+                    rules={{
+                      required: "Please select GST percentage",
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        label="GST Percentage"
+                        placeholder="Select GST percentage"
+                        variant="bordered"
+                        selectedKeys={
+                          new Set(field.value ? [String(field.value)] : [])
+                        }
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] || "";
+                          field.onChange(String(selected));
+                        }}
+                        isInvalid={Boolean(errors.gstPercentage)}
+                        errorMessage={errors.gstPercentage?.message}
+                      >
+                        <SelectItem key="5">5%</SelectItem>
+                        <SelectItem key="12">12%</SelectItem>
+                        <SelectItem key="18">18%</SelectItem>
+                        <SelectItem key="28">28%</SelectItem>
+                      </Select>
+                    )}
+                  />
+                )}
+              </div>
+
+              {gstActive === "YES" && (
+                <div className="mt-4 rounded-lg bg-default-50 p-3 text-xs text-default-600">
+                  <div className="mb-2 font-medium text-default-700">
+                    GST Calculation
+                  </div>
+
+                  {String(gstStateCode) === "09" ? (
+                    <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+                      <span>
+                        CGST ({gstCalculation.cgstRate}%):{" "}
+                        {formatAmount(gstCalculation.cgstAmount)}
+                      </span>
+
+                      <span>
+                        SGST ({gstCalculation.sgstRate}%):{" "}
+                        {formatAmount(gstCalculation.sgstAmount)}
+                      </span>
+
+                      <span>
+                        Total GST: {formatAmount(gstCalculation.gstAmount)}
+                      </span>
+
+                      <span>
+                        Total With GST:{" "}
+                        {formatAmount(gstCalculation.totalWithGst)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+                      <span>
+                        IGST ({gstCalculation.igstRate}%):{" "}
+                        {formatAmount(gstCalculation.igstAmount)}
+                      </span>
+
+                      <span>
+                        Total GST: {formatAmount(gstCalculation.gstAmount)}
+                      </span>
+
+                      <span>
+                        Total With GST:{" "}
+                        {formatAmount(gstCalculation.totalWithGst)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <Textarea
               label="Completion Remarks"

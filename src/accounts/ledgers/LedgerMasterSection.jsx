@@ -74,21 +74,21 @@ import {
 const defaultValues = {
   name: "",
   ledgerType: "CUSTOMER",
-  ledgerCategory: "CUSTOMER",
-  partyType: "CUSTOMER",
+  // ledgerCategory: "CUSTOMER",
+  // partyType: "CUSTOMER",
   groupName: "",
   bankName: "",
   accountHolderName: "",
   accountNumber: "",
   ifscCode: "",
   branchName: "",
-  openingBalance: "0",
-  openingBalanceType: "DR",
-  currentBalance: "0",
-  currentBalanceType: "DR",
-  totalDebit: "0",
-  totalCredit: "0",
-  currency: "INR",
+  // openingBalance: "0",
+  // openingBalanceType: "DR",
+  // currentBalance: "0",
+  // currentBalanceType: "DR",
+  // totalDebit: "0",
+  // totalCredit: "0",
+  // currency: "INR",
   effectiveFrom: new Date().toISOString().slice(0, 10),
   gstStatus: "Not Applicable",
   gstin: "",
@@ -100,6 +100,7 @@ const defaultValues = {
 };
 
 const ledgerTypeOptions = [
+  "COMPANY",
   "CUSTOMER",
   "CUSTOMER_ADVANCE",
   "VENDOR",
@@ -112,6 +113,9 @@ const ledgerTypeOptions = [
   "OUTPUT_IGST",
   "OUTPUT_CGST",
   "OUTPUT_SGST",
+  "INPUT_IGST",
+  "INPUT_CGST",
+  "INPUT_SGST",
   "TDS_RECEIVABLE",
   "CREDIT_NOTE",
   "REFUND_PAYABLE",
@@ -119,6 +123,8 @@ const ledgerTypeOptions = [
   "EXPENSE",
   "LIABILITY",
   "ASSET",
+  "TAX",
+  "INCOME",
 ];
 
 const ledgerCategoryOptions = [
@@ -150,6 +156,13 @@ const gstFieldAllowedGroups = [
   "Sundry Creditors",
   "Bank Accounts",
   "Loans and Liabilities",
+  "Bank OCC A/C",
+  "Bank OD A/C",
+  "Loans and Advance Asset",
+  "Provision",
+  "Secured Loans",
+  "Unsecured Loans",
+  "Branch / Division",
 ];
 
 const balanceTypeOptions = ["DR", "CR"];
@@ -203,6 +216,15 @@ const toNumber = (value) => {
   return Number.isNaN(numericValue) ? 0 : numericValue;
 };
 
+const formatVoucherType = (type) => {
+  if (!type) return "-";
+
+  return String(type)
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const getApiErrorMessage = (error) => {
   if (typeof error === "string") return error;
 
@@ -214,38 +236,92 @@ const getApiErrorMessage = (error) => {
   );
 };
 
+const normalizeTransaction = (transaction = {}) => {
+  return {
+    id: transaction.entryId,
+    entryId: transaction.entryId,
+    voucherId: transaction.voucherId,
+    voucherNo: transaction.voucherNumber || "-",
+    voucherNumber: transaction.voucherNumber || "-",
+    voucherType: formatVoucherType(transaction.voucherType),
+    rawVoucherType: transaction.voucherType,
+    date: formatDate(transaction.voucherDate),
+    entryDate: transaction.voucherDate,
+    particulars: transaction.narration || transaction.sourceType || "-",
+    debit: Number(transaction.debitAmount || 0),
+    credit: Number(transaction.creditAmount || 0),
+    balance: `${formatCurrency(transaction.runningBalanceAmount)} ${toUiBalanceType(
+      transaction.runningBalanceType,
+    )}`,
+    balanceAmount: Number(transaction.runningBalanceAmount || 0),
+    balanceType: toUiBalanceType(transaction.runningBalanceType),
+    sourceType: transaction.sourceType,
+    sourceId: transaction.sourceId,
+    status: transaction.status,
+    raw: transaction,
+  };
+};
+
 const normalizeLedger = (ledger = {}) => {
-  const ledgerCategory = deriveLedgerCategory(ledger.ledgerType);
   const partyType = derivePartyType(ledger.ledgerType);
   const gstStatus = ledger.gstNo ? "Registered" : "Not Applicable";
+
+  const entries = Array.isArray(ledger.transactions)
+    ? ledger.transactions.map(normalizeTransaction)
+    : [];
+
+  const totalDebit = entries.reduce(
+    (sum, entry) => sum + Number(entry.debit || 0),
+    0,
+  );
+
+  const totalCredit = entries.reduce(
+    (sum, entry) => sum + Number(entry.credit || 0),
+    0,
+  );
 
   return {
     ...ledger,
     raw: ledger,
+
     name: ledger.ledgerName || "",
-    ledgerCategory,
+    ledgerCategory: deriveLedgerCategory(ledger.ledgerType),
     partyType,
+
     groupName:
       ledger.ledgerGroupName ||
       (ledger.ledgerGroupId ? `Group ID ${ledger.ledgerGroupId}` : "-"),
+
+    openingBalance: ledger.openingBalance ?? 0,
     openingBalanceType: toUiBalanceType(ledger.openingBalanceType),
+
+    currentBalance: ledger.currentBalance ?? 0,
     currentBalanceType: toUiBalanceType(ledger.currentBalanceType),
-    totalDebit: ledger.totalDebit ?? 0,
-    totalCredit: ledger.totalCredit ?? 0,
-    currency: ledger.currency || "INR",
+
+    totalDebit,
+    totalCredit,
+
+    currency: "INR",
     effectiveFrom: ledger.createdAt || "",
+
     gstStatus,
     gstin: ledger.gstNo || "-",
     panNumber: ledger.panNo || "-",
     email: ledger.email || "-",
     mobile: ledger.mobile || "-",
+
     billingAddress:
       ledger.billingAddress ||
+      ledger.fullAddress ||
       [ledger.companyName, ledger.unitName, ledger.contactName]
         .filter(Boolean)
         .join(" / ") ||
       "-",
-    entries: Array.isArray(ledger.entries) ? ledger.entries : [],
+
+    fullAddress: ledger.fullAddress || "-",
+
+    entries,
+    transactions: Array.isArray(ledger.transactions) ? ledger.transactions : [],
   };
 };
 
@@ -254,15 +330,18 @@ const getVoucherDetails = (entry, ledger) => {
 
   const voucherNo = entry.voucherNo || "-";
 
-  const voucherType = voucherNo.startsWith("INV")
-    ? "Sales Invoice"
-    : voucherNo.startsWith("PUR")
-      ? "Purchase Voucher"
-      : voucherNo.startsWith("PAY")
-        ? "Payment Voucher"
-        : voucherNo.startsWith("RCPT")
-          ? "Receipt Voucher"
-          : "Accounting Voucher";
+  const voucherType =
+    entry.voucherType ||
+    formatVoucherType(entry.rawVoucherType) ||
+    (voucherNo.startsWith("INV")
+      ? "Sales Invoice"
+      : voucherNo.startsWith("PUR")
+        ? "Purchase Voucher"
+        : voucherNo.startsWith("PAY")
+          ? "Payment Voucher"
+          : voucherNo.startsWith("RCP") || voucherNo.startsWith("RCPT")
+            ? "Receipt Voucher"
+            : "Accounting Voucher");
 
   const amount = Number(entry.debit || entry.credit || 0);
   const isBankLedger = ledger.ledgerCategory === "BANK";
@@ -522,21 +601,21 @@ const LedgerMasterSection = () => {
       ledgerType: String(ledger.ledgerType || "CUSTOMER")
         .trim()
         .toUpperCase(),
-      ledgerCategory: ledger.ledgerCategory || "COMPANY",
-      partyType: ledger.partyType || "CUSTOMER",
+      // ledgerCategory: ledger.ledgerCategory || "COMPANY",
+      // partyType: ledger.partyType || "CUSTOMER",
       groupName: ledger.ledgerGroupId ? String(ledger.ledgerGroupId) : "",
       bankName: ledger.raw?.bankName || "",
       accountHolderName: ledger.raw?.accountHolderName || "",
       accountNumber: ledger.raw?.accountNumber || "",
       ifscCode: ledger.raw?.ifscCode || "",
       branchName: ledger.raw?.branchName || "",
-      openingBalance: String(ledger.openingBalance ?? 0),
-      openingBalanceType: ledger.openingBalanceType || "DR",
-      currentBalance: String(ledger.currentBalance ?? 0),
-      currentBalanceType: ledger.currentBalanceType || "DR",
-      totalDebit: String(ledger.totalDebit ?? 0),
-      totalCredit: String(ledger.totalCredit ?? 0),
-      currency: ledger.currency || "INR",
+      // openingBalance: String(ledger.openingBalance ?? 0),
+      // openingBalanceType: ledger.openingBalanceType || "DR",
+      // currentBalance: String(ledger.currentBalance ?? 0),
+      // currentBalanceType: ledger.currentBalanceType || "DR",
+      // totalDebit: String(ledger.totalDebit ?? 0),
+      // totalCredit: String(ledger.totalCredit ?? 0),
+      // currency: ledger.currency || "INR",
       effectiveFrom:
         ledger.effectiveFrom?.slice?.(0, 10) ||
         new Date().toISOString().slice(0, 10),
@@ -581,8 +660,8 @@ const LedgerMasterSection = () => {
             : "",
         branchName:
           ledgerType === "BANK" ? values.branchName?.trim() || "" : "",
-        openingBalance: toNumber(values.openingBalance),
-        openingBalanceType: toApiBalanceType(values.openingBalanceType),
+        // openingBalance: toNumber(values.openingBalance),
+        // openingBalanceType: toApiBalanceType(values.openingBalanceType),
         active: values.active === "true",
       };
 
@@ -1001,16 +1080,16 @@ const LedgerMasterSection = () => {
                     label="Email"
                     value={selectedLedger.email}
                   />
-                  <ContactItem
+                  {/* <ContactItem
                     icon={Phone}
                     label="Mobile"
                     value={selectedLedger.mobile}
-                  />
+                  /> */}
                   <div className="md:col-span-2">
                     <ContactItem
                       icon={MapPin}
                       label="Billing Address"
-                      value={selectedLedger.billingAddress}
+                      value={selectedLedger.fullAddress || "-"}
                     />
                   </div>
                 </div>
@@ -1052,6 +1131,7 @@ const LedgerMasterSection = () => {
                   <TableHeader>
                     <TableColumn>Date</TableColumn>
                     <TableColumn>Voucher No.</TableColumn>
+                    <TableColumn>Voucher Type</TableColumn>
                     <TableColumn>Particulars</TableColumn>
                     <TableColumn>Debit</TableColumn>
                     <TableColumn>Credit</TableColumn>
@@ -1065,6 +1145,7 @@ const LedgerMasterSection = () => {
                     {(entry) => (
                       <TableRow key={entry.id}>
                         <TableCell>{entry.date}</TableCell>
+
                         <TableCell>
                           <Button
                             size="sm"
@@ -1075,9 +1156,23 @@ const LedgerMasterSection = () => {
                             {entry.voucherNo}
                           </Button>
                         </TableCell>
+
+                        <TableCell>
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            className="bg-slate-100 text-xs text-slate-700"
+                          >
+                            {entry.voucherType || "-"}
+                          </Chip>
+                        </TableCell>
+
                         <TableCell>{entry.particulars}</TableCell>
+
                         <TableCell>{formatCurrency(entry.debit)}</TableCell>
+
                         <TableCell>{formatCurrency(entry.credit)}</TableCell>
+
                         <TableCell className="font-semibold">
                           {entry.balance}
                         </TableCell>
@@ -1192,13 +1287,22 @@ const LedgerModal = ({
                   />
 
                   <RHFSelect
+                    name="groupName"
+                    label="Under Group"
+                    control={control}
+                    options={ledgerGroupOptions}
+                    rules={{ required: "Under group is required" }}
+                    isRequired
+                  />
+
+                  {/* <RHFSelect
                     name="ledgerType"
                     label="Ledger Type"
                     control={control}
                     options={ledgerTypeOptions}
                     rules={{ required: "Ledger type is required" }}
                     isRequired
-                  />
+                  /> */}
 
                   {isBankLedgerType && (
                     <>
@@ -1291,34 +1395,25 @@ const LedgerModal = ({
                     </>
                   )}
 
-                  <RHFSelect
+                  {/* <RHFSelect
                     name="ledgerCategory"
                     label="Ledger Category"
                     control={control}
                     options={ledgerCategoryOptions}
                     rules={{ required: "Ledger category is required" }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFSelect
+                  {/* <RHFSelect
                     name="partyType"
                     label="Party Type"
                     control={control}
                     options={partyTypeOptions}
                     rules={{ required: "Party type is required" }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFSelect
-                    name="groupName"
-                    label="Under Group"
-                    control={control}
-                    options={ledgerGroupOptions}
-                    rules={{ required: "Under group is required" }}
-                    isRequired
-                  />
-
-                  <RHFInput
+                  {/* <RHFInput
                     name="openingBalance"
                     label="Opening Balance"
                     type="number"
@@ -1331,18 +1426,18 @@ const LedgerModal = ({
                       },
                     }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFSelect
+                  {/* <RHFSelect
                     name="openingBalanceType"
                     label="Opening Balance Type"
                     control={control}
                     options={balanceTypeOptions}
                     rules={{ required: "Opening balance type is required" }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFInput
+                  {/* <RHFInput
                     name="currentBalance"
                     label="Current Balance"
                     type="number"
@@ -1355,18 +1450,18 @@ const LedgerModal = ({
                       },
                     }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFSelect
+                  {/* <RHFSelect
                     name="currentBalanceType"
                     label="Current Balance Type"
                     control={control}
                     options={balanceTypeOptions}
                     rules={{ required: "Current balance type is required" }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFInput
+                  {/* <RHFInput
                     name="totalDebit"
                     label="Total Debit"
                     type="number"
@@ -1379,9 +1474,9 @@ const LedgerModal = ({
                       },
                     }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFInput
+                  {/* <RHFInput
                     name="totalCredit"
                     label="Total Credit"
                     type="number"
@@ -1394,15 +1489,15 @@ const LedgerModal = ({
                       },
                     }}
                     isRequired
-                  />
+                  /> */}
 
-                  <RHFInput
+                  {/* <RHFInput
                     name="currency"
                     label="Currency"
                     control={control}
                     rules={{ required: "Currency is required" }}
                     isRequired
-                  />
+                  /> */}
 
                   <RHFInput
                     name="effectiveFrom"
@@ -1634,15 +1729,22 @@ const VoucherDetailsDrawer = ({
                   className="border border-emerald-100 bg-emerald-50"
                 >
                   <CardBody className="p-4">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                       <VoucherInfoItem
                         label="Voucher No."
                         value={details.voucherNo}
                       />
+
+                      <VoucherInfoItem
+                        label="Voucher Type"
+                        value={details.voucherType}
+                      />
+
                       <VoucherInfoItem
                         label="Voucher Date"
                         value={details.date}
                       />
+
                       <VoucherInfoItem
                         label="Amount"
                         value={formatCurrency(details.amount)}
@@ -1953,6 +2055,7 @@ const SummaryCard = ({ label, value, icon: Icon, textOnly = false }) => {
 };
 
 const ContactItem = ({ icon: Icon, label, value }) => {
+  console.log("ContactItem value:", value); // Debugging line to check the value
   return (
     <div className="flex min-w-0 gap-3 border-b border-slate-200 pb-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700">
