@@ -323,7 +323,7 @@ export const getPaymentSummaryDashboard = createAsyncThunk(
       {
         params: {
           userId,
-          period,
+          // period,
           fromDate,
           toDate,
         },
