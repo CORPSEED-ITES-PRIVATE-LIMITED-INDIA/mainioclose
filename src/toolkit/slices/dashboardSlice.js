@@ -162,7 +162,7 @@ export const getDashboardSummaryCards = createAsyncThunk(
       {
         params: {
           userId,
-          period: period || getCurrentMonthName(), // JULY
+          // period: period || getCurrentMonthName(), // JULY
           fromDate,
           toDate,
         },
@@ -217,7 +217,9 @@ export const getLeadsFunnel = createAsyncThunk(
     const response = await api.get(
       `/leadService/api/v1/dashboard/leads-funnel`,
       {
-        params: { userId, period, fromDate, toDate },
+        params: { userId,
+          //  period, 
+           fromDate, toDate },
       },
     );
 
@@ -231,7 +233,9 @@ export const getLeadsBySolution = createAsyncThunk(
     const response = await api.get(
       `/leadService/api/v1/dashboard/leads-by-solution`,
       {
-        params: { userId, period, fromDate, toDate },
+        params: { userId,
+          //  period,
+           fromDate, toDate },
       },
     );
 
