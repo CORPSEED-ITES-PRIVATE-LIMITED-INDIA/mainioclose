@@ -374,6 +374,132 @@ export const getRevenueByServiceDashboard = createAsyncThunk(
   },
 );
 
+export const getBillingOverview = createAsyncThunk(
+  "dashboard/getBillingOverview",
+  async (
+    { userId, period = "MONTH", fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/billing-overview",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch billing overview",
+      );
+    }
+  },
+);
+
+export const getBillingVsCollection = createAsyncThunk(
+  "dashboard/getBillingVsCollection",
+  async ({ userId, months = 6, fromDate, toDate }, { rejectWithValue }) => {
+    try {
+      const params = {
+        userId,
+        months,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/billing-vs-collection",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch billing vs collection",
+      );
+    }
+  },
+);
+
+export const getApprovalQueueDashboard = createAsyncThunk(
+  "dashboard/getApprovalQueueDashboard",
+  async (
+    { userId, period = "MONTH", fromDate, toDate, limit = 4 },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+        limit,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/approval-queue",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch approval queue",
+      );
+    }
+  },
+);
+
+export const getInvoiceStatusOverviewDashboard = createAsyncThunk(
+  "dashboard/getInvoiceStatusOverviewDashboard",
+  async (
+    { userId, period = "MONTH", fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/invoice-status-overview",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch invoice status overview",
+      );
+    }
+  },
+);
+
 const DashboardSlice = createSlice({
   name: "dashboard",
   initialState: {
@@ -451,6 +577,23 @@ const DashboardSlice = createSlice({
     revenueByServiceDashboard: [],
     revenueByServiceDashboardLoading: "",
     revenueByServiceDashboardError: null,
+
+    billingOverview: null,
+    billingOverviewLoading: false,
+    billingOverviewError: null,
+
+    billingVsCollection: null,
+    billingVsCollectionLoading: false,
+    billingVsCollectionError: null,
+
+    approvalQueueData: null,
+    approvalQueueItems: [],
+    approvalQueueLoading: false,
+    approvalQueueError: null,
+
+    invoiceStatusOverviewData: null,
+    invoiceStatusOverviewLoading: false,
+    invoiceStatusOverviewError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -825,6 +968,75 @@ const DashboardSlice = createSlice({
       state.revenueByServiceDashboardError =
         action?.error?.message || "Something went wrong";
     });
+
+    builder.addCase(getBillingOverview.pending, (state) => {
+      state.billingOverviewLoading = true;
+      state.billingOverviewError = null;
+    });
+    builder.addCase(getBillingOverview.fulfilled, (state, action) => {
+      state.billingOverviewLoading = false;
+      state.billingOverview = action.payload;
+    });
+    builder.addCase(getBillingOverview.rejected, (state, action) => {
+      state.billingOverviewLoading = false;
+      state.billingOverviewError =
+        action.payload || "Failed to fetch billing overview";
+    });
+
+    builder.addCase(getBillingVsCollection.pending, (state) => {
+      state.billingVsCollectionLoading = true;
+      state.billingVsCollectionError = null;
+    });
+
+    builder.addCase(getBillingVsCollection.fulfilled, (state, action) => {
+      state.billingVsCollectionLoading = false;
+      state.billingVsCollection = action.payload;
+    });
+
+    builder.addCase(getBillingVsCollection.rejected, (state, action) => {
+      state.billingVsCollectionLoading = false;
+      state.billingVsCollectionError =
+        action.payload || "Failed to fetch billing vs collection";
+    });
+
+    builder.addCase(getApprovalQueueDashboard.pending, (state) => {
+      state.approvalQueueLoading = true;
+      state.approvalQueueError = null;
+    });
+
+    builder.addCase(getApprovalQueueDashboard.fulfilled, (state, action) => {
+      state.approvalQueueLoading = false;
+      state.approvalQueueData = action.payload;
+      state.approvalQueueItems = action?.payload?.items || [];
+    });
+
+    builder.addCase(getApprovalQueueDashboard.rejected, (state, action) => {
+      state.approvalQueueLoading = false;
+      state.approvalQueueError =
+        action.payload || "Failed to fetch approval queue";
+    });
+
+    builder.addCase(getInvoiceStatusOverviewDashboard.pending, (state) => {
+      state.invoiceStatusOverviewLoading = true;
+      state.invoiceStatusOverviewError = null;
+    });
+
+    builder.addCase(
+      getInvoiceStatusOverviewDashboard.fulfilled,
+      (state, action) => {
+        state.invoiceStatusOverviewLoading = false;
+        state.invoiceStatusOverviewData = action.payload;
+      },
+    );
+
+    builder.addCase(
+      getInvoiceStatusOverviewDashboard.rejected,
+      (state, action) => {
+        state.invoiceStatusOverviewLoading = false;
+        state.invoiceStatusOverviewError =
+          action.payload || "Failed to fetch invoice status overview";
+      },
+    );
   },
 });
 

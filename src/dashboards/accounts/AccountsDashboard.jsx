@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -21,54 +21,252 @@ import {
   TrendingUp,
   WalletCards,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getApprovalQueueDashboard,
+  getBillingOverview,
+  getBillingVsCollection,
+  getInvoiceStatusOverviewDashboard,
+} from "../../toolkit/slices/dashboardSlice";
+import { useParams } from "react-router-dom";
 
-const stats = [
-  {
-    title: "Total Billed",
-    value: "₹ 48.75L",
-    icon: ReceiptIndianRupee,
-    tone: "blue",
-    change: "↑ 14%",
-    changeColor: "text-emerald-600",
-    suffix: "vs last month",
-  },
-  {
-    title: "Payment Received",
-    value: "₹ 36.20L",
-    icon: Banknote,
-    tone: "emerald",
-    change: "↑ 18%",
-    changeColor: "text-emerald-600",
-    suffix: "vs last month",
-  },
-  {
-    title: "Outstanding",
-    value: "₹ 12.55L",
-    icon: WalletCards,
-    tone: "amber",
-    change: "↓ 8%",
-    changeColor: "text-rose-600",
-    suffix: "vs last month",
-  },
-  {
-    title: "Pending Approvals",
-    value: "18",
-    icon: Clock3,
-    tone: "violet",
-    change: "6 urgent",
-    changeColor: "text-orange-600",
-    suffix: "today",
-  },
-  {
-    title: "TDS Pending",
-    value: "₹ 2.40L",
-    icon: FileCheck2,
-    tone: "rose",
-    change: "12 cases",
-    changeColor: "text-rose-600",
-    suffix: "pending",
-  },
-];
+const getInvoiceStatusMeta = (status) => {
+  const value = String(status || "").toLowerCase();
+
+  if (value === "generated") {
+    return {
+      color: "#2563eb",
+      dotClass: "bg-blue-600",
+    };
+  }
+
+  if (value === "paid") {
+    return {
+      color: "#22c55e",
+      dotClass: "bg-emerald-500",
+    };
+  }
+
+  if (value === "partially paid") {
+    return {
+      color: "#facc15",
+      dotClass: "bg-amber-400",
+    };
+  }
+
+  if (value === "overdue") {
+    return {
+      color: "#ef4444",
+      dotClass: "bg-rose-500",
+    };
+  }
+
+  return {
+    color: "#64748b",
+    dotClass: "bg-slate-500",
+  };
+};
+
+const buildInvoiceConicGradient = (statuses, totalInvoices) => {
+  if (!Array.isArray(statuses) || statuses.length === 0 || !totalInvoices) {
+    return "conic-gradient(#e2e8f0 0deg 360deg)";
+  }
+
+  let currentDegree = 0;
+
+  const parts = statuses
+    .filter((item) => Number(item?.count || 0) > 0)
+    .map((item) => {
+      const meta = getInvoiceStatusMeta(item?.status);
+      const percentage =
+        item?.percentage !== undefined
+          ? Number(item.percentage || 0)
+          : (Number(item?.count || 0) / totalInvoices) * 100;
+
+      const nextDegree = currentDegree + (percentage / 100) * 360;
+      const segment = `${meta.color} ${currentDegree}deg ${nextDegree}deg`;
+
+      currentDegree = nextDegree;
+      return segment;
+    });
+
+  if (parts.length === 0) {
+    return "conic-gradient(#e2e8f0 0deg 360deg)";
+  }
+
+  return `conic-gradient(${parts.join(", ")})`;
+};
+
+const formatAmount = (value) => {
+  const amount = Number(value || 0);
+
+  if (amount >= 10000000) {
+    return `₹ ${(amount / 10000000).toFixed(2)}Cr`;
+  }
+
+  if (amount >= 100000) {
+    return `₹ ${(amount / 100000).toFixed(2)}L`;
+  }
+
+  if (amount >= 1000) {
+    return `₹ ${(amount / 1000).toFixed(2)}K`;
+  }
+
+  return `₹ ${amount.toLocaleString("en-IN")}`;
+};
+
+const formatDateShort = (date) => {
+  if (!date) return "";
+
+  return new Date(date).toLocaleDateString("en-IN", {
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getApprovalChipColor = (priority) => {
+  const value = String(priority || "").toUpperCase();
+
+  if (value === "URGENT" || value === "HIGH") return "danger";
+  if (value === "REVIEW") return "secondary";
+  if (value === "PENDING") return "warning";
+
+  return "default";
+};
+
+const buildLinePath = (points) => {
+  if (!points.length) return "";
+
+  return points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+};
+
+const formatPercentage = (value) => {
+  const percentage = Number(value || 0);
+  return Number.isInteger(percentage)
+    ? percentage
+    : percentage.toFixed(2).replace(/\.?0+$/, "");
+};
+
+const getGrowthMeta = (item) => {
+  const direction = String(item?.growthDirection || "").toUpperCase();
+  const isDown = direction.includes("DOWN");
+  const isBad = direction.includes("BAD");
+
+  return {
+    arrow: isDown ? "↓" : "↑",
+    color: isBad ? "text-rose-600" : "text-emerald-600",
+  };
+};
+
+const getLoggedInUserId = () => {
+  try {
+    const possibleKeys = ["user", "authUser", "loggedInUser", "userInfo"];
+
+    for (const key of possibleKeys) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+
+      const parsed = JSON.parse(raw);
+
+      const id =
+        parsed?.id ||
+        parsed?.userId ||
+        parsed?.payload?.id ||
+        parsed?.data?.id ||
+        parsed?.user?.id;
+
+      if (id) return id;
+    }
+  } catch (error) {
+    return null;
+  }
+
+  return null;
+};
+
+const buildBillingStats = (billingOverview, approvalQueueData) => {
+  const totalBilled = billingOverview?.totalBilled || {};
+  const paymentReceived = billingOverview?.paymentReceived || {};
+  const outstanding = billingOverview?.outstanding || {};
+  const pendingApprovals = billingOverview?.pendingApprovals || {};
+
+  const totalBilledGrowth = getGrowthMeta(totalBilled);
+  const paymentReceivedGrowth = getGrowthMeta(paymentReceived);
+  const outstandingGrowth = getGrowthMeta(outstanding);
+
+  const approvalItems = approvalQueueData?.items || [];
+
+  const pendingApprovalCount =
+    approvalQueueData?.totalPendingApprovals ?? pendingApprovals.count ?? 0;
+
+  const urgentCount =
+    approvalQueueData?.urgentCount ?? pendingApprovals.urgentTodayCount ?? 0;
+
+  const tdsItems = approvalItems.filter(
+    (item) => item?.itemType === "TDS_REGISTRATION",
+  );
+
+  const tdsPendingAmount = tdsItems.reduce(
+    (sum, item) => sum + Number(item?.amount || 0),
+    0,
+  );
+
+  return [
+    {
+      title: "Total Billed",
+      value: formatAmount(totalBilled.value),
+      icon: ReceiptIndianRupee,
+      tone: "blue",
+      change: `${totalBilledGrowth.arrow} ${formatPercentage(
+        totalBilled.growthPercentage,
+      )}%`,
+      changeColor: totalBilledGrowth.color,
+      suffix: totalBilled.comparisonLabel || "vs last month",
+    },
+    {
+      title: "Payment Received",
+      value: formatAmount(paymentReceived.value),
+      icon: Banknote,
+      tone: "emerald",
+      change: `${paymentReceivedGrowth.arrow} ${formatPercentage(
+        paymentReceived.growthPercentage,
+      )}%`,
+      changeColor: paymentReceivedGrowth.color,
+      suffix: paymentReceived.comparisonLabel || "vs last month",
+    },
+    {
+      title: "Outstanding",
+      value: formatAmount(outstanding.value),
+      icon: WalletCards,
+      tone: "amber",
+      change: `${outstandingGrowth.arrow} ${formatPercentage(
+        outstanding.growthPercentage,
+      )}%`,
+      changeColor: outstandingGrowth.color,
+      suffix: outstanding.comparisonLabel || "vs last month",
+    },
+    {
+      title: "Pending Approvals",
+      value: String(pendingApprovalCount),
+      icon: Clock3,
+      tone: "violet",
+      change: `${urgentCount} urgent`,
+      changeColor: "text-orange-600",
+      suffix: "today",
+    },
+    {
+      title: "TDS Pending",
+      value: formatAmount(tdsPendingAmount),
+      icon: FileCheck2,
+      tone: "rose",
+      change: `${tdsItems.length} cases`,
+      changeColor: "text-rose-600",
+      suffix: "pending",
+    },
+  ];
+};
 
 const invoiceStatus = [
   { label: "Generated", value: 42, percent: 45, color: "bg-blue-600" },
@@ -297,7 +495,16 @@ function StatCard({ item }) {
   );
 }
 
-function DashboardToolbar() {
+function DashboardToolbar({
+  period,
+  fromDate,
+  toDate,
+  onPeriodChange,
+  onFromDateChange,
+  onToDateChange,
+  onRefresh,
+  loading,
+}) {
   return (
     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -310,22 +517,42 @@ function DashboardToolbar() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="bordered"
-          className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-medium"
-          startContent={<CalendarDays size={14} />}
+        <select
+          value={period}
+          onChange={(e) => onPeriodChange(e.target.value)}
+          className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium outline-none"
         >
-          May 2025
-        </Button>
+          <option value="TODAY">TODAY</option>
+          <option value="WEEK">WEEK</option>
+          <option value="MONTH">MONTH</option>
+          <option value="YEAR">YEAR</option>
+          <option value="CUSTOM">CUSTOM</option>
+        </select>
+
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => onFromDateChange(e.target.value)}
+          className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium outline-none"
+        />
+
+        <input
+          type="date"
+          value={toDate}
+          min={fromDate || undefined}
+          onChange={(e) => onToDateChange(e.target.value)}
+          className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium outline-none"
+        />
 
         <Button
           size="sm"
           variant="bordered"
+          isLoading={loading}
           className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-medium"
-          startContent={<Filter size={14} />}
+          startContent={!loading && <Filter size={14} />}
+          onPress={onRefresh}
         >
-          Filter
+          Apply
         </Button>
       </div>
     </div>
@@ -343,7 +570,82 @@ function DashboardCard({ children, className = "" }) {
   );
 }
 
-function RevenueCollectionChart() {
+function RevenueCollectionChart({ data, loading }) {
+  const points = Array.isArray(data?.points) ? data.points : [];
+
+  const chartData = useMemo(() => {
+    const safePoints = points.length
+      ? points
+      : [
+          {
+            label: "",
+            billed: 0,
+            collected: 0,
+          },
+        ];
+
+    const maxValue = Math.max(
+      1,
+      ...safePoints.map((item) =>
+        Math.max(Number(item?.billed || 0), Number(item?.collected || 0)),
+      ),
+    );
+
+    const roundedMax = Math.ceil(maxValue / 1000) * 1000;
+
+    const left = 48;
+    const right = 625;
+    const top = 30;
+    const bottom = 178;
+    const height = bottom - top;
+    const width = right - left;
+
+    const xForIndex = (index) => {
+      if (safePoints.length === 1) return left + width / 2;
+      return left + (index * width) / (safePoints.length - 1);
+    };
+
+    const yForValue = (value) => {
+      return bottom - (Number(value || 0) / roundedMax) * height;
+    };
+
+    const billedPoints = safePoints.map((item, index) => ({
+      x: xForIndex(index),
+      y: yForValue(item?.billed),
+      value: Number(item?.billed || 0),
+    }));
+
+    const collectedPoints = safePoints.map((item, index) => ({
+      x: xForIndex(index),
+      y: yForValue(item?.collected),
+      value: Number(item?.collected || 0),
+    }));
+
+    const ticks = [
+      roundedMax,
+      roundedMax * 0.75,
+      roundedMax * 0.5,
+      roundedMax * 0.25,
+    ];
+
+    return {
+      safePoints,
+      billedPoints,
+      collectedPoints,
+      billedPath: buildLinePath(billedPoints),
+      collectedPath: buildLinePath(collectedPoints),
+      ticks: ticks.map((value) => ({
+        value,
+        y: yForValue(value),
+      })),
+    };
+  }, [points]);
+
+  const subtitle =
+    data?.fromDate && data?.toDate
+      ? `${formatDateShort(data.fromDate)} - ${formatDateShort(data.toDate)}`
+      : "Last 6 months";
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
@@ -353,7 +655,7 @@ function RevenueCollectionChart() {
               Billing vs Collection
             </h3>
             <p className="text-[11px] leading-4 text-slate-500">
-              Dec 2024 - May 2025
+              {loading ? "Loading..." : subtitle}
             </p>
           </div>
 
@@ -371,83 +673,71 @@ function RevenueCollectionChart() {
       <CardBody className="px-3 pb-3 pt-2">
         <div className="relative h-[176px] w-full sm:h-[190px]">
           <svg viewBox="0 0 650 220" className="h-full w-full">
-            {[35, 78, 121, 164].map((y) => (
-              <line
-                key={y}
-                x1="36"
-                y1={y}
-                x2="630"
-                y2={y}
-                stroke="#e2e8f0"
-                strokeWidth="1"
-              />
+            {chartData.ticks.map((tick) => (
+              <g key={tick.value}>
+                <line
+                  x1="48"
+                  y1={tick.y}
+                  x2="625"
+                  y2={tick.y}
+                  stroke="#e2e8f0"
+                  strokeWidth="1"
+                />
+                <text x="0" y={tick.y + 4} fontSize="10" fill="#64748b">
+                  {formatAmount(tick.value)}
+                </text>
+              </g>
             ))}
 
-            <text x="0" y="39" fontSize="10" fill="#64748b">
-              ₹60L
-            </text>
-            <text x="0" y="82" fontSize="10" fill="#64748b">
-              ₹45L
-            </text>
-            <text x="0" y="125" fontSize="10" fill="#64748b">
-              ₹30L
-            </text>
-            <text x="0" y="168" fontSize="10" fill="#64748b">
-              ₹15L
-            </text>
-
             <path
-              d="M70 130 C120 125, 145 112, 180 100 C225 85, 245 76, 290 72 C340 68, 365 55, 410 64 C460 76, 485 88, 525 70 C565 50, 590 40, 615 36"
+              d={chartData.billedPath}
               fill="none"
               stroke="#2563eb"
               strokeWidth="3.5"
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
 
             <path
-              d="M70 155 C115 150, 145 135, 180 125 C225 115, 245 98, 290 96 C340 90, 365 82, 410 90 C460 100, 485 112, 525 95 C565 75, 590 68, 615 60"
+              d={chartData.collectedPath}
               fill="none"
               stroke="#22c55e"
               strokeWidth="3.5"
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
 
-            {[70, 180, 290, 410, 525, 615].map((x, index) => {
-              const billed = [130, 100, 72, 64, 70, 36][index];
-              const received = [155, 125, 96, 90, 95, 60][index];
+            {chartData.billedPoints.map((point, index) => (
+              <g key={`point-${index}`}>
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="4"
+                  fill="#2563eb"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx={chartData.collectedPoints[index].x}
+                  cy={chartData.collectedPoints[index].y}
+                  r="4"
+                  fill="#22c55e"
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+              </g>
+            ))}
 
-              return (
-                <g key={x}>
-                  <circle
-                    cx={x}
-                    cy={billed}
-                    r="4"
-                    fill="#2563eb"
-                    stroke="#fff"
-                    strokeWidth="2"
-                  />
-                  <circle
-                    cx={x}
-                    cy={received}
-                    r="4"
-                    fill="#22c55e"
-                    stroke="#fff"
-                    strokeWidth="2"
-                  />
-                </g>
-              );
-            })}
-
-            {["Dec", "Jan", "Feb", "Mar", "Apr", "May"].map((month, index) => (
+            {chartData.safePoints.map((item, index) => (
               <text
-                key={month}
-                x={70 + index * 109}
+                key={`${item?.label}-${index}`}
+                x={chartData.billedPoints[index].x}
                 y="202"
                 fontSize="10"
                 fill="#64748b"
                 textAnchor="middle"
               >
-                {month}
+                {item?.label || "-"}
               </text>
             ))}
           </svg>
@@ -456,12 +746,16 @@ function RevenueCollectionChart() {
         <div className="mt-1 flex flex-wrap items-center gap-4 text-[11px]">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-blue-600" />
-            <span className="text-slate-600">Billed</span>
+            <span className="text-slate-600">
+              Billed: {formatAmount(data?.totalBilled || 0)}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-600">Received</span>
+            <span className="text-slate-600">
+              Received: {formatAmount(data?.totalCollected || 0)}
+            </span>
           </div>
         </div>
       </CardBody>
@@ -469,97 +763,162 @@ function RevenueCollectionChart() {
   );
 }
 
-function InvoiceStatusOverview() {
+function InvoiceStatusOverview({ data, loading }) {
+  const statuses = Array.isArray(data?.statuses) ? data.statuses : [];
+
+  const totalInvoices =
+    Number(data?.totalInvoices || 0) ||
+    statuses.reduce((sum, item) => sum + Number(item?.count || 0), 0);
+
+  const conicGradient = useMemo(
+    () => buildInvoiceConicGradient(statuses, totalInvoices),
+    [statuses, totalInvoices],
+  );
+
+  const subtitle =
+    data?.fromDate && data?.toDate
+      ? `${data.fromDate} - ${data.toDate}`
+      : "This Month";
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
-        <SectionTitle title="Invoice Status Overview" subtitle="This Month" />
+        <SectionTitle
+          title="Invoice Status Overview"
+          subtitle={loading ? "Loading..." : subtitle}
+        />
       </CardHeader>
 
       <CardBody className="px-3 pb-3 pt-2">
-        <div className="flex min-h-[215px] flex-col justify-center gap-4 sm:flex-row sm:items-center">
-          <div
-            className="relative mx-auto h-32 w-32 shrink-0 rounded-full"
-            style={{
-              background:
-                "conic-gradient(#2563eb 0deg 162deg, #22c55e 162deg 281deg, #facc15 281deg 335deg, #ef4444 335deg 360deg)",
-            }}
-          >
-            <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
-              <p className="text-xl font-bold leading-6 text-slate-950">94</p>
-              <p className="text-[11px] text-slate-500">Invoices</p>
+        {loading ? (
+          <div className="flex min-h-[215px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-xs font-medium text-slate-500">
+            Loading invoice status...
+          </div>
+        ) : (
+          <div className="flex min-h-[215px] flex-col justify-center gap-4 sm:flex-row sm:items-center">
+            <div
+              className="relative mx-auto h-32 w-32 shrink-0 rounded-full"
+              style={{
+                background: conicGradient,
+              }}
+            >
+              <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+                <p className="text-xl font-bold leading-6 text-slate-950">
+                  {totalInvoices}
+                </p>
+                <p className="text-[11px] text-slate-500">Invoices</p>
+              </div>
+            </div>
+
+            <div className="w-full space-y-2.5">
+              {statuses.length === 0 ? (
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs font-medium text-slate-500">
+                  No invoice status data found.
+                </div>
+              ) : (
+                statuses.map((item) => {
+                  const meta = getInvoiceStatusMeta(item?.status);
+
+                  return (
+                    <div
+                      key={item?.status}
+                      className="flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dotClass}`}
+                        />
+                        <span className="truncate text-slate-700">
+                          {item?.status || "-"}
+                        </span>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <span className="font-bold text-slate-950">
+                          {item?.count || 0}
+                        </span>
+                        <span className="text-slate-500">
+                          ({formatPercentage(item?.percentage)}%)
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
-
-          <div className="w-full space-y-2.5">
-            {invoiceStatus.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between gap-3 text-xs"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.color}`}
-                  />
-                  <span className="truncate text-slate-700">{item.label}</span>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <span className="font-bold text-slate-950">{item.value}</span>
-                  <span className="text-slate-500">({item.percent}%)</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </CardBody>
     </DashboardCard>
   );
 }
 
-function ApprovalQueue() {
+function ApprovalQueue({ data, loading }) {
+  const items = Array.isArray(data?.items) ? data.items : [];
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
           title="Approval Queue"
-          subtitle="Unbilled, cancellation and receipt approvals"
+          subtitle={`${data?.totalPendingApprovals || 0} pending, ${
+            data?.urgentCount || 0
+          } urgent`}
         />
       </CardHeader>
 
       <CardBody className="px-3 pb-3 pt-2">
-        <div className="space-y-2">
-          {approvalQueue.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-xl border border-slate-100 bg-white p-2.5 transition hover:bg-slate-50"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
-                    {item.title}
-                  </p>
-                  <p className="truncate text-[11px] leading-4 text-slate-500">
-                    {item.company}
-                  </p>
+        {loading ? (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs font-medium text-slate-500">
+            Loading approval queue...
+          </div>
+        ) : items.length === 0 ? (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs font-medium text-slate-500">
+            No pending approvals found.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <div
+                key={`${item?.itemType}-${item?.itemId}`}
+                className="rounded-xl border border-slate-100 bg-white p-2.5 transition hover:bg-slate-50"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold leading-5 text-slate-950">
+                      {item?.title || "-"}
+                    </p>
+                    <p className="truncate text-[11px] leading-4 text-slate-500">
+                      {item?.companyName || item?.subTitle || "-"}
+                    </p>
+                  </div>
+
+                  <Chip
+                    size="sm"
+                    color={getApprovalChipColor(item?.priority)}
+                    variant="flat"
+                  >
+                    {item?.badge || item?.sourceStatus || "Pending"}
+                  </Chip>
                 </div>
 
-                <Chip size="sm" color={item.color} variant="flat">
-                  {item.status}
-                </Chip>
-              </div>
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="truncate text-[11px] leading-4 text-slate-500">
+                    {item?.referenceNumber || "-"}
+                  </p>
 
-              <p className="mt-1.5 text-xs font-bold leading-5 text-slate-950">
-                {item.amount}
-              </p>
-            </div>
-          ))}
-        </div>
+                  <p className="whitespace-nowrap text-xs font-bold leading-5 text-slate-950">
+                    {formatAmount(item?.amount)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardBody>
     </DashboardCard>
   );
 }
-
 function ReceivableAging() {
   return (
     <DashboardCard>
@@ -947,22 +1306,125 @@ function CashFlowCards() {
 }
 
 export default function AccountsDashboard() {
+  const dispatch = useDispatch();
+  const params = useParams();
+
+  const {
+    billingOverview,
+    billingOverviewLoading,
+    billingOverviewError,
+
+    billingVsCollection,
+    billingVsCollectionLoading,
+    billingVsCollectionError,
+
+    approvalQueueData,
+    approvalQueueLoading,
+    approvalQueueError,
+    invoiceStatusOverviewData,
+    invoiceStatusOverviewLoading,
+    invoiceStatusOverviewError,
+  } = useSelector((state) => state.dashboard);
+
+  const [period, setPeriod] = useState("MONTH");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const userId = useMemo(() => {
+    return Number(params?.userId || params?.id || getLoggedInUserId());
+  }, [params?.userId, params?.id]);
+
+  const loadDashboardData = useCallback(() => {
+    if (!userId) return;
+
+    const commonPayload = {
+      userId,
+      period,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    };
+
+    dispatch(getBillingOverview(commonPayload));
+
+    dispatch(
+      getBillingVsCollection({
+        userId,
+        months: 6,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }),
+    );
+
+    dispatch(
+      getApprovalQueueDashboard({
+        ...commonPayload,
+        limit: 4,
+      }),
+    );
+
+    dispatch(getInvoiceStatusOverviewDashboard(commonPayload));
+  }, [dispatch, userId, period, fromDate, toDate]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const billingStats = useMemo(
+    () => buildBillingStats(billingOverview, approvalQueueData),
+    [billingOverview, approvalQueueData],
+  );
+
   return (
     <div className="h-full max-h-[calc(100vh-76px)] overflow-auto bg-slate-50 text-slate-900">
       <div className="w-full p-2.5 sm:p-3 lg:p-4">
-        <DashboardToolbar />
+        <DashboardToolbar
+          period={period}
+          fromDate={fromDate}
+          toDate={toDate}
+          loading={
+            billingOverviewLoading ||
+            billingVsCollectionLoading ||
+            approvalQueueLoading ||
+            invoiceStatusOverviewLoading
+          }
+          onPeriodChange={setPeriod}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
+          onRefresh={loadDashboardData}
+        />
+
+        {(billingOverviewError ||
+          billingVsCollectionError ||
+          approvalQueueError ||
+          invoiceStatusOverviewError) && (
+          <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+            {billingOverviewError ||
+              billingVsCollectionError ||
+              approvalQueueError ||
+              invoiceStatusOverviewError}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-          {stats.map((item) => (
+          {billingStats.map((item) => (
             <StatCard key={item.title} item={item} />
           ))}
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1.25fr_0.85fr_0.95fr]">
-          <RevenueCollectionChart />
-          <InvoiceStatusOverview />
+          <RevenueCollectionChart
+            data={billingVsCollection}
+            loading={billingVsCollectionLoading}
+          />
+          <InvoiceStatusOverview
+            data={invoiceStatusOverviewData}
+            loading={invoiceStatusOverviewLoading}
+          />
           <div className="xl:col-span-2 2xl:col-span-1">
-            <ApprovalQueue />
+            <ApprovalQueue
+              data={approvalQueueData}
+              loading={approvalQueueLoading}
+            />
           </div>
         </div>
 

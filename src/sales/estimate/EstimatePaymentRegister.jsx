@@ -469,6 +469,116 @@ const EstimatePaymentRegister = ({
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Controller
+                    name="paymentTypeId"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired
+                        isDisabled={estimateItem?.paymentTypeId ? true : false}
+                        label="Payment term"
+                        // errorMessage={error?.message}
+                        // isInvalid={!!error}
+                        data={paymentTypeList || []}
+                        labelKey="name"
+                        valueKey="id"
+                        value={field.value ?? ""}
+                        onChange={(value) => {
+                          field.onChange(value);
+                        }}
+                      />
+                    )}
+                  />
+
+                  {shouldShowPaymentTenure && (
+                    <Controller
+                      name="paymentTerms"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          label="Payment Tenure"
+                          placeholder="Select payment tenure"
+                          isRequired
+                          selectedKeys={
+                            field.value ? new Set([field.value]) : new Set([])
+                          }
+                          onSelectionChange={(keys) => {
+                            const selectedValue = Array.from(keys)?.[0] || "";
+                            const selectedTenure = paymentTenureOptions.find(
+                              (item) => item.value === selectedValue,
+                            );
+
+                            field.onChange(selectedValue);
+                            setValue(
+                              "paymentTermsDays",
+                              selectedTenure?.days ?? "",
+                            );
+                          }}
+                        >
+                          {paymentTenureOptions.map((item) => (
+                            <SelectItem key={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  )}
+
+                  {shouldShowTds && (
+                    <>
+                      <Controller
+                        name="tdsActive"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="TDS"
+                            selectedKeys={
+                              new Set([field.value ? "true" : "false"])
+                            }
+                            onSelectionChange={(keys) => {
+                              const selectedValue = Array.from(keys)?.[0];
+                              field.onChange(selectedValue === "true");
+                            }}
+                          >
+                            <SelectItem key="true">Yes</SelectItem>
+                            <SelectItem key="false">No</SelectItem>
+                          </Select>
+                        )}
+                      />
+
+                      {tdsActive && (
+                        <Controller
+                          name="tds.tdsPercentage"
+                          control={control}
+                          render={({ field, fieldState: { error } }) => (
+                            <Select
+                              label="TDS Percentage"
+                              isRequired
+                              selectedKeys={
+                                field.value !== undefined &&
+                                field.value !== null &&
+                                field.value !== ""
+                                  ? new Set([String(field.value)])
+                                  : new Set([])
+                              }
+                              onSelectionChange={(keys) => {
+                                const selectedValue =
+                                  Array.from(keys)?.[0] || "";
+                                field.onChange(selectedValue);
+                              }}
+                              isInvalid={!!error}
+                              errorMessage={error?.message}
+                            >
+                              <SelectItem key="10">10%</SelectItem>
+                              <SelectItem key="2">2%</SelectItem>
+                            </Select>
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
+
+                  <Controller
                     name="amount"
                     control={control}
                     render={({ field }) => (
@@ -476,7 +586,7 @@ const EstimatePaymentRegister = ({
                         {...field}
                         type="number"
                         min={0}
-                        label="Amount"
+                        label="Received Amount"
                         placeholder="Enter amount"
                         isRequired
                         onKeyDown={preventNegativeNumberInput}
@@ -505,7 +615,7 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <DatePicker
                         isRequired
-                        label="Order date"
+                        label="Payment date"
                         showMonthAndYearPickers
                         maxValue={today(getLocalTimeZone())}
                         // errorMessage={error?.message}
@@ -571,75 +681,13 @@ const EstimatePaymentRegister = ({
                   />
 
                   <Controller
-                    name="paymentTypeId"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        isDisabled={estimateItem?.paymentTypeId ? true : false}
-                        label="Payment term"
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
-                        data={paymentTypeList || []}
-                        labelKey="name"
-                        valueKey="id"
-                        value={field.value ?? ""}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
-
-                  {shouldShowPaymentTenure && (
-                    <Controller
-                      name="paymentTerms"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          label="Payment Tenure"
-                          placeholder="Select payment tenure"
-                          isRequired
-                          selectedKeys={
-                            field.value ? new Set([field.value]) : new Set([])
-                          }
-                          onSelectionChange={(keys) => {
-                            const selectedValue = Array.from(keys)?.[0] || "";
-                            const selectedTenure = paymentTenureOptions.find(
-                              (item) => item.value === selectedValue,
-                            );
-
-                            field.onChange(selectedValue);
-                            setValue(
-                              "paymentTermsDays",
-                              selectedTenure?.days ?? "",
-                            );
-                          }}
-                        >
-                          {paymentTenureOptions.map((item) => (
-                            <SelectItem key={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                  )}
-
-                  <Controller
                     name="transactionReference"
                     control={control}
                     render={({ field, fieldState: { error } }) => (
-                      <SingleFileUploader
-                        // isRequired={true}
-                        // errorMessage={"please attach the reference document"}
-                        label="Payment document"
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
+                      <Input
+                        {...field}
+                        label="Transaction Reference Number / UTR number"
+                        placeholder="Enter number"
                       />
                     )}
                   />
@@ -698,59 +746,6 @@ const EstimatePaymentRegister = ({
                     )}
                   /> */}
 
-                  {shouldShowTds && (
-                    <>
-                      <Controller
-                        name="tdsActive"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="TDS"
-                            selectedKeys={
-                              new Set([field.value ? "true" : "false"])
-                            }
-                            onSelectionChange={(keys) => {
-                              const selectedValue = Array.from(keys)?.[0];
-                              field.onChange(selectedValue === "true");
-                            }}
-                          >
-                            <SelectItem key="true">Yes</SelectItem>
-                            <SelectItem key="false">No</SelectItem>
-                          </Select>
-                        )}
-                      />
-
-                      {tdsActive && (
-                        <Controller
-                          name="tds.tdsPercentage"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Select
-                              label="TDS Percentage"
-                              isRequired
-                              selectedKeys={
-                                field.value !== undefined &&
-                                field.value !== null &&
-                                field.value !== ""
-                                  ? new Set([String(field.value)])
-                                  : new Set([])
-                              }
-                              onSelectionChange={(keys) => {
-                                const selectedValue =
-                                  Array.from(keys)?.[0] || "";
-                                field.onChange(selectedValue);
-                              }}
-                              isInvalid={!!error}
-                              errorMessage={error?.message}
-                            >
-                              <SelectItem key="10">10%</SelectItem>
-                              <SelectItem key="2">2%</SelectItem>
-                            </Select>
-                          )}
-                        />
-                      )}
-                    </>
-                  )}
                   <Controller
                     name="governmentFeeActive"
                     control={control}

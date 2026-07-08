@@ -651,7 +651,7 @@ const mapApiTransactionToEntry = (entry) => {
     voucherNo: entry.voucherNumber,
     voucherType: formattedVoucherType,
     rawVoucherType: entry.voucherType,
-    particulars: entry.narration || entry.sourceType || "-",
+    particulars: entry.particulars || "-",
     debit: entry.debitAmount,
     credit: entry.creditAmount,
     balance: entry.runningBalanceAmount,

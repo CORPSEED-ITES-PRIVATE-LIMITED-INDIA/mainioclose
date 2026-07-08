@@ -287,8 +287,8 @@ const Group = () => {
       case "name":
         return (
           <Link
-            to={`${rowData?.id}/groupLedger`}
-            className="text-sm font-semibold capitalize text-blue-600 hover:text-blue-700"
+            // to={`${rowData?.id}/groupLedger`}
+            className="text-sm font-semibold capitalize"
           >
             {rowData?.name || "-"}
           </Link>
@@ -390,8 +390,6 @@ const Group = () => {
     setActiveFilter("");
     setPage(1);
   };
-
-  console.log("djkgkjdsgjk", ledgerGroupTypeList);
 
   const paginationTotal = Math.max(ledgerGroupTotalPages || 1, 1);
 
@@ -597,8 +595,7 @@ const Group = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[58vh] w-full",
-          table: "w-full",
+          wrapper: "max-h-[52vh] ",
           th: "text-xs",
           td: "text-sm",
         }}

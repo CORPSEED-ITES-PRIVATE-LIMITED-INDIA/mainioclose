@@ -247,7 +247,7 @@ const normalizeTransaction = (transaction = {}) => {
     rawVoucherType: transaction.voucherType,
     date: formatDate(transaction.voucherDate),
     entryDate: transaction.voucherDate,
-    particulars: transaction.narration || transaction.sourceType || "-",
+    particulars: transaction.particulars,
     debit: Number(transaction.debitAmount || 0),
     credit: Number(transaction.creditAmount || 0),
     balance: `${formatCurrency(transaction.runningBalanceAmount)} ${toUiBalanceType(
@@ -750,14 +750,6 @@ const LedgerMasterSection = () => {
                   Total {totalElements} ledgers
                 </p>
               </div>
-
-              <Chip
-                size="sm"
-                variant="flat"
-                className="bg-emerald-50 text-xs text-emerald-700"
-              >
-                Live API
-              </Chip>
             </div>
 
             <Input

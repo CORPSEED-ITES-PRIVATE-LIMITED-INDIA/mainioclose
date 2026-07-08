@@ -1260,8 +1260,18 @@ function DateRangeFilter({
 }
 
 function LeadStatusCard({ statusCounts }) {
+  const excludedStatuses = [
+    "awaiting document",
+    "awaiting documents",
+    "future service",
+    "future services",
+    "final bad fit",
+    "final deal lost",
+  ];
+
   const chartData = useMemo(() => {
     const data = Array.isArray(statusCounts) ? statusCounts : [];
+
     const colors = [
       "#2563eb",
       "#14b8a6",
@@ -1273,12 +1283,19 @@ function LeadStatusCard({ statusCounts }) {
       "#64748b",
     ];
 
-    return [...data]
+    return data
       .map((item) => ({
         statusId: item?.statusId,
         statusName: item?.statusName || "Unknown Status",
         leadCount: safeNumber(item?.leadCount),
       }))
+      .filter((item) => {
+        const name = String(item.statusName || "")
+          .trim()
+          .toLowerCase();
+
+        return item.leadCount > 0 && !excludedStatuses.includes(name);
+      })
       .sort((a, b) => {
         if (b.leadCount !== a.leadCount) return b.leadCount - a.leadCount;
         return safeNumber(a.statusId) - safeNumber(b.statusId);
@@ -1290,28 +1307,47 @@ function LeadStatusCard({ statusCounts }) {
   }, [statusCounts]);
 
   const totalStatusLeads = chartData.reduce(
-    (total, item) => total + safeNumber(item?.leadCount),
+    (total, item) => total + safeNumber(item.leadCount),
     0,
   );
 
   const maxLeadCount = Math.max(
-    ...chartData.map((item) => safeNumber(item?.leadCount)),
+    ...chartData.map((item) => safeNumber(item.leadCount)),
     1,
   );
 
-  const activeStatuses = chartData.filter((item) => item.leadCount > 0);
-  const topStatus = activeStatuses[0] || chartData[0];
+  const conicGradient =
+    chartData.length > 0 && totalStatusLeads > 0
+      ? chartData
+          .reduce(
+            (acc, item) => {
+              const start = acc.currentDegree;
+              const degrees =
+                (safeNumber(item.leadCount) / totalStatusLeads) * 360;
+              const end = start + degrees;
+
+              acc.parts.push(`${item.color} ${start}deg ${end}deg`);
+              acc.currentDegree = end;
+
+              return acc;
+            },
+            { parts: [], currentDegree: 0 },
+          )
+          .parts.join(", ")
+      : "#e2e8f0 0deg 360deg";
+
+  const topStatus = chartData[0];
 
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-3 pb-0">
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full items-center justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-[13px] font-semibold text-slate-950">
+            <h3 className="truncate text-[13px] font-semibold text-slate-950">
               Lead Status Distribution
             </h3>
             <p className="mt-0.5 text-[10px] text-slate-500">
-              Horizontal bar chart based on current status counts
+              Active lead statuses for selected period
             </p>
           </div>
 
@@ -1319,53 +1355,87 @@ function LeadStatusCard({ statusCounts }) {
             size="sm"
             variant="flat"
             color="primary"
-            className="w-fit font-semibold"
+            className="shrink-0 font-semibold"
           >
             Total {formatNumber(totalStatusLeads)}
           </Chip>
         </div>
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
+      <CardBody className="px-3 pb-3 pt-3">
         {chartData.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 px-3 py-8 text-center text-xs font-medium text-slate-500">
-            No lead status data found.
+            No active lead status data found.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-              <div className="mb-3 flex items-center justify-between gap-3 text-[10px] font-medium text-slate-500">
-                <span>Status</span>
-                <span>Lead Count</span>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[170px_minmax(0,1fr)]">
+            <div className="flex items-center justify-center">
+              <div
+                className="relative h-32 w-32 shrink-0 rounded-full"
+                style={{
+                  background: `conic-gradient(${conicGradient})`,
+                }}
+              >
+                <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+                  <p className="text-2xl font-bold leading-7 text-slate-950">
+                    {formatNumber(totalStatusLeads)}
+                  </p>
+                  <p className="text-[11px] text-slate-500">Leads</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-blue-50 px-3 py-2.5">
+                  <p className="text-[10px] font-medium text-blue-700">
+                    Active Statuses
+                  </p>
+                  <p className="mt-0.5 text-lg font-bold text-slate-950">
+                    {formatNumber(chartData.length)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-green-50 px-3 py-2.5">
+                  <p className="text-[10px] font-medium text-green-700">
+                    Highest Status
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-bold text-slate-950">
+                    {topStatus?.statusName || "-"}
+                  </p>
+                </div>
               </div>
 
-              {totalStatusLeads === 0 && (
-                <div className="mb-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
-                  No leads found for the selected date range. Bars will appear
-                  automatically when counts are available.
-                </div>
-              )}
-
-              <div className="max-h-[410px] space-y-2 overflow-auto pr-1">
-                {chartData.map((item) => {
+              <div className="space-y-2.5">
+                {chartData.slice(0, 6).map((item) => {
                   const count = safeNumber(item.leadCount);
+                  const percentage =
+                    totalStatusLeads > 0 ? (count / totalStatusLeads) * 100 : 0;
+
                   const barWidth = count > 0 ? (count / maxLeadCount) * 100 : 0;
 
                   return (
-                    <div
-                      key={item.statusId ?? item.statusName}
-                      className="grid grid-cols-[126px_minmax(0,1fr)_42px] items-center gap-2 sm:grid-cols-[180px_minmax(0,1fr)_54px]"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-slate-900">
-                          {item.statusName}
+                    <div key={item.statusId ?? item.statusName}>
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <p className="truncate text-xs font-semibold text-slate-800">
+                            {item.statusName}
+                          </p>
+                        </div>
+
+                        <p className="shrink-0 text-xs font-bold text-slate-950">
+                          {formatNumber(count)}{" "}
+                          <span className="font-medium text-slate-500">
+                            ({formatPercentage(percentage)})
+                          </span>
                         </p>
-                        {/* <p className="text-[10px] text-slate-500">
-                          ID: {item.statusId ?? "-"}
-                        </p> */}
                       </div>
 
-                      <div className="relative h-7 overflow-hidden rounded-full bg-white ring-1 ring-slate-100">
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
                           className="h-full rounded-full transition-all duration-300"
                           style={{
@@ -1374,101 +1444,9 @@ function LeadStatusCard({ statusCounts }) {
                           }}
                         />
                       </div>
-
-                      <p className="text-right text-xs font-bold text-slate-950">
-                        {formatNumber(count)}
-                      </p>
                     </div>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-100 bg-white p-4">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                Summary
-              </p>
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-blue-50 px-3 py-3">
-                  <p className="text-[10px] font-medium text-blue-700">
-                    Total Leads
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-slate-950">
-                    {formatNumber(totalStatusLeads)}
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-green-50 px-3 py-3">
-                  <p className="text-[10px] font-medium text-green-700">
-                    Active Statuses
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-slate-950">
-                    {formatNumber(activeStatuses.length)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-slate-100 px-3 py-3">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Highest Status
-                </p>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-slate-950">
-                      {totalStatusLeads > 0
-                        ? topStatus?.statusName
-                        : "No active lead status"}
-                    </p>
-                    <p className="mt-0.5 text-[10px] text-slate-500">
-                      {totalStatusLeads > 0
-                        ? `Status ID: ${topStatus?.statusId ?? "-"}`
-                        : "Selected range has zero leads"}
-                    </p>
-                  </div>
-
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color={totalStatusLeads > 0 ? "success" : "default"}
-                    className="shrink-0 font-bold"
-                  >
-                    {formatNumber(
-                      totalStatusLeads > 0 ? topStatus?.leadCount : 0,
-                    )}
-                  </Chip>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Top Statuses
-                </p>
-
-                <div className="space-y-2">
-                  {(activeStatuses.length > 0 ? activeStatuses : chartData)
-                    .slice(0, 5)
-                    .map((item) => (
-                      <div
-                        key={`summary-${item.statusId ?? item.statusName}`}
-                        className="flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="truncate text-slate-700">
-                            {item.statusName}
-                          </span>
-                        </div>
-
-                        <span className="shrink-0 font-semibold text-slate-950">
-                          {formatNumber(item.leadCount)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
               </div>
             </div>
           </div>
@@ -1863,11 +1841,6 @@ export default function SalesDashboard() {
           ))}
         </div>
 
-        {/* Lead Status Counts */}
-        <div className="mt-3">
-          <LeadStatusCard statusCounts={statusCounts} />
-        </div>
-
         {/* First Row */}
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[1.25fr_0.85fr_0.9fr]">
           <RevenueTrendChart
@@ -1880,6 +1853,8 @@ export default function SalesDashboard() {
             data={leadsFunnelData}
             loading={leadsFunnelLoading === "pending"}
           />
+
+          <LeadStatusCard statusCounts={statusCounts} />
 
           <LeadsByService
             solutions={leadsBySolutionList}
