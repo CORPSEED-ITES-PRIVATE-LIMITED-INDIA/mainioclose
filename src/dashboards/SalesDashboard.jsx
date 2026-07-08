@@ -50,7 +50,7 @@ const SalesDashboard = () => {
 
   return (
     <div className="max-h-[85vh] overflow-auto p-3">
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 gap-4 mb-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex justify-between items-center w-full text-muted-foreground">

@@ -1184,7 +1184,6 @@ function PaymentSummary({ data, loading = false }) {
   );
 }
 
-
 function DateRangeFilter({
   fromDate,
   toDate,
@@ -1858,7 +1857,7 @@ export default function SalesDashboard() {
         />
 
         {/* Top Stats */}
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
           {dashboardStats.map((item) => (
             <StatCard key={item.title} item={item} />
           ))}
@@ -1870,7 +1869,7 @@ export default function SalesDashboard() {
         </div>
 
         {/* First Row */}
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1.25fr_0.85fr_0.9fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[1.25fr_0.85fr_0.9fr]">
           <RevenueTrendChart
             data={revenueTrendData}
             loading={revenueTrendLoading === "pending"}
@@ -1882,16 +1881,10 @@ export default function SalesDashboard() {
             loading={leadsFunnelLoading === "pending"}
           />
 
-          <div className="xl:col-span-2 2xl:col-span-1">
-            <LeadsByService
-              solutions={leadsBySolutionList}
-              loading={leadsBySolutionLoading === "pending"}
-            />
-          </div>
-        </div>
-
-        {/* Second Row */}
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-3">
+          <LeadsByService
+            solutions={leadsBySolutionList}
+            loading={leadsBySolutionLoading === "pending"}
+          />
           <TopSellingServices
             userId={selectedUserId}
             period={currentPeriod}
@@ -1913,10 +1906,6 @@ export default function SalesDashboard() {
             totalProjects={projectOverviewData?.totalProjects || 0}
             loading={projectOverviewLoading === "pending"}
           />
-        </div>
-
-        {/* Third Row */}
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-3">
           <RevenueByService
             userId={selectedUserId}
             period={currentPeriod}
