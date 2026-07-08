@@ -304,7 +304,7 @@ export const getRevenueCardsDashboard = createAsyncThunk(
       {
         params: {
           userId,
-          period,
+          // period,
           fromDate,
           toDate,
         },
