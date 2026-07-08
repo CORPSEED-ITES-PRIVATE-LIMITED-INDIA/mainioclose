@@ -1326,7 +1326,7 @@ const ProjectPurchaseOrder = () => {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-sans text-2xl font-medium">
-            Project Purchase Orders
+            Project Purchase Orderss
           </h1>
 
           <p className="text-sm text-default-500">Project ID: {projectId}</p>
@@ -1479,6 +1479,8 @@ const ProjectPurchaseOrder = () => {
                         //   uid: "PARTIALLY_COMPLETED",
                         // },
                         { label: "COMPLETED", uid: "COMPLETED" },
+                        { label: "APPROVED", uid: "APPROVED" },
+                        { label: "DRAFT", uid: "DRAFT" },
                       ]}
                       label="Select status"
                     >
