@@ -245,6 +245,18 @@ const EstimatePaymentRegister = ({
   const tdsActive = watch("tdsActive");
   const paymentMode = watch("paymentMode");
 
+  const isCashPaymentMode = String(paymentMode || "")
+    .toLowerCase()
+    .includes("cash");
+
+  const filteredPaymentLedgerList = isCashPaymentMode
+    ? (paymentLegerList || []).filter((ledger) =>
+        String(ledger?.ledgerName || "")
+          .toLowerCase()
+          .includes("cash"),
+      )
+    : paymentLegerList || [];
+
   const shouldShowBankName = bankRequiredPaymentModes.includes(paymentMode);
 
   const selectedPaymentType = (paymentTypeList || []).find(
@@ -666,10 +678,10 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
-                        label="Select Ledger"
+                        label="Select Bank/Cash"
                         // errorMessage={error?.message}
                         // isInvalid={!!error}
-                        data={paymentLegerList || []}
+                        data={filteredPaymentLedgerList}
                         labelKey="ledgerName"
                         valueKey="id"
                         value={field.value ?? ""}

@@ -372,6 +372,7 @@ const ProcurementPaymentRequest = () => {
           </div>
         );
       case "actions":
+        const isPending = rowData?.status == "PENDING";
         return (
           <Dropdown>
             <DropdownTrigger>
@@ -385,16 +386,20 @@ const ProcurementPaymentRequest = () => {
               >
                 Release payment
               </DropdownItem>
-              <DropdownItem
-                onPress={() => handleActionPress(rowData, "Approved")}
-              >
-                Approved
-              </DropdownItem>
-              <DropdownItem
-                onPress={() => handleActionPress(rowData, "Rejected")}
-              >
-                Rejected
-              </DropdownItem>
+              {isPending && (
+                <>
+                  <DropdownItem
+                    onPress={() => handleActionPress(rowData, "Approved")}
+                  >
+                    Approved
+                  </DropdownItem>
+                  <DropdownItem
+                    onPress={() => handleActionPress(rowData, "Rejected")}
+                  >
+                    Rejected
+                  </DropdownItem>
+                </>
+              )}
             </DropdownMenu>
           </Dropdown>
         );
