@@ -362,46 +362,121 @@ const CompanyAndUnitsInLead = () => {
     );
   };
 
+  const getGstStateCodeFromGstNo = (gstNo) => {
+    return String(gstNo || "")
+      .trim()
+      .slice(0, 2);
+  };
+
+  const getSelectedStateGstCode = (stateName) => {
+    const selectedState = statesList.find(
+      (item) => normalizeName(item?.name) === normalizeName(stateName),
+    );
+
+    return selectedState?.gstCode
+      ? String(selectedState.gstCode).padStart(2, "0")
+      : "";
+  };
+
+  const validateStateAgainstGstNumber = (_, stateName) => {
+    const gstNo = unitForm.getFieldValue("gstNo");
+
+    // If GST number is not entered, do not match
+    if (!gstNo) {
+      return Promise.resolve();
+    }
+
+    // If state is not selected, do not show GST-state mismatch error here
+    if (!stateName) {
+      return Promise.resolve();
+    }
+
+    const gstStateCode = getGstStateCodeFromGstNo(gstNo);
+
+    // Avoid mismatch error while user is typing incomplete GST
+    if (!gstStateCode || gstStateCode.length < 2) {
+      return Promise.resolve();
+    }
+
+    const selectedStateGstCode = getSelectedStateGstCode(stateName);
+
+    // If selected state does not have gstCode configured, do not block existing flow
+    if (!selectedStateGstCode) {
+      return Promise.resolve();
+    }
+
+    if (gstStateCode !== selectedStateGstCode) {
+      return Promise.reject(
+        new Error(
+          `Selected state GST code ${selectedStateGstCode} does not match GST number state code ${gstStateCode}.`,
+        ),
+      );
+    }
+
+    return Promise.resolve();
+  };
+
   const allowedGstTypeNames = useMemo(() => {
+    const getName = (unit) => normalizeName(getGstTypeName(unit));
+
+    // Editing: allow all options if current unit has no GST type
     if (editingUnit?.id) {
+      const editingType = getName(editingUnit);
+
+      if (!editingType) {
+        return ["Registered", "Unregistered", "SEZ", "International"];
+      }
+
       return ["Registered", "Unregistered", "SEZ", "International"];
     }
 
+    // No units added yet
     if (!units || units.length === 0) {
       return ["Registered", "Unregistered", "SEZ", "International"];
     }
 
-    const getName = (unit) =>
-      String(getGstTypeName(unit) || "")
-        .trim()
-        .toLowerCase();
+    // Ignore units where GST type is null/empty
+    const unitsWithGstType = units.filter((unit) => getName(unit));
 
-    const firstType = getName(units[0]);
+    // Important case:
+    // If existing units have no GST type selected,
+    // treat next unit as first GST decision.
+    if (unitsWithGstType.length === 0) {
+      return ["Registered", "Unregistered", "SEZ", "International"];
+    }
+
+    const firstType = getName(unitsWithGstType[0]);
 
     if (firstType === "international") {
       return ["International"];
     }
 
+    // First actual GST type Registered
     if (firstType === "registered") {
       return ["Registered", "SEZ"];
     }
 
+    // First actual GST type Unregistered
     if (firstType === "unregistered") {
       return ["Unregistered", "SEZ"];
     }
 
+    // First actual GST type SEZ
     if (firstType === "sez") {
-      const hasRegistered = units.some(
-        (unit) => getName(unit) === "registered",
-      );
-      const hasUnregistered = units.some(
-        (unit) => getName(unit) === "unregistered",
-      );
+      const secondDecisionType = unitsWithGstType
+        .slice(1)
+        .map((unit) => getName(unit))
+        .find((name) => name === "registered" || name === "unregistered");
 
-      if (hasRegistered) return ["Registered", "SEZ"];
-      if (hasUnregistered) return ["Unregistered", "SEZ"];
+      if (secondDecisionType === "registered") {
+        return ["Registered"];
+      }
 
-      return ["Registered", "Unregistered", "SEZ"];
+      if (secondDecisionType === "unregistered") {
+        return ["Unregistered"];
+      }
+
+      return ["Registered", "Unregistered"];
     }
 
     return ["Registered", "Unregistered", "SEZ", "International"];
@@ -507,9 +582,7 @@ const CompanyAndUnitsInLead = () => {
       (item) => String(item?.id) === String(gstTypeId),
     );
 
-    setIsGstMandatory(
-      selectedGstType?.name === "Registered" || selectedGstType?.name === "SEZ",
-    );
+    setIsGstMandatory(normalizeName(selectedGstType?.name) === "registered");
 
     if (country) {
       await dispatch(getAllStatesByCountryName(country));
@@ -779,11 +852,11 @@ const CompanyAndUnitsInLead = () => {
     const isCountryNonIndia =
       values?.country && normalizeName(values.country) !== "india";
 
-    if (
-      selectedGstType?.name &&
-      !isCountryNonIndia &&
-      !allowedGstTypeNames.includes(selectedGstType.name)
-    ) {
+    const isAllowedGstType = allowedGstTypeNames.some(
+      (name) => normalizeName(name) === normalizeName(selectedGstType?.name),
+    );
+
+    if (selectedGstType?.name && !isCountryNonIndia && !isAllowedGstType) {
       api.error({
         title: "Invalid GST Type",
         description: `Allowed GST types are ${allowedGstTypeNames.join(", ")} only.`,
@@ -801,10 +874,14 @@ const CompanyAndUnitsInLead = () => {
       .trim()
       .toLowerCase();
 
+    const canAcceptGstNumber = ["registered", "sez"].includes(
+      selectedGstTypeName,
+    );
+
     if (isCountryNonIndia) {
       payload.gstTypeId = getGstTypeIdByName("International");
       payload.gstNo = "";
-    } else if (selectedGstTypeName !== "registered") {
+    } else if (!canAcceptGstNumber) {
       payload.gstNo = "";
     }
 
@@ -1089,17 +1166,16 @@ const CompanyAndUnitsInLead = () => {
       (item) => String(item?.id) === String(value),
     );
 
-    const gstTypeName = String(selectedGstType?.name || "")
-      .trim()
-      .toLowerCase();
+    const gstTypeName = normalizeName(selectedGstType?.name);
 
     const isRegistered = gstTypeName === "registered";
+    const canAcceptGstNumber = ["registered", "sez"].includes(gstTypeName);
 
     setIsGstMandatory(isRegistered);
 
     unitForm.setFieldsValue({
       gstTypeId: value,
-      gstNo: isRegistered ? unitForm.getFieldValue("gstNo") : "",
+      gstNo: canAcceptGstNumber ? unitForm.getFieldValue("gstNo") : "",
       country: gstTypeName === "international" ? undefined : "India",
       state: undefined,
       city: undefined,
@@ -1709,19 +1785,10 @@ const CompanyAndUnitsInLead = () => {
             label="GST Number"
             name="gstNo"
             getValueFromEvent={(e) => formatGSTInput(e.target.value)}
-            disabled={
-              !["registered", "sez"].includes(
-                String(selectedUnitGstTypeName || "")
-                  .trim()
-                  .toLowerCase(),
-              )
-            }
             rules={[
               {
                 required:
-                  String(selectedUnitGstTypeName || "")
-                    .trim()
-                    .toLowerCase() === "registered",
+                  normalizeName(selectedUnitGstTypeName) === "registered",
                 message: "Please enter GST number",
               },
               () => ({
@@ -1736,9 +1803,9 @@ const CompanyAndUnitsInLead = () => {
               placeholder="GST Number"
               maxLength={15}
               disabled={
-                String(selectedUnitGstTypeName || "")
-                  .trim()
-                  .toLowerCase() !== "registered"
+                !["registered", "sez"].includes(
+                  normalizeName(selectedUnitGstTypeName),
+                )
               }
             />
           </Form.Item>
@@ -1762,7 +1829,16 @@ const CompanyAndUnitsInLead = () => {
             />
           </Form.Item>
 
-          <Form.Item label="State" name="state">
+          <Form.Item
+            label="State"
+            name="state"
+            dependencies={["gstNo"]}
+            rules={[
+              {
+                validator: validateStateAgainstGstNumber,
+              },
+            ]}
+          >
             <Select
               showSearch
               allowClear

@@ -252,6 +252,11 @@ export function CompanyAndUnitsForm({
 
   const getUnitPath = (index, key) => ["units", index, key];
 
+  const normalizeName = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
   const setUnitValue = (index, key, value) => {
     form.setFieldValue(getUnitPath(index, key), value);
   };
@@ -273,18 +278,70 @@ export function CompanyAndUnitsForm({
     }
   };
 
+  const getGstStateCodeFromGstNo = (gstNo) => {
+    return String(gstNo || "")
+      .trim()
+      .slice(0, 2);
+  };
+
+  const validateUnitStateAgainstGstNumber = (index) => (_, stateName) => {
+    const gstNo = form.getFieldValue(getUnitPath(index, "gstNo"));
+
+    if (!gstNo) {
+      return Promise.resolve();
+    }
+
+    if (!stateName) {
+      return Promise.resolve();
+    }
+
+    const gstStateCode = String(gstNo || "")
+      .trim()
+      .slice(0, 2);
+
+    if (!gstStateCode || gstStateCode.length < 2) {
+      return Promise.resolve();
+    }
+
+    const unitCountry = form.getFieldValue(getUnitPath(index, "country"));
+    const unitStatesList = statesByCountry?.[unitCountry] || [];
+
+    const selectedState = unitStatesList.find(
+      (item) => normalizeName(item?.name) === normalizeName(stateName),
+    );
+
+    const selectedStateGstCode = selectedState?.gstCode
+      ? String(selectedState.gstCode).padStart(2, "0")
+      : "";
+
+    if (!selectedStateGstCode) {
+      return Promise.resolve();
+    }
+
+    if (gstStateCode !== selectedStateGstCode) {
+      return Promise.reject(
+        new Error(
+          `GST number belongs to state code ${gstStateCode}, but selected state has GST code ${selectedStateGstCode}. Please select the correct state.`,
+        ),
+      );
+    }
+
+    return Promise.resolve();
+  };
+
   const handleUnitGstTypeChange = (index, value) => {
     const finalValue = String(value || "");
     setUnitValue(index, "gstTypeId", finalValue);
     clearUnitErrors(index, ["gstTypeId"]);
 
     const selectedName = getGstTypeNameById(finalValue);
-    const isRegistered = selectedName === "registered";
     const isInternational = selectedName === "international";
 
-    if (!isRegistered) {
+    const canAcceptGstNumber = ["registered", "sez"].includes(selectedName);
+
+    if (!canAcceptGstNumber) {
       setUnitValue(index, "gstNo", "");
-      clearUnitErrors(index, ["gstNo"]);
+      clearUnitErrors(index, ["gstNo", "state"]);
     }
 
     if (isInternational) {
@@ -304,7 +361,7 @@ export function CompanyAndUnitsForm({
       setUnitValue(index, "country", "India");
       setUnitValue(index, "state", "");
       setUnitValue(index, "city", "");
-      clearUnitErrors(index, ["country"]);
+      clearUnitErrors(index, ["country", "state", "city"]);
       dispatch(getAllStatesByCountryName("India"));
     }
   };
@@ -998,8 +1055,15 @@ export function CompanyAndUnitsForm({
                     ? removeIndiaFromCountryList(countryList || [])
                     : countryList || [];
 
+                  const selectedGstTypeName =
+                    getGstTypeNameById(selectedGstTypeId);
+
                   const isRegisteredGstType =
-                    getGstTypeNameById(selectedGstTypeId) === "registered";
+                    selectedGstTypeName === "registered";
+                  const isSezGstType = selectedGstTypeName === "sez";
+
+                  const shouldShowGstField =
+                    isRegisteredGstType || isSezGstType;
 
                   const unitStatesList = statesByCountry?.[unitCountry] || [];
                   const unitCitiesList = citiesByState?.[unitState] || [];
@@ -1085,13 +1149,13 @@ export function CompanyAndUnitsForm({
                             />
                           </Form.Item>
 
-                          {isRegisteredGstType && (
+                          {shouldShowGstField && (
                             <Form.Item
                               name={[field.name, "gstNo"]}
                               label="GST No"
                               rules={[
                                 {
-                                  required: true,
+                                  required: isRegisteredGstType,
                                   message: "GST number is required",
                                 },
                                 {
@@ -1117,7 +1181,16 @@ export function CompanyAndUnitsForm({
                                 formatGSTInput(e.target.value)
                               }
                             >
-                              <Input maxLength={15} />
+                              <Input
+                                maxLength={15}
+                                onChange={() => {
+                                  form
+                                    .validateFields([
+                                      getUnitPath(index, "state"),
+                                    ])
+                                    .catch(() => {});
+                                }}
+                              />
                             </Form.Item>
                           )}
 
@@ -1194,7 +1267,14 @@ export function CompanyAndUnitsForm({
                           <Form.Item
                             name={[field.name, "state"]}
                             label="State"
-                            rules={requiredRule("State is required")}
+                            dependencies={[[field.name, "gstNo"]]}
+                            rules={[
+                              ...requiredRule("State is required"),
+                              {
+                                validator:
+                                  validateUnitStateAgainstGstNumber(index),
+                              },
+                            ]}
                             className={formItemClass}
                           >
                             <Select

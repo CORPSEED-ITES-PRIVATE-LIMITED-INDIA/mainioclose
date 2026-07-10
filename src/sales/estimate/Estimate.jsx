@@ -730,12 +730,26 @@ const Estimate = () => {
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
       setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
+      dispatch(
+        getAllEstimateByUserId({
+          userId,
+          page: prev.page + 1,
+          size: filteration.size,
+        }),
+      );
     }
   }, [filteration, pages]);
 
   const onPreviousPage = useCallback(() => {
     if (filteration?.page > 1) {
       setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
+      dispatch(
+        getAllEstimateByUserId({
+          userId,
+          page: prev.page - 1,
+          size: filteration.size,
+        }),
+      );
     }
   }, [filteration]);
 
@@ -994,6 +1008,13 @@ const Estimate = () => {
           total={pages}
           onChange={(e) => {
             setFilteration((prev) => ({ ...prev, page: e }));
+            dispatch(
+              getAllEstimateByUserId({
+                userId,
+                page: e,
+                size: filteration.size,
+              }),
+            );
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">

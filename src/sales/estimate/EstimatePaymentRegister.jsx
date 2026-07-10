@@ -265,9 +265,11 @@ const EstimatePaymentRegister = ({
 
   const selectedPaymentTypeName = selectedPaymentType?.name || "";
 
-  const shouldShowTds =
-    selectedPaymentTypeName === "Full Payment" ||
-    selectedPaymentTypeName === "Purchase Order Payment";
+  // const shouldShowTds =
+  //   selectedPaymentTypeName === "Full Payment" ||
+  //   selectedPaymentTypeName === "Purchase Order Payment";
+
+  const shouldShowTds = true;
 
   const shouldShowPaymentTenure =
     selectedPaymentTypeName === "Purchase Order Payment";

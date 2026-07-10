@@ -392,6 +392,26 @@ const getVoucherDetails = (entry, ledger) => {
   const grossAmount = taxableAmount + gstAmount;
   const netAmount = grossAmount - tdsAmount;
 
+  const raw = entry?.raw || {};
+
+  const rawBankName = raw?.bankName || raw?.particulars || "";
+  const normalizedBankName = String(rawBankName).trim().toUpperCase();
+
+  const isCashTransaction = normalizedBankName === "CASH";
+
+  const isReceiptOrPayment =
+    raw?.voucherType === "RECEIPT" ||
+    raw?.voucherType === "PAYMENT" ||
+    raw?.sourceType === "PAYMENT_RECEIPT";
+
+  const hasRealBankDetails =
+    isReceiptOrPayment && !isCashTransaction && Boolean(raw?.bankName);
+
+  const paymentMode =
+    raw?.particulars ||
+    raw?.bankName ||
+    (isReceiptOrPayment ? "-" : "Adjustment Entry");
+
   return {
     voucherNo,
     voucherType,
@@ -432,16 +452,29 @@ const getVoucherDetails = (entry, ledger) => {
     grossAmount,
     netAmount,
 
-    bankName: isBankLedger ? ledger.name : "HDFC Bank",
-    bankAccountNumber: isBankLedger ? "50100012345678" : "50100098765432",
-    ifscCode: isBankLedger ? "HDFC0000911" : "HDFC0001234",
-    branchName: isBankLedger ? "Sector 63, Noida" : "Corpseed Main Account",
-    paymentMode: voucherNo.startsWith("RCPT")
-      ? "Bank Transfer / UPI"
-      : voucherNo.startsWith("PAY")
-        ? "NEFT"
-        : "Adjustment Entry",
-    transactionReference: `${voucherNo}-${ledger.ledgerCode || "LED"}`,
+    bankName: hasRealBankDetails ? raw?.bankName : "-",
+    bankAccountNumber: hasRealBankDetails
+      ? raw?.accountNumber ||
+        raw?.bankAccountNumber ||
+        ledger?.raw?.accountNumber ||
+        "-"
+      : "-",
+    ifscCode: hasRealBankDetails
+      ? raw?.ifscCode || ledger?.raw?.ifscCode || "-"
+      : "-",
+    branchName: hasRealBankDetails
+      ? raw?.branchName || ledger?.raw?.branchName || "-"
+      : "-",
+
+    paymentMode,
+    transactionReference: raw?.transactionReference || "-",
+
+    actualBankReceivedAmount: raw?.actualBankReceivedAmount,
+    tdsAmountFromApi: raw?.tdsAmount,
+    settlementAmount: raw?.settlementAmount,
+
+    showBankDetails: hasRealBankDetails,
+    showTransactionDetails: isReceiptOrPayment,
 
     createdBy: "ERP Test",
     createdAt: entry.date || "-",
@@ -452,6 +485,8 @@ const getVoucherDetails = (entry, ledger) => {
 const LedgerMasterSection = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const {
     isOpen: isVoucherDrawerOpen,
@@ -854,27 +889,29 @@ const LedgerMasterSection = () => {
                             </div>
                           </div>
 
-                          <Dropdown>
-                            <DropdownTrigger>
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                onPress={(e) => e?.continuePropagation?.()}
-                              >
-                                <EllipsisVertical size={16} />
-                              </Button>
-                            </DropdownTrigger>
+                          {adminRole && (
+                            <Dropdown>
+                              <DropdownTrigger>
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  onPress={(e) => e?.continuePropagation?.()}
+                                >
+                                  <EllipsisVertical size={16} />
+                                </Button>
+                              </DropdownTrigger>
 
-                            <DropdownMenu
-                              aria-label="Ledger actions"
-                              onAction={(key) => {
-                                if (key === "edit") handleOpenEdit(ledger);
-                              }}
-                            >
-                              <DropdownItem key="edit">Edit</DropdownItem>
-                            </DropdownMenu>
-                          </Dropdown>
+                              <DropdownMenu
+                                aria-label="Ledger actions"
+                                onAction={(key) => {
+                                  if (key === "edit") handleOpenEdit(ledger);
+                                }}
+                              >
+                                <DropdownItem key="edit">Edit</DropdownItem>
+                              </DropdownMenu>
+                            </Dropdown>
+                          )}
                         </div>
 
                         <div className="mb-3 flex flex-wrap gap-2">
@@ -967,14 +1004,16 @@ const LedgerMasterSection = () => {
                     {selectedLedger.active ? "ACTIVE" : "INACTIVE"}
                   </Chip>
 
-                  <Button
-                    size="sm"
-                    variant="bordered"
-                    startContent={<Pencil size={15} />}
-                    onPress={() => handleOpenEdit(selectedLedger)}
-                  >
-                    Edit
-                  </Button>
+                  {adminRole && (
+                    <Button
+                      size="sm"
+                      variant="bordered"
+                      startContent={<Pencil size={15} />}
+                      onPress={() => handleOpenEdit(selectedLedger)}
+                    >
+                      Edit
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -1683,13 +1722,12 @@ const VoucherDetailsDrawer = ({
 
   return (
     <Drawer
-      size="lg"
+      size="4xl"
       placement="right"
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       scrollBehavior="inside"
       classNames={{
-        base: "max-w-[560px]",
         header: "border-b border-slate-200",
         footer: "border-t border-slate-200",
       }}
@@ -1801,40 +1839,69 @@ const VoucherDetailsDrawer = ({
                   </div>
                 </section>
 
-                <Divider />
+                {details.showTransactionDetails && (
+                  <>
+                    <Divider />
 
-                <section>
-                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
-                    Bank / Transaction Details
-                  </h3>
+                    <section>
+                      <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                        {details.showBankDetails
+                          ? "Bank / Transaction Details"
+                          : "Transaction Details"}
+                      </h3>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <VoucherInfoItem
-                      label="Bank Name"
-                      value={details.bankName}
-                    />
-                    <VoucherInfoItem
-                      label="Bank Account No."
-                      value={details.bankAccountNumber}
-                    />
-                    <VoucherInfoItem
-                      label="IFSC Code"
-                      value={details.ifscCode}
-                    />
-                    <VoucherInfoItem
-                      label="Branch"
-                      value={details.branchName}
-                    />
-                    <VoucherInfoItem
-                      label="Payment Mode"
-                      value={details.paymentMode}
-                    />
-                    <VoucherInfoItem
-                      label="Transaction Ref."
-                      value={details.transactionReference}
-                    />
-                  </div>
-                </section>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {details.showBankDetails && (
+                          <>
+                            <VoucherInfoItem
+                              label="Bank Name"
+                              value={details.bankName}
+                            />
+                            <VoucherInfoItem
+                              label="Bank Account No."
+                              value={details.bankAccountNumber}
+                            />
+                            <VoucherInfoItem
+                              label="IFSC Code"
+                              value={details.ifscCode}
+                            />
+                            <VoucherInfoItem
+                              label="Branch"
+                              value={details.branchName}
+                            />
+                          </>
+                        )}
+
+                        <VoucherInfoItem
+                          label="Payment Mode"
+                          value={details.paymentMode}
+                        />
+
+                        <VoucherInfoItem
+                          label="Transaction Ref."
+                          value={details.transactionReference}
+                        />
+
+                        <VoucherInfoItem
+                          label="Actual Received Amount"
+                          value={formatCurrency(
+                            details.actualBankReceivedAmount,
+                          )}
+                        />
+
+                        <VoucherInfoItem
+                          label="TDS Amount"
+                          value={formatCurrency(details.tdsAmountFromApi)}
+                        />
+
+                        <VoucherInfoItem
+                          label="Settlement Amount"
+                          value={formatCurrency(details.settlementAmount)}
+                        />
+                      </div>
+                    </section>
+                  </>
+                )}
 
                 <Divider />
 

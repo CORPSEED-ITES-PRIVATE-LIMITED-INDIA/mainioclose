@@ -559,6 +559,15 @@ const Unbill = () => {
       return;
     }
 
+    if (!paymentProofUrl.startsWith("http")) {
+      addToast({
+        title: "Invalid payment proof URL",
+        description: "Payment proof should be a valid file URL.",
+        color: "danger",
+      });
+      return;
+    }
+
     setSelectedPaymentProof(paymentProofUrl);
     paymentProofModal.onOpen();
   };
@@ -572,7 +581,7 @@ const Unbill = () => {
         style={{ maxWidth }}
       >
         {lines.map((line, index) => (
-          <p key={index} className="whitespace-nowrap">
+          <p key={index} className="whitespace-nowrap text-sm">
             {line}
           </p>
         ))}
@@ -668,7 +677,7 @@ const Unbill = () => {
         return (
           <>
             <Link
-              className="font-medium"
+              className="font-medium text-sm"
               to={`/erp/${userId}/accounts/companyApprovals`}
             >
               {renderTwoLineText(
@@ -697,7 +706,7 @@ const Unbill = () => {
         return (
           <div className="">
             <Link
-              className="font-medium"
+              className="font-medium text-sm"
               to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
             >
               {renderTwoLineText(rowData?.unitName, "220px")}
@@ -768,15 +777,13 @@ const Unbill = () => {
       case "paymentProof":
         return (
           <div className="flex items-center gap-2">
-            {rowData?.transactionReference ? (
+            {rowData?.paymentProof ? (
               <Button
                 size="sm"
                 color="primary"
                 variant="flat"
                 startContent={<Paperclip size={14} />}
-                onPress={() =>
-                  handlePaymentProofPreview(rowData?.transactionReference)
-                }
+                onPress={() => handlePaymentProofPreview(rowData?.paymentProof)}
               >
                 View
               </Button>
@@ -1718,12 +1725,12 @@ const Unbill = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
+                {isAdvanceInvoice ? "Tax Invoice" : "Unbill"}
               </ModalHeader>
               <ModalBody className="max-h-[75vh] overflow-auto">
                 <UnbilledView
                   invoiceData={invoiceDetail}
-                  heading={isAdvanceInvoice ? "Advance Invoice" : "Unbill"}
+                  heading={isAdvanceInvoice ? "Tax Invoice" : "Unbill"}
                 />
               </ModalBody>
               <ModalFooter>
