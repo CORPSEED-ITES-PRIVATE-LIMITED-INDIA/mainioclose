@@ -500,6 +500,38 @@ export const getInvoiceStatusOverviewDashboard = createAsyncThunk(
   },
 );
 
+export const getRecentPayments = createAsyncThunk(
+  "getRecentPayments",
+  async (
+    { userId, period = "MONTH", fromDate, toDate, status },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/recent-payments",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch invoice status overview",
+      );
+    }
+  },
+);
+
 const DashboardSlice = createSlice({
   name: "dashboard",
   initialState: {
@@ -518,6 +550,7 @@ const DashboardSlice = createSlice({
     topSellLeadsList: [],
     userLeadDataMonthWiseList: [],
     revenueDataList: [],
+    recentPayments: [],
 
     // NEW
     summaryCardsData: null,

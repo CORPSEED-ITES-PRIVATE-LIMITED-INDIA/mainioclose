@@ -255,7 +255,11 @@ const EstimatePaymentRegister = ({
           .toLowerCase()
           .includes("cash"),
       )
-    : paymentLegerList || [];
+    : (paymentLegerList || []).filter(
+        (ledger) =>
+          String(ledger?.ledgerName || "") !==
+          "CASH".toLowerCase().includes("cash"),
+      );
 
   const shouldShowBankName = bankRequiredPaymentModes.includes(paymentMode);
 
