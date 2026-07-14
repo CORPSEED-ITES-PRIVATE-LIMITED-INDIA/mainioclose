@@ -531,6 +531,68 @@ export const getRecentPayments = createAsyncThunk(
     }
   },
 );
+export const getAccountSummary = createAsyncThunk(
+  "getAccountSummary",
+  async (
+    { userId, period = "MONTH", fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/account-summary",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch invoice status overview",
+      );
+    }
+  },
+);
+export const getTopOutstandingCompanies = createAsyncThunk(
+  "getTopOutstandingCompanies",
+  async (
+    { userId, period = "MONTH", fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        period,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/top-outstanding-companies",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch invoice status overview",
+      );
+    }
+  },
+);
 
 const DashboardSlice = createSlice({
   name: "dashboard",
@@ -627,6 +689,9 @@ const DashboardSlice = createSlice({
     invoiceStatusOverviewData: null,
     invoiceStatusOverviewLoading: false,
     invoiceStatusOverviewError: null,
+
+    accountSummary:[],
+    topOutstandingCompanies:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -1068,6 +1133,33 @@ const DashboardSlice = createSlice({
         state.invoiceStatusOverviewLoading = false;
         state.invoiceStatusOverviewError =
           action.payload || "Failed to fetch invoice status overview";
+      },
+    );
+
+    builder.addCase(
+      getAccountSummary.fulfilled,
+      (state, action) => {
+        state.getAccountSummary = action.payload;
+      },
+    );
+
+    builder.addCase(
+      getAccountSummary.rejected,
+      (state, action) => {
+        state.getAccountSummary = [];
+      },
+    );
+    builder.addCase(
+      getTopOutstandingCompanies.fulfilled,
+      (state, action) => {
+        state.topOutstandingCompanies = action.payload;
+      },
+    );
+
+    builder.addCase(
+      getTopOutstandingCompanies.rejected,
+      (state, action) => {
+        state.topOutstandingCompanies = [];
       },
     );
   },

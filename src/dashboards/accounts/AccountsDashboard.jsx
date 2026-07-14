@@ -1058,7 +1058,7 @@ function AccountSummary() {
       </CardHeader>
 
       <CardBody className="px-3 pb-3 pt-3">
-        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-2">
           {accountSummary.map((item) => (
             <div
               key={item.title}
@@ -1405,7 +1405,7 @@ export default function AccountsDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
           {billingStats.map((item) => (
             <StatCard key={item.title} item={item} />
           ))}
@@ -1420,26 +1420,18 @@ export default function AccountsDashboard() {
             data={invoiceStatusOverviewData}
             loading={invoiceStatusOverviewLoading}
           />
-          <div className="xl:col-span-2 2xl:col-span-1">
-            <ApprovalQueue
-              data={approvalQueueData}
-              loading={approvalQueueLoading}
-            />
-          </div>
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[0.95fr_1.1fr_0.95fr]">
+          <ApprovalQueue
+            data={approvalQueueData}
+            loading={approvalQueueLoading}
+          />
           <ReceivableAging />
           <RecentPayments />
           <TopOutstandingCompanies />
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
           <GstClientVendorSection />
           <TdsClientVendorSection />
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_0.65fr]">
           <AccountSummary />
           <CashFlowCards />
         </div>
