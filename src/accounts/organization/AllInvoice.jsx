@@ -22,6 +22,7 @@ import {
   Select,
   SelectItem,
   ModalFooter,
+  Spinner,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -85,6 +86,9 @@ const AllInvoice = () => {
     (state) => state.organization.allInvoiceList?.length,
   );
 
+  const [isConfirmEInvoiceSubmitting, setIsConfirmEInvoiceSubmitting] =
+    useState(false);
+
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
@@ -145,6 +149,8 @@ const AllInvoice = () => {
   };
 
   const handleSubmitConfirmEInvoice = async () => {
+    if (isConfirmEInvoiceSubmitting) return;
+
     if (!selectedInvoice?.id) {
       addToast({
         title: "Invoice not selected",
@@ -185,6 +191,8 @@ const AllInvoice = () => {
       einvoiceAckNo: confirmEInvoiceForm.einvoiceAckNo,
     };
 
+    setIsConfirmEInvoiceSubmitting(true);
+
     try {
       await dispatch(
         confirmEInvoice({
@@ -209,6 +217,8 @@ const AllInvoice = () => {
         title: "Failed to confirm E-Invoice",
         color: "danger",
       });
+    } finally {
+      setIsConfirmEInvoiceSubmitting(false);
     }
   };
 
@@ -658,6 +668,28 @@ const AllInvoice = () => {
 
   return (
     <>
+      {isConfirmEInvoiceSubmitting && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/35 backdrop-blur-sm"
+          role="status"
+          aria-live="assertive"
+          aria-label="Confirming E-Invoice"
+        >
+          <div className="flex min-w-[240px] flex-col items-center gap-4 rounded-2xl bg-background px-8 py-7 shadow-2xl">
+            <Spinner size="lg" color="primary" />
+
+            <div className="text-center">
+              <p className="text-base font-semibold text-foreground">
+                Confirming E-Invoice
+              </p>
+              <p className="mt-1 text-sm text-default-500">
+                Please do not refresh or close this page.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="font-sans text-2xl font-medium mb-1">Invoice list</h1>
 
       <Table
@@ -832,7 +864,9 @@ const AllInvoice = () => {
 
                 <Button
                   color="primary"
-                  isDisabled={isAttachmentUploading}
+                  isDisabled={
+                    isAttachmentUploading || isConfirmEInvoiceSubmitting
+                  }
                   onPress={handleSubmitConfirmEInvoice}
                 >
                   {isAttachmentUploading ? "Uploading..." : "Confirm E Invoice"}

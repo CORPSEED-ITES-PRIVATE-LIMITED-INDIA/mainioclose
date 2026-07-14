@@ -963,6 +963,24 @@ const AccountSlice = createSlice({
         state.loading = "rejected";
       },
     );
+    builder.addCase(
+      confirmEInvoice.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      confirmEInvoice.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+      },
+    );
+    builder.addCase(
+      confirmEInvoice.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
   },
 });
 
