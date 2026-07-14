@@ -414,9 +414,15 @@ const AllInvoice = () => {
                 >
                   <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
                   <DropdownItem key="viewEstimate">Estimate</DropdownItem>
-                  <DropdownItem key="confirmEInvoice">
-                    Confirm E Invoice
-                  </DropdownItem>
+                  {!(
+                    rowData?.status?.toLowerCase() === "e_invoice_generated" ||
+                    rowData?.gstRegistrationType?.toLowerCase() ===
+                      "international"
+                  ) && (
+                    <DropdownItem key="confirmEInvoice">
+                      Confirm E Invoice
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>

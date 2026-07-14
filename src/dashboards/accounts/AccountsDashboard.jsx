@@ -450,9 +450,9 @@ function SectionTitle({ title, subtitle }) {
         )}
       </div>
 
-      <button className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-700">
+      {/* <button className="shrink-0 text-[11px] font-semibold text-blue-600 transition hover:text-blue-700">
         View All
-      </button>
+      </button> */}
     </div>
   );
 }
