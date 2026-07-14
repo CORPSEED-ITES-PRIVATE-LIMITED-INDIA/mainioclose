@@ -27,6 +27,8 @@ import {
   getBillingOverview,
   getBillingVsCollection,
   getInvoiceStatusOverviewDashboard,
+  getAccountSummary,
+  getTopOutstandingCompanies,
 } from "../../toolkit/slices/dashboardSlice";
 import { useParams } from "react-router-dom";
 
@@ -341,40 +343,6 @@ const recentPayments = [
     amount: "₹ 75,000",
     date: "16 May 2025",
     status: "Received",
-  },
-];
-
-const topOutstandingCompanies = [
-  { company: "ABC Foundation", due: "₹ 2,40,000", days: "12 Days" },
-  { company: "Green Earth Pvt. Ltd.", due: "₹ 1,85,000", days: "24 Days" },
-  { company: "Helping Hands Trust", due: "₹ 1,20,000", days: "31 Days" },
-  { company: "Sunrise Enterprises", due: "₹ 95,000", days: "45 Days" },
-];
-
-const accountSummary = [
-  {
-    title: "Unbilled Invoices",
-    value: "26",
-    amount: "₹ 9.80L",
-    bg: "bg-blue-50",
-  },
-  {
-    title: "Tax Invoices",
-    value: "54",
-    amount: "₹ 48.75L",
-    bg: "bg-emerald-50",
-  },
-  {
-    title: "Advance Payments",
-    value: "12",
-    amount: "₹ 5.35L",
-    bg: "bg-violet-50",
-  },
-  {
-    title: "Cancelled Invoices",
-    value: "4",
-    amount: "₹ 1.10L",
-    bg: "bg-rose-50",
   },
 ];
 
@@ -1010,7 +978,11 @@ function RecentPayments() {
   );
 }
 
-function TopOutstandingCompanies() {
+function TopOutstandingCompanies({ data }) {
+  const companies = Array.isArray(data?.topOutstandingCompanies)
+    ? data.topOutstandingCompanies
+    : [];
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
@@ -1022,22 +994,23 @@ function TopOutstandingCompanies() {
 
       <CardBody className="px-3 pb-3 pt-2">
         <div className="divide-y divide-slate-100">
-          {topOutstandingCompanies.map((item) => (
+          {companies.map((item) => (
             <div
-              key={item.company}
+              key={item?.companyId}
               className="flex items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
             >
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold leading-5 text-slate-950">
-                  {item.company}
+                  {item?.companyName || "-"}
                 </p>
+
                 <p className="text-[11px] leading-4 text-rose-500">
-                  Overdue: {item.days}
+                  Overdue: {item?.overdueDays || 0} Days
                 </p>
               </div>
 
               <p className="whitespace-nowrap text-xs font-bold text-slate-950">
-                {item.due}
+                {formatAmount(item?.outstandingAmount)}
               </p>
             </div>
           ))}
@@ -1047,7 +1020,18 @@ function TopOutstandingCompanies() {
   );
 }
 
-function AccountSummary() {
+function AccountSummary({ data }) {
+  const summaryCards = Array.isArray(data?.summaryCards)
+    ? data.summaryCards
+    : [];
+
+  const backgrounds = [
+    "bg-blue-50",
+    "bg-emerald-50",
+    "bg-violet-50",
+    "bg-rose-50",
+  ];
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
@@ -1059,19 +1043,23 @@ function AccountSummary() {
 
       <CardBody className="px-3 pb-3 pt-3">
         <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-2">
-          {accountSummary.map((item) => (
+          {summaryCards.map((item, index) => (
             <div
-              key={item.title}
-              className={`${item.bg} rounded-xl p-3 text-center ring-1 ring-slate-100`}
+              key={item?.title || index}
+              className={`${
+                backgrounds[index % backgrounds.length]
+              } rounded-xl p-3 text-center ring-1 ring-slate-100`}
             >
               <p className="text-lg font-bold leading-6 text-slate-950">
-                {item.value}
+                {item?.count || 0}
               </p>
+
               <p className="mt-0.5 truncate text-[11px] leading-4 text-slate-500">
-                {item.title}
+                {item?.title || "-"}
               </p>
+
               <p className="mt-1.5 whitespace-nowrap text-xs font-bold text-slate-950">
-                {item.amount}
+                {formatAmount(item?.amount)}
               </p>
             </div>
           ))}
@@ -1324,6 +1312,9 @@ export default function AccountsDashboard() {
     invoiceStatusOverviewData,
     invoiceStatusOverviewLoading,
     invoiceStatusOverviewError,
+
+    accountSummary,
+    topOutstandingCompanies,
   } = useSelector((state) => state.dashboard);
 
   const [period, setPeriod] = useState("MONTH");
@@ -1363,6 +1354,23 @@ export default function AccountsDashboard() {
     );
 
     dispatch(getInvoiceStatusOverviewDashboard(commonPayload));
+
+    dispatch(
+      getAccountSummary({
+        userId,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }),
+    );
+
+    dispatch(
+      getTopOutstandingCompanies({
+        userId,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        limit: 4,
+      }),
+    );
   }, [dispatch, userId, period, fromDate, toDate]);
 
   useEffect(() => {
@@ -1429,10 +1437,10 @@ export default function AccountsDashboard() {
           />
           <ReceivableAging />
           <RecentPayments />
-          <TopOutstandingCompanies />
+          <TopOutstandingCompanies data={topOutstandingCompanies} />
           <GstClientVendorSection />
           <TdsClientVendorSection />
-          <AccountSummary />
+          <AccountSummary data={accountSummary} />
           <CashFlowCards />
         </div>
       </div>

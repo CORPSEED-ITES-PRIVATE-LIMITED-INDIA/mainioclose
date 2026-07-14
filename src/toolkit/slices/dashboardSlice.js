@@ -612,7 +612,6 @@ const DashboardSlice = createSlice({
     topSellLeadsList: [],
     userLeadDataMonthWiseList: [],
     revenueDataList: [],
-    recentPayments: [],
 
     // NEW
     summaryCardsData: null,
@@ -691,7 +690,8 @@ const DashboardSlice = createSlice({
     invoiceStatusOverviewError: null,
 
     accountSummary:[],
-    topOutstandingCompanies:[]
+    topOutstandingCompanies:[],
+    recentPayments: [],
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -1139,14 +1139,14 @@ const DashboardSlice = createSlice({
     builder.addCase(
       getAccountSummary.fulfilled,
       (state, action) => {
-        state.getAccountSummary = action.payload;
+        state.accountSummary = action.payload;
       },
     );
 
     builder.addCase(
       getAccountSummary.rejected,
       (state, action) => {
-        state.getAccountSummary = [];
+        state.accountSummary = [];
       },
     );
     builder.addCase(
