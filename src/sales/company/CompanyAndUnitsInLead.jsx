@@ -354,9 +354,7 @@ const CompanyAndUnitsInLead = () => {
       unit?.gstType ||
       unit?.gstRegistrationTypeName ||
       gstTypeList?.find(
-        (item) =>
-          String(item?.id) ===
-          String(unit?.gstTypeId || unit?.gstRegistrationTypeId),
+        (item) => String(item?.id) === String(unit?.gstRegistrationTypeId),
       )?.name ||
       ""
     );
@@ -1393,7 +1391,18 @@ const CompanyAndUnitsInLead = () => {
                               size="sm"
                               variant="light"
                               isIconOnly
-                              onPress={openAddContactModal}
+                              onPress={() => {
+                                if (!unit?.gstRegistrationTypeName) {
+                                  addToast({
+                                    title: "RESTRICTED",
+                                    description:
+                                      "Please update the Unit GST Type in Unit update.",
+                                    color: "danger",
+                                  });
+                                  return;
+                                }
+                                openAddContactModal();
+                              }}
                             >
                               <Plus className={iconClass} />
                             </Button>
@@ -1774,9 +1783,7 @@ const CompanyAndUnitsInLead = () => {
               options={filteredGstTypeList}
               fieldNames={{ label: "name", value: "id" }}
               placeholder="Select GST Type"
-              disabled={
-                allowedGstTypeNames.length === 1 || isNonIndiaUnitCountry
-              }
+              disabled={allowedGstTypeNames.length === 1}
               onChange={handleUnitGstTypeChange}
             />
           </Form.Item>

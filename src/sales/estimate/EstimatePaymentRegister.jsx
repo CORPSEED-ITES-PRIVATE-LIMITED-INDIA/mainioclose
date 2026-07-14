@@ -62,51 +62,81 @@ const numberLike = (label) =>
     .transform((v) => (typeof v === "string" ? Number(v) : v))
     .refine((v) => !Number.isNaN(v), `${label} must be a valid number`);
 
+const purchaseOrderPaymentSchema = z.object({
+  isPurchaseOrderPayment: z.literal(true),
+
+  paymentTypeId: numberLike("Payment type").refine(
+    (v) => v > 0,
+    "Payment type is required",
+  ),
+
+  paymentTerms: z.string().min(1, "Payment tenure is required"),
+  paymentTermsDays: z.union([z.number(), z.string()]).optional(),
+
+  poNumber: z.string().trim().min(1, "PO number is required"),
+  poAttachmentUrl: z.string().trim().min(1, "PO attachment is required"),
+
+  remarks: z.string().optional(),
+});
+
+const regularPaymentSchema = z.object({
+  isPurchaseOrderPayment: z.literal(false),
+
+  amount: numberLike("Amount").refine(
+    (v) => v >= 0,
+    "Amount must be 0 or greater",
+  ),
+
+  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentMode: z.string().min(1, "Payment mode is required"),
+  transactionReference: z
+    .string()
+    .trim()
+    .min(1, "Transaction reference number is required"),
+  paymentProof: z.string().optional(),
+  remarks: z.string().optional(),
+  bankLedgerId: z.string().optional(),
+
+  paymentTypeId: numberLike("Payment type").refine(
+    (v) => v > 0,
+    "Payment type is required",
+  ),
+
+  eprFinancialYear: z.string().optional(),
+  eprPortalRegistrationNumber: z.string().optional(),
+  eprCertificateOrInvoiceNumber: z.string().optional(),
+
+  tdsActive: z.boolean().optional(),
+
+  tds: z
+    .object({
+      tdsPercentage: z.union([z.number(), z.string()]).optional(),
+    })
+    .optional(),
+
+  governmentFeeActive: z.boolean(),
+
+  governmentFee: z
+    .object({
+      totalAmount: z.union([z.number(), z.string()]).optional(),
+      paymentDate: z.string().optional(),
+      feeReferenceNumber: z.string().optional(),
+      departmentName: z.string().optional(),
+      remarks: z.string().optional(),
+    })
+    .optional(),
+});
+
 const paymentRegisterSchema = z
-  .object({
-    amount: numberLike("Amount").refine(
-      (v) => v >= 0,
-      "Amount must be 0 or greater",
-    ),
-    paymentDate: z.string().min(1, "Payment date is required"),
-    paymentMode: z.string().min(1, "Payment mode is required"),
-    transactionReference: z.string().optional(),
-    paymentProof: z.string().optional(),
-    remarks: z.string().optional(),
-    bankLedgerId: z.string().optional(),
-
-    paymentTypeId: numberLike("Payment type").refine(
-      (v) => v > 0,
-      "Payment type is required",
-    ),
-
-    paymentTerms: z.string().optional(),
-    paymentTermsDays: z.union([z.number(), z.string()]).optional(),
-
-    eprFinancialYear: z.string().optional(),
-    eprPortalRegistrationNumber: z.string().optional(),
-    eprCertificateOrInvoiceNumber: z.string().optional(),
-    tdsActive: z.boolean().optional(),
-
-    tds: z
-      .object({
-        tdsPercentage: z.union([z.number(), z.string()]).optional(),
-      })
-      .optional(),
-
-    governmentFeeActive: z.boolean(),
-
-    governmentFee: z
-      .object({
-        totalAmount: z.union([z.number(), z.string()]).optional(),
-        paymentDate: z.string().optional(),
-        feeReferenceNumber: z.string().optional(),
-        departmentName: z.string().optional(),
-        remarks: z.string().optional(),
-      })
-      .optional(),
-  })
+  .discriminatedUnion("isPurchaseOrderPayment", [
+    purchaseOrderPaymentSchema,
+    regularPaymentSchema,
+  ])
   .superRefine((data, ctx) => {
+    if (data.isPurchaseOrderPayment) {
+      return;
+    }
+
     if (data.governmentFeeActive) {
       const gf = data.governmentFee || {};
 
@@ -166,17 +196,6 @@ const paymentRegisterSchema = z
         });
       }
     }
-
-    // if (
-    //   bankRequiredPaymentModes.includes(data.paymentMode) &&
-    //   !data.bankName?.trim()
-    // ) {
-    //   ctx.addIssue({
-    //     code: z.ZodIssueCode.custom,
-    //     path: ["bankName"],
-    //     message: "Bank name is required",
-    //   });
-    // }
   });
 
 const EstimatePaymentRegister = ({
@@ -211,11 +230,17 @@ const EstimatePaymentRegister = ({
   } = useForm({
     resolver: zodResolver(paymentRegisterSchema),
     defaultValues: {
+      isPurchaseOrderPayment: false,
+
       amount: "",
       paymentDate: "",
       paymentMode: "",
       transactionReference: "",
       paymentProof: "",
+
+      poNumber: "",
+      poAttachmentUrl: "",
+
       bankLedgerId: "",
       remarks: "",
       paymentTypeId: "",
@@ -231,7 +256,6 @@ const EstimatePaymentRegister = ({
       governmentFeeActive: false,
       governmentFee: {
         totalAmount: "",
-        // receivedAmount: "",
         paymentDate: "",
         feeReferenceNumber: "",
         departmentName: "",
@@ -245,21 +269,33 @@ const EstimatePaymentRegister = ({
   const tdsActive = watch("tdsActive");
   const paymentMode = watch("paymentMode");
 
+  useEffect(() => {
+    setValue("bankLedgerId", "");
+  }, [paymentMode, setValue]);
+
+  const hasPaymentModeSelected = !!String(paymentMode || "").trim();
+
   const isCashPaymentMode = String(paymentMode || "")
+    .trim()
     .toLowerCase()
     .includes("cash");
 
-  const filteredPaymentLedgerList = isCashPaymentMode
-    ? (paymentLegerList || []).filter((ledger) =>
-        String(ledger?.ledgerName || "")
-          .toLowerCase()
-          .includes("cash"),
-      )
-    : (paymentLegerList || []).filter(
-        (ledger) =>
-          String(ledger?.ledgerName || "") !==
-          "CASH".toLowerCase().includes("cash"),
-      );
+  const isCashLedger = (ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  };
+
+  const filteredPaymentLedgerList = !hasPaymentModeSelected
+    ? []
+    : isCashPaymentMode
+      ? (paymentLegerList || []).filter(isCashLedger)
+      : (paymentLegerList || []).filter((ledger) => !isCashLedger(ledger));
 
   const shouldShowBankName = bankRequiredPaymentModes.includes(paymentMode);
 
@@ -269,14 +305,26 @@ const EstimatePaymentRegister = ({
 
   const selectedPaymentTypeName = selectedPaymentType?.name || "";
 
-  // const shouldShowTds =
-  //   selectedPaymentTypeName === "Full Payment" ||
-  //   selectedPaymentTypeName === "Purchase Order Payment";
+  // Hide TDS fields when the selected estimate belongs to an international unit.
+  const normalizedGstRegistrationType = String(
+    estimateItem?.unit?.gstRegistrationType || "",
+  )
+    .trim()
+    .toUpperCase();
 
-  const shouldShowTds = true;
+  const isInternationalUnit = normalizedGstRegistrationType === "INTERNATIONAL";
 
-  const shouldShowPaymentTenure =
-    selectedPaymentTypeName === "Purchase Order Payment";
+  const shouldShowTds = !isInternationalUnit;
+
+  const normalizedPaymentTypeName = String(selectedPaymentTypeName || "")
+    .trim()
+    .toLowerCase();
+
+  const shouldShowPurchaseOrderFields =
+    normalizedPaymentTypeName.includes("purchase") &&
+    normalizedPaymentTypeName.includes("order");
+
+  const shouldShowPaymentTenure = shouldShowPurchaseOrderFields;
 
   useEffect(() => {
     dispatch(getActivePaymentLedgerForPaymentRegister());
@@ -344,6 +392,8 @@ const EstimatePaymentRegister = ({
   }, [estimateItem, setValue]);
 
   useEffect(() => {
+    setValue("isPurchaseOrderPayment", shouldShowPurchaseOrderFields);
+
     if (!shouldShowTds) {
       setValue("tdsActive", false);
       setValue("tds.tdsPercentage", "");
@@ -357,7 +407,28 @@ const EstimatePaymentRegister = ({
       setValue("paymentTerms", "");
       setValue("paymentTermsDays", "");
     }
-  }, [shouldShowTds, shouldShowPaymentTenure, tdsActive, setValue]);
+
+    if (!shouldShowPurchaseOrderFields) {
+      setValue("poNumber", "");
+      setValue("poAttachmentUrl", "");
+    } else {
+      setValue("amount", "");
+      setValue("paymentDate", "");
+      setValue("paymentMode", "");
+      setValue("bankLedgerId", "");
+      setValue("transactionReference", "");
+      setValue("paymentProof", "");
+      setValue("governmentFeeActive", false);
+      setValue("tdsActive", false);
+      setValue("tds.tdsPercentage", "");
+    }
+  }, [
+    shouldShowTds,
+    shouldShowPaymentTenure,
+    shouldShowPurchaseOrderFields,
+    tdsActive,
+    setValue,
+  ]);
 
   const submitHandler = async (values) => {
     try {
@@ -373,38 +444,55 @@ const EstimatePaymentRegister = ({
         (item) => item.value === values.paymentTerms,
       );
 
-      const payload = {
-        ...values,
-        estimateId: Number(estimateId),
-        amount: Number(values.amount),
-        paymentTypeId: Number(values.paymentTypeId),
-        paymentDate: values.paymentDate,
-        paymentTerms: shouldShowPaymentTenure ? values.paymentTerms : null,
-        paymentTermsDays: shouldShowPaymentTenure
-          ? Number(selectedTenure?.days ?? values.paymentTermsDays ?? 0)
-          : null,
+      const payload = shouldShowPurchaseOrderFields
+        ? {
+            estimateId: Number(estimateId),
+            amount: 0,
+            paymentTypeId: Number(values.paymentTypeId),
+            paymentTerms: values.paymentTerms,
+            paymentTermsDays: Number(
+              selectedTenure?.days ?? values.paymentTermsDays ?? 0,
+            ),
+            poNumber: values.poNumber || "",
+            poAttachmentUrl: values.poAttachmentUrl || "",
+            remarks: values.remarks || "",
+          }
+        : {
+            ...values,
+            estimateId: Number(estimateId),
+            amount: Number(values.amount),
+            paymentTypeId: Number(values.paymentTypeId),
+            paymentDate: values.paymentDate,
+            paymentTerms: null,
+            paymentTermsDays: null,
+            poNumber: "",
+            poAttachmentUrl: "",
 
-        tdsActive: Boolean(values.tdsActive),
-        tds: values.tdsActive
-          ? {
-              tdsPercentage: Number(values.tds?.tdsPercentage || 0),
-            }
-          : null,
+            // TDS is not applicable for international units.
+            tdsActive: isInternationalUnit ? false : Boolean(values.tdsActive),
+            tds:
+              !isInternationalUnit && values.tdsActive
+                ? {
+                    tdsPercentage: Number(values.tds?.tdsPercentage || 0),
+                  }
+                : null,
 
-        governmentFeeActive: values.governmentFeeActive,
-        governmentFee: values.governmentFeeActive
-          ? {
-              totalAmount: Number(values.governmentFee?.totalAmount || 0),
-              receivedAmount: Number(values.governmentFee?.totalAmount || 0),
-              paymentDate: values.governmentFee?.paymentDate || "",
-              feeReferenceNumber:
-                values.governmentFee?.feeReferenceNumber || "",
-              departmentName: values.governmentFee?.departmentName || "",
-              feeType: values.paymentMode || "",
-              remarks: values.governmentFee?.remarks || "",
-            }
-          : null,
-      };
+            governmentFeeActive: values.governmentFeeActive,
+            governmentFee: values.governmentFeeActive
+              ? {
+                  totalAmount: Number(values.governmentFee?.totalAmount || 0),
+                  receivedAmount: Number(
+                    values.governmentFee?.totalAmount || 0,
+                  ),
+                  paymentDate: values.governmentFee?.paymentDate || "",
+                  feeReferenceNumber:
+                    values.governmentFee?.feeReferenceNumber || "",
+                  departmentName: values.governmentFee?.departmentName || "",
+                  feeType: values.paymentMode || "",
+                  remarks: values.governmentFee?.remarks || "",
+                }
+              : null,
+          };
 
       const res = await onSubmitPayment({ userId, data: payload });
 
@@ -486,6 +574,7 @@ const EstimatePaymentRegister = ({
                 className="space-y-4"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* COMMON FIELD: Payment Type */}
                   <Controller
                     name="paymentTypeId"
                     control={control}
@@ -493,9 +582,7 @@ const EstimatePaymentRegister = ({
                       <NewSelect
                         isRequired
                         isDisabled={estimateItem?.paymentTypeId ? true : false}
-                        label="Payment term"
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
+                        label="Payment Type"
                         data={paymentTypeList || []}
                         labelKey="name"
                         valueKey="id"
@@ -507,318 +594,157 @@ const EstimatePaymentRegister = ({
                     )}
                   />
 
-                  {shouldShowPaymentTenure && (
-                    <Controller
-                      name="paymentTerms"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          label="Payment Tenure"
-                          placeholder="Select payment tenure"
-                          isRequired
-                          selectedKeys={
-                            field.value ? new Set([field.value]) : new Set([])
-                          }
-                          onSelectionChange={(keys) => {
-                            const selectedValue = Array.from(keys)?.[0] || "";
-                            const selectedTenure = paymentTenureOptions.find(
-                              (item) => item.value === selectedValue,
-                            );
-
-                            field.onChange(selectedValue);
-                            setValue(
-                              "paymentTermsDays",
-                              selectedTenure?.days ?? "",
-                            );
-                          }}
-                        >
-                          {paymentTenureOptions.map((item) => (
-                            <SelectItem key={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      )}
-                    />
-                  )}
-
-                  {shouldShowTds && (
+                  {/* PURCHASE ORDER FIELDS ONLY */}
+                  {shouldShowPurchaseOrderFields && (
                     <>
                       <Controller
-                        name="tdsActive"
+                        name="paymentTerms"
                         control={control}
-                        render={({ field }) => (
+                        render={({ field, fieldState: { error } }) => (
                           <Select
-                            label="TDS"
+                            label="Payment Tenure"
+                            placeholder="Select payment tenure"
+                            isRequired
                             selectedKeys={
-                              new Set([field.value ? "true" : "false"])
+                              field.value ? new Set([field.value]) : new Set([])
                             }
                             onSelectionChange={(keys) => {
-                              const selectedValue = Array.from(keys)?.[0];
-                              field.onChange(selectedValue === "true");
+                              const selectedValue = Array.from(keys)?.[0] || "";
+                              const selectedTenure = paymentTenureOptions.find(
+                                (item) => item.value === selectedValue,
+                              );
+
+                              field.onChange(selectedValue);
+                              setValue(
+                                "paymentTermsDays",
+                                selectedTenure?.days ?? "",
+                              );
                             }}
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
                           >
-                            <SelectItem key="true">Yes</SelectItem>
-                            <SelectItem key="false">No</SelectItem>
+                            {paymentTenureOptions.map((item) => (
+                              <SelectItem key={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
                           </Select>
                         )}
                       />
 
-                      {tdsActive && (
-                        <Controller
-                          name="tds.tdsPercentage"
-                          control={control}
-                          render={({ field, fieldState: { error } }) => (
-                            <Select
-                              label="TDS Percentage"
-                              isRequired
-                              selectedKeys={
-                                field.value !== undefined &&
-                                field.value !== null &&
-                                field.value !== ""
-                                  ? new Set([String(field.value)])
-                                  : new Set([])
-                              }
-                              onSelectionChange={(keys) => {
-                                const selectedValue =
-                                  Array.from(keys)?.[0] || "";
-                                field.onChange(selectedValue);
+                      <Controller
+                        name="poNumber"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            {...field}
+                            label="PO Number"
+                            placeholder="Enter PO number"
+                            isRequired
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="poAttachmentUrl"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <div>
+                            <SingleFileUploader
+                              label="PO Attachment"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
                               }}
+                              isRequired={true}
                               isInvalid={!!error}
                               errorMessage={error?.message}
-                            >
-                              <SelectItem key="10">10%</SelectItem>
-                              <SelectItem key="2">2%</SelectItem>
-                            </Select>
-                          )}
-                        />
-                      )}
+                            />
+
+                            {error?.message && (
+                              <p className="mt-1 text-xs text-danger">
+                                {error.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      />
                     </>
                   )}
 
-                  <Controller
-                    name="amount"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        type="number"
-                        min={0}
-                        label="Received Amount"
-                        placeholder="Enter amount"
-                        isRequired
-                        onKeyDown={preventNegativeNumberInput}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                  {/* NORMAL PAYMENT FIELDS ONLY */}
+                  {!shouldShowPurchaseOrderFields && (
+                    <>
+                      {shouldShowTds && (
+                        <>
+                          <Controller
+                            name="tdsActive"
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                label="TDS"
+                                selectedKeys={
+                                  new Set([field.value ? "true" : "false"])
+                                }
+                                onSelectionChange={(keys) => {
+                                  const selectedValue = Array.from(keys)?.[0];
+                                  field.onChange(selectedValue === "true");
+                                }}
+                              >
+                                <SelectItem key="true">Yes</SelectItem>
+                                <SelectItem key="false">No</SelectItem>
+                              </Select>
+                            )}
+                          />
 
-                          if (value === "") {
-                            field.onChange("");
-                            return;
-                          }
+                          {tdsActive && (
+                            <Controller
+                              name="tds.tdsPercentage"
+                              control={control}
+                              render={({ field, fieldState: { error } }) => (
+                                <Select
+                                  label="TDS Percentage"
+                                  isRequired
+                                  selectedKeys={
+                                    field.value !== undefined &&
+                                    field.value !== null &&
+                                    field.value !== ""
+                                      ? new Set([String(field.value)])
+                                      : new Set([])
+                                  }
+                                  onSelectionChange={(keys) => {
+                                    const selectedValue =
+                                      Array.from(keys)?.[0] || "";
+                                    field.onChange(selectedValue);
+                                  }}
+                                  isInvalid={!!error}
+                                  errorMessage={error?.message}
+                                >
+                                  <SelectItem key="10">10%</SelectItem>
+                                  <SelectItem key="2">2%</SelectItem>
+                                </Select>
+                              )}
+                            />
+                          )}
+                        </>
+                      )}
 
-                          if (Number(value) < 0) {
-                            field.onChange("0");
-                            return;
-                          }
-
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="paymentDate"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <DatePicker
-                        isRequired
-                        label="Payment date"
-                        showMonthAndYearPickers
-                        maxValue={today(getLocalTimeZone())}
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
-                        value={
-                          field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                            ? parseDate(field.value)
-                            : null
-                        }
-                        onChange={(value) => {
-                          const iso = value ? value.toString() : "";
-                          field.onChange(iso);
-                        }}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="paymentMode"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        selectedKeys={
-                          field.value ? new Set([field.value]) : new Set([])
-                        }
-                        onSelectionChange={(keys) =>
-                          field.onChange(Array.from(keys)?.[0] || "")
-                        }
-                        label="Payment Mode"
-                        isRequired
-                        // isInvalid={!!errors.paymentMode}
-                        // errorMessage={errors.paymentMode?.message}
-                      >
-                        <SelectItem key="CASH">Cash</SelectItem>
-                        <SelectItem key="UPI">UPI</SelectItem>
-                        <SelectItem key="CARD">Card</SelectItem>
-                        <SelectItem key="BANK_TRANSFER">
-                          Bank Transfer
-                        </SelectItem>
-                        <SelectItem key="CHEQUE">Cheque</SelectItem>
-                      </Select>
-                    )}
-                  />
-
-                  <Controller
-                    name="bankLedgerId"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <NewSelect
-                        isRequired
-                        label="Select Bank/Cash"
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
-                        data={filteredPaymentLedgerList}
-                        labelKey="ledgerName"
-                        valueKey="id"
-                        value={field.value ?? ""}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="transactionReference"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <Input
-                        {...field}
-                        label="Transaction Reference Number / UTR number"
-                        placeholder="Enter number"
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="paymentProof"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <SingleFileUploader
-                        // isRequired={true}
-                        // errorMessage={"please attach the reference document"}
-                        label="Payment proof"
-                        value={field.value}
-                        onChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        // errorMessage={error?.message}
-                        // isInvalid={!!error}
-                      />
-                    )}
-                  />
-
-                  {/* <Controller
-                    name="eprFinancialYear"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="EPR Financial Year"
-                        placeholder="e.g. 2025-26"
-                      />
-                    )}
-                  /> */}
-
-                  {/* <Controller
-                    name="eprPortalRegistrationNumber"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="EPR Portal Registration No."
-                        placeholder="Enter number"
-                      />
-                    )}
-                  /> */}
-
-                  {/* <Controller
-                    name="eprCertificateOrInvoiceNumber"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="EPR Certificate/Invoice No."
-                        placeholder="Enter number"
-                      />
-                    )}
-                  /> */}
-
-                  <Controller
-                    name="governmentFeeActive"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        label="Government Fee Active"
-                        isDisabled={
-                          estimateItem?.governmentFeeActive === false ||
-                          estimateItem?.governmentFeeActive === true
-                        }
-                        selectedKeys={new Set([field.value ? "true" : "false"])}
-                        onSelectionChange={(keys) => {
-                          const selectedValue = Array.from(keys)?.[0];
-                          field.onChange(selectedValue === "true");
-                        }}
-                      >
-                        <SelectItem key="true">Yes</SelectItem>
-                        <SelectItem key="false">No</SelectItem>
-                      </Select>
-                    )}
-                  />
-
-                  <Controller
-                    name="remarks"
-                    control={control}
-                    render={({ field }) => (
-                      <Textarea
-                        {...field}
-                        label="Remarks"
-                        placeholder="Any remarks..."
-                        minRows={3}
-                      />
-                    )}
-                  />
-                </div>
-
-                {governmentFeeActive && (
-                  <div className="mt-4 border rounded-xl p-4 space-y-4">
-                    <h3 className="text-sm font-semibold">
-                      Government Fee Details
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <Controller
-                        name="governmentFee.totalAmount"
+                        name="amount"
                         control={control}
-                        render={({ field }) => (
+                        render={({ field, fieldState: { error } }) => (
                           <Input
                             {...field}
                             type="number"
                             min={0}
-                            label="Total Amount"
-                            placeholder="Enter total amount"
+                            label="Received Amount"
+                            placeholder="Enter amount"
                             isRequired
                             onKeyDown={preventNegativeNumberInput}
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
                             onChange={(e) => {
                               const value = e.target.value;
 
@@ -834,31 +760,191 @@ const EstimatePaymentRegister = ({
 
                               field.onChange(value);
                             }}
-                            // isInvalid={!!errors.governmentFee?.totalAmount}
-                            // errorMessage={
-                            //   errors.governmentFee?.totalAmount?.message
-                            // }
                           />
                         )}
                       />
 
-                      {/* <Controller
-                        name="governmentFee.receivedAmount"
+                      <Controller
+                        name="paymentDate"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <DatePicker
+                            isRequired
+                            label="Payment Date"
+                            showMonthAndYearPickers
+                            maxValue={today(getLocalTimeZone())}
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
+                            value={
+                              field.value &&
+                              /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                                ? parseDate(field.value)
+                                : null
+                            }
+                            onChange={(value) => {
+                              const iso = value ? value.toString() : "";
+                              field.onChange(iso);
+                            }}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="paymentMode"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Select
+                            selectedKeys={
+                              field.value ? new Set([field.value]) : new Set([])
+                            }
+                            onSelectionChange={(keys) =>
+                              field.onChange(Array.from(keys)?.[0] || "")
+                            }
+                            label="Payment Mode"
+                            isRequired
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
+                          >
+                            <SelectItem key="CASH">Cash</SelectItem>
+                            <SelectItem key="UPI">UPI</SelectItem>
+                            <SelectItem key="CARD">Card</SelectItem>
+                            <SelectItem key="BANK_TRANSFER">
+                              Bank Transfer
+                            </SelectItem>
+                            <SelectItem key="CHEQUE">Cheque</SelectItem>
+                          </Select>
+                        )}
+                      />
+
+                      <Controller
+                        name="bankLedgerId"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <NewSelect
+                            isRequired
+                            label="Select Bank/Cash"
+                            data={filteredPaymentLedgerList}
+                            labelKey="ledgerName"
+                            valueKey="id"
+                            value={field.value ?? ""}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="transactionReference"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                          <Input
+                            {...field}
+                            label="Transaction Reference Number / UTR Number"
+                            placeholder="Enter number"
+                            isRequired
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="paymentProof"
                         control={control}
                         render={({ field }) => (
+                          <SingleFileUploader
+                            label="Payment Proof"
+                            value={field.value}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="governmentFeeActive"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="Government Fee Active"
+                            isDisabled={
+                              estimateItem?.governmentFeeActive === false ||
+                              estimateItem?.governmentFeeActive === true
+                            }
+                            selectedKeys={
+                              new Set([field.value ? "true" : "false"])
+                            }
+                            onSelectionChange={(keys) => {
+                              const selectedValue = Array.from(keys)?.[0];
+                              field.onChange(selectedValue === "true");
+                            }}
+                          >
+                            <SelectItem key="true">Yes</SelectItem>
+                            <SelectItem key="false">No</SelectItem>
+                          </Select>
+                        )}
+                      />
+                    </>
+                  )}
+
+                  {/* COMMON FIELD: Remarks */}
+                  <Controller
+                    name="remarks"
+                    control={control}
+                    render={({ field }) => (
+                      <Textarea
+                        {...field}
+                        label="Remarks"
+                        placeholder="Any remarks..."
+                        minRows={3}
+                        className="md:col-span-2"
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* GOVERNMENT FEE DETAILS: NORMAL PAYMENT ONLY */}
+                {!shouldShowPurchaseOrderFields && governmentFeeActive && (
+                  <div className="mt-4 border rounded-xl p-4 space-y-4">
+                    <h3 className="text-sm font-semibold">
+                      Government Fee Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Controller
+                        name="governmentFee.totalAmount"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
                           <Input
                             {...field}
                             type="number"
-                            label="Received Amount"
-                            placeholder="Enter received amount"
+                            min={0}
+                            label="Total Amount"
+                            placeholder="Enter total amount"
                             isRequired
-                            isInvalid={!!errors.governmentFee?.receivedAmount}
-                            errorMessage={
-                              errors.governmentFee?.receivedAmount?.message
-                            }
+                            onKeyDown={preventNegativeNumberInput}
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
+                            onChange={(e) => {
+                              const value = e.target.value;
+
+                              if (value === "") {
+                                field.onChange("");
+                                return;
+                              }
+
+                              if (Number(value) < 0) {
+                                field.onChange("0");
+                                return;
+                              }
+
+                              field.onChange(value);
+                            }}
                           />
                         )}
-                      /> */}
+                      />
 
                       <Controller
                         name="governmentFee.paymentDate"
@@ -888,18 +974,14 @@ const EstimatePaymentRegister = ({
                       <Controller
                         name="governmentFee.feeReferenceNumber"
                         control={control}
-                        render={({ field }) => (
+                        render={({ field, fieldState: { error } }) => (
                           <Input
                             {...field}
                             label="Fee Reference Number"
                             placeholder="Enter fee reference number"
                             isRequired
-                            isInvalid={
-                              !!errors.governmentFee?.feeReferenceNumber
-                            }
-                            errorMessage={
-                              errors.governmentFee?.feeReferenceNumber?.message
-                            }
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
                           />
                         )}
                       />
@@ -907,16 +989,14 @@ const EstimatePaymentRegister = ({
                       <Controller
                         name="governmentFee.departmentName"
                         control={control}
-                        render={({ field }) => (
+                        render={({ field, fieldState: { error } }) => (
                           <Input
                             {...field}
                             label="Department Name"
                             placeholder="Enter department name"
                             isRequired
-                            isInvalid={!!errors.governmentFee?.departmentName}
-                            errorMessage={
-                              errors.governmentFee?.departmentName?.message
-                            }
+                            isInvalid={!!error}
+                            errorMessage={error?.message}
                           />
                         )}
                       />
@@ -930,6 +1010,7 @@ const EstimatePaymentRegister = ({
                             label="Government Fee Remarks"
                             placeholder="Enter remarks"
                             minRows={3}
+                            className="md:col-span-2"
                           />
                         )}
                       />
@@ -940,7 +1021,7 @@ const EstimatePaymentRegister = ({
             </ModalBody>
 
             <ModalFooter className="flex justify-end gap-2">
-              <BaseAmountCalculator />
+              {!shouldShowPurchaseOrderFields && <BaseAmountCalculator />}
 
               <Button
                 type="button"

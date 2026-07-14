@@ -922,10 +922,10 @@ export const createLedger = createAsyncThunk(
 
 export const updateLedger = createAsyncThunk(
   "ledger/updateLedger",
-  async ({ id, payload }, { rejectWithValue }) => {
+  async ({ id, userId, payload }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/accountService/api/v1/ledgers/${id}`,
+        `/accountService/api/v1/ledgers/${id}?userId=${userId}`,
         payload,
       );
       return response.data;

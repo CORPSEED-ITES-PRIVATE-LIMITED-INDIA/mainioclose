@@ -56,7 +56,7 @@ import {
 } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   clearLedgerError,
   createLedger,
@@ -483,6 +483,7 @@ const getVoucherDetails = (entry, ledger) => {
 };
 
 const LedgerMasterSection = () => {
+  const { userId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
@@ -698,6 +699,7 @@ const LedgerMasterSection = () => {
         // openingBalance: toNumber(values.openingBalance),
         // openingBalanceType: toApiBalanceType(values.openingBalanceType),
         active: values.active === "true",
+        ...values,
       };
 
       let savedLedger = null;
@@ -706,6 +708,7 @@ const LedgerMasterSection = () => {
         savedLedger = await dispatch(
           updateLedger({
             id: editData.id,
+            userId,
             payload,
           }),
         ).unwrap();
