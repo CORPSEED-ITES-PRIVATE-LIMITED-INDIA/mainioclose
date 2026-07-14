@@ -1207,6 +1207,27 @@ const CompanyAndUnitsInLead = () => {
     }
   }, [unitModal, allowedGstTypeNames, gstTypeList, unitForm]);
 
+  const selectedCompanyTypeId = Form.useWatch("companyTypeId", companyForm);
+
+  const selectedCompanyTypeName = useMemo(() => {
+    return (
+      companyTypeList.find(
+        (item) => String(item?.id) === String(selectedCompanyTypeId),
+      )?.name || ""
+    );
+  }, [companyTypeList, selectedCompanyTypeId]);
+
+  const isForeignCompany =
+    normalizeName(selectedCompanyTypeName) === "foreign company";
+
+  const filteredCompanyCountryList = useMemo(() => {
+    if (!isForeignCompany) return countryList;
+
+    return countryList.filter(
+      (country) => normalizeName(country?.name) !== "india",
+    );
+  }, [countryList, isForeignCompany]);
+
   return (
     <>
       {contextHolder}
@@ -1675,7 +1696,15 @@ const CompanyAndUnitsInLead = () => {
                 name="panNo"
                 getValueFromEvent={(e) => formatPANInput(e.target.value)}
               >
-                <Input placeholder="PAN Number" maxLength={10} />
+                <Input
+                  placeholder={
+                    isForeignCompany
+                      ? "PAN not applicable for Foreign Company"
+                      : "PAN Number"
+                  }
+                  maxLength={10}
+                  disabled={isForeignCompany}
+                />
               </Form.Item>
 
               <Form.Item label="Address" name="address">
@@ -1686,7 +1715,7 @@ const CompanyAndUnitsInLead = () => {
                 <Select
                   showSearch
                   allowClear
-                  options={countryList}
+                  options={filteredCompanyCountryList}
                   fieldNames={{ label: "name", value: "name" }}
                   onChange={(value) => {
                     companyForm.setFieldsValue({

@@ -22,6 +22,8 @@ import {
   Textarea,
   Select,
   SelectItem,
+  RadioGroup,
+  Radio,
   addToast,
   Chip,
   Popover,
@@ -314,6 +316,7 @@ const Unbill = () => {
   const [updatedStatusData, setUpdatedStatusData] = useState({
     approverUserId: userId,
     approvalRemarks: "",
+    registrationType: "",
     rejectionReason: "",
     attachment: "",
   });
@@ -883,8 +886,15 @@ const Unbill = () => {
                 <DropdownItem
                   key="status"
                   onPress={() => {
-                    statusModal.onOpen();
                     setRowItem(rowData);
+                    setUpdatedStatusData({
+                      approverUserId: userId,
+                      approvalRemarks: "",
+                      registrationType: "",
+                      rejectionReason: "",
+                      attachment: "",
+                    });
+                    statusModal.onOpen();
                   }}
                 >
                   Update status
@@ -971,6 +981,15 @@ const Unbill = () => {
       return;
     }
 
+    if (selectedStatus === "APPROVED" && !updatedStatusData?.registrationType) {
+      addToast({
+        title: "Registration type is required",
+        description: "Please select Registered or Unregistered.",
+        color: "danger",
+      });
+      return;
+    }
+
     if (
       (selectedStatus === "REJECTED" || selectedStatus === "CANCELLED") &&
       !updatedStatusData?.rejectionReason?.trim()
@@ -1026,6 +1045,7 @@ const Unbill = () => {
             setUpdatedStatusData({
               approverUserId: userId,
               approvalRemarks: "",
+              registrationType: "",
               rejectionReason: "",
               attachment: "",
             });
@@ -1082,6 +1102,7 @@ const Unbill = () => {
             setUpdatedStatusData({
               approverUserId: userId,
               approvalRemarks: "",
+              registrationType: "",
               rejectionReason: "",
               attachment: "",
             });
@@ -1137,6 +1158,7 @@ const Unbill = () => {
             setUpdatedStatusData({
               approverUserId: userId,
               approvalRemarks: "",
+              registrationType: "",
               rejectionReason: "",
               attachment: "",
             });
@@ -1177,6 +1199,9 @@ const Unbill = () => {
       approverUserId: updatedStatusData?.approverUserId,
       approvalRemarks: updatedStatusData?.approvalRemarks,
       rejectionReason: updatedStatusData?.rejectionReason,
+      ...(selectedStatus === "APPROVED" && {
+        registrationType: updatedStatusData?.registrationType,
+      }),
     };
 
     dispatch(
@@ -1247,6 +1272,7 @@ const Unbill = () => {
           setUpdatedStatusData({
             approverUserId: userId,
             approvalRemarks: "",
+            registrationType: "",
             rejectionReason: "",
             attachment: "",
           });
@@ -1777,6 +1803,8 @@ const Unbill = () => {
                     setUpdatedStatusData((prev) => ({
                       ...prev,
                       approvalRemarks: key,
+                      registrationType:
+                        key === "APPROVED" ? prev.registrationType : "",
                       rejectionReason:
                         key === "REJECTED" || key === "CANCELLED"
                           ? prev.rejectionReason
@@ -1793,6 +1821,27 @@ const Unbill = () => {
                     <SelectItem key={item.key}>{item.label}</SelectItem>
                   ))}
                 </Select>
+
+                {updatedStatusData?.approvalRemarks === "APPROVED" && (
+                  <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+                    <RadioGroup
+                      label="Registration Type"
+                      description="Select the registration category for this approved unbilled invoice."
+                      orientation="horizontal"
+                      isRequired
+                      value={updatedStatusData?.registrationType}
+                      onValueChange={(value) =>
+                        setUpdatedStatusData((prev) => ({
+                          ...prev,
+                          registrationType: value,
+                        }))
+                      }
+                    >
+                      <Radio value="REGISTERED">Registered</Radio>
+                      <Radio value="UNREGISTERED">Unregistered</Radio>
+                    </RadioGroup>
+                  </div>
+                )}
 
                 {(updatedStatusData?.approvalRemarks === "REJECTED" ||
                   updatedStatusData?.approvalRemarks === "CANCELLED") && (
@@ -1835,6 +1884,7 @@ const Unbill = () => {
                     setUpdatedStatusData({
                       approverUserId: userId,
                       approvalRemarks: "",
+                      registrationType: "",
                       rejectionReason: "",
                       attachment: "",
                     });
