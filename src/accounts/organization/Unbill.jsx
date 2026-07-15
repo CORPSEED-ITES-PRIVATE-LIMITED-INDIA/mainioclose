@@ -990,14 +990,14 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "APPROVED" && !updatedStatusData?.registrationType) {
-      addToast({
-        title: "Registration type is required",
-        description: "Please select Registered or Unregistered.",
-        color: "danger",
-      });
-      return;
-    }
+    // if (selectedStatus === "APPROVED" && !updatedStatusData?.registrationType) {
+    //   addToast({
+    //     title: "Registration type is required",
+    //     description: "Please select Registered or Unregistered.",
+    //     color: "danger",
+    //   });
+    //   return;
+    // }
 
     if (
       (selectedStatus === "REJECTED" || selectedStatus === "CANCELLED") &&
