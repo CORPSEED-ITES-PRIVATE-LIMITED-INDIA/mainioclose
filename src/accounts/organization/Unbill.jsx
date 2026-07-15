@@ -37,6 +37,7 @@ import {
   ExternalLink,
   FileDown,
   Paperclip,
+  Loader2,
   Search,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -326,6 +327,7 @@ const Unbill = () => {
   const [isAdvanceInvoice, setIsAdvanceInvoice] = useState(false);
   const [searchBy, setSearchBy] = useState("companyName");
   const [estimateDetail, setEstimateDetail] = useState(null);
+  const [updateStatusLoading, setUpdateStatusLoading] = useState(false);
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
   const [tdsDetail, setTdsDetail] = useState();
@@ -969,8 +971,15 @@ const Unbill = () => {
     setPage(1);
   }, [searchBy]);
 
-  const handleUpdateStatus = () => {
+  const handleUpdateStatus = async () => {
+    // Prevent duplicate submission
+    if (updateStatusLoading) return;
+
     const selectedStatus = updatedStatusData?.approvalRemarks;
+
+    /* =========================
+     VALIDATIONS
+  ========================= */
 
     if (!selectedStatus) {
       addToast({
@@ -1013,8 +1022,8 @@ const Unbill = () => {
 
     if (
       selectedStatus === "CANCELLED" &&
-      !updatedStatusData?.attachment &&
-      !adminRole
+      !adminRole &&
+      !updatedStatusData?.attachment
     ) {
       addToast({
         title: "Attachment is required",
@@ -1024,279 +1033,305 @@ const Unbill = () => {
       return;
     }
 
-    if (selectedStatus === "CANCELLED" && !adminRole) {
-      dispatch(
-        cancelUnBilledInvoice({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-          cancelAttachment: updatedStatusData?.attachment,
-        }),
-      )
-        .then((re) => {
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "SUCCESS",
-              description: "Unbill canceled successfully !.",
-              color: "success",
-            });
+    /* =========================
+     START FULL-SCREEN LOADER
+  ========================= */
 
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              registrationType: "",
-              rejectionReason: "",
-              attachment: "",
-            });
+    setUpdateStatusLoading(true);
 
-            dispatch(
-              getAllUnbillList({
-                page,
-                size: rowsPerPage,
-                userId,
-                status,
-              }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            statusModal.onClose();
-          } else {
-            addToast({
-              title: "ERROR",
-              description:
-                re?.payload?.data?.message ||
-                re?.payload?.message ||
-                "Failed to cancel unbill.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() =>
-          addToast({
-            title: "ERROR",
-            description: "Something went wrong !.",
-            color: "danger",
+    try {
+      /* ==========================================
+       NON-ADMIN CANCELLATION REQUEST
+    ========================================== */
+
+      if (selectedStatus === "CANCELLED" && !adminRole) {
+        const response = await dispatch(
+          cancelUnBilledInvoice({
+            id: rowItem?.id,
+            userId,
+            reason: updatedStatusData?.rejectionReason?.trim(),
+            cancelAttachment: updatedStatusData?.attachment,
           }),
         );
 
-      return;
-    }
-
-    if (adminRole && selectedStatus === "REJECTED") {
-      dispatch(
-        cancelUnBilledInvoiceByAdmin({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-        }),
-      )
-        .then((re) => {
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "SUCCESS",
-              description: "Unbill canceled successfully by Admin !.",
-              color: "success",
-            });
-
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              registrationType: "",
-              rejectionReason: "",
-              attachment: "",
-            });
-
-            dispatch(
-              getAllUnbillList({
-                page,
-                size: rowsPerPage,
-                userId,
-                status,
-              }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            statusModal.onClose();
-          } else {
-            addToast({
-              title: "ERROR",
-              description:
-                re?.payload?.data?.message ||
-                re?.payload?.message ||
-                "Failed to cancel unbill.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() =>
-          addToast({
-            title: "ERROR",
-            description: "Something went wrong !.",
-            color: "danger",
-          }),
-        );
-      return;
-    }
-
-    if (selectedStatus === "CANCELLED" && adminRole) {
-      dispatch(
-        approveUnBilledInvoiceByAdmin({
-          id: rowItem?.id,
-          userId,
-          reason: updatedStatusData?.rejectionReason,
-        }),
-      )
-        .then((re) => {
-          if (re.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "SUCCESS",
-              description: "Unbill approved successfully by Admin !.",
-              color: "success",
-            });
-
-            setRowItem(null);
-            setUpdatedStatusData({
-              approverUserId: userId,
-              approvalRemarks: "",
-              registrationType: "",
-              rejectionReason: "",
-              attachment: "",
-            });
-
-            dispatch(
-              getAllUnbillList({
-                page,
-                size: rowsPerPage,
-                userId,
-                status,
-              }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-            statusModal.onClose();
-          } else {
-            addToast({
-              title: "ERROR",
-              description:
-                re?.payload?.data?.message ||
-                re?.payload?.message ||
-                "Failed to cancel unbill.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() =>
-          addToast({
-            title: "ERROR",
-            description: "Something went wrong !.",
-            color: "danger",
-          }),
-        );
-
-      return;
-    }
-
-    const payload = {
-      approverUserId: updatedStatusData?.approverUserId,
-      approvalRemarks: updatedStatusData?.approvalRemarks,
-      rejectionReason: updatedStatusData?.rejectionReason,
-      ...(selectedStatus === "APPROVED" && {
-        registrationType: updatedStatusData?.registrationType,
-      }),
-    };
-
-    dispatch(
-      updateStatusForUnbill({
-        unbilledId: rowItem?.id,
-        data: payload,
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "SUCCESS",
-            description: "Status updated successfully !.",
-            color: "success",
-          });
-
-          if (selectedStatus === "APPROVED") {
-            const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
-
-            if (!awaitingPaymentStatusId) {
-              addToast({
-                title: "Awaiting Payment status not found",
-                description: "Please check status master data.",
-                color: "danger",
-              });
-            } else {
-              dispatch(
-                updateLeadStatus({
-                  leadId: rowItem?.leadId,
-                  userId,
-                  statusId: awaitingPaymentStatusId,
-                }),
-              )
-                .then((resp) => {
-                  if (resp.meta.requestStatus === "fulfilled") {
-                    addToast({
-                      title: "SUCCESS",
-                      description: "Payment approved successfully",
-                      color: "success",
-                    });
-                  } else {
-                    addToast({
-                      title: "ERROR",
-                      description:
-                        resp?.payload?.data?.message ||
-                        "Something went wrong in lead status update !.",
-                      color: "danger",
-                    });
-                  }
-                })
-                .catch(() => {
-                  addToast({
-                    title: "ERROR",
-                    description:
-                      "Something went wrong in lead status update !.",
-                    color: "danger",
-                  });
-                });
-            }
-          }
-
-          dispatch(
-            getAllUnbillList({ page, size: rowsPerPage, userId, status }),
-          );
-          dispatch(getAllUnbillCount({ userId, status }));
-
-          setRowItem(null);
-          setUpdatedStatusData({
-            approverUserId: userId,
-            approvalRemarks: "",
-            registrationType: "",
-            rejectionReason: "",
-            attachment: "",
-          });
-
-          statusModal.onClose();
-        } else {
+        if (response.meta.requestStatus !== "fulfilled") {
           addToast({
             title: "ERROR",
             description:
-              resp?.payload?.data?.message ||
-              resp?.payload?.message ||
-              "Failed to update status.",
+              response?.payload?.data?.message ||
+              response?.payload?.message ||
+              "Failed to cancel unbill.",
             color: "danger",
           });
+          return;
         }
-      })
-      .catch(() =>
+
         addToast({
-          title: "ERROR",
-          description: "Something went wrong !.",
-          color: "danger",
+          title: "SUCCESS",
+          description: "Unbill cancellation requested successfully.",
+          color: "success",
+        });
+
+        setRowItem(null);
+        setUpdatedStatusData({
+          approverUserId: userId,
+          approvalRemarks: "",
+          registrationType: "",
+          rejectionReason: "",
+          attachment: "",
+        });
+
+        statusModal.onClose();
+
+        dispatch(
+          getAllUnbillList({
+            page,
+            size: rowsPerPage,
+            userId,
+            status,
+          }),
+        );
+        dispatch(getAllUnbillCount({ userId, status }));
+
+        return;
+      }
+
+      /* ==========================================
+       ADMIN REJECTS CANCELLATION
+    ========================================== */
+
+      if (adminRole && selectedStatus === "REJECTED") {
+        const response = await dispatch(
+          cancelUnBilledInvoiceByAdmin({
+            id: rowItem?.id,
+            userId,
+            reason: updatedStatusData?.rejectionReason?.trim(),
+          }),
+        );
+
+        if (response.meta.requestStatus !== "fulfilled") {
+          addToast({
+            title: "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              response?.payload?.message ||
+              "Failed to reject cancellation request.",
+            color: "danger",
+          });
+          return;
+        }
+
+        addToast({
+          title: "SUCCESS",
+          description: "Cancellation request rejected successfully by Admin.",
+          color: "success",
+        });
+
+        setRowItem(null);
+        setUpdatedStatusData({
+          approverUserId: userId,
+          approvalRemarks: "",
+          registrationType: "",
+          rejectionReason: "",
+          attachment: "",
+        });
+
+        statusModal.onClose();
+
+        dispatch(
+          getAllUnbillList({
+            page,
+            size: rowsPerPage,
+            userId,
+            status,
+          }),
+        );
+        dispatch(getAllUnbillCount({ userId, status }));
+
+        return;
+      }
+
+      /* ==========================================
+       ADMIN APPROVES CANCELLATION
+    ========================================== */
+
+      if (adminRole && selectedStatus === "CANCELLED") {
+        const response = await dispatch(
+          approveUnBilledInvoiceByAdmin({
+            id: rowItem?.id,
+            userId,
+            reason: updatedStatusData?.rejectionReason?.trim(),
+          }),
+        );
+
+        if (response.meta.requestStatus !== "fulfilled") {
+          addToast({
+            title: "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              response?.payload?.message ||
+              "Failed to approve cancellation request.",
+            color: "danger",
+          });
+          return;
+        }
+
+        addToast({
+          title: "SUCCESS",
+          description: "Cancellation request approved successfully by Admin.",
+          color: "success",
+        });
+
+        setRowItem(null);
+        setUpdatedStatusData({
+          approverUserId: userId,
+          approvalRemarks: "",
+          registrationType: "",
+          rejectionReason: "",
+          attachment: "",
+        });
+
+        statusModal.onClose();
+
+        dispatch(
+          getAllUnbillList({
+            page,
+            size: rowsPerPage,
+            userId,
+            status,
+          }),
+        );
+        dispatch(getAllUnbillCount({ userId, status }));
+
+        return;
+      }
+
+      /* ==========================================
+       NORMAL STATUS UPDATE
+    ========================================== */
+
+      const payload = {
+        approverUserId: updatedStatusData?.approverUserId,
+        approvalRemarks: selectedStatus,
+        rejectionReason: updatedStatusData?.rejectionReason?.trim() || "",
+        ...(selectedStatus === "APPROVED" && {
+          registrationType: updatedStatusData?.registrationType,
+        }),
+      };
+
+      const statusResponse = await dispatch(
+        updateStatusForUnbill({
+          unbilledId: rowItem?.id,
+          data: payload,
         }),
       );
+
+      if (statusResponse.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "ERROR",
+          description:
+            statusResponse?.payload?.data?.message ||
+            statusResponse?.payload?.message ||
+            "Failed to update status.",
+          color: "danger",
+        });
+        return;
+      }
+
+      addToast({
+        title: "SUCCESS",
+        description: "Status updated successfully.",
+        color: "success",
+      });
+
+      /* ==========================================
+       UPDATE LEAD STATUS AFTER APPROVAL
+    ========================================== */
+
+      if (selectedStatus === "APPROVED") {
+        const awaitingPaymentStatusId = getAwaitingPaymentStatusId();
+
+        if (!awaitingPaymentStatusId) {
+          addToast({
+            title: "Awaiting Payment status not found",
+            description:
+              "Unbilled invoice was approved, but the lead status could not be updated. Please check status master data.",
+            color: "warning",
+          });
+        } else if (!rowItem?.leadId) {
+          addToast({
+            title: "Lead ID not found",
+            description:
+              "Unbilled invoice was approved, but the related lead status could not be updated.",
+            color: "warning",
+          });
+        } else {
+          const leadStatusResponse = await dispatch(
+            updateLeadStatus({
+              leadId: rowItem?.leadId,
+              userId,
+              statusId: awaitingPaymentStatusId,
+            }),
+          );
+
+          if (leadStatusResponse.meta.requestStatus === "fulfilled") {
+            addToast({
+              title: "SUCCESS",
+              description: "Lead status updated to Awaiting Payment.",
+              color: "success",
+            });
+          } else {
+            addToast({
+              title: "Lead status update failed",
+              description:
+                leadStatusResponse?.payload?.data?.message ||
+                leadStatusResponse?.payload?.message ||
+                "Unbilled invoice was approved, but the lead status could not be updated.",
+              color: "warning",
+            });
+          }
+        }
+      }
+
+      /* ==========================================
+       RESET AND REFRESH
+    ========================================== */
+
+      setRowItem(null);
+      setUpdatedStatusData({
+        approverUserId: userId,
+        approvalRemarks: "",
+        registrationType: "",
+        rejectionReason: "",
+        attachment: "",
+      });
+
+      statusModal.onClose();
+
+      dispatch(
+        getAllUnbillList({
+          page,
+          size: rowsPerPage,
+          userId,
+          status,
+        }),
+      );
+      dispatch(getAllUnbillCount({ userId, status }));
+    } catch (error) {
+      console.error("Update unbilled status error:", error);
+
+      addToast({
+        title: "ERROR",
+        description:
+          error?.message || "Something went wrong while updating status.",
+        color: "danger",
+      });
+    } finally {
+      // Runs for every success, failure and return inside try
+      setUpdateStatusLoading(false);
+    }
   };
+
   const handleFetchReport = React.useCallback(async () => {
     const hasFromDate = Boolean(reportFilters.fromDate);
     const hasToDate = Boolean(reportFilters.toDate);
@@ -1703,6 +1738,21 @@ const Unbill = () => {
 
   return (
     <>
+      {updateStatusLoading && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex min-w-[220px] flex-col items-center rounded-2xl bg-white px-8 py-6 shadow-2xl">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+
+            <p className="mt-4 text-sm font-semibold text-default-900">
+              Updating status...
+            </p>
+
+            <p className="mt-1 text-xs text-default-500">
+              Please do not refresh or close this page.
+            </p>
+          </div>
+        </div>
+      )}
       <h1 className="font-sans text-2xl font-medium mb-1">Unbilled list</h1>
       <Table
         isHeaderSticky
@@ -1822,7 +1872,7 @@ const Unbill = () => {
                   ))}
                 </Select>
 
-                {updatedStatusData?.approvalRemarks === "APPROVED" && (
+                {/* {updatedStatusData?.approvalRemarks === "APPROVED" && (
                   <div className="rounded-xl border border-default-200 bg-default-50 p-4">
                     <RadioGroup
                       label="Registration Type"
@@ -1841,7 +1891,7 @@ const Unbill = () => {
                       <Radio value="UNREGISTERED">Unregistered</Radio>
                     </RadioGroup>
                   </div>
-                )}
+                )} */}
 
                 {(updatedStatusData?.approvalRemarks === "REJECTED" ||
                   updatedStatusData?.approvalRemarks === "CANCELLED") && (
@@ -1895,7 +1945,14 @@ const Unbill = () => {
                   Close
                 </Button>
 
-                <Button color="primary" onPress={handleUpdateStatus}>
+                <Button
+                  color="primary"
+                  isLoading={updateStatusLoading}
+                  isDisabled={
+                    updateStatusLoading || isCancelAttachmentUploading
+                  }
+                  onPress={handleUpdateStatus}
+                >
                   Submit
                 </Button>
               </ModalFooter>
@@ -2473,14 +2530,17 @@ const Unbill = () => {
                 <Button
                   color="danger"
                   variant="light"
+                  isDisabled={updateStatusLoading}
                   onPress={() => {
-                    onClose();
-                    setCreditNoteRow(null);
-                    setCreditNoteData({
-                      refundAmount: "",
-                      reason: "",
+                    setUpdatedStatusData({
+                      approverUserId: userId,
+                      approvalRemarks: "",
+                      registrationType: "",
+                      rejectionReason: "",
                       attachment: "",
                     });
+                    setRowItem(null);
+                    onClose();
                   }}
                 >
                   Close

@@ -427,7 +427,9 @@ const AllInvoice = () => {
                   {!(
                     rowData?.status?.toLowerCase() === "e_invoice_generated" ||
                     rowData?.gstRegistrationType?.toLowerCase() ===
-                      "international"
+                      "international" ||
+                    rowData?.gstRegistrationType?.toLowerCase() ===
+                      "unregistered"
                   ) && (
                     <DropdownItem key="confirmEInvoice">
                       Confirm E Invoice
