@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "@heroui/react";
 import { createProcurementPurchaseOrder } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
+import NewTextEditor from "../../components/NewTextEditor";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 
 const { TextArea } = Input;
@@ -44,6 +45,16 @@ const taxTypeOptions = [
 
 const roundAmount = (value) => {
   return Number(Number(value || 0).toFixed(2));
+};
+
+const isRichTextEmpty = (html = "") => {
+  const text = String(html)
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+
+  return !text;
 };
 
 const CreatePurchaseOrderModal = ({
@@ -121,8 +132,8 @@ const CreatePurchaseOrderModal = ({
       finalAmount: Number(defaultEstimatedAmount || 0),
       gstRate: 18,
       taxType: "CGST_SGST",
-      scopeOfWork: "",
-      termsAndConditions: "",
+      scopeOfWork: "<p></p>",
+      termsAndConditions: "<p></p>",
       remarks: "",
       validTillDate: dayjs().add(15, "day"),
       paymentTypeName: "",
@@ -410,44 +421,44 @@ const CreatePurchaseOrderModal = ({
 
         <Divider />
 
-        <div className="grid grid-cols-1 gap-x-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5">
           <Form.Item
             label="Scope of Work"
             name="scopeOfWork"
+            valuePropName="data"
+            trigger="onChange"
             rules={[
               {
-                required: true,
-                message: "Please enter scope of work",
+                validator: (_, value) =>
+                  isRichTextEmpty(value)
+                    ? Promise.reject(new Error("Please enter scope of work"))
+                    : Promise.resolve(),
               },
             ]}
           >
-            <TextArea
-              rows={5}
-              placeholder="Enter scope of work"
-              showCount
-              maxLength={3000}
-            />
+            <NewTextEditor />
           </Form.Item>
 
           <Form.Item
             label="Terms and Conditions"
             name="termsAndConditions"
+            valuePropName="data"
+            trigger="onChange"
             rules={[
               {
-                required: true,
-                message: "Please enter terms and conditions",
+                validator: (_, value) =>
+                  isRichTextEmpty(value)
+                    ? Promise.reject(
+                        new Error("Please enter terms and conditions"),
+                      )
+                    : Promise.resolve(),
               },
             ]}
           >
-            <TextArea
-              rows={5}
-              placeholder="Enter terms and conditions"
-              showCount
-              maxLength={3000}
-            />
+            <NewTextEditor />
           </Form.Item>
 
-          <Form.Item label="Remarks" name="remarks" className="md:col-span-2">
+          <Form.Item label="Remarks" name="remarks">
             <TextArea
               rows={3}
               placeholder="Enter remarks"
