@@ -51,6 +51,18 @@ export const navItems = [
       //   key: "automationReport",
       // },
       { title: "Projects", icon: "", url: "sales/projects", key: "projects" },
+      {
+        title: "Advance Invoice",
+        icon: "",
+        url: "sales/advanceTaxInvoice",
+        key: "advanceInvoice",
+      },
+      {
+        title: "PO Payments",
+        icon: "",
+        url: "sales/poPayments",
+        key: "poPayments",
+      },
       // {
       //   title: "Serving Companies",
       //   icon: "",
@@ -120,9 +132,9 @@ export const navItems = [
         key: "taxation",
       },
       {
-        title: "Procurement PO",
-        url: "accounts/procurementPurchaseOrders",
-        key: "procurementPurchaseOrders",
+        title: "PO Payments",
+        url: "accounts/poPayments",
+        key: "poPayments",
       },
       {
         title: "Procurement PR",
@@ -506,9 +518,9 @@ export const accountNavItems = [
     icon: "FileText",
   },
   {
-    title: "Procurement PO",
-    url: "accounts/procurementPurchaseOrders",
-    key: "procurementPurchaseOrders",
+    title: "PO Payments",
+    url: "accounts/poPayments",
+    key: "poPayments",
     icon: "FileText",
   },
 
@@ -677,6 +689,18 @@ export const salesNavItems = [
     icon: "FolderKanban",
     url: "sales/projects",
     key: "projects",
+  },
+  {
+    title: "Advance Invoice",
+    icon: "",
+    url: "sales/advanceTaxInvoice",
+    key: "advanceInvoice",
+  },
+  {
+    title: "PO Payments",
+    icon: "",
+    url: "sales/poPayments",
+    key: "poPayments",
   },
   // {
   //   title: "Serving Companies",

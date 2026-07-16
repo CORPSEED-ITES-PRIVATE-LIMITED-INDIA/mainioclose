@@ -29,6 +29,7 @@ import {
   getInvoiceStatusOverviewDashboard,
   getAccountSummary,
   getTopOutstandingCompanies,
+  getClientGSTCollected,
 } from "../../toolkit/slices/dashboardSlice";
 import { useParams } from "react-router-dom";
 
@@ -149,6 +150,15 @@ const formatPercentage = (value) => {
   return Number.isInteger(percentage)
     ? percentage
     : percentage.toFixed(2).replace(/\.?0+$/, "");
+};
+
+const getSafePercentage = (amount, total) => {
+  const safeAmount = Number(amount || 0);
+  const safeTotal = Number(total || 0);
+
+  if (safeTotal <= 0) return 0;
+
+  return Math.min(100, Math.max(0, (safeAmount / safeTotal) * 100));
 };
 
 const getGrowthMeta = (item) => {
@@ -343,31 +353,6 @@ const recentPayments = [
     amount: "₹ 75,000",
     date: "16 May 2025",
     status: "Received",
-  },
-];
-
-const gstClientVendor = [
-  {
-    title: "GST Client / Output GST",
-    subtitle: "Collected from clients",
-    taxable: "₹ 42.10L",
-    gstAmount: "₹ 7.58L",
-    pending: "₹ 1.25L",
-    filed: "84%",
-    color: "primary",
-    bg: "bg-blue-50",
-    iconColor: "text-blue-600",
-  },
-  {
-    title: "GST Vendor / Input GST",
-    subtitle: "Claimable from vendor bills",
-    taxable: "₹ 18.75L",
-    gstAmount: "₹ 3.38L",
-    pending: "₹ 82,000",
-    filed: "71%",
-    color: "success",
-    bg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
   },
 ];
 
@@ -1069,86 +1054,133 @@ function AccountSummary({ data }) {
   );
 }
 
-function GstClientVendorSection() {
+function GstClientVendorSection({ data }) {
+  const taxableAmount = Number(data?.taxableAmount || 0);
+  const gstAmount = Number(data?.gstAmount || 0);
+  const pendingAmount = Number(data?.pendingAmount || 0);
+  const filedAmount = Number(data?.filedAmount || 0);
+  const reconciledAmount = Number(data?.reconciledAmount || 0);
+
+  const filedPercentage = getSafePercentage(filedAmount, gstAmount);
+  const reconciledPercentage = getSafePercentage(reconciledAmount, gstAmount);
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
-          title="GST Client & Vendor"
-          subtitle="Output GST, input GST and pending claim summary"
+          title="GST Client / Output GST"
+          subtitle="GST collected, filed and reconciled from client invoices"
         />
       </CardHeader>
 
       <CardBody className="px-3 pb-3 pt-3">
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-          {gstClientVendor.map((item) => (
-            <div
-              key={item.title}
-              className={`${item.bg} rounded-xl p-3 ring-1 ring-slate-100`}
-            >
-              <div className="mb-2.5 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
-                    {item.title}
-                  </p>
-                  <p className="truncate text-[11px] leading-4 text-slate-500">
-                    {item.subtitle}
-                  </p>
-                </div>
+        <div className="rounded-xl bg-blue-50 p-3 ring-1 ring-slate-100">
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold leading-5 text-slate-950">
+                GST Client / Output GST
+              </p>
 
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                  <ShieldCheck size={15} className={item.iconColor} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Taxable
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-950">
-                    {item.taxable}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    GST
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-950">
-                    {item.gstAmount}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Pending
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-950">
-                    {item.pending}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-2.5">
-                <div className="mb-1 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500">Filed / Reconciled</span>
-                  <span className="font-bold text-slate-950">{item.filed}</span>
-                </div>
-                <Progress
-                  aria-label={item.title}
-                  value={Number(item.filed.replace("%", ""))}
-                  color={item.color}
-                  size="sm"
-                  radius="full"
-                  classNames={{
-                    track: "bg-white/70",
-                    indicator: "h-1.5",
-                  }}
-                />
-              </div>
+              <p className="truncate text-[11px] leading-4 text-slate-500">
+                Collected from clients
+              </p>
             </div>
-          ))}
+
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+              <ShieldCheck size={15} className="text-blue-600" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Taxable
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-slate-950">
+                {formatAmount(taxableAmount)}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                GST
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-slate-950">
+                {formatAmount(gstAmount)}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Pending
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-rose-600">
+                {formatAmount(pendingAmount)}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Filed
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-emerald-700">
+                {formatAmount(filedAmount)}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Reconciled
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-violet-700">
+                {formatAmount(reconciledAmount)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2.5">
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Filed</span>
+                <span className="font-bold text-slate-950">
+                  {formatPercentage(filedPercentage)}%
+                </span>
+              </div>
+
+              <Progress
+                aria-label="GST filed percentage"
+                value={filedPercentage}
+                color="primary"
+                size="sm"
+                radius="full"
+                classNames={{
+                  track: "bg-white/70",
+                  indicator: "h-1.5",
+                }}
+              />
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Reconciled</span>
+                <span className="font-bold text-slate-950">
+                  {formatPercentage(reconciledPercentage)}%
+                </span>
+              </div>
+
+              <Progress
+                aria-label="GST reconciled percentage"
+                value={reconciledPercentage}
+                color="secondary"
+                size="sm"
+                radius="full"
+                classNames={{
+                  track: "bg-white/70",
+                  indicator: "h-1.5",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </CardBody>
     </DashboardCard>
@@ -1315,6 +1347,7 @@ export default function AccountsDashboard() {
 
     accountSummary,
     topOutstandingCompanies,
+    clientGST,
   } = useSelector((state) => state.dashboard);
 
   const [period, setPeriod] = useState("MONTH");
@@ -1369,6 +1402,22 @@ export default function AccountsDashboard() {
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
         limit: 4,
+      }),
+    );
+
+    const today = new Date();
+
+    const defaultToDate = today.toISOString().split("T")[0];
+
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const defaultFromDate = firstDayOfMonth.toISOString().split("T")[0];
+
+    dispatch(
+      getClientGSTCollected({
+        userId,
+        fromDate: fromDate || defaultFromDate,
+        toDate: toDate || defaultToDate,
       }),
     );
   }, [dispatch, userId, period, fromDate, toDate]);
@@ -1438,7 +1487,7 @@ export default function AccountsDashboard() {
           <ReceivableAging />
           <RecentPayments />
           <TopOutstandingCompanies data={topOutstandingCompanies} />
-          <GstClientVendorSection />
+          <GstClientVendorSection data={clientGST} />
           <TdsClientVendorSection />
           <AccountSummary data={accountSummary} />
           <CashFlowCards />

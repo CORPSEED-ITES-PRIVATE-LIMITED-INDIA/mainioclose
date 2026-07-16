@@ -36,7 +36,7 @@ const columns = [
   { name: "ID", uid: "unitId" },
   { name: "UNIT NAME", uid: "name" },
   { name: "STATE NAME", uid: "state" },
-  { name: "STATUS", uid: "status" },
+  { name: "ONBOARDING STATUS", uid: "status" },
   { name: "GST NUMBER", uid: "gstNo" },
   { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },
@@ -501,7 +501,7 @@ const CompanyUnitsInAccount = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Unit list</h1>
+      <h1 className="font-sans text-2xl font-medium mb-1">Unit List</h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

@@ -64,10 +64,7 @@ export const AccountsModuleRouting = () => {
         path="accounts/procurementPaymentRequests"
         element={<ProcurementPaymentRequest />}
       />
-      <Route
-        path="accounts/procurementPurchaseOrders"
-        element={<PurchaseOrder />}
-      />
+      <Route path="accounts/poPayments" element={<PurchaseOrder />} />
       <Route path="accounts/vendorsPayment" element={<VendorPayments />} />
       <Route
         path="accounts/vendorsPayment/:paymentId/paymentHistory"

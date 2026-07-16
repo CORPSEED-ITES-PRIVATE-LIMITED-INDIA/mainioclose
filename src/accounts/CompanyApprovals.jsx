@@ -40,7 +40,7 @@ const columns = [
   { name: "ESTABLISHED DATE", uid: "establishDate" },
   { name: "INDUSTRY", uid: "industryName" },
   { name: "PAN NUMBER", uid: "panNo" },
-  { name: "STATUS", uid: "status" },
+  { name: "ONBOARDING STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "ADDRESS", uid: "address" },
   { name: "ACTIONS", uid: "actions" },

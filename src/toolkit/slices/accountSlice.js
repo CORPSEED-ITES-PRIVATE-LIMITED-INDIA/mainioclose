@@ -635,6 +635,42 @@ export const reviewPendingPayment = createAsyncThunk(
   },
 );
 
+export const getAllAdvanceTaxInvoiceRequests = createAsyncThunk(
+  "advanceTaxInvoice/getAllAdvanceTaxInvoiceRequests",
+  async (
+    {
+      userId,
+      status = "PENDING",
+      page = 0,
+      size = 10,
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        "/accountService/api/v1/advance-tax-invoice-requests",
+        {
+          params: {
+            userId,
+            status,
+            page,
+            size,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch advance tax invoice requests",
+      );
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -661,6 +697,7 @@ const AccountSlice = createSlice({
     vendorsDetails: [],
     paymentLegerList: [],
     paymentLegalVerification: [],
+    allAdvanceTaxInvoiceRequests:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -977,6 +1014,25 @@ const AccountSlice = createSlice({
     );
     builder.addCase(
       confirmEInvoice.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getAllAdvanceTaxInvoiceRequests.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getAllAdvanceTaxInvoiceRequests.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.AllAdvanceTaxInvoiceRequests = action.payload || [];
+      },
+    );
+    builder.addCase(
+      getAllAdvanceTaxInvoiceRequests.rejected,
       (state) => {
         state.loading = "rejected";
       },

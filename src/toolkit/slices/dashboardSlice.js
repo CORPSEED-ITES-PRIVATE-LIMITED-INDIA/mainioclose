@@ -593,6 +593,36 @@ export const getTopOutstandingCompanies = createAsyncThunk(
     }
   },
 );
+export const getClientGSTCollected = createAsyncThunk(
+  "getClientGSTCollected",
+  async (
+    { userId, fromDate, toDate },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+      };
+
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/gst-collected",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch GST collected",
+      );
+    }
+  },
+);
 
 const DashboardSlice = createSlice({
   name: "dashboard",
@@ -692,6 +722,8 @@ const DashboardSlice = createSlice({
     accountSummary:[],
     topOutstandingCompanies:[],
     recentPayments: [],
+
+    clientGST :[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -1160,6 +1192,19 @@ const DashboardSlice = createSlice({
       getTopOutstandingCompanies.rejected,
       (state, action) => {
         state.topOutstandingCompanies = [];
+      },
+    );
+    builder.addCase(
+      getClientGSTCollected.fulfilled,
+      (state, action) => {
+        state.clientGST = action.payload;
+      },
+    );
+
+    builder.addCase(
+      getClientGSTCollected.rejected,
+      (state, action) => {
+        state.clientGST = [];
       },
     );
   },
