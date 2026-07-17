@@ -558,12 +558,16 @@ const AllInvoice = () => {
                 }}
               >
                 <DropdownItem key="GENERATED">GENERATED</DropdownItem>
-                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
+                <DropdownItem key="SENT_TO_CLIENT">SENT TO CLIENT</DropdownItem>
                 <DropdownItem key="VIEWED">VIEWED</DropdownItem>
                 <DropdownItem key="PAID">PAID</DropdownItem>
+                <DropdownItem key="UNPAID">UNPAID</DropdownItem>
                 <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
+                <DropdownItem key="FINALIZED_WITHOUT_E_INVOICE">
+                  FINALIZED WITHOUT E INVOICE
+                </DropdownItem>
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
-                <DropdownItem key="CREDIT_NOTED">CREDIT_NOTED</DropdownItem>
+                <DropdownItem key="CREDIT_NOTED">CREDIT NOTED</DropdownItem>
                 <DropdownItem key="E_INVOICE_CONFIRMED">
                   E_INVOICE_CONFIRMED
                 </DropdownItem>
