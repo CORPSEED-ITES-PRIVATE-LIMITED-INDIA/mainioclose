@@ -356,31 +356,6 @@ const recentPayments = [
   },
 ];
 
-const tdsClientVendor = [
-  {
-    title: "TDS Client Receivable",
-    subtitle: "Deducted by clients",
-    amount: "₹ 2.40L",
-    pendingCases: "12",
-    claimed: "₹ 1.65L",
-    pending: "₹ 75,000",
-    color: "warning",
-    bg: "bg-amber-50",
-    iconColor: "text-amber-600",
-  },
-  {
-    title: "TDS Vendor Payable",
-    subtitle: "Deducted on vendor payments",
-    amount: "₹ 1.10L",
-    pendingCases: "7",
-    claimed: "₹ 70,000",
-    pending: "₹ 40,000",
-    color: "secondary",
-    bg: "bg-violet-50",
-    iconColor: "text-violet-600",
-  },
-];
-
 const toneClass = {
   blue: "bg-blue-50 text-blue-600 ring-blue-100",
   emerald: "bg-emerald-50 text-emerald-600 ring-emerald-100",
@@ -1187,68 +1162,124 @@ function GstClientVendorSection({ data }) {
   );
 }
 
-function TdsClientVendorSection() {
+function TdsClientVendorSection({ data }) {
+  const totalTdsAmount = Number(data?.totalTdsAmount || 0);
+  const pendingAmount = Number(data?.pendingAmount || 0);
+  const claimedAmount = Number(data?.claimedAmount || 0);
+
+  const totalCount = Number(data?.totalCount || 0);
+  const pendingCount = Number(data?.pendingCount || 0);
+  const claimedCount = Number(data?.claimedCount || 0);
+
+  const claimedPercentage = getSafePercentage(claimedAmount, totalTdsAmount);
+
+  const pendingPercentage = getSafePercentage(pendingAmount, totalTdsAmount);
+
   return (
     <DashboardCard>
       <CardHeader className="px-3 pb-0 pt-3">
         <SectionTitle
-          title="TDS Client & Vendor"
-          subtitle="TDS receivable, payable, claim and pending cases"
+          title="TDS Collection Summary"
+          subtitle="Claimed vs Pending TDS"
         />
       </CardHeader>
 
       <CardBody className="px-3 pb-3 pt-3">
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-          {tdsClientVendor.map((item) => (
-            <div
-              key={item.title}
-              className={`${item.bg} rounded-xl p-3 ring-1 ring-slate-100`}
-            >
-              <div className="mb-2.5 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold leading-5 text-slate-950">
-                    {item.title}
-                  </p>
-                  <p className="truncate text-[11px] leading-4 text-slate-500">
-                    {item.subtitle}
-                  </p>
-                </div>
-
-                <Chip size="sm" color={item.color} variant="flat">
-                  {item.pendingCases} Cases
-                </Chip>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Amount
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-slate-950">
-                    {item.amount}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Claimed
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-emerald-700">
-                    {item.claimed}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Pending
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-rose-600">
-                    {item.pending}
-                  </p>
-                </div>
-              </div>
+        <div className="rounded-xl bg-violet-50 p-3 ring-1 ring-slate-100">
+          <div className="mb-3 flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-950">Total TDS</p>
+              <p className="text-[11px] text-slate-500">
+                {totalCount} Registrations
+              </p>
             </div>
-          ))}
+
+            <Chip color="secondary" variant="flat">
+              {totalCount} Cases
+            </Chip>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Total
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-slate-950">
+                {formatAmount(totalTdsAmount)}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Claimed
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-emerald-700">
+                {formatAmount(claimedAmount)}
+              </p>
+              <p className="text-[10px] text-slate-500">{claimedCount} Cases</p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Pending
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-rose-600">
+                {formatAmount(pendingAmount)}
+              </p>
+              <p className="text-[10px] text-slate-500">{pendingCount} Cases</p>
+            </div>
+
+            <div className="rounded-lg bg-white/70 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                Success Rate
+              </p>
+              <p className="mt-0.5 text-xs font-bold text-violet-700">
+                {formatPercentage(getSafePercentage(claimedCount, totalCount))}%
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Claimed</span>
+                <span className="font-bold text-slate-950">
+                  {formatPercentage(claimedPercentage)}%
+                </span>
+              </div>
+
+              <Progress
+                value={claimedPercentage}
+                color="success"
+                size="sm"
+                radius="full"
+                classNames={{
+                  track: "bg-white/70",
+                  indicator: "h-1.5",
+                }}
+              />
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Pending</span>
+                <span className="font-bold text-slate-950">
+                  {formatPercentage(pendingPercentage)}%
+                </span>
+              </div>
+
+              <Progress
+                value={pendingPercentage}
+                color="danger"
+                size="sm"
+                radius="full"
+                classNames={{
+                  track: "bg-white/70",
+                  indicator: "h-1.5",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </CardBody>
     </DashboardCard>
@@ -1348,6 +1379,7 @@ export default function AccountsDashboard() {
     accountSummary,
     topOutstandingCompanies,
     clientGST,
+    tdsCollectionSummary,
   } = useSelector((state) => state.dashboard);
 
   const [period, setPeriod] = useState("MONTH");
@@ -1420,6 +1452,8 @@ export default function AccountsDashboard() {
         toDate: toDate || defaultToDate,
       }),
     );
+
+    dispatch(getTDSCollectionSummary());
   }, [dispatch, userId, period, fromDate, toDate]);
 
   useEffect(() => {
@@ -1488,7 +1522,7 @@ export default function AccountsDashboard() {
           <RecentPayments />
           <TopOutstandingCompanies data={topOutstandingCompanies} />
           <GstClientVendorSection data={clientGST} />
-          <TdsClientVendorSection />
+          <TdsClientVendorSection data={tdsCollectionSummary} />
           <AccountSummary data={accountSummary} />
           <CashFlowCards />
         </div>

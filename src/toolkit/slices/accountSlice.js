@@ -670,6 +670,27 @@ export const getAllAdvanceTaxInvoiceRequests = createAsyncThunk(
     }
   },
 );
+export const getTDSCollectionSummary = createAsyncThunk(
+  "getTDSCollectionSummary",
+  async (
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        "/accountService/api/v1/dashboard/tds-collect",
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch advance tax invoice requests",
+      );
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -697,7 +718,8 @@ const AccountSlice = createSlice({
     vendorsDetails: [],
     paymentLegerList: [],
     paymentLegalVerification: [],
-    allAdvanceTaxInvoiceRequests:[]
+    allAdvanceTaxInvoiceRequests:[],
+    tdsCollectionSummary:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -1033,6 +1055,25 @@ const AccountSlice = createSlice({
     );
     builder.addCase(
       getAllAdvanceTaxInvoiceRequests.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
+    builder.addCase(
+      getTDSCollectionSummary.pending,
+      (state) => {
+        state.loading = "pending";
+      },
+    );
+    builder.addCase(
+      getTDSCollectionSummary.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.tdsCollectionSummary = action.payload || [];
+      },
+    );
+    builder.addCase(
+      getTDSCollectionSummary.rejected,
       (state) => {
         state.loading = "rejected";
       },

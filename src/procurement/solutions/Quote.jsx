@@ -79,6 +79,7 @@ import {
   reopenOperationChat,
 } from "../../toolkit/slices/operationSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
+import { allowOnlyNumbers } from "../../common";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -289,6 +290,10 @@ const sendToAccountsDefaultValues = {
   authorizedSignatoryNumber: "",
   authorizedSignatoryEmail: "",
   authorizedSignatoryAadhar: "",
+
+  gstRegistrationType: "",
+  gstNumber: "",
+
   accountHolderName: "",
   accountNumber: "",
   confirmAccountNumber: "",
@@ -309,36 +314,63 @@ const sendToAccountsDefaultValues = {
 const sendToAccountsSchema = z
   .object({
     authorizedSignatoryName: z.string().optional(),
+
     authorizedSignatoryNumber: z.string().optional(),
+
     authorizedSignatoryEmail: z
       .string()
       .optional()
       .refine((value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
         message: "Please enter valid authorized signatory email",
       }),
+
     authorizedSignatoryAadhar: z.any().optional(),
+
+    gstRegistrationType: z
+      .string()
+      .min(1, "Please select GST registration type"),
+
+    gstNumber: z
+      .string()
+      .max(15, "GST number cannot exceed 15 characters")
+      .optional(),
+
     accountHolderName: z.string().min(1, "Please enter account holder name"),
+
     accountNumber: z.string().min(1, "Please enter account number"),
+
     confirmAccountNumber: z.string().min(1, "Please re-enter account number"),
+
     ifsc: z.string().min(1, "Please enter IFSC"),
+
     swiftCode: z.string().optional(),
+
     branchAddress: z.string().min(1, "Please enter branch address"),
+
     gstDetailsUrl: z.any().refine((value) => Boolean(value), {
       message: "Please upload GST details",
     }),
+
     vendorSetupFormUrl: z.any().refine((value) => Boolean(value), {
       message: "Please upload vendor setup form",
     }),
+
     cancelChequeUrl: z.any().refine((value) => Boolean(value), {
       message: "Please upload cancel cheque",
     }),
+
     itrLastFinancialYearUrl: z.any().optional(),
+
     panDetailsUrl: z.any().refine((value) => Boolean(value), {
       message: "Please upload PAN details",
     }),
+
     partnershipOrCoiUrl: z.any().optional(),
+
     deedOrMsmeUrl: z.any().optional(),
+
     balanceSheetUrl: z.any().optional(),
+
     remarks: z.string().optional(),
   })
   .superRefine((values, ctx) => {
@@ -351,6 +383,33 @@ const sendToAccountsSchema = z
         code: z.ZodIssueCode.custom,
         path: ["confirmAccountNumber"],
         message: "Account number and confirm account number must match",
+      });
+    }
+
+    const gstNumber = values.gstNumber?.trim().toUpperCase() || "";
+
+    const gstNumberRequired = ["REGISTERED", "SEZ"].includes(
+      values.gstRegistrationType,
+    );
+
+    if (gstNumberRequired && !gstNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["gstNumber"],
+        message: "GST number is required for Registered and SEZ vendors",
+      });
+
+      return;
+    }
+
+    if (
+      gstNumber &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstNumber)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["gstNumber"],
+        message: "Please enter a valid 15-character GST number",
       });
     }
   });
@@ -564,11 +623,20 @@ const Quote = () => {
     control: sendToAccountsControl,
     handleSubmit: handleSendToAccountsSubmit,
     reset: resetSendToAccountsForm,
+    watch: watchSendToAccounts,
     formState: { errors: sendToAccountsErrors },
   } = useForm({
     resolver: zodResolver(sendToAccountsSchema),
     defaultValues: sendToAccountsDefaultValues,
   });
+
+  const selectedGstRegistrationType = watchSendToAccounts(
+    "gstRegistrationType",
+  );
+
+  const isGstNumberRequired = ["REGISTERED", "SEZ"].includes(
+    selectedGstRegistrationType,
+  );
 
   const [quotationResponse, setQuotationResponse] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
@@ -1989,17 +2057,23 @@ const Quote = () => {
       number: vendorBaseDetails.number,
       email: vendorBaseDetails.email,
       aadhar: vendorBaseDetails.aadhar || "",
+
       authorizedSignatoryName: values.authorizedSignatoryName || "",
       authorizedSignatoryNumber: values.authorizedSignatoryNumber || "",
       authorizedSignatoryEmail: values.authorizedSignatoryEmail || "",
       authorizedSignatoryAadhar: getUploadedFileValue(
         values.authorizedSignatoryAadhar,
       ),
+
+      gstRegistrationType: values.gstRegistrationType,
+      gstNumber: values.gstNumber?.trim().toUpperCase() || null,
+
       accountHolderName: values.accountHolderName,
       accountNumber: values.accountNumber,
       ifsc: values.ifsc,
       swiftCode: values.swiftCode || "",
       branchAddress: values.branchAddress,
+
       gstDetailsUrl,
       vendorSetupFormUrl,
       cancelChequeUrl,
@@ -2008,6 +2082,7 @@ const Quote = () => {
       partnershipOrCoiUrl,
       deedOrMsmeUrl,
       balanceSheetUrl,
+
       remarks: values.remarks || "",
       sentToAccountsBy: Number(resolvedUserId),
     };
@@ -3627,10 +3702,6 @@ const Quote = () => {
                             <h3 className="text-sm font-semibold text-gray-900">
                               Banking Details
                             </h3>
-                            <p className="text-xs text-default-500">
-                              Vendor contact details are auto-populated. Add
-                              bank information required by Accounts.
-                            </p>
                           </div>
                           <Chip size="sm" color="primary" variant="flat">
                             Required
@@ -3688,6 +3759,83 @@ const Quote = () => {
                           })()}
 
                           <Controller
+                            name="gstRegistrationType"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Select
+                                size="sm"
+                                label="GST Registration Type"
+                                placeholder="Select registration type"
+                                isRequired
+                                selectedKeys={
+                                  field.value
+                                    ? new Set([field.value])
+                                    : new Set()
+                                }
+                                onSelectionChange={(keys) => {
+                                  const selectedValue =
+                                    Array.from(keys)?.[0] || "";
+
+                                  field.onChange(selectedValue);
+                                }}
+                                isInvalid={
+                                  !!sendToAccountsErrors.gstRegistrationType
+                                }
+                                errorMessage={
+                                  sendToAccountsErrors.gstRegistrationType
+                                    ?.message
+                                }
+                              >
+                                <SelectItem key="REGISTERED">
+                                  Registered
+                                </SelectItem>
+
+                                <SelectItem key="SEZ">SEZ</SelectItem>
+
+                                <SelectItem key="UNREGISTERED">
+                                  Unregistered
+                                </SelectItem>
+
+                                <SelectItem key="INTERNATIONAL">
+                                  International
+                                </SelectItem>
+                              </Select>
+                            )}
+                          />
+
+                          <Controller
+                            name="gstNumber"
+                            control={sendToAccountsControl}
+                            render={({ field }) => (
+                              <Input
+                                size="sm"
+                                label="GST Number"
+                                placeholder={
+                                  isGstNumberRequired
+                                    ? "Enter GST number"
+                                    : "GST number is optional"
+                                }
+                                isRequired={isGstNumberRequired}
+                                value={field.value || ""}
+                                maxLength={15}
+                                onValueChange={(value) => {
+                                  const normalizedValue = String(value || "")
+                                    .replace(/[^a-zA-Z0-9]/g, "")
+                                    .toUpperCase()
+                                    .slice(0, 15);
+
+                                  field.onChange(normalizedValue);
+                                }}
+                                onBlur={field.onBlur}
+                                isInvalid={!!sendToAccountsErrors.gstNumber}
+                                errorMessage={
+                                  sendToAccountsErrors.gstNumber?.message
+                                }
+                              />
+                            )}
+                          />
+
+                          <Controller
                             name="accountHolderName"
                             control={sendToAccountsControl}
                             render={({ field }) => (
@@ -3719,9 +3867,14 @@ const Quote = () => {
                                 value={field.value}
                                 onChange={(e) =>
                                   field.onChange(
-                                    e.target.value.replace(/\s/g, ""),
+                                    allowOnlyNumbers(e.target.value, 18),
                                   )
                                 }
+                                onPaste={(e) => e.preventDefault()}
+                                onCopy={(e) => e.preventDefault()}
+                                onCut={(e) => e.preventDefault()}
+                                onDrop={(e) => e.preventDefault()}
+                                onDragOver={(e) => e.preventDefault()}
                                 isInvalid={!!sendToAccountsErrors.accountNumber}
                                 errorMessage={
                                   sendToAccountsErrors.accountNumber?.message
@@ -3741,9 +3894,14 @@ const Quote = () => {
                                 value={field.value}
                                 onChange={(e) =>
                                   field.onChange(
-                                    e.target.value.replace(/\s/g, ""),
+                                    allowOnlyNumbers(e.target.value, 18),
                                   )
                                 }
+                                onPaste={(e) => e.preventDefault()}
+                                onCopy={(e) => e.preventDefault()}
+                                onCut={(e) => e.preventDefault()}
+                                onDrop={(e) => e.preventDefault()}
+                                onDragOver={(e) => e.preventDefault()}
                                 isInvalid={
                                   !!sendToAccountsErrors.confirmAccountNumber
                                 }
