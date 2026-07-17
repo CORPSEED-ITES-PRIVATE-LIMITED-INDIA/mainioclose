@@ -1226,6 +1226,8 @@ const CompanyAndUnitsInLead = () => {
     );
   }, [countryList, isForeignCompany]);
 
+  console.log("jdfkhgdkjfgkjd", effectiveCompany);
+
   return (
     <>
       {contextHolder}
@@ -1238,19 +1240,21 @@ const CompanyAndUnitsInLead = () => {
               <p className="truncate text-sm font-medium">Company detail</p>
             </div>
 
-            <Button
-              size="sm"
-              isIconOnly
-              variant="light"
-              className="h-6 w-6 shrink-0 rounded-full bg-none"
-              onClick={openCompanyModal}
-            >
-              {effectiveCompany?.id ? (
-                <Pencil className={iconClass} />
-              ) : (
-                <Plus className={iconClass} />
-              )}
-            </Button>
+            {effectiveCompany?.onboardingStatus !== "APPROVED" && (
+              <Button
+                size="sm"
+                isIconOnly
+                variant="light"
+                className="h-6 w-6 shrink-0 rounded-full bg-none"
+                onClick={openCompanyModal}
+              >
+                {effectiveCompany?.id ? (
+                  <Pencil className={iconClass} />
+                ) : (
+                  <Plus className={iconClass} />
+                )}
+              </Button>
+            )}
           </div>
         </CardHeader>
 
@@ -1350,14 +1354,16 @@ const CompanyAndUnitsInLead = () => {
                           <Link className={iconClass} />
                         </Button>
 
-                        <Button
-                          size="sm"
-                          variant="light"
-                          isIconOnly
-                          onPress={() => openEditUnitModal(unit)}
-                        >
-                          <Pencil className={iconClass} />
-                        </Button>
+                        {unit?.onboardingStatus !== "APPROVED" && (
+                          <Button
+                            size="sm"
+                            variant="light"
+                            isIconOnly
+                            onPress={() => openEditUnitModal(unit)}
+                          >
+                            <Pencil className={iconClass} />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -1440,17 +1446,22 @@ const CompanyAndUnitsInLead = () => {
                                 {displayContact?.name || "NA"}
                               </p>
 
-                              <Button
-                                size="sm"
-                                variant="light"
-                                isIconOnly
-                                className="shrink-0"
-                                onPress={() =>
-                                  openEditContactModal(displayContact, unit?.id)
-                                }
-                              >
-                                <Pencil className={iconClass} />
-                              </Button>
+                              {unit?.onboardingStatus !== "APPROVED" && (
+                                <Button
+                                  size="sm"
+                                  variant="light"
+                                  isIconOnly
+                                  className="shrink-0"
+                                  onPress={() =>
+                                    openEditContactModal(
+                                      displayContact,
+                                      unit?.id,
+                                    )
+                                  }
+                                >
+                                  <Pencil className={iconClass} />
+                                </Button>
+                              )}
                             </div>
 
                             <p className="min-w-0 break-words text-gray-500">
@@ -1914,7 +1925,7 @@ const CompanyAndUnitsInLead = () => {
           setContactModal(false);
           resetContactModalState();
         }}
-        title="Add Contact Detail"
+        title={editingContact ? "Edit Contact Detail" : "Add Contact Detail"}
         onOk={() => contactForm.submit()}
         okText="Save"
         confirmLoading={contactLoading}

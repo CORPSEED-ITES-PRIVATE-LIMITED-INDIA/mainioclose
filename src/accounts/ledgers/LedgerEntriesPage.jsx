@@ -194,7 +194,11 @@ const LedgerEntriesPage = () => {
         },
       ];
 
-      if (expandedEntryId === entry.id && entry.isSalesInvoice) {
+      if (
+        expandedEntryId === entry.id &&
+        entry.isSalesInvoice &&
+        entry.hasGstDetails
+      ) {
         rows.push({
           rowType: "GST",
           rowKey: `gst-${entry.id}`,
@@ -207,7 +211,7 @@ const LedgerEntriesPage = () => {
   }, [filteredEntries, expandedEntryId]);
 
   const handleToggleGstDetails = (entry) => {
-    if (!entry?.isSalesInvoice) return;
+    if (!entry?.isSalesInvoice || !entry?.hasGstDetails) return;
 
     setExpandedEntryId((prevId) => (prevId === entry.id ? null : entry.id));
   };
@@ -553,7 +557,7 @@ const LedgerEntriesPage = () => {
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap font-semibold">
-                        {entry.isSalesInvoice ? (
+                        {entry.isSalesInvoice && entry.hasGstDetails ? (
                           <Button
                             size="sm"
                             variant="light"
@@ -568,7 +572,7 @@ const LedgerEntriesPage = () => {
                       </TableCell>
 
                       <TableCell>
-                        {entry.isSalesInvoice ? (
+                        {entry.isSalesInvoice && entry.hasGstDetails ? (
                           <button
                             type="button"
                             onClick={() => handleToggleGstDetails(entry)}
@@ -642,8 +646,9 @@ const LedgerEntriesPage = () => {
 const mapApiTransactionToEntry = (entry) => {
   const formattedVoucherType = formatVoucherType(entry.voucherType);
   const isSalesInvoice = isSalesInvoiceVoucher(entry.voucherType);
+  const gstDetails = getSalesInvoiceGstDetails(entry);
 
-  const mappedEntry = {
+  return {
     id:
       entry.entryId ||
       `${entry.voucherId || "voucher"}-${entry.sourceId || ""}`,
@@ -657,12 +662,9 @@ const mapApiTransactionToEntry = (entry) => {
     balance: entry.runningBalanceAmount,
     balanceType: formatBalanceType(entry.runningBalanceType),
     isSalesInvoice,
+    gstDetails,
+    hasGstDetails: hasPositiveGstAmount(gstDetails),
     raw: entry,
-  };
-
-  return {
-    ...mappedEntry,
-    gstDetails: getSalesInvoiceGstDetails(mappedEntry),
   };
 };
 
@@ -757,20 +759,42 @@ const formatVoucherType = (type) => {
 };
 
 const TallyGstNestedLine = ({ entry }) => {
-  const gstAmount = Number(entry?.gstDetails?.gstAmount || 0);
+  const gstDetails = entry?.gstDetails || {};
   const suffix = Number(entry?.debit || 0) > 0 ? "Dr" : "Cr";
+
+  const gstRows = [
+    {
+      label: "CGST",
+      amount: Number(gstDetails.cgstAmount || 0),
+    },
+    {
+      label: "SGST",
+      amount: Number(gstDetails.sgstAmount || 0),
+    },
+    {
+      label: "IGST",
+      amount: Number(gstDetails.igstAmount || 0),
+    },
+  ].filter((item) => item.amount > 0);
+
+  if (!gstRows.length) return null;
 
   return (
     <div className="animate-tally-open overflow-hidden">
       <div className="py-1 text-xs text-slate-950">
-        <div className="font-bold">(as per details)</div>
+        <div className="font-bold">(as per GST details)</div>
 
-        <div className="mt-0.5 flex max-w-[360px] items-center justify-between gap-8 pl-7 font-semibold">
-          <span>GST</span>
-          <span className="whitespace-nowrap">
-            {formatCurrency(gstAmount)} {suffix}
-          </span>
-        </div>
+        {gstRows.map((item) => (
+          <div
+            key={item.label}
+            className="mt-0.5 flex max-w-[360px] items-center justify-between gap-8 pl-7 font-semibold"
+          >
+            <span>{item.label}</span>
+            <span className="whitespace-nowrap">
+              {formatCurrency(item.amount)} {suffix}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -786,34 +810,31 @@ const isSalesInvoiceVoucher = (type) => {
 };
 
 const getSalesInvoiceGstDetails = (entry = {}) => {
-  const raw = entry.raw || {};
-  const amount = Number(entry.debit || entry.credit || 0);
+  const gstDetails = entry?.gstDetails;
 
-  const apiGstAmount =
-    raw.gstAmount ??
-    raw.totalGstAmount ??
-    raw.totalTax ??
-    raw.taxAmount ??
-    entry.gstAmount;
-
-  if (
-    apiGstAmount !== null &&
-    apiGstAmount !== undefined &&
-    apiGstAmount !== ""
-  ) {
-    const gstAmount = Number(apiGstAmount);
-
-    return {
-      gstAmount: Number.isNaN(gstAmount) ? 0 : gstAmount,
-    };
+  if (!gstDetails || typeof gstDetails !== "object") {
+    return null;
   }
 
-  const gstRate = 18;
-  const gstAmount = amount ? (amount * gstRate) / (100 + gstRate) : 0;
-
   return {
-    gstAmount: Number(gstAmount.toFixed(2)),
+    gstNo: gstDetails.gstNo || null,
+    subTotalExGst: Number(gstDetails.subTotalExGst || 0),
+    totalGstAmount: Number(gstDetails.totalGstAmount || 0),
+    cgstAmount: Number(gstDetails.cgstAmount || 0),
+    sgstAmount: Number(gstDetails.sgstAmount || 0),
+    igstAmount: Number(gstDetails.igstAmount || 0),
+    grandTotal: Number(gstDetails.grandTotal || 0),
   };
+};
+
+const hasPositiveGstAmount = (gstDetails) => {
+  if (!gstDetails) return false;
+
+  return [
+    gstDetails.cgstAmount,
+    gstDetails.sgstAmount,
+    gstDetails.igstAmount,
+  ].some((amount) => Number(amount || 0) > 0);
 };
 
 export default LedgerEntriesPage;

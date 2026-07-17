@@ -638,12 +638,7 @@ export const reviewPendingPayment = createAsyncThunk(
 export const getAllAdvanceTaxInvoiceRequests = createAsyncThunk(
   "advanceTaxInvoice/getAllAdvanceTaxInvoiceRequests",
   async (
-    {
-      userId,
-      status = "PENDING",
-      page = 0,
-      size = 10,
-    },
+    { userId, status = "PENDING", page = 0, size = 10 },
     { rejectWithValue },
   ) => {
     try {
@@ -692,6 +687,73 @@ export const getTDSCollectionSummary = createAsyncThunk(
   },
 );
 
+export const createAdvanceTaxInvoiceRequest = createAsyncThunk(
+  "accounts/createAdvanceTaxInvoiceRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/accountService/api/v1/advance-tax-invoice-requests",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message:
+            error?.message || "Failed to create advance tax invoice request",
+        },
+      );
+    }
+  },
+);
+
+export const approveAdvanceTaxInvoiceRequest = createAsyncThunk(
+  "advanceTaxInvoice/approveAdvanceTaxInvoiceRequest",
+  async ({ requestId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/advance-tax-invoice-requests/${requestId}/approve`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to approve advance tax invoice request",
+      );
+    }
+  },
+);
+
+export const confirmAdvanceTaxInvoiceEInvoiceAndCreateProject =
+  createAsyncThunk(
+    "advanceTaxInvoice/confirmAdvanceTaxInvoiceEInvoiceAndCreateProject",
+    async ({ requestId, data }, { rejectWithValue }) => {
+      try {
+        /*
+         * The backend path variable is named invoiceId.
+         * As required by the frontend flow, requestId is passed
+         * in that path position.
+         */
+        const response = await api.put(
+          `/accountService/api/v1/advance-tax-invoice-requests/${requestId}/confirm-e-invoice-and-create-project`,
+          data,
+        );
+
+        return response.data;
+      } catch (error) {
+        return rejectWithValue(
+          error?.response?.data ||
+            error?.message ||
+            "Failed to confirm E-Invoice and create project",
+        );
+      }
+    },
+  );
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -718,8 +780,23 @@ const AccountSlice = createSlice({
     vendorsDetails: [],
     paymentLegerList: [],
     paymentLegalVerification: [],
-    allAdvanceTaxInvoiceRequests:[],
-    tdsCollectionSummary:[]
+    tdsCollectionSummary:[],
+    allAdvanceTaxInvoiceRequests: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 10,
+      first: true,
+      last: true,
+      empty: true,
+    },
+    advanceTaxInvoiceRequestsLoading: false,
+    advanceTaxInvoiceRequestsError: null,
+    advanceTaxInvoiceRequestCreating: false,
+    advanceTaxInvoiceRequestCreateError: null,
+    advanceTaxInvoiceRequestApproving: false,
+    advanceTaxInvoiceRequestApproveError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -1003,60 +1080,53 @@ const AccountSlice = createSlice({
         state.loading = "rejected";
       },
     );
-    builder.addCase(
-      getAllPendingPayment.pending,
-      (state) => {
-        state.loading = "pending";
-      },
-    );
-    builder.addCase(
-      getAllPendingPayment.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.paymentLegalVerification = action.payload || [];
-      },
-    );
-    builder.addCase(
-      getAllPendingPayment.rejected,
-      (state) => {
-        state.loading = "rejected";
-      },
-    );
-    builder.addCase(
-      confirmEInvoice.pending,
-      (state) => {
-        state.loading = "pending";
-      },
-    );
-    builder.addCase(
-      confirmEInvoice.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-      },
-    );
-    builder.addCase(
-      confirmEInvoice.rejected,
-      (state) => {
-        state.loading = "rejected";
-      },
-    );
-    builder.addCase(
-      getAllAdvanceTaxInvoiceRequests.pending,
-      (state) => {
-        state.loading = "pending";
-      },
-    );
+    builder.addCase(getAllPendingPayment.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPendingPayment.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.paymentLegalVerification = action.payload || [];
+    });
+    builder.addCase(getAllPendingPayment.rejected, (state) => {
+      state.loading = "rejected";
+    });
+    builder.addCase(getAllAdvanceTaxInvoiceRequests.pending, (state) => {
+      state.advanceTaxInvoiceRequestsLoading = true;
+      state.advanceTaxInvoiceRequestsError = null;
+    });
     builder.addCase(
       getAllAdvanceTaxInvoiceRequests.fulfilled,
       (state, action) => {
-        state.loading = "success";
-        state.AllAdvanceTaxInvoiceRequests = action.payload || [];
+        state.advanceTaxInvoiceRequestsLoading = false;
+        state.advanceTaxInvoiceRequestsError = null;
+        state.allAdvanceTaxInvoiceRequests = action.payload || {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          number: 0,
+          size: 10,
+          first: true,
+          last: true,
+          empty: true,
+        };
       },
     );
     builder.addCase(
       getAllAdvanceTaxInvoiceRequests.rejected,
-      (state) => {
-        state.loading = "rejected";
+      (state, action) => {
+        state.advanceTaxInvoiceRequestsLoading = false;
+        state.advanceTaxInvoiceRequestsError =
+          action.payload || action.error?.message || "Failed to fetch requests";
+        state.allAdvanceTaxInvoiceRequests = {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          number: 0,
+          size: 10,
+          first: true,
+          last: true,
+          empty: true,
+        };
       },
     );
     builder.addCase(
@@ -1078,6 +1148,96 @@ const AccountSlice = createSlice({
         state.loading = "rejected";
       },
     );
+
+    builder.addCase(createAdvanceTaxInvoiceRequest.pending, (state) => {
+      state.advanceTaxInvoiceRequestCreating = true;
+      state.advanceTaxInvoiceRequestCreateError = null;
+    });
+    builder.addCase(createAdvanceTaxInvoiceRequest.fulfilled, (state) => {
+      state.advanceTaxInvoiceRequestCreating = false;
+      state.advanceTaxInvoiceRequestCreateError = null;
+    });
+    builder.addCase(
+      createAdvanceTaxInvoiceRequest.rejected,
+      (state, action) => {
+        state.advanceTaxInvoiceRequestCreating = false;
+        state.advanceTaxInvoiceRequestCreateError =
+          action.payload || action.error?.message || "Failed to create request";
+      },
+    );
+
+    builder.addCase(approveAdvanceTaxInvoiceRequest.pending, (state) => {
+      state.advanceTaxInvoiceRequestApproving = true;
+      state.advanceTaxInvoiceRequestApproveError = null;
+    });
+    builder.addCase(
+      approveAdvanceTaxInvoiceRequest.fulfilled,
+      (state, action) => {
+        state.advanceTaxInvoiceRequestApproving = false;
+        state.advanceTaxInvoiceRequestApproveError = null;
+
+        const approvedRequest = action.payload;
+
+        if (approvedRequest?.requestId) {
+          const currentContent =
+            state.allAdvanceTaxInvoiceRequests?.content || [];
+
+          state.allAdvanceTaxInvoiceRequests = {
+            ...state.allAdvanceTaxInvoiceRequests,
+            content: currentContent.map((item) =>
+              item?.requestId === approvedRequest.requestId
+                ? approvedRequest
+                : item,
+            ),
+          };
+        }
+      },
+    );
+    builder.addCase(
+      approveAdvanceTaxInvoiceRequest.rejected,
+      (state, action) => {
+        state.advanceTaxInvoiceRequestApproving = false;
+        state.advanceTaxInvoiceRequestApproveError =
+          action.payload ||
+          action.error?.message ||
+          "Failed to approve advance tax invoice request";
+      },
+    );
+
+    builder.addCase(
+      confirmAdvanceTaxInvoiceEInvoiceAndCreateProject.pending,
+      (state) => {
+        state.advanceTaxInvoiceEInvoiceConfirming = true;
+        state.advanceTaxInvoiceEInvoiceConfirmError = null;
+      },
+    );
+    builder.addCase(
+      confirmAdvanceTaxInvoiceEInvoiceAndCreateProject.fulfilled,
+      (state) => {
+        state.advanceTaxInvoiceEInvoiceConfirming = false;
+        state.advanceTaxInvoiceEInvoiceConfirmError = null;
+      },
+    );
+    builder.addCase(
+      confirmAdvanceTaxInvoiceEInvoiceAndCreateProject.rejected,
+      (state, action) => {
+        state.advanceTaxInvoiceEInvoiceConfirming = false;
+        state.advanceTaxInvoiceEInvoiceConfirmError =
+          action.payload ||
+          action.error?.message ||
+          "Failed to confirm E-Invoice and create project";
+      },
+    );
+
+    builder.addCase(confirmEInvoice.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(confirmEInvoice.fulfilled, (state, action) => {
+      state.loading = "success";
+    });
+    builder.addCase(confirmEInvoice.rejected, (state) => {
+      state.loading = "rejected";
+    });
   },
 });
 

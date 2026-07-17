@@ -127,6 +127,11 @@ export const navItems = [
         key: "allInvoice",
       },
       {
+        title: "Advance invoices",
+        url: "accounts/advanceInvoices",
+        key: "advanceInvoices",
+      },
+      {
         title: "Taxation",
         url: "accounts/taxation",
         key: "taxation",
@@ -512,6 +517,12 @@ export const accountNavItems = [
     icon: "FileText",
   },
   {
+    title: "Advance invoices",
+    url: "accounts/advanceInvoices",
+    icon: "BookOpenText",
+    key: "advanceInvoices",
+  },
+  {
     title: "Taxation",
     url: "accounts/taxation",
     key: "taxation",
@@ -698,7 +709,7 @@ export const salesNavItems = [
   },
   {
     title: "PO Payments",
-    icon: "",
+    icon: "BookOpenText",
     url: "sales/poPayments",
     key: "poPayments",
   },

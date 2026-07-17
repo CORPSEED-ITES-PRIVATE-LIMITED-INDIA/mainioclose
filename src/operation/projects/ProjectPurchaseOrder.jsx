@@ -114,7 +114,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const FIXED_STATUS_FILTER_OPTIONS = ["PARTIALLY_COMPLETED", "COMPLETED"];
+const FIXED_STATUS_FILTER_OPTIONS = ["DRAFT", "APPROVED"];
 
 function capitalize(value) {
   return value
@@ -1326,7 +1326,7 @@ const ProjectPurchaseOrder = () => {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-sans text-2xl font-medium">
-            Project Purchase Orderss
+            Project Purchase Orders
           </h1>
 
           <p className="text-sm text-default-500">Project ID: {projectId}</p>
@@ -1355,12 +1355,12 @@ const ProjectPurchaseOrder = () => {
           wrapper: "max-h-[65vh] w-full",
           table: "w-full",
         }}
-        selectedKeys={selectedKeys}
+        // selectedKeys={selectedKeys}
         // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
+        // onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -1474,11 +1474,6 @@ const ProjectPurchaseOrder = () => {
                       isRequired
                       errorMessage="please select status"
                       items={[
-                        // {
-                        //   label: "PARTIALLY_COMPLETED",
-                        //   uid: "PARTIALLY_COMPLETED",
-                        // },
-                        { label: "COMPLETED", uid: "COMPLETED" },
                         { label: "APPROVED", uid: "APPROVED" },
                         { label: "DRAFT", uid: "DRAFT" },
                       ]}

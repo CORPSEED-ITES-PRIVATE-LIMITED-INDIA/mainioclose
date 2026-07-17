@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { Chip, Pagination } from "@heroui/react";
+import { Chip, Pagination, Spinner } from "@heroui/react";
 
 import { ChevronDown, Search } from "lucide-react";
 
@@ -43,12 +43,22 @@ const getLoggedInUserId = () => {
 };
 
 const formatAmount = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  const numericValue = Number(value);
+
+  if (Number.isNaN(numericValue)) {
+    return "-";
+  }
+
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+  }).format(numericValue);
 };
 
 const formatDate = (value) => {
@@ -128,9 +138,11 @@ const SalesAdvanceInvoice = () => {
   const dispatch = useDispatch();
   const params = useParams();
 
-  const { AllAdvanceTaxInvoiceRequests } = useSelector(
-    (state) => state.account,
-  );
+  const {
+    allAdvanceTaxInvoiceRequests,
+    advanceTaxInvoiceRequestsLoading,
+    advanceTaxInvoiceRequestsError,
+  } = useSelector((state) => state.account || {});
 
   const [status, setStatus] = useState("PENDING");
   const [search, setSearch] = useState("");
@@ -141,7 +153,7 @@ const SalesAdvanceInvoice = () => {
     return Number(params?.userId || params?.id || getLoggedInUserId());
   }, [params?.userId, params?.id]);
 
-  const response = AllAdvanceTaxInvoiceRequests || {};
+  const response = allAdvanceTaxInvoiceRequests || {};
 
   const requests = Array.isArray(response?.content) ? response.content : [];
 
@@ -272,7 +284,7 @@ const SalesAdvanceInvoice = () => {
                 </th>
 
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase text-slate-500">
-                  Request Number
+                  Request ID
                 </th>
 
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase text-slate-500">
@@ -342,7 +354,27 @@ const SalesAdvanceInvoice = () => {
             </thead>
 
             <tbody>
-              {filteredRequests.length === 0 ? (
+              {advanceTaxInvoiceRequestsLoading ? (
+                <tr>
+                  <td colSpan={18} className="h-44 text-center">
+                    <div className="flex items-center justify-center">
+                      <Spinner
+                        size="sm"
+                        label="Loading advance tax invoice requests..."
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ) : advanceTaxInvoiceRequestsError ? (
+                <tr>
+                  <td
+                    colSpan={18}
+                    className="h-44 px-4 text-center text-sm text-danger"
+                  >
+                    {String(advanceTaxInvoiceRequestsError)}
+                  </td>
+                </tr>
+              ) : filteredRequests.length === 0 ? (
                 <tr>
                   <td
                     colSpan={18}
@@ -369,9 +401,7 @@ const SalesAdvanceInvoice = () => {
 
                     <td className="whitespace-nowrap px-4 py-3 align-top">
                       <p className="text-xs font-semibold text-slate-900">
-                        {item?.requestId
-                          ? `ATI-${String(item.requestId).padStart(6, "0")}`
-                          : "-"}
+                        {item?.requestId ?? "-"}
                       </p>
 
                       <p

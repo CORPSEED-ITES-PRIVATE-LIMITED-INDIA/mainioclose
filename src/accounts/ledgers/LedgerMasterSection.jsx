@@ -90,7 +90,7 @@ const defaultValues = {
   // totalCredit: "0",
   // currency: "INR",
   effectiveFrom: new Date().toISOString().slice(0, 10),
-  gstStatus: "Not Applicable",
+  gstStatus: "",
   gstin: "",
   panNumber: "",
   email: "",
@@ -199,7 +199,7 @@ const derivePartyType = (ledgerType = "") => {
 const toUiBalanceType = (value) => {
   if (value === "DEBIT") return "DR";
   if (value === "CREDIT") return "CR";
-  return value || "DR";
+  return value || "";
 };
 
 const toApiBalanceType = (value) => {
@@ -263,9 +263,6 @@ const normalizeTransaction = (transaction = {}) => {
 };
 
 const normalizeLedger = (ledger = {}) => {
-  const partyType = derivePartyType(ledger.ledgerType);
-  const gstStatus = ledger.gstNo ? "Registered" : "Not Applicable";
-
   const entries = Array.isArray(ledger.transactions)
     ? ledger.transactions.map(normalizeTransaction)
     : [];
@@ -285,8 +282,15 @@ const normalizeLedger = (ledger = {}) => {
     raw: ledger,
 
     name: ledger.ledgerName || "",
-    ledgerCategory: deriveLedgerCategory(ledger.ledgerType),
-    partyType,
+
+    // Used only to select the appropriate icon when the API does not
+    // provide a separate ledgerCategory field.
+    ledgerCategory:
+      ledger.ledgerCategory || deriveLedgerCategory(ledger.ledgerType),
+
+    // Do not derive business data on the frontend. These values are shown
+    // only when they are actually returned by the API.
+    partyType: ledger.partyType || null,
 
     groupName:
       ledger.ledgerGroupName ||
@@ -298,27 +302,23 @@ const normalizeLedger = (ledger = {}) => {
     currentBalance: ledger.currentBalance ?? 0,
     currentBalanceType: toUiBalanceType(ledger.currentBalanceType),
 
+    // These totals are based only on the actual transaction records
+    // returned in the current API response.
     totalDebit,
     totalCredit,
 
-    currency: "INR",
-    effectiveFrom: ledger.createdAt || "",
+    currency: ledger.currency || null,
+    effectiveFrom: ledger.effectiveFrom || null,
 
-    gstStatus,
-    gstin: ledger.gstNo || "-",
-    panNumber: ledger.panNo || "-",
-    email: ledger.email || "-",
-    mobile: ledger.mobile || "-",
+    // Do not infer GST status from the presence of a GST number.
+    gstStatus: ledger.gstStatus || null,
+    gstin: ledger.gstNo || null,
+    panNumber: ledger.panNo || null,
+    email: ledger.email || null,
+    mobile: ledger.mobile || null,
 
-    billingAddress:
-      ledger.billingAddress ||
-      ledger.fullAddress ||
-      [ledger.companyName, ledger.unitName, ledger.contactName]
-        .filter(Boolean)
-        .join(" / ") ||
-      "-",
-
-    fullAddress: ledger.fullAddress || "-",
+    billingAddress: ledger.billingAddress || ledger.fullAddress || null,
+    fullAddress: ledger.fullAddress || null,
 
     entries,
     transactions: Array.isArray(ledger.transactions) ? ledger.transactions : [],
@@ -328,157 +328,87 @@ const normalizeLedger = (ledger = {}) => {
 const getVoucherDetails = (entry, ledger) => {
   if (!entry || !ledger) return null;
 
-  const voucherNo = entry.voucherNo || "-";
-
-  const voucherType =
-    entry.voucherType ||
-    formatVoucherType(entry.rawVoucherType) ||
-    (voucherNo.startsWith("INV")
-      ? "Sales Invoice"
-      : voucherNo.startsWith("PUR")
-        ? "Purchase Voucher"
-        : voucherNo.startsWith("PAY")
-          ? "Payment Voucher"
-          : voucherNo.startsWith("RCP") || voucherNo.startsWith("RCPT")
-            ? "Receipt Voucher"
-            : "Accounting Voucher");
+  const raw = entry.raw || {};
 
   const amount = Number(entry.debit || entry.credit || 0);
-  const isBankLedger = ledger.ledgerCategory === "BANK";
 
-  // Dummy service logic for now.
-  // Later replace this with API response fields.
-  const serviceName = voucherNo.startsWith("INV")
-    ? "12A Registration"
-    : voucherNo.startsWith("PUR")
-      ? "Vendor Compliance Service"
-      : voucherNo.startsWith("RCPT")
-        ? "Client Payment Collection"
-        : voucherNo.startsWith("PAY")
-          ? "Vendor Payment Service"
-          : "Accounting Service";
+  const voucherType = raw.voucherType
+    ? formatVoucherType(raw.voucherType)
+    : entry.voucherType || "-";
 
-  const serviceCode = voucherNo.startsWith("INV")
-    ? "SVC-12A-REG"
-    : voucherNo.startsWith("PUR")
-      ? "SVC-VENDOR-COMP"
-      : voucherNo.startsWith("RCPT")
-        ? "SVC-PAYMENT-COLLECTION"
-        : voucherNo.startsWith("PAY")
-          ? "SVC-VENDOR-PAYMENT"
-          : "SVC-ACCOUNTING";
-
-  const sacCode = voucherNo.startsWith("INV") ? "998399" : "998599";
-
-  const taxableAmount = amount;
-  const gstRate =
-    voucherNo.startsWith("INV") || voucherNo.startsWith("PUR") ? 18 : 0;
-  const gstAmount = Math.round((taxableAmount * gstRate) / 100);
-
-  const cgstRate = gstRate ? gstRate / 2 : 0;
-  const sgstRate = gstRate ? gstRate / 2 : 0;
-  const igstRate = 0;
-
-  const cgstAmount = Math.round((taxableAmount * cgstRate) / 100);
-  const sgstAmount = Math.round((taxableAmount * sgstRate) / 100);
-  const igstAmount = 0;
-
-  const tdsApplicable =
-    voucherNo.startsWith("INV") || voucherNo.startsWith("RCPT");
-
-  const tdsRate = tdsApplicable ? 10 : 0;
-  const tdsAmount = Math.round((taxableAmount * tdsRate) / 100);
-
-  const grossAmount = taxableAmount + gstAmount;
-  const netAmount = grossAmount - tdsAmount;
-
-  const raw = entry?.raw || {};
-
-  const rawBankName = raw?.bankName || raw?.particulars || "";
-  const normalizedBankName = String(rawBankName).trim().toUpperCase();
-
-  const isCashTransaction = normalizedBankName === "CASH";
-
-  const isReceiptOrPayment =
-    raw?.voucherType === "RECEIPT" ||
-    raw?.voucherType === "PAYMENT" ||
-    raw?.sourceType === "PAYMENT_RECEIPT";
+  const rawBankName = raw.bankName || null;
+  const isCashTransaction =
+    String(rawBankName || "")
+      .trim()
+      .toUpperCase() === "CASH";
 
   const hasRealBankDetails =
-    isReceiptOrPayment && !isCashTransaction && Boolean(raw?.bankName);
+    !isCashTransaction &&
+    Boolean(
+      raw.bankName ||
+        raw.accountNumber ||
+        raw.bankAccountNumber ||
+        raw.ifscCode ||
+        raw.branchName,
+    );
 
-  const paymentMode =
-    raw?.particulars ||
-    raw?.bankName ||
-    (isReceiptOrPayment ? "-" : "Adjustment Entry");
+  const hasRealTransactionDetails = Boolean(
+    hasRealBankDetails ||
+      raw.paymentMode ||
+      raw.transactionReference ||
+      (raw.actualBankReceivedAmount !== null &&
+        raw.actualBankReceivedAmount !== undefined) ||
+      (raw.tdsAmount !== null && raw.tdsAmount !== undefined) ||
+      (raw.settlementAmount !== null && raw.settlementAmount !== undefined),
+  );
 
   return {
-    voucherNo,
+    voucherNo: raw.voucherNumber || entry.voucherNo || "-",
     voucherType,
-    date: entry.date || "-",
-    particulars: entry.particulars || "-",
+    date: raw.voucherDate ? formatDate(raw.voucherDate) : entry.date || "-",
+    particulars: raw.particulars || entry.particulars || null,
     debit: entry.debit,
     credit: entry.credit,
     balance: entry.balance || "-",
     amount,
 
-    ledgerName: ledger.name || "-",
-    ledgerCode: ledger.ledgerCode || "-",
-    ledgerType: ledger.ledgerType || "-",
-    groupName: ledger.groupName || "-",
-    partyType: ledger.partyType || "-",
+    ledgerName: ledger.raw?.ledgerName || ledger.name || "-",
+    ledgerCode: ledger.raw?.ledgerCode || ledger.ledgerCode || "-",
+    ledgerType: ledger.raw?.ledgerType || ledger.ledgerType || "-",
+    groupName: ledger.raw?.ledgerGroupName || ledger.groupName || "-",
+    partyType: ledger.raw?.partyType || null,
 
-    address: ledger.billingAddress || "-",
-    gstin: ledger.gstin || "-",
-    panNumber: ledger.panNumber || "-",
-    email: ledger.email || "-",
-    mobile: ledger.mobile || "-",
+    address: ledger.raw?.billingAddress || ledger.raw?.fullAddress || null,
+    gstin: ledger.raw?.gstNo || null,
+    panNumber: ledger.raw?.panNo || null,
+    email: ledger.raw?.email || null,
+    mobile: ledger.raw?.mobile || null,
 
-    serviceName,
-    serviceCode,
-    sacCode,
-    taxableAmount,
-    gstRate,
-    gstAmount,
-    cgstRate,
-    sgstRate,
-    igstRate,
-    cgstAmount,
-    sgstAmount,
-    igstAmount,
-    tdsApplicable,
-    tdsRate,
-    tdsAmount,
-    grossAmount,
-    netAmount,
+    serviceName: raw.serviceName || null,
+    gstDetails:
+      raw.gstDetails && typeof raw.gstDetails === "object"
+        ? raw.gstDetails
+        : null,
 
-    bankName: hasRealBankDetails ? raw?.bankName : "-",
+    bankName: hasRealBankDetails ? raw.bankName || null : null,
     bankAccountNumber: hasRealBankDetails
-      ? raw?.accountNumber ||
-        raw?.bankAccountNumber ||
-        ledger?.raw?.accountNumber ||
-        "-"
-      : "-",
-    ifscCode: hasRealBankDetails
-      ? raw?.ifscCode || ledger?.raw?.ifscCode || "-"
-      : "-",
-    branchName: hasRealBankDetails
-      ? raw?.branchName || ledger?.raw?.branchName || "-"
-      : "-",
+      ? raw.accountNumber || raw.bankAccountNumber || null
+      : null,
+    ifscCode: hasRealBankDetails ? raw.ifscCode || null : null,
+    branchName: hasRealBankDetails ? raw.branchName || null : null,
 
-    paymentMode,
-    transactionReference: raw?.transactionReference || "-",
-
-    actualBankReceivedAmount: raw?.actualBankReceivedAmount,
-    tdsAmountFromApi: raw?.tdsAmount,
-    settlementAmount: raw?.settlementAmount,
+    paymentMode: raw.paymentMode || null,
+    transactionReference: raw.transactionReference || null,
+    actualBankReceivedAmount: raw.actualBankReceivedAmount,
+    tdsAmountFromApi: raw.tdsAmount,
+    settlementAmount: raw.settlementAmount,
 
     showBankDetails: hasRealBankDetails,
-    showTransactionDetails: isReceiptOrPayment,
+    showTransactionDetails: hasRealTransactionDetails,
 
-    createdBy: "ERP Test",
-    createdAt: entry.date || "-",
-    remarks: `Voucher entry posted in ${ledger.name || "selected ledger"}.`,
+    createdBy: raw.createdBy || null,
+    createdAt: raw.createdAt ? formatDate(raw.createdAt) : null,
+    remarks: raw.remarks || raw.narration || null,
   };
 };
 
@@ -652,10 +582,8 @@ const LedgerMasterSection = () => {
       // totalDebit: String(ledger.totalDebit ?? 0),
       // totalCredit: String(ledger.totalCredit ?? 0),
       // currency: ledger.currency || "INR",
-      effectiveFrom:
-        ledger.effectiveFrom?.slice?.(0, 10) ||
-        new Date().toISOString().slice(0, 10),
-      gstStatus: ledger.gstStatus || "Not Applicable",
+      effectiveFrom: ledger.raw?.effectiveFrom?.slice?.(0, 10) || "",
+      gstStatus: ledger.raw?.gstStatus || "",
       gstin: ledger.raw?.gstNo || "",
       panNumber: ledger.raw?.panNo || "",
       email: ledger.email === "-" ? "" : ledger.email || "",
@@ -1046,12 +974,19 @@ const LedgerMasterSection = () => {
                     }`}
                   />
 
-                  <InfoItem label="Currency" value={selectedLedger.currency} />
+                  {selectedLedger.currency && (
+                    <InfoItem
+                      label="Currency"
+                      value={selectedLedger.currency}
+                    />
+                  )}
 
-                  <InfoItem
-                    label="Effective From"
-                    value={formatDate(selectedLedger.effectiveFrom)}
-                  />
+                  {selectedLedger.effectiveFrom && (
+                    <InfoItem
+                      label="Effective From"
+                      value={formatDate(selectedLedger.effectiveFrom)}
+                    />
+                  )}
                 </div>
 
                 {/* Financial Summary */}
@@ -1081,12 +1016,14 @@ const LedgerMasterSection = () => {
                       icon={ArrowDownRight}
                     />
 
-                    <SummaryCard
-                      label="GST Status"
-                      value={selectedLedger.gstStatus}
-                      icon={ShieldCheck}
-                      textOnly
-                    />
+                    {selectedLedger.gstStatus && (
+                      <SummaryCard
+                        label="GST Status"
+                        value={selectedLedger.gstStatus}
+                        icon={ShieldCheck}
+                        textOnly
+                      />
+                    )}
                   </div>
                 </div>
               </section>
@@ -1099,33 +1036,47 @@ const LedgerMasterSection = () => {
                 </h3>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <ContactItem
-                    icon={FileText}
-                    label="GSTIN"
-                    value={selectedLedger.gstin}
-                  />
-                  <ContactItem
-                    icon={IdCard}
-                    label="PAN"
-                    value={selectedLedger.panNumber}
-                  />
-                  <ContactItem
-                    icon={Mail}
-                    label="Email"
-                    value={selectedLedger.email}
-                  />
-                  {/* <ContactItem
-                    icon={Phone}
-                    label="Mobile"
-                    value={selectedLedger.mobile}
-                  /> */}
-                  <div className="md:col-span-2">
+                  {selectedLedger.gstin && (
                     <ContactItem
-                      icon={MapPin}
-                      label="Billing Address"
-                      value={selectedLedger.fullAddress || "-"}
+                      icon={FileText}
+                      label="GSTIN"
+                      value={selectedLedger.gstin}
                     />
-                  </div>
+                  )}
+
+                  {selectedLedger.panNumber && (
+                    <ContactItem
+                      icon={IdCard}
+                      label="PAN"
+                      value={selectedLedger.panNumber}
+                    />
+                  )}
+
+                  {selectedLedger.email && (
+                    <ContactItem
+                      icon={Mail}
+                      label="Email"
+                      value={selectedLedger.email}
+                    />
+                  )}
+
+                  {selectedLedger.mobile && (
+                    <ContactItem
+                      icon={Phone}
+                      label="Mobile"
+                      value={selectedLedger.mobile}
+                    />
+                  )}
+
+                  {selectedLedger.fullAddress && (
+                    <div className="md:col-span-2">
+                      <ContactItem
+                        icon={MapPin}
+                        label="Billing Address"
+                        value={selectedLedger.fullAddress}
+                      />
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -1808,10 +1759,12 @@ const VoucherDetailsDrawer = ({
                       label="Under Group"
                       value={details.groupName}
                     />
-                    <VoucherInfoItem
-                      label="Party Type"
-                      value={details.partyType}
-                    />
+                    {details.partyType && (
+                      <VoucherInfoItem
+                        label="Party Type"
+                        value={details.partyType}
+                      />
+                    )}
                     <VoucherInfoItem label="Balance" value={details.balance} />
                   </div>
                 </section>
@@ -1824,21 +1777,34 @@ const VoucherDetailsDrawer = ({
                   </h3>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <VoucherInfoItem label="GSTIN" value={details.gstin} />
-                    <VoucherInfoItem
-                      label="PAN Number"
-                      value={details.panNumber}
-                    />
-                    <VoucherInfoItem label="Email" value={details.email} />
-                    <VoucherInfoItem label="Mobile" value={details.mobile} />
+                    {details.gstin && (
+                      <VoucherInfoItem label="GSTIN" value={details.gstin} />
+                    )}
 
-                    <div className="sm:col-span-2">
+                    {details.panNumber && (
                       <VoucherInfoItem
-                        label="Billing Address"
-                        value={details.address}
-                        multiline
+                        label="PAN Number"
+                        value={details.panNumber}
                       />
-                    </div>
+                    )}
+
+                    {details.email && (
+                      <VoucherInfoItem label="Email" value={details.email} />
+                    )}
+
+                    {details.mobile && (
+                      <VoucherInfoItem label="Mobile" value={details.mobile} />
+                    )}
+
+                    {details.address && (
+                      <div className="sm:col-span-2">
+                        <VoucherInfoItem
+                          label="Billing Address"
+                          value={details.address}
+                          multiline
+                        />
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -1856,51 +1822,72 @@ const VoucherDetailsDrawer = ({
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {details.showBankDetails && (
                           <>
-                            <VoucherInfoItem
-                              label="Bank Name"
-                              value={details.bankName}
-                            />
-                            <VoucherInfoItem
-                              label="Bank Account No."
-                              value={details.bankAccountNumber}
-                            />
-                            <VoucherInfoItem
-                              label="IFSC Code"
-                              value={details.ifscCode}
-                            />
-                            <VoucherInfoItem
-                              label="Branch"
-                              value={details.branchName}
-                            />
+                            {details.bankName && (
+                              <VoucherInfoItem
+                                label="Bank Name"
+                                value={details.bankName}
+                              />
+                            )}
+                            {details.bankAccountNumber && (
+                              <VoucherInfoItem
+                                label="Bank Account No."
+                                value={details.bankAccountNumber}
+                              />
+                            )}
+                            {details.ifscCode && (
+                              <VoucherInfoItem
+                                label="IFSC Code"
+                                value={details.ifscCode}
+                              />
+                            )}
+                            {details.branchName && (
+                              <VoucherInfoItem
+                                label="Branch"
+                                value={details.branchName}
+                              />
+                            )}
                           </>
                         )}
 
-                        <VoucherInfoItem
-                          label="Payment Mode"
-                          value={details.paymentMode}
-                        />
+                        {details.paymentMode && (
+                          <VoucherInfoItem
+                            label="Payment Mode"
+                            value={details.paymentMode}
+                          />
+                        )}
 
-                        <VoucherInfoItem
-                          label="Transaction Ref."
-                          value={details.transactionReference}
-                        />
+                        {details.transactionReference && (
+                          <VoucherInfoItem
+                            label="Transaction Ref."
+                            value={details.transactionReference}
+                          />
+                        )}
 
-                        <VoucherInfoItem
-                          label="Actual Received Amount"
-                          value={formatCurrency(
-                            details.actualBankReceivedAmount,
+                        {details.actualBankReceivedAmount !== null &&
+                          details.actualBankReceivedAmount !== undefined && (
+                            <VoucherInfoItem
+                              label="Actual Received Amount"
+                              value={formatCurrency(
+                                details.actualBankReceivedAmount,
+                              )}
+                            />
                           )}
-                        />
 
-                        <VoucherInfoItem
-                          label="TDS Amount"
-                          value={formatCurrency(details.tdsAmountFromApi)}
-                        />
+                        {details.tdsAmountFromApi !== null &&
+                          details.tdsAmountFromApi !== undefined && (
+                            <VoucherInfoItem
+                              label="TDS Amount"
+                              value={formatCurrency(details.tdsAmountFromApi)}
+                            />
+                          )}
 
-                        <VoucherInfoItem
-                          label="Settlement Amount"
-                          value={formatCurrency(details.settlementAmount)}
-                        />
+                        {details.settlementAmount !== null &&
+                          details.settlementAmount !== undefined && (
+                            <VoucherInfoItem
+                              label="Settlement Amount"
+                              value={formatCurrency(details.settlementAmount)}
+                            />
+                          )}
                       </div>
                     </section>
                   </>
@@ -1919,14 +1906,18 @@ const VoucherDetailsDrawer = ({
                       value={details.particulars}
                       multiline
                     />
-                    <VoucherInfoItem
-                      label="Created By"
-                      value={details.createdBy}
-                    />
-                    <VoucherInfoItem
-                      label="Created At"
-                      value={details.createdAt}
-                    />
+                    {details.createdBy && (
+                      <VoucherInfoItem
+                        label="Created By"
+                        value={details.createdBy}
+                      />
+                    )}
+                    {details.createdAt && (
+                      <VoucherInfoItem
+                        label="Created At"
+                        value={details.createdAt}
+                      />
+                    )}
                     <VoucherInfoItem
                       label="Debit"
                       value={formatCurrency(details.debit)}
@@ -1935,11 +1926,13 @@ const VoucherDetailsDrawer = ({
                       label="Credit"
                       value={formatCurrency(details.credit)}
                     />
-                    <VoucherInfoItem
-                      label="Remarks"
-                      value={details.remarks}
-                      multiline
-                    />
+                    {details.remarks && (
+                      <VoucherInfoItem
+                        label="Remarks"
+                        value={details.remarks}
+                        multiline
+                      />
+                    )}
                   </div>
                 </section>
               </div>
@@ -2117,7 +2110,6 @@ const SummaryCard = ({ label, value, icon: Icon, textOnly = false }) => {
 };
 
 const ContactItem = ({ icon: Icon, label, value }) => {
-  console.log("ContactItem value:", value); // Debugging line to check the value
   return (
     <div className="flex min-w-0 gap-3 border-b border-slate-200 pb-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700">
