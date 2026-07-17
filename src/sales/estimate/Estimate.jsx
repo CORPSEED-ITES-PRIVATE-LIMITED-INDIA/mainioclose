@@ -26,6 +26,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
   useDisclosure,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
@@ -42,6 +43,7 @@ import {
 import dayjs from "dayjs";
 import { inrCurrency, statusColorCode } from "../../common";
 import {
+  createAdvanceTaxInvoiceRequest,
   createPaymentRegister,
   fetchEstimateReport,
 } from "../../toolkit/slices/accountSlice";
@@ -90,6 +92,26 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
+function isPurchaseOrderEstimate(estimate) {
+  const possibleValues = [
+    estimate?.paymentTypeCode,
+    estimate?.paymentTypeName,
+    estimate?.paymentType?.code,
+    estimate?.paymentType?.name,
+  ];
+
+  return possibleValues.some((value) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      normalized === "purchase_order" ||
+      (normalized.includes("purchase") && normalized.includes("order"))
+    );
+  });
+}
+
 const INITIAL_VISIBLE_COLUMNS = [
   "estimateNumber",
   "solutionName",
@@ -109,6 +131,7 @@ const Estimate = () => {
   const { userId } = useParams();
   const viewModal = useDisclosure();
   const paymentModal = useDisclosure();
+  const advanceTaxInvoiceModal = useDisclosure();
   const reportModal = useDisclosure();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.leads.totalEstimateCount);
@@ -123,6 +146,13 @@ const Estimate = () => {
   );
   const [activeEstimateId, setActiveEstimateId] = useState(null);
   const [estimateItem, setEstimateItem] = useState(null);
+
+  const [advanceTaxInvoiceEstimate, setAdvanceTaxInvoiceEstimate] =
+    useState(null);
+  const [advanceTaxInvoiceAmount, setAdvanceTaxInvoiceAmount] = useState("");
+  const [advanceTaxInvoiceRemarks, setAdvanceTaxInvoiceRemarks] = useState("");
+  const [isAdvanceTaxInvoiceSubmitting, setIsAdvanceTaxInvoiceSubmitting] =
+    useState(false);
   const paymentTypes = useMemo(
     () => [
       { id: 1, name: "Advance" },
@@ -322,6 +352,128 @@ const Estimate = () => {
     }
   };
 
+  const resetAdvanceTaxInvoiceForm = () => {
+    setAdvanceTaxInvoiceEstimate(null);
+    setAdvanceTaxInvoiceAmount("");
+    setAdvanceTaxInvoiceRemarks("");
+    setIsAdvanceTaxInvoiceSubmitting(false);
+  };
+
+  const closeAdvanceTaxInvoiceModal = () => {
+    advanceTaxInvoiceModal.onClose();
+    resetAdvanceTaxInvoiceForm();
+  };
+
+  const handleOpenAdvanceTaxInvoice = (rowData) => {
+    if (
+      rowData?.company?.onboardingStatus === "MINIMAL" ||
+      rowData?.unit?.onboardingStatus === "MINIMAL"
+    ) {
+      addToast({
+        title: "Please update the full company detail first.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (rowData?.status === "CANCELLED") {
+      addToast({
+        title: "Advance Tax Invoice cannot be raised for a cancelled estimate.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setAdvanceTaxInvoiceEstimate(rowData);
+    setAdvanceTaxInvoiceAmount("");
+    setAdvanceTaxInvoiceRemarks("");
+    advanceTaxInvoiceModal.onOpen();
+  };
+
+  const handleSubmitAdvanceTaxInvoice = async () => {
+    if (!advanceTaxInvoiceEstimate?.id) {
+      addToast({
+        title: "Estimate is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    const purchaseOrderConversion = isPurchaseOrderEstimate(
+      advanceTaxInvoiceEstimate,
+    );
+
+    const numericAmount = Number(advanceTaxInvoiceAmount);
+
+    if (
+      !purchaseOrderConversion &&
+      (!advanceTaxInvoiceAmount ||
+        Number.isNaN(numericAmount) ||
+        numericAmount <= 0)
+    ) {
+      addToast({
+        title: "Requested amount must be greater than zero",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      estimateId: Number(advanceTaxInvoiceEstimate.id),
+      requestedByUserId: Number(userId),
+      requestRemarks: advanceTaxInvoiceRemarks.trim(),
+    };
+
+    /*
+     * Completed zero-value PURCHASE_ORDER conversion:
+     * requestedAmount must not be sent. Backend calculates the
+     * complete remaining invoiceable amount automatically.
+     */
+    if (!purchaseOrderConversion) {
+      payload.requestedAmount = numericAmount;
+    }
+
+    try {
+      setIsAdvanceTaxInvoiceSubmitting(true);
+
+      const response = await dispatch(createAdvanceTaxInvoiceRequest(payload));
+
+      if (response?.meta?.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Failed to raise Advance Tax Invoice request",
+          description:
+            response?.payload?.message ||
+            response?.payload?.data?.message ||
+            "Something went wrong",
+          color: "danger",
+        });
+        return;
+      }
+
+      addToast({
+        title: "SUCCESS",
+        description:
+          response?.payload?.message ||
+          "Advance Tax Invoice request raised successfully.",
+        color: "success",
+      });
+
+      closeAdvanceTaxInvoiceModal();
+      handleApplyFilter();
+    } catch (error) {
+      addToast({
+        title: "Failed to raise Advance Tax Invoice request",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong",
+        color: "danger",
+      });
+    } finally {
+      setIsAdvanceTaxInvoiceSubmitting(false);
+    }
+  };
+
   const downloadCSV = (rows = [], fileName = "estimate-report.csv") => {
     if (!rows.length) {
       addToast({
@@ -490,8 +642,15 @@ const Estimate = () => {
         );
       case "unitName":
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <span className="font-normal">{rowData?.unit?.unitName}</span>
+
+            {rowData?.unit?.gstRegistrationType && (
+              <span className="text-xs text-foreground-500">
+                GST Type: {rowData.unit.gstRegistrationType}
+              </span>
+            )}
+
             <Badge
               size="sm"
               placement="center-left"
@@ -673,6 +832,8 @@ const Estimate = () => {
                       setEstimateItem(rowData);
                       paymentModal.onOpen();
                     }
+                  } else if (item === "advanceTaxInvoice") {
+                    handleOpenAdvanceTaxInvoice(rowData);
                   } else if (item === "viewEstimate") {
                     handleViewEstimate(rowData, "ESTIMATE");
                   } else if (item === "viewPI") {
@@ -712,6 +873,13 @@ const Estimate = () => {
                     Add payment register
                   </DropdownItem>
                 )}
+
+                {rowData?.status !== "CANCELLED" && (
+                  <DropdownItem key="advanceTaxInvoice">
+                    Raise Advance Tax Invoice
+                  </DropdownItem>
+                )}
+
                 <DropdownItem key="viewEstimate">View estimate</DropdownItem>
                 <DropdownItem key="viewPI">View PI</DropdownItem>
                 <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
@@ -1129,6 +1297,117 @@ const Estimate = () => {
         filters={filters}
         onSubmitPayment={(payload) => dispatch(createPaymentRegister(payload))}
       />
+
+      <Modal
+        size="2xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={advanceTaxInvoiceModal.isOpen}
+        onOpenChange={advanceTaxInvoiceModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {() => {
+            const purchaseOrderConversion = isPurchaseOrderEstimate(
+              advanceTaxInvoiceEstimate,
+            );
+
+            return (
+              <>
+                <ModalHeader>Raise Advance Tax Invoice Request</ModalHeader>
+
+                <ModalBody>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      label="Estimate Number"
+                      value={advanceTaxInvoiceEstimate?.estimateNumber || ""}
+                      isReadOnly
+                    />
+
+                    <Input
+                      label="Estimate Total"
+                      value={inrCurrency(
+                        advanceTaxInvoiceEstimate?.grandTotal || 0,
+                      )}
+                      isReadOnly
+                    />
+
+                    {purchaseOrderConversion ? (
+                      <div className="md:col-span-2 rounded-xl border border-warning-200 bg-warning-50 p-3 text-sm">
+                        This Estimate uses the completed zero-value Purchase
+                        Order flow. The backend will automatically request the
+                        complete remaining invoiceable amount. Manual amount
+                        entry is disabled.
+                      </div>
+                    ) : (
+                      <Input
+                        className="md:col-span-2"
+                        type="number"
+                        min={0.01}
+                        step="0.01"
+                        label="Requested Amount"
+                        placeholder="Enter Advance Tax Invoice amount"
+                        value={advanceTaxInvoiceAmount}
+                        onKeyDown={(event) => {
+                          if (["-", "+", "e", "E"].includes(event.key)) {
+                            event.preventDefault();
+                          }
+                        }}
+                        onChange={(event) => {
+                          const value = event.target.value;
+
+                          if (value === "") {
+                            setAdvanceTaxInvoiceAmount("");
+                            return;
+                          }
+
+                          if (Number(value) < 0) {
+                            setAdvanceTaxInvoiceAmount("0");
+                            return;
+                          }
+
+                          setAdvanceTaxInvoiceAmount(value);
+                        }}
+                        isRequired
+                      />
+                    )}
+
+                    <Textarea
+                      className="md:col-span-2"
+                      label="Request Remarks"
+                      placeholder="Enter reason for raising Advance Tax Invoice"
+                      minRows={3}
+                      maxLength={5000}
+                      value={advanceTaxInvoiceRemarks}
+                      onChange={(event) =>
+                        setAdvanceTaxInvoiceRemarks(event.target.value)
+                      }
+                    />
+                  </div>
+                </ModalBody>
+
+                <ModalFooter>
+                  <Button
+                    variant="flat"
+                    onPress={closeAdvanceTaxInvoiceModal}
+                    isDisabled={isAdvanceTaxInvoiceSubmitting}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    color="primary"
+                    onPress={handleSubmitAdvanceTaxInvoice}
+                    isLoading={isAdvanceTaxInvoiceSubmitting}
+                  >
+                    Raise Request
+                  </Button>
+                </ModalFooter>
+              </>
+            );
+          }}
+        </ModalContent>
+      </Modal>
 
       <FullCompanyDetailsForm
         isOpen={isOpen}

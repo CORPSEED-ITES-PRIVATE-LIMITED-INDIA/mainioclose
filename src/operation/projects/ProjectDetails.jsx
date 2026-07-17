@@ -526,6 +526,8 @@ const ProjectDetails = () => {
     return [];
   }, [vendorList]);
 
+  console.log("adsjgdfjgs", normalizedVendorList);
+
   const vendorDetail = useSelector(
     (state) => state.vendors.vendorDetailInProject,
   );

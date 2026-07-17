@@ -36,6 +36,7 @@ import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
 import Ledger from "../accounts/ledgers/Ledger";
 import LedgerEntriesPage from "../accounts/ledgers/LedgerEntriesPage";
 import VendorDetails from "../accounts/vendorDetails/VendorDetails";
+import AdvanceInvoices from "../accounts/AdvanceInvoices";
 
 export const AccountsModuleRouting = () => {
   return (
@@ -54,6 +55,7 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/bankStatement" element={<BankStatement />} />
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
+      <Route path="accounts/advanceInvoices" element={<AdvanceInvoices />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
       <Route
         path="accounts/unbilled/:unbilledId/invoices"

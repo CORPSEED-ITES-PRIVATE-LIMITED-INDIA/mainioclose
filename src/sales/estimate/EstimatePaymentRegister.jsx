@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from "react";
+import React, { memo, useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,11 @@ const bankOptions = [
 
 const bankRequiredPaymentModes = ["UPI", "CHEQUE", "BANK_TRANSFER", "CARD"];
 
+const PAYMENT_FLOW = {
+  REGULAR: "REGULAR",
+  PURCHASE_ORDER: "PURCHASE_ORDER",
+};
+
 const preventNegativeNumberInput = (e) => {
   if (["-", "+", "e", "E"].includes(e.key)) {
     e.preventDefault();
@@ -63,7 +68,7 @@ const numberLike = (label) =>
     .refine((v) => !Number.isNaN(v), `${label} must be a valid number`);
 
 const purchaseOrderPaymentSchema = z.object({
-  isPurchaseOrderPayment: z.literal(true),
+  paymentFlow: z.literal(PAYMENT_FLOW.PURCHASE_ORDER),
 
   paymentTypeId: numberLike("Payment type").refine(
     (v) => v > 0,
@@ -80,7 +85,7 @@ const purchaseOrderPaymentSchema = z.object({
 });
 
 const regularPaymentSchema = z.object({
-  isPurchaseOrderPayment: z.literal(false),
+  paymentFlow: z.literal(PAYMENT_FLOW.REGULAR),
 
   amount: numberLike("Amount").refine(
     (v) => v >= 0,
@@ -128,12 +133,12 @@ const regularPaymentSchema = z.object({
 });
 
 const paymentRegisterSchema = z
-  .discriminatedUnion("isPurchaseOrderPayment", [
+  .discriminatedUnion("paymentFlow", [
     purchaseOrderPaymentSchema,
     regularPaymentSchema,
   ])
   .superRefine((data, ctx) => {
-    if (data.isPurchaseOrderPayment) {
+    if (data.paymentFlow !== PAYMENT_FLOW.REGULAR) {
       return;
     }
 
@@ -230,7 +235,7 @@ const EstimatePaymentRegister = ({
   } = useForm({
     resolver: zodResolver(paymentRegisterSchema),
     defaultValues: {
-      isPurchaseOrderPayment: false,
+      paymentFlow: PAYMENT_FLOW.REGULAR,
 
       amount: "",
       paymentDate: "",
@@ -299,7 +304,24 @@ const EstimatePaymentRegister = ({
 
   const shouldShowBankName = bankRequiredPaymentModes.includes(paymentMode);
 
-  const selectedPaymentType = (paymentTypeList || []).find(
+  const availablePaymentTypeList = useMemo(() => {
+    const apiPaymentTypes = Array.isArray(paymentTypeList)
+      ? paymentTypeList
+      : [];
+
+    const lockedPaymentTypeId = estimateItem?.paymentTypeId;
+
+    const allowedApiPaymentTypes =
+      lockedPaymentTypeId !== undefined && lockedPaymentTypeId !== null
+        ? apiPaymentTypes.filter(
+            (item) => String(item?.id) === String(lockedPaymentTypeId),
+          )
+        : apiPaymentTypes;
+
+    return allowedApiPaymentTypes;
+  }, [paymentTypeList, estimateItem?.paymentTypeId]);
+
+  const selectedPaymentType = availablePaymentTypeList.find(
     (item) => String(item?.id) === String(selectedPaymentTypeId),
   );
 
@@ -323,6 +345,8 @@ const EstimatePaymentRegister = ({
   const shouldShowPurchaseOrderFields =
     normalizedPaymentTypeName.includes("purchase") &&
     normalizedPaymentTypeName.includes("order");
+
+  const shouldShowRegularPaymentFields = !shouldShowPurchaseOrderFields;
 
   const shouldShowPaymentTenure = shouldShowPurchaseOrderFields;
 
@@ -392,7 +416,24 @@ const EstimatePaymentRegister = ({
   }, [estimateItem, setValue]);
 
   useEffect(() => {
-    setValue("isPurchaseOrderPayment", shouldShowPurchaseOrderFields);
+    if (shouldShowPurchaseOrderFields) {
+      setValue("paymentFlow", PAYMENT_FLOW.PURCHASE_ORDER);
+
+      setValue("amount", "");
+      setValue("paymentDate", "");
+      setValue("paymentMode", "");
+      setValue("bankLedgerId", "");
+      setValue("transactionReference", "");
+      setValue("paymentProof", "");
+      setValue("governmentFeeActive", false);
+      setValue("tdsActive", false);
+      setValue("tds.tdsPercentage", "");
+      return;
+    }
+
+    setValue("paymentFlow", PAYMENT_FLOW.REGULAR);
+    setValue("poNumber", "");
+    setValue("poAttachmentUrl", "");
 
     if (!shouldShowTds) {
       setValue("tdsActive", false);
@@ -407,28 +448,41 @@ const EstimatePaymentRegister = ({
       setValue("paymentTerms", "");
       setValue("paymentTermsDays", "");
     }
-
-    if (!shouldShowPurchaseOrderFields) {
-      setValue("poNumber", "");
-      setValue("poAttachmentUrl", "");
-    } else {
-      setValue("amount", "");
-      setValue("paymentDate", "");
-      setValue("paymentMode", "");
-      setValue("bankLedgerId", "");
-      setValue("transactionReference", "");
-      setValue("paymentProof", "");
-      setValue("governmentFeeActive", false);
-      setValue("tdsActive", false);
-      setValue("tds.tdsPercentage", "");
-    }
   }, [
+    shouldShowPurchaseOrderFields,
     shouldShowTds,
     shouldShowPaymentTenure,
-    shouldShowPurchaseOrderFields,
     tdsActive,
     setValue,
   ]);
+
+  const refreshEstimateList = () => {
+    dispatch(
+      getAllEstimateByUserId({
+        userId,
+        page: filteration.page,
+        size: filteration.size,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
+      }),
+    );
+
+    dispatch(
+      getTotalCountOfEstimate({
+        userId,
+        data: {
+          search: filters.search || "",
+          status: filters.status || "",
+          fromDate: filters.fromDate || "",
+          toDate: filters.toDate || "",
+        },
+      }),
+    );
+  };
 
   const submitHandler = async (values) => {
     try {
@@ -502,43 +556,25 @@ const EstimatePaymentRegister = ({
           description: "Payment registered successfully!",
           color: "success",
         });
-        dispatch(
-          getAllEstimateByUserId({
-            userId,
-            page: filteration.page,
-            size: filteration.size,
-            data: {
-              search: filters.search || "",
-              status: filters.status || "",
-              fromDate: filters.fromDate || "",
-              toDate: filters.toDate || "",
-            },
-          }),
-        );
 
-        dispatch(
-          getTotalCountOfEstimate({
-            userId,
-            data: {
-              search: filters.search || "",
-              status: filters.status || "",
-              fromDate: filters.fromDate || "",
-              toDate: filters.toDate || "",
-            },
-          }),
-        );
+        refreshEstimateList();
+        reset();
         onClose?.();
       } else {
         addToast({
           title: "ERROR",
-          description: res?.payload?.message || "Failed to register payment",
+          description:
+            res?.payload?.message ||
+            res?.payload?.data?.message ||
+            "Failed to register payment",
           color: "danger",
         });
       }
     } catch (e) {
       addToast({
         title: "ERROR",
-        description: "Something went wrong !",
+        description:
+          e?.response?.data?.message || e?.message || "Something went wrong!",
         color: "danger",
       });
     }
@@ -581,14 +617,34 @@ const EstimatePaymentRegister = ({
                     render={({ field, fieldState: { error } }) => (
                       <NewSelect
                         isRequired
-                        isDisabled={estimateItem?.paymentTypeId ? true : false}
                         label="Payment Type"
-                        data={paymentTypeList || []}
+                        data={availablePaymentTypeList}
                         labelKey="name"
                         valueKey="id"
                         value={field.value ?? ""}
                         onChange={(value) => {
                           field.onChange(value);
+
+                          const nextPaymentType = availablePaymentTypeList.find(
+                            (item) => String(item?.id) === String(value),
+                          );
+
+                          const nextPaymentTypeName = String(
+                            nextPaymentType?.name || "",
+                          )
+                            .trim()
+                            .toLowerCase();
+
+                          const isPurchaseOrder =
+                            nextPaymentTypeName.includes("purchase") &&
+                            nextPaymentTypeName.includes("order");
+
+                          setValue(
+                            "paymentFlow",
+                            isPurchaseOrder
+                              ? PAYMENT_FLOW.PURCHASE_ORDER
+                              : PAYMENT_FLOW.REGULAR,
+                          );
                         }}
                       />
                     )}
@@ -675,7 +731,7 @@ const EstimatePaymentRegister = ({
                   )}
 
                   {/* NORMAL PAYMENT FIELDS ONLY */}
-                  {!shouldShowPurchaseOrderFields && (
+                  {shouldShowRegularPaymentFields && (
                     <>
                       {shouldShowTds && (
                         <>
@@ -906,7 +962,7 @@ const EstimatePaymentRegister = ({
                 </div>
 
                 {/* GOVERNMENT FEE DETAILS: NORMAL PAYMENT ONLY */}
-                {!shouldShowPurchaseOrderFields && governmentFeeActive && (
+                {shouldShowRegularPaymentFields && governmentFeeActive && (
                   <div className="mt-4 border rounded-xl p-4 space-y-4">
                     <h3 className="text-sm font-semibold">
                       Government Fee Details
@@ -1021,7 +1077,7 @@ const EstimatePaymentRegister = ({
             </ModalBody>
 
             <ModalFooter className="flex justify-end gap-2">
-              {!shouldShowPurchaseOrderFields && <BaseAmountCalculator />}
+              {shouldShowRegularPaymentFields && <BaseAmountCalculator />}
 
               <Button
                 type="button"
