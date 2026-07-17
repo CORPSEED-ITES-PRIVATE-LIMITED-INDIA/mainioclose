@@ -82,6 +82,7 @@ const getDiscountApprovalToken = (proposal) =>
   "";
 
 const ProposalPdfPreview = ({ pdfUrl, pdfFileName }) => {
+  console.log("pdfUrl:", pdfUrl);
   return (
     <div className="bg-white rounded-xl shadow border overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-gray-50 px-5 py-3">

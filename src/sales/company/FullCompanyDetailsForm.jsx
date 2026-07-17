@@ -693,7 +693,7 @@ export function CompanyAndUnitsForm({
               className={formItemClass}
               getValueFromEvent={(e) => allowOnlyNumbers(e.target.value)}
             >
-              <Input maxLength={4} />
+              <Input maxLength={4} readOnly />
             </Form.Item>
 
             <Form.Item
