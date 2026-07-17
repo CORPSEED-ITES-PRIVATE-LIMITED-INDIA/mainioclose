@@ -98,7 +98,7 @@ const regularPaymentSchema = z.object({
     .string()
     .trim()
     .min(1, "Transaction reference number is required"),
-  paymentProof: z.string().optional(),
+  paymentProof: z.string().trim().min(1, "Payment proof is required"),
   remarks: z.string().optional(),
   bankLedgerId: z.string().optional(),
 
@@ -908,14 +908,25 @@ const EstimatePaymentRegister = ({
                       <Controller
                         name="paymentProof"
                         control={control}
-                        render={({ field }) => (
-                          <SingleFileUploader
-                            label="Payment Proof"
-                            value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                            }}
-                          />
+                        render={({ field, fieldState: { error } }) => (
+                          <div>
+                            <SingleFileUploader
+                              label="Payment Proof"
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value || "");
+                              }}
+                              isRequired={true}
+                              isInvalid={!!error}
+                              errorMessage={error?.message}
+                            />
+
+                            {error?.message && (
+                              <p className="mt-1 text-xs text-danger">
+                                {error.message}
+                              </p>
+                            )}
+                          </div>
                         )}
                       />
 
