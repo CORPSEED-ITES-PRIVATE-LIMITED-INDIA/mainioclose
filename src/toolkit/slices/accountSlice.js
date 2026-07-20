@@ -739,7 +739,7 @@ export const confirmAdvanceTaxInvoiceEInvoiceAndCreateProject =
          * in that path position.
          */
         const response = await api.put(
-          `/accountService/api/v1/advance-tax-invoice-requests/${requestId}/confirm-e-invoice-and-create-project`,
+          `/accountService/api/v1/advance-tax-invoice-requests/${requestId}/confirm-e-invoice`,
           data,
         );
 
