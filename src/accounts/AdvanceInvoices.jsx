@@ -30,7 +30,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 
-import { EllipsisVertical, Search } from "lucide-react";
+import { EllipsisVertical, Eye, Search } from "lucide-react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -41,6 +41,7 @@ import {
   confirmAdvanceTaxInvoiceEInvoiceAndCreateProject,
   getAllAdvanceTaxInvoiceRequests,
 } from "../toolkit/slices/accountSlice";
+import AdvanceTaxInvoiceView from "./AdvanceTaxInvoiceView";
 
 const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -57,6 +58,7 @@ const COLUMNS = [
   { name: "INVOICE NUMBER", uid: "invoiceNumber" },
   { name: "INVOICE TOTAL", uid: "invoiceGrandTotal", align: "end" },
   { name: "RECEIVED", uid: "receivedAmount", align: "end" },
+  { name: "E-INVOICE", uid: "invoiceStatus", align: "end" },
   {
     name: "PENDING RECEIVED",
     uid: "pendingReceivedAmount",
@@ -172,6 +174,8 @@ const getStatusColor = (status) => {
 
     case "APPROVED":
       return "success";
+    case "E_INVOICE_CONFIRMED":
+      return "success";
 
     case "REJECTED":
       return "danger";
@@ -232,6 +236,26 @@ const normalizeLocalDateTime = (value) => {
   return value;
 };
 
+/**
+ * The advance-invoice list API already returns the complete invoice snapshot.
+ * TaxInvoice expects `grandTotal`, while this response exposes
+ * `invoiceGrandTotal`, so normalize the selected row before rendering it.
+ */
+const buildTaxInvoiceData = (item) => {
+  if (!item) return null;
+
+  return {
+    ...item,
+    id: item?.invoiceId ?? item?.id ?? null,
+    publicUuid: item?.invoicePublicUuid ?? item?.publicUuid ?? null,
+    status: item?.invoiceStatus ?? item?.status ?? null,
+    paymentStatus: item?.invoicePaymentStatus ?? item?.paymentStatus ?? null,
+    grandTotal:
+      item?.invoiceGrandTotal ?? item?.grandTotal ?? item?.approvedAmount ?? 0,
+    lineItems: Array.isArray(item?.lineItems) ? item.lineItems : [],
+  };
+};
+
 const AdvanceInvoices = () => {
   const dispatch = useDispatch();
   const params = useParams();
@@ -254,7 +278,9 @@ const AdvanceInvoices = () => {
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
 
   const confirmEInvoiceModal = useDisclosure();
+  const taxInvoiceModal = useDisclosure();
 
+  const [selectedTaxInvoice, setSelectedTaxInvoice] = useState(null);
   const [selectedEInvoiceRequest, setSelectedEInvoiceRequest] = useState(null);
   const [eInvoiceForm, setEInvoiceForm] = useState(EMPTY_E_INVOICE_FORM);
   const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
@@ -403,6 +429,30 @@ const AdvanceInvoices = () => {
       description: getApiErrorMessage(action?.payload),
       color: "danger",
     });
+  };
+
+  const openTaxInvoiceModal = (item) => {
+    const canViewTaxInvoice =
+      Boolean(item?.invoiceGenerated) &&
+      Boolean(item?.invoiceId) &&
+      Boolean(item?.invoiceNumber);
+
+    if (!canViewTaxInvoice) {
+      addToast({
+        title: "Tax invoice is not available",
+        description: "The invoice has not been generated for this request.",
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedTaxInvoice(buildTaxInvoiceData(item));
+    taxInvoiceModal.onOpen();
+  };
+
+  const closeTaxInvoiceModal = () => {
+    setSelectedTaxInvoice(null);
+    taxInvoiceModal.onClose();
   };
 
   const openEInvoiceModal = (item) => {
@@ -635,6 +685,16 @@ const AdvanceInvoices = () => {
             {item?.requestStatus || "-"}
           </Chip>
         );
+      case "invoiceStatus":
+        return (
+          <Chip
+            size="sm"
+            color={getStatusColor(item?.invoiceStatus)}
+            variant="flat"
+          >
+            {item?.invoiceStatus || "-"}
+          </Chip>
+        );
 
       case "invoiceNumber":
         return (
@@ -686,8 +746,46 @@ const AdvanceInvoices = () => {
         ).toUpperCase();
 
         const isPending = normalizedStatus === "PENDING";
+        const canViewTaxInvoice =
+          Boolean(item?.invoiceGenerated) &&
+          Boolean(item?.invoiceId) &&
+          Boolean(item?.invoiceNumber);
         const canConfirmEInvoice =
           normalizedStatus === "APPROVED" && Boolean(item?.invoiceNumber);
+        const actionItems = [];
+
+        if (isPending) {
+          actionItems.push({
+            key: "approve",
+            label: "Approve",
+            color: "success",
+          });
+        }
+
+        if (canViewTaxInvoice) {
+          actionItems.push({
+            key: "viewTaxInvoice",
+            label: "View Tax Invoice",
+            color: "secondary",
+            icon: <Eye size={16} />,
+          });
+        }
+
+        if (canConfirmEInvoice) {
+          actionItems.push({
+            key: "confirmEInvoice",
+            label: "Confirm E-Invoice",
+            color: "primary",
+          });
+        }
+
+        if (actionItems.length === 0) {
+          actionItems.push({
+            key: "noAction",
+            label: "No action available",
+            isReadOnly: true,
+          });
+        }
 
         return (
           <Dropdown>
@@ -698,10 +796,15 @@ const AdvanceInvoices = () => {
             </DropdownTrigger>
 
             <DropdownMenu
+              items={actionItems}
               aria-label="Advance tax invoice actions"
               onAction={(key) => {
                 if (key === "approve") {
                   openApproveModal(item);
+                }
+
+                if (key === "viewTaxInvoice") {
+                  openTaxInvoiceModal(item);
                 }
 
                 if (key === "confirmEInvoice") {
@@ -709,21 +812,15 @@ const AdvanceInvoices = () => {
                 }
               }}
             >
-              {isPending ? (
-                <DropdownItem key="approve" color="success">
-                  Approve
-                </DropdownItem>
-              ) : canConfirmEInvoice ? (
-                <DropdownItem key="confirmEInvoice" color="primary">
-                  Confirm E-Invoice
-                </DropdownItem>
-              ) : (
+              {(action) => (
                 <DropdownItem
-                  key="noAction"
-                  isReadOnly
-                  className="text-slate-400"
+                  key={action.key}
+                  color={action.color}
+                  isReadOnly={action.isReadOnly}
+                  startContent={action.icon}
+                  className={action.isReadOnly ? "text-slate-400" : ""}
                 >
-                  No action available
+                  {action.label}
                 </DropdownItem>
               )}
             </DropdownMenu>
@@ -864,6 +961,62 @@ const AdvanceInvoices = () => {
           )}
         </CardBody>
       </Card>
+
+      <Modal
+        size="full"
+        isOpen={taxInvoiceModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeTaxInvoiceModal();
+          }
+        }}
+        scrollBehavior="inside"
+        placement="center"
+        classNames={{
+          base: "bg-slate-100",
+          body: "p-0",
+        }}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="border-b border-slate-200 bg-white">
+                Tax Invoice
+                {selectedTaxInvoice?.invoiceNumber
+                  ? ` - ${selectedTaxInvoice.invoiceNumber}`
+                  : ""}
+              </ModalHeader>
+
+              <ModalBody className="overflow-auto bg-slate-100 p-0 sm:p-3">
+                {selectedTaxInvoice ? (
+                  <div className="min-w-fit">
+                    <AdvanceTaxInvoiceView
+                      invoiceData={selectedTaxInvoice}
+                      heading="TAX INVOICE"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[300px] items-center justify-center">
+                    <Spinner label="Loading tax invoice..." />
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter className="border-t border-slate-200 bg-white">
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    closeTaxInvoiceModal();
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
 
       <Modal
         isOpen={isApproveModalOpen}
