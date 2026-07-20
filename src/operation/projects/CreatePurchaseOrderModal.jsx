@@ -89,6 +89,7 @@ const CreatePurchaseOrderModal = ({
 
   const watchedFinalAmount = Form.useWatch("finalAmount", form);
   const watchedGstRate = Form.useWatch("gstRate", form);
+  const watchedTdsPercentage = Form.useWatch("tdsPercentage", form);
   const watchedTaxType = Form.useWatch("taxType", form);
   const [isAttachmentUploading, setIsAttachmentUploading] =
     React.useState(false);
@@ -96,8 +97,12 @@ const CreatePurchaseOrderModal = ({
   const taxCalculation = useMemo(() => {
     const finalAmount = Number(watchedFinalAmount || 0);
     const gstRate = Number(watchedGstRate || 0);
+    const tdsPercentage = Number(watchedTdsPercentage || 0);
     const taxType = watchedTaxType || "CGST_SGST";
 
+    /*
+     * Existing GST calculation remains unchanged.
+     */
     const totalTaxAmount = roundAmount((finalAmount * gstRate) / 100);
 
     let cgstAmount = 0;
@@ -108,19 +113,37 @@ const CreatePurchaseOrderModal = ({
       igstAmount = totalTaxAmount;
     } else {
       cgstAmount = roundAmount(totalTaxAmount / 2);
-      sgstAmount = roundAmount(totalTaxAmount / 2);
+
+      /*
+       * Subtraction avoids any one-paise rounding mismatch.
+       */
+      sgstAmount = roundAmount(totalTaxAmount - cgstAmount);
     }
 
-    const grandTotal = roundAmount(finalAmount + totalTaxAmount);
+    /*
+     * TDS is calculated on Final Amount.
+     */
+    const tdsAmount = roundAmount((finalAmount * tdsPercentage) / 100);
+
+    /*
+     * Grand Total = Final Amount + GST - TDS
+     */
+    const grandTotal = roundAmount(finalAmount + totalTaxAmount - tdsAmount);
 
     return {
       cgstAmount,
       sgstAmount,
       igstAmount,
       totalTaxAmount,
+      tdsAmount,
       grandTotal,
     };
-  }, [watchedFinalAmount, watchedGstRate, watchedTaxType]);
+  }, [
+    watchedFinalAmount,
+    watchedGstRate,
+    watchedTdsPercentage,
+    watchedTaxType,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +154,8 @@ const CreatePurchaseOrderModal = ({
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
       gstRate: 18,
+      tdsPercentage: 0,
+      tdsAmount: 0,
       taxType: "CGST_SGST",
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
@@ -157,6 +182,7 @@ const CreatePurchaseOrderModal = ({
       sgstAmount: taxCalculation.sgstAmount,
       igstAmount: taxCalculation.igstAmount,
       totalTaxAmount: taxCalculation.totalTaxAmount,
+      tdsAmount: taxCalculation.tdsAmount,
       grandTotal: taxCalculation.grandTotal,
     });
   }, [taxCalculation, form]);
@@ -184,6 +210,9 @@ const CreatePurchaseOrderModal = ({
 
       finalAmount: Number(values.finalAmount || 0),
       gstRate: Number(values.gstRate || 0),
+
+      tdsPercentage: Number(values.tdsPercentage || 0),
+      tdsAmount: Number(values.tdsAmount || 0),
 
       cgstAmount: Number(values.cgstAmount || 0),
       sgstAmount: Number(values.sgstAmount || 0),
@@ -318,6 +347,48 @@ const CreatePurchaseOrderModal = ({
           </Form.Item>
 
           <Form.Item
+            label="TDS Percentage (%)"
+            name="tdsPercentage"
+            rules={[
+              {
+                required: true,
+                message: "Please enter TDS percentage",
+              },
+              {
+                validator: (_, value) => {
+                  const percentage = Number(value);
+
+                  if (value === null || value === undefined || value === "") {
+                    return Promise.resolve();
+                  }
+
+                  if (
+                    Number.isNaN(percentage) ||
+                    percentage < 0 ||
+                    percentage > 100
+                  ) {
+                    return Promise.reject(
+                      new Error("TDS percentage must be between 0 and 100"),
+                    );
+                  }
+
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <InputNumber
+              className="w-full"
+              style={{ width: "100%" }}
+              min={0}
+              max={100}
+              precision={2}
+              placeholder="Enter TDS percentage"
+              addonAfter="%"
+            />
+          </Form.Item>
+
+          <Form.Item
             label="Tax Type"
             name="taxType"
             rules={[{ required: true, message: "Please select tax type" }]}
@@ -356,6 +427,16 @@ const CreatePurchaseOrderModal = ({
           </Form.Item>
 
           <Form.Item label="Total Tax Amount" name="totalTaxAmount">
+            <InputNumber
+              className="w-full"
+              style={{ width: "100%" }}
+              min={0}
+              precision={2}
+              disabled
+            />
+          </Form.Item>
+
+          <Form.Item label="TDS Amount" name="tdsAmount">
             <InputNumber
               className="w-full"
               style={{ width: "100%" }}

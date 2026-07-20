@@ -239,6 +239,12 @@ const RaiseProcurementPaymentRequestModal = ({
   const gstPercentage = watch("gstPercentage");
   const invoiceAmount = watch("invoiceAmount");
 
+  const vendorGSTRegistrationType = procurementOrder?.vendorGSTRegistrationType;
+
+  const isRegisteredVendor = vendorGSTRegistrationType === "REGISTERED";
+
+  const isInternationalVendor = vendorGSTRegistrationType === "INTERNATIONAL";
+
   const gstCalculation = useMemo(() => {
     const taxableAmount = Number(invoiceAmount || 0);
     const gstRate = Number(gstPercentage || 0);
@@ -311,8 +317,9 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
-    const isTdsActive = values.tdsActive === "YES";
-    const isGstActive = values.gstActive === "YES";
+    const isTdsActive = !isInternationalVendor && values.tdsActive === "YES";
+
+    const isGstActive = isRegisteredVendor && values.gstActive === "YES";
 
     const payload = {
       invoiceAmount: Number(values.invoiceAmount || 0),
@@ -376,6 +383,26 @@ const RaiseProcurementPaymentRequestModal = ({
     });
   };
 
+  useEffect(() => {
+    if (!open || !procurementOrder) return;
+
+    const gstValue = vendorGSTRegistrationType === "REGISTERED" ? "YES" : "NO";
+
+    const tdsValue =
+      vendorGSTRegistrationType === "INTERNATIONAL" ? "NO" : "YES";
+
+    setValue("gstActive", gstValue);
+    setValue("tdsActive", tdsValue);
+
+    if (gstValue === "NO") {
+      setValue("gstPercentage", "");
+      setValue("gstStateCode", "");
+    }
+
+    if (tdsValue === "NO") {
+      setValue("tdsPercentage", "");
+    }
+  }, [open, procurementOrder, vendorGSTRegistrationType, setValue]);
   return (
     <Modal
       isOpen={open}
@@ -396,6 +423,7 @@ const RaiseProcurementPaymentRequestModal = ({
         >
           <ModalHeader className="flex shrink-0 flex-col gap-1 border-b border-default-200">
             <span>Raise Procurement Payment Request</span>
+            {console.log(procurementOrder)}
 
             <span className="text-xs font-normal text-default-500">
               PO Number: {procurementOrder?.poNumber || "-"}
@@ -448,14 +476,12 @@ const RaiseProcurementPaymentRequestModal = ({
                 }}
                 render={({ field }) => (
                   <Select
+                    isDisabled
                     label="Apply TDS?"
                     placeholder="Select TDS option"
                     variant="bordered"
                     selectedKeys={field.value ? [field.value] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] || "NO";
-                      field.onChange(selected);
-                    }}
+                    onSelectionChange={() => {}}
                     isInvalid={Boolean(errors.tdsActive)}
                     errorMessage={errors.tdsActive?.message}
                   >
@@ -465,7 +491,7 @@ const RaiseProcurementPaymentRequestModal = ({
                 )}
               />
 
-              {tdsActive === "YES" && (
+              {!isInternationalVendor && tdsActive === "YES" && (
                 <Controller
                   name="tdsPercentage"
                   control={control}
@@ -507,19 +533,12 @@ const RaiseProcurementPaymentRequestModal = ({
                   }}
                   render={({ field }) => (
                     <Select
+                      isDisabled
                       label="Apply GST?"
                       placeholder="Select GST option"
                       variant="bordered"
                       selectedKeys={new Set(field.value ? [field.value] : [])}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] || "NO";
-                        field.onChange(selected);
-
-                        if (selected === "NO") {
-                          setValue("gstStateCode", "");
-                          setValue("gstPercentage", "");
-                        }
-                      }}
+                      onSelectionChange={() => {}}
                       isInvalid={Boolean(errors.gstActive)}
                       errorMessage={errors.gstActive?.message}
                     >
@@ -529,7 +548,7 @@ const RaiseProcurementPaymentRequestModal = ({
                   )}
                 />
 
-                {gstActive === "YES" && (
+                {isRegisteredVendor && gstActive === "YES" && (
                   <Controller
                     name="gstStateCode"
                     control={control}
@@ -564,7 +583,7 @@ const RaiseProcurementPaymentRequestModal = ({
                   />
                 )}
 
-                {gstActive === "YES" && (
+                {isRegisteredVendor && gstActive === "YES" && (
                   <Controller
                     name="gstPercentage"
                     control={control}
@@ -596,7 +615,7 @@ const RaiseProcurementPaymentRequestModal = ({
                 )}
               </div>
 
-              {gstActive === "YES" && (
+              {isRegisteredVendor && gstActive === "YES" && (
                 <div className="mt-4 rounded-lg bg-default-50 p-3 text-xs text-default-600">
                   <div className="mb-2 font-medium text-default-700">
                     GST Calculation

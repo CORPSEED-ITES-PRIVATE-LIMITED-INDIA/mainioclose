@@ -50,11 +50,19 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
+const gstRegistrationTypeOptions = [
+  { label: "Registered", value: "REGISTERED" },
+  { label: "Unregistered", value: "UNREGISTERED" },
+  { label: "SEZ", value: "SEZ" },
+  { label: "International", value: "INTERNATIONAL" },
+];
+
 const initialVendorForm = {
   name: "",
   description: "",
   email: "",
   mobile: "",
+  gstRegistrationType: "",
   gstNumber: "",
   panNumber: "",
   status: "Active",
@@ -147,10 +155,22 @@ const Vendors = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setVendorForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setVendorForm((prev) => {
+      const updatedForm = {
+        ...prev,
+        [field]: value,
+      };
+
+      if (
+        field === "gstRegistrationType" &&
+        value !== "REGISTERED" &&
+        value !== "SEZ"
+      ) {
+        updatedForm.gstNumber = "";
+      }
+
+      return updatedForm;
+    });
   };
 
   const openCreateModal = () => {
@@ -168,6 +188,7 @@ const Vendors = () => {
       description: vendor?.description || "",
       email: vendor?.email || "",
       mobile: vendor?.mobile || "",
+      gstRegistrationType: vendor?.gstRegistrationType || "",
       gstNumber: vendor?.gstNumber || "",
       panNumber: vendor?.panNumber || "",
       status: vendor?.status || "Active",
@@ -216,9 +237,22 @@ const Vendors = () => {
       return false;
     }
 
-    if (!vendorForm.gstNumber.trim()) {
+    if (!vendorForm.gstRegistrationType) {
+      addToast({
+        title: "GST registration type is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    const isGstNumberRequired =
+      vendorForm.gstRegistrationType === "REGISTERED" ||
+      vendorForm.gstRegistrationType === "SEZ";
+
+    if (isGstNumberRequired && !vendorForm.gstNumber.trim()) {
       addToast({
         title: "GST number is required",
+        description: "GST number is mandatory for Registered and SEZ vendors.",
         color: "danger",
       });
       return false;
@@ -241,7 +275,12 @@ const Vendors = () => {
       description: vendorForm.description.trim(),
       email: vendorForm.email.trim(),
       mobile: vendorForm.mobile.trim(),
-      gstNumber: vendorForm.gstNumber.trim().toUpperCase(),
+      gstRegistrationType: vendorForm.gstRegistrationType || null,
+      gstNumber:
+        vendorForm.gstRegistrationType === "REGISTERED" ||
+        vendorForm.gstRegistrationType === "SEZ"
+          ? vendorForm.gstNumber.trim().toUpperCase()
+          : null,
       panNumber: vendorForm.panNumber.trim().toUpperCase(),
       status: "ACTIVE",
       createdBy:
@@ -775,11 +814,35 @@ const Vendors = () => {
                       }
                     />
 
+                    <Select
+                      label="GST Registration Type"
+                      name="gstRegistrationType"
+                      placeholder="Select GST registration type"
+                      selectedKeys={
+                        vendorForm.gstRegistrationType
+                          ? new Set([vendorForm.gstRegistrationType])
+                          : new Set([])
+                      }
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] || "";
+
+                        handleInputChange("gstRegistrationType", selected);
+                      }}
+                    >
+                      <SelectItem key="REGISTERED">Registered</SelectItem>
+                      <SelectItem key="UNREGISTERED">Unregistered</SelectItem>
+                      <SelectItem key="SEZ">SEZ</SelectItem>
+                      <SelectItem key="INTERNATIONAL">International</SelectItem>
+                    </Select>
+
                     <Input
-                      // isRequired
+                      isRequired={
+                        vendorForm.gstRegistrationType === "REGISTERED" ||
+                        vendorForm.gstRegistrationType === "SEZ"
+                      }
                       label="GST Number"
                       name="gstNumber"
-                      placeholder="Enter GST number"
+                      placeholder="Enter GST Number"
                       value={vendorForm.gstNumber}
                       maxLength={15}
                       onValueChange={(value) =>
@@ -805,6 +868,7 @@ const Vendors = () => {
                       selectedKeys={new Set([vendorForm.verified])}
                       onSelectionChange={(keys) => {
                         const selected = Array.from(keys)[0];
+
                         handleInputChange("verified", selected);
                       }}
                     >
