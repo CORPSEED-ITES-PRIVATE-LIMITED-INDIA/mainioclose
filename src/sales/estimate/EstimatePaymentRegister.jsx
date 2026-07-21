@@ -55,6 +55,16 @@ const PAYMENT_FLOW = {
   PURCHASE_ORDER: "PURCHASE_ORDER",
 };
 
+const toTwoDecimalAmount = (value) => {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return 0;
+  }
+
+  return Number(parsedValue.toFixed(2));
+};
+
 const preventNegativeNumberInput = (e) => {
   if (["-", "+", "e", "E"].includes(e.key)) {
     e.preventDefault();
@@ -514,7 +524,10 @@ const EstimatePaymentRegister = ({
         : {
             ...values,
             estimateId: Number(estimateId),
-            amount: Number(values.amount),
+
+            // Send amount rounded to maximum two decimal places
+            amount: toTwoDecimalAmount(values.amount),
+
             paymentTypeId: Number(values.paymentTypeId),
             paymentDate: values.paymentDate,
             paymentTerms: null,
@@ -522,21 +535,27 @@ const EstimatePaymentRegister = ({
             poNumber: "",
             poAttachmentUrl: "",
 
-            // TDS is not applicable for international units.
+            // TDS is not applicable for international units
             tdsActive: isInternationalUnit ? false : Boolean(values.tdsActive),
+
             tds:
               !isInternationalUnit && values.tdsActive
                 ? {
-                    tdsPercentage: Number(values.tds?.tdsPercentage || 0),
+                    tdsPercentage: toTwoDecimalAmount(
+                      values.tds?.tdsPercentage || 0,
+                    ),
                   }
                 : null,
 
-            governmentFeeActive: values.governmentFeeActive,
+            governmentFeeActive: Boolean(values.governmentFeeActive),
+
             governmentFee: values.governmentFeeActive
               ? {
-                  totalAmount: Number(values.governmentFee?.totalAmount || 0),
-                  receivedAmount: Number(
-                    values.governmentFee?.totalAmount || 0,
+                  totalAmount: toTwoDecimalAmount(
+                    values.governmentFee?.totalAmount,
+                  ),
+                  receivedAmount: toTwoDecimalAmount(
+                    values.governmentFee?.totalAmount,
                   ),
                   paymentDate: values.governmentFee?.paymentDate || "",
                   feeReferenceNumber:
@@ -795,6 +814,8 @@ const EstimatePaymentRegister = ({
                             {...field}
                             type="number"
                             min={0}
+                            step="0.01"
+                            inputMode="decimal"
                             label="Received Amount"
                             placeholder="Enter amount"
                             isRequired
@@ -806,6 +827,11 @@ const EstimatePaymentRegister = ({
 
                               if (value === "") {
                                 field.onChange("");
+                                return;
+                              }
+
+                              // Allow maximum two decimal places
+                              if (!/^\d*(\.\d{0,2})?$/.test(value)) {
                                 return;
                               }
 
@@ -988,6 +1014,8 @@ const EstimatePaymentRegister = ({
                             {...field}
                             type="number"
                             min={0}
+                            step="0.01"
+                            inputMode="decimal"
                             label="Total Amount"
                             placeholder="Enter total amount"
                             isRequired
@@ -1002,8 +1030,7 @@ const EstimatePaymentRegister = ({
                                 return;
                               }
 
-                              if (Number(value) < 0) {
-                                field.onChange("0");
+                              if (!/^\d*(\.\d{0,2})?$/.test(value)) {
                                 return;
                               }
 
