@@ -249,7 +249,16 @@ const Expense = () => {
       case "amount":
         return <p>{inrCurrency(rowData?.amount)}</p>;
 
-      case "actions":
+      case "actions": {
+        const status = String(rowData?.approvalStatus || "")
+          .trim()
+          .toUpperCase();
+
+        // Do not show any action after final decision
+        if (["APPROVED", "REJECTED"].includes(status)) {
+          return null;
+        }
+
         return (
           <Dropdown showArrow>
             <DropdownTrigger>
@@ -257,8 +266,10 @@ const Expense = () => {
                 <EllipsisVertical />
               </Button>
             </DropdownTrigger>
+
             <DropdownMenu>
               <DropdownItem
+                key="approved"
                 onPress={() => {
                   handleChangeExpenseStatus({
                     status: "APPROVED",
@@ -269,11 +280,13 @@ const Expense = () => {
               >
                 APPROVED
               </DropdownItem>
+
               <DropdownItem
+                key="pending"
                 onPress={() => {
                   onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
+                  setStatusData((prev) => ({
+                    ...prev,
                     status: "PENDING",
                     projectId: rowData?.projectId,
                     expenseId: rowData?.expenseId,
@@ -282,11 +295,13 @@ const Expense = () => {
               >
                 PENDING
               </DropdownItem>
+
               <DropdownItem
+                key="onHold"
                 onPress={() => {
                   onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
+                  setStatusData((prev) => ({
+                    ...prev,
                     status: "ON_HOLD",
                     projectId: rowData?.projectId,
                     expenseId: rowData?.expenseId,
@@ -295,11 +310,13 @@ const Expense = () => {
               >
                 ON_HOLD
               </DropdownItem>
+
               <DropdownItem
+                key="rejected"
                 onPress={() => {
                   onOpen();
-                  setStatusData((pre) => ({
-                    ...pre,
+                  setStatusData((prev) => ({
+                    ...prev,
                     status: "REJECTED",
                     projectId: rowData?.projectId,
                     expenseId: rowData?.expenseId,
@@ -311,6 +328,7 @@ const Expense = () => {
             </DropdownMenu>
           </Dropdown>
         );
+      }
       default:
         return rowData[columnKey] || "-";
     }

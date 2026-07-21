@@ -79,7 +79,7 @@ import {
   reopenOperationChat,
 } from "../../toolkit/slices/operationSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
-import { allowOnlyNumbers } from "../../common";
+import { allowOnlyNumbers, validateGST } from "../../common";
 
 const columns = [
   { name: "QUOTATION NO.", uid: "quotationNumber" },
@@ -337,9 +337,15 @@ const sendToAccountsSchema = z
 
     accountHolderName: z.string().min(1, "Please enter account holder name"),
 
-    accountNumber: z.string().min(1, "Please enter account number"),
+    accountNumber: z
+      .string()
+      .min(1, "Please enter account number")
+      .regex(/^[0-9]{6,18}$/, "Account number must be 6 to 18 digits"),
 
-    confirmAccountNumber: z.string().min(1, "Please re-enter account number"),
+    confirmAccountNumber: z
+      .string()
+      .min(1, "Please re-enter account number")
+      .regex(/^[0-9]{6,18}$/, "Confirm account number must be 6 to 18 digits"),
 
     ifsc: z.string().min(1, "Please enter IFSC"),
 
@@ -373,7 +379,7 @@ const sendToAccountsSchema = z
 
     remarks: z.string().optional(),
   })
-  .superRefine((values, ctx) => {
+  .superRefine(async (values, ctx) => {
     if (
       values.accountNumber &&
       values.confirmAccountNumber &&
@@ -392,25 +398,23 @@ const sendToAccountsSchema = z
       values.gstRegistrationType,
     );
 
-    if (gstNumberRequired && !gstNumber) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["gstNumber"],
-        message: "GST number is required for Registered and SEZ vendors",
-      });
-
-      return;
-    }
-
-    if (
-      gstNumber &&
-      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstNumber)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["gstNumber"],
-        message: "Please enter a valid 15-character GST number",
-      });
+    /*
+     * REGISTERED / SEZ:
+     * GST is mandatory and must be valid.
+     *
+     * UNREGISTERED / INTERNATIONAL:
+     * GST is optional, but when entered it must be valid.
+     */
+    if (gstNumberRequired || gstNumber) {
+      try {
+        await validateGST(null, gstNumber);
+      } catch (error) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["gstNumber"],
+          message: error?.message || "Please enter a valid GST number",
+        });
+      }
     }
   });
 
@@ -628,6 +632,8 @@ const Quote = () => {
   } = useForm({
     resolver: zodResolver(sendToAccountsSchema),
     defaultValues: sendToAccountsDefaultValues,
+    mode: "onChange",
+    reValidateMode: "onChange",
   });
 
   const selectedGstRegistrationType = watchSendToAccounts(
@@ -637,6 +643,21 @@ const Quote = () => {
   const isGstNumberRequired = ["REGISTERED", "SEZ"].includes(
     selectedGstRegistrationType,
   );
+
+  const watchedAccountNumber = watchSendToAccounts("accountNumber") || "";
+
+  const watchedConfirmAccountNumber =
+    watchSendToAccounts("confirmAccountNumber") || "";
+
+  const accountNumbersMismatch =
+    Boolean(watchedAccountNumber) &&
+    Boolean(watchedConfirmAccountNumber) &&
+    watchedAccountNumber !== watchedConfirmAccountNumber;
+
+  const accountNumbersMatch =
+    Boolean(watchedAccountNumber) &&
+    Boolean(watchedConfirmAccountNumber) &&
+    watchedAccountNumber === watchedConfirmAccountNumber;
 
   const [quotationResponse, setQuotationResponse] = useState(null);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
@@ -1682,7 +1703,9 @@ const Quote = () => {
         onboardingModal.onClose();
         setSelectedVendorFinalization(null);
         resetOnboardingForm(onboardingDefaultValues);
+
         fetchVendorFinalizations();
+        fetchQuotations();
       } else {
         addToast({
           title: "ERROR",
@@ -2279,8 +2302,38 @@ const Quote = () => {
         case "actions": {
           const finalization = getFinalizationForQuotation(rowData);
           const existingLegalRequest = getLegalRequestForQuotation(rowData);
+
+          const isAccepted =
+            String(rowData?.status || "")
+              .trim()
+              .toUpperCase() === "ACCEPTED";
+
+          // Once accepted, allow only View
+          if (isAccepted) {
+            return (
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button size="sm" isIconOnly variant="light">
+                    <EllipsisVertical size={18} />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu aria-label="Accepted quotation actions">
+                  <DropdownItem
+                    key="view"
+                    startContent={<Eye size={15} />}
+                    onPress={() => handleView(rowData)}
+                  >
+                    View
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            );
+          }
+
           const onboardingStarted =
             finalization?.status === "ONBOARDING_STARTED";
+
           const canSendToAccounts =
             ["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
               rowData?.status,
@@ -3859,26 +3912,24 @@ const Quote = () => {
                           <Controller
                             name="accountNumber"
                             control={sendToAccountsControl}
-                            render={({ field }) => (
+                            render={({ field, fieldState: { error } }) => (
                               <Input
                                 size="sm"
                                 label="A/C Number"
                                 isRequired
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    allowOnlyNumbers(e.target.value, 18),
-                                  )
-                                }
+                                value={field.value || ""}
+                                maxLength={18}
+                                onValueChange={(value) => {
+                                  field.onChange(allowOnlyNumbers(value, 18));
+                                }}
+                                onBlur={field.onBlur}
                                 onPaste={(e) => e.preventDefault()}
                                 onCopy={(e) => e.preventDefault()}
                                 onCut={(e) => e.preventDefault()}
                                 onDrop={(e) => e.preventDefault()}
                                 onDragOver={(e) => e.preventDefault()}
-                                isInvalid={!!sendToAccountsErrors.accountNumber}
-                                errorMessage={
-                                  sendToAccountsErrors.accountNumber?.message
-                                }
+                                isInvalid={!!error}
+                                errorMessage={error?.message}
                               />
                             )}
                           />
@@ -3886,28 +3937,32 @@ const Quote = () => {
                           <Controller
                             name="confirmAccountNumber"
                             control={sendToAccountsControl}
-                            render={({ field }) => (
+                            render={({ field, fieldState: { error } }) => (
                               <Input
                                 size="sm"
                                 label="Confirm A/C Number"
                                 isRequired
-                                value={field.value}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    allowOnlyNumbers(e.target.value, 18),
-                                  )
-                                }
+                                value={field.value || ""}
+                                maxLength={18}
+                                onValueChange={(value) => {
+                                  field.onChange(allowOnlyNumbers(value, 18));
+                                }}
+                                onBlur={field.onBlur}
                                 onPaste={(e) => e.preventDefault()}
                                 onCopy={(e) => e.preventDefault()}
                                 onCut={(e) => e.preventDefault()}
                                 onDrop={(e) => e.preventDefault()}
                                 onDragOver={(e) => e.preventDefault()}
-                                isInvalid={
-                                  !!sendToAccountsErrors.confirmAccountNumber
-                                }
+                                isInvalid={!!error || accountNumbersMismatch}
                                 errorMessage={
-                                  sendToAccountsErrors.confirmAccountNumber
-                                    ?.message
+                                  accountNumbersMismatch
+                                    ? "Account number and confirm account number must match"
+                                    : error?.message
+                                }
+                                description={
+                                  accountNumbersMatch
+                                    ? "Account numbers matched successfully"
+                                    : undefined
                                 }
                               />
                             )}
