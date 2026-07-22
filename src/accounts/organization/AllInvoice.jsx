@@ -42,6 +42,7 @@ import {
 import TaxInvoice from "../../components/TaxInvoice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 import FileUploader from "../../components/FileUploader";
+import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -276,58 +277,31 @@ const AllInvoice = () => {
       );
   };
 
-  const handleViewEstimate = (rowData, type = "ESTIMATE") => {
+  const handleViewEstimate = (rowData, type) => {
     setViewType(type);
-
-    const taxableAmount =
-      Number(rowData?.grandTotal || 0) - Number(rowData?.totalGstAmount || 0);
-
-    setEstimateDetail({
-      id: rowData?.estimateId,
-      estimateNumber: rowData?.estimateNumber,
-      estimateDate: rowData?.invoiceDate,
-      validUntil: rowData?.invoiceDate,
-      solutionName: rowData?.solutionName,
-      subTotalExGst: taxableAmount,
-      totalGstAmount: rowData?.totalGstAmount || 0,
-      grandTotal: rowData?.grandTotal || 0,
-      cgstAmount: rowData?.cgstAmount || 0,
-      sgstAmount: rowData?.sgstAmount || 0,
-      igstAmount: rowData?.igstAmount || 0,
-
-      unit: {
-        unitName: rowData?.companyName || "NA",
-        gstNo: rowData?.organizationGstNo || "",
-        addressLine1: rowData?.organizationAddressLine1 || "",
-        addressLine2: rowData?.organizationAddressLine2 || "",
-        city: rowData?.organizationCity || "",
-        state: rowData?.organizationState || "",
-        country: rowData?.organizationCountry || "",
-        pinCode: rowData?.organizationPinCode || "",
-      },
-
-      lineItems: [
-        {
-          id: rowData?.id,
-          itemName: rowData?.solutionName || "Service",
-          description: rowData?.estimateNumber || "",
-          hsnSacCode: "NA",
-          quantity: 1,
-          unitPriceExGst: taxableAmount,
-          gstRate:
-            taxableAmount > 0
-              ? (
-                  (Number(rowData?.totalGstAmount || 0) / taxableAmount) *
-                  100
-                ).toFixed(0)
-              : 0,
-          gstAmount: rowData?.totalGstAmount || 0,
-          lineTotalExGst: taxableAmount,
-        },
-      ],
-    });
-
-    viewModal.onOpen();
+    dispatch(
+      getEstimateByEstimateId({ estimateId: rowData?.estimateId, userId }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "ERROR",
+            description: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "ERROR",
+          description: "There is Some Issue in estimate",
+          color: "danger",
+        }),
+      );
   };
 
   const renderCell = React.useCallback(

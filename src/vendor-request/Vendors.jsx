@@ -320,7 +320,8 @@ const Vendors = () => {
         ).unwrap();
 
         addToast({
-          title: "Vendor updated successfully",
+          title: "SUCCESS",
+          description: "Vendor updated successfully",
           color: "success",
         });
       } else {
@@ -332,7 +333,8 @@ const Vendors = () => {
         ).unwrap();
 
         addToast({
-          title: "Vendor created successfully",
+          title: "SUCCESS",
+          description: "Vendor created successfully !.",
           color: "success",
         });
       }
