@@ -689,6 +689,50 @@ export const getAllVendorRFQs = createAsyncThunk(
     }
   },
 );
+export const getVendorQuotationResponseRate = createAsyncThunk(
+  "getVendorQuotationResponseRate",
+  async (
+    { solutionId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+       `/operationService/api/product-vendor-dashboard/quotation-response-rate/${solutionId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Wise Quotation Count",
+      );
+    }
+  },
+);
+export const getVendorVerificationRate = createAsyncThunk(
+  "getVendorVerificationRate",
+  async (
+    { solutionId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+       `/operationService/api/product-vendor-dashboard/verification/by-product/${solutionId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Wise Verification Count",
+      );
+    }
+  },
+);
 
 
 const DashboardSlice = createSlice({
@@ -793,7 +837,9 @@ const DashboardSlice = createSlice({
     clientGST :[],
     vendorWiseAssignmentCount:[],
     procurementProcessFlow:[],
-    vendorRFQs:[]
+    vendorRFQs:[],
+    quotationResponseRate :[],
+    vendorVerificationRate:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -1332,6 +1378,44 @@ const DashboardSlice = createSlice({
       getAllVendorRFQs.rejected,
       (state, action) => {
         state.vendorRFQs = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getVendorQuotationResponseRate.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getVendorQuotationResponseRate.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.quotationResponseRate = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getVendorQuotationResponseRate.rejected,
+      (state, action) => {
+        state.quotationResponseRate = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getVendorVerificationRate.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getVendorVerificationRate.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.vendorVerificationRate = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getVendorVerificationRate.rejected,
+      (state, action) => {
+        state.vendorVerificationRate = [];
         state.loading = false;
       },
     );

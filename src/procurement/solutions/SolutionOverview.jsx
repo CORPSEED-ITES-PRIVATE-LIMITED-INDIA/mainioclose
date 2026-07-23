@@ -29,6 +29,8 @@ import {
   getAllVendorRFQs,
   getProcurementProcessFlow,
   getVendorAssignmentCount,
+  getVendorQuotationResponseRate,
+  getVendorVerificationRate,
 } from "../../toolkit/slices/dashboardSlice";
 
 const vendors = [
@@ -395,6 +397,47 @@ const SolutionOverview = () => {
     (state) => state.dashboard.procurementProcessFlow,
   );
   const vendorRFQs = useSelector((state) => state.dashboard.vendorRFQs);
+  const quotationResponseRate = useSelector(
+    (state) => state.dashboard.quotationResponseRate,
+  );
+  const vendorVerificationRate = useSelector(
+    (state) => state.dashboard.vendorVerificationRate,
+  );
+
+  const verifiedVendorCount = Number(vendorVerificationRate?.verified) || 0;
+
+  const notVerifiedVendorCount =
+    Number(vendorVerificationRate?.notVerified) || 0;
+
+  const totalVerificationVendors = verifiedVendorCount + notVerifiedVendorCount;
+
+  const vendorVerificationPercentage =
+    totalVerificationVendors > 0
+      ? (verifiedVendorCount / totalVerificationVendors) * 100
+      : 0;
+
+  const vendorNotVerifiedPercentage =
+    totalVerificationVendors > 0
+      ? (notVerifiedVendorCount / totalVerificationVendors) * 100
+      : 0;
+
+  const quotationTotalInvited =
+    Number(quotationResponseRate?.totalInvited) || 0;
+
+  const quotationResponded = Number(quotationResponseRate?.responded) || 0;
+
+  const quotationPending = Number(quotationResponseRate?.pending) || 0;
+
+  const quotationResponsePercentage = Math.min(
+    Math.max(Number(quotationResponseRate?.responseRate) || 0, 0),
+    100,
+  );
+
+  const quotationPendingPercentage =
+    quotationTotalInvited > 0
+      ? (quotationPending / quotationTotalInvited) * 100
+      : 0;
+
   const sortedVendors = useMemo(() => {
     return [...vendors].sort((a, b) => a.quotedPrice - b.quotedPrice);
   }, []);
@@ -420,6 +463,8 @@ const SolutionOverview = () => {
     dispatch(getVendorAssignmentCount({ solutionId }));
     dispatch(getProcurementProcessFlow({ solutionId }));
     dispatch(getAllVendorRFQs({ solutionId }));
+    dispatch(getVendorQuotationResponseRate({ solutionId }));
+    dispatch(getVendorVerificationRate({ solutionId }));
   }, [dispatch, solutionId]);
 
   console.log("RFQs", vendorRFQs);
@@ -896,8 +941,8 @@ const SolutionOverview = () => {
               <InsightItem
                 icon={<FileText className="h-5 w-5" />}
                 iconClassName="bg-primary-50 text-primary"
-                title="5 of 6 vendors submitted quotations"
-                description="Response rate: 83.3%"
+                title={`${quotationResponded} of ${quotationTotalInvited} vendors submitted quotations`}
+                description={`Response rate: ${quotationResponsePercentage.toFixed(2)}%`}
               />
 
               <InsightItem
@@ -910,10 +955,32 @@ const SolutionOverview = () => {
               />
 
               <InsightItem
-                icon={<AlertTriangle className="h-5 w-5" />}
-                iconClassName="bg-warning-50 text-warning"
-                title="3 vendors still not verified"
-                description="Complete verification before final approval"
+                icon={
+                  notVerifiedVendorCount > 0 ? (
+                    <AlertTriangle className="h-5 w-5" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5" />
+                  )
+                }
+                iconClassName={
+                  notVerifiedVendorCount > 0
+                    ? "bg-warning-50 text-warning"
+                    : "bg-success-50 text-success"
+                }
+                title={
+                  notVerifiedVendorCount > 0
+                    ? `${notVerifiedVendorCount} vendor${
+                        notVerifiedVendorCount === 1 ? "" : "s"
+                      } still not verified`
+                    : "All vendors are verified"
+                }
+                description={
+                  notVerifiedVendorCount > 0
+                    ? "Complete verification before final approval"
+                    : `${verifiedVendorCount} vendor${
+                        verifiedVendorCount === 1 ? "" : "s"
+                      } successfully verified`
+                }
               />
             </CardBody>
           </Card>
@@ -1084,22 +1151,20 @@ const SolutionOverview = () => {
           <div className="grid grid-cols-1 gap-4 xl:col-span-4">
             <DonutChart
               title="Vendor Verification"
-              centerText={`${verifiedVendors}/${totalVendors}`}
+              centerText={`${verifiedVendorCount}/${totalVerificationVendors}`}
               centerSubText="Verified"
-              percentage={(verifiedVendors / totalVendors) * 100}
+              percentage={vendorVerificationPercentage}
               legends={[
                 {
-                  label: `Verified ${verifiedVendors} (${(
-                    (verifiedVendors / totalVendors) *
-                    100
-                  ).toFixed(1)}%)`,
+                  label: `Verified ${verifiedVendorCount} (${vendorVerificationPercentage.toFixed(
+                    2,
+                  )}%)`,
                   color: "bg-success",
                 },
                 {
-                  label: `Not Verified ${totalVendors - verifiedVendors} (${(
-                    ((totalVendors - verifiedVendors) / totalVendors) *
-                    100
-                  ).toFixed(1)}%)`,
+                  label: `Not Verified ${notVerifiedVendorCount} (${vendorNotVerifiedPercentage.toFixed(
+                    2,
+                  )}%)`,
                   color: "bg-warning",
                 },
               ]}
@@ -1107,23 +1172,21 @@ const SolutionOverview = () => {
 
             <DonutChart
               title="Quotation Response Rate"
-              centerText={`${quotationsReceived}/${totalVendors}`}
+              centerText={`${quotationResponded}/${quotationTotalInvited}`}
               centerSubText="Responded"
-              percentage={(quotationsReceived / totalVendors) * 100}
+              percentage={quotationResponsePercentage}
               legends={[
                 {
-                  label: `Responded ${quotationsReceived} (${(
-                    (quotationsReceived / totalVendors) *
-                    100
-                  ).toFixed(1)}%)`,
+                  label: `Responded ${quotationResponded} (${quotationResponsePercentage.toFixed(
+                    2,
+                  )}%)`,
                   color: "bg-success",
                 },
                 {
-                  label: `Pending ${totalVendors - quotationsReceived} (${(
-                    ((totalVendors - quotationsReceived) / totalVendors) *
-                    100
-                  ).toFixed(1)}%)`,
-                  color: "bg-primary",
+                  label: `Pending ${quotationPending} (${quotationPendingPercentage.toFixed(
+                    2,
+                  )}%)`,
+                  color: "bg-warning",
                 },
               ]}
             />
