@@ -27,7 +27,10 @@ import {
   getAllEstimateByUserId,
   getTotalCountOfEstimate,
 } from "../../toolkit/slices/leadSlice";
-import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
+import {
+  getActivePaymentLedgerForPaymentRegister,
+  getEstimatePaymentHistory,
+} from "../../toolkit/slices/accountSlice";
 
 const paymentTenureOptions = [
   { label: "NET 0", value: "NET 0", days: 0 },
@@ -230,6 +233,9 @@ const EstimatePaymentRegister = ({
   const paymentLegerList = useSelector(
     (state) => state.account.paymentLegerList,
   );
+  const estimatePaymentHistory = useSelector(
+    (state) => state.account.estimatePaymentHistory,
+  );
 
   useEffect(() => {
     dispatch(getAllPaymentType());
@@ -365,6 +371,54 @@ const EstimatePaymentRegister = ({
   }, []);
 
   useEffect(() => {
+    if (isOpen && estimateId) {
+      dispatch(
+        getEstimatePaymentHistory({
+          estimateId,
+          userId,
+        }),
+      );
+    }
+  }, [isOpen, estimateId, userId, dispatch]);
+
+  useEffect(() => {
+    const backendTdsPercentage = estimatePaymentHistory?.tdsPercentage;
+
+    const hasTdsPercentage =
+      backendTdsPercentage !== undefined &&
+      backendTdsPercentage !== null &&
+      backendTdsPercentage !== "" &&
+      Number(backendTdsPercentage) > 0;
+
+    if (hasTdsPercentage && shouldShowTds && !shouldShowPurchaseOrderFields) {
+      setValue("tdsActive", true, {
+        shouldValidate: true,
+        shouldDirty: false,
+      });
+
+      setValue("tds.tdsPercentage", String(backendTdsPercentage), {
+        shouldValidate: true,
+        shouldDirty: false,
+      });
+    } else {
+      setValue("tdsActive", false, {
+        shouldValidate: true,
+        shouldDirty: false,
+      });
+
+      setValue("tds.tdsPercentage", "", {
+        shouldValidate: true,
+        shouldDirty: false,
+      });
+    }
+  }, [
+    estimatePaymentHistory?.tdsPercentage,
+    shouldShowTds,
+    shouldShowPurchaseOrderFields,
+    setValue,
+  ]);
+
+  useEffect(() => {
     if (!shouldShowBankName) {
       setValue("bankName", "");
     }
@@ -450,10 +504,6 @@ const EstimatePaymentRegister = ({
       setValue("tds.tdsPercentage", "");
     }
 
-    if (!tdsActive) {
-      setValue("tds.tdsPercentage", "");
-    }
-
     if (!shouldShowPaymentTenure) {
       setValue("paymentTerms", "");
       setValue("paymentTermsDays", "");
@@ -462,7 +512,6 @@ const EstimatePaymentRegister = ({
     shouldShowPurchaseOrderFields,
     shouldShowTds,
     shouldShowPaymentTenure,
-    tdsActive,
     setValue,
   ]);
 
@@ -598,6 +647,11 @@ const EstimatePaymentRegister = ({
       });
     }
   };
+  const hasRegisteredTds =
+    estimatePaymentHistory?.tdsPercentage !== undefined &&
+    estimatePaymentHistory?.tdsPercentage !== null &&
+    estimatePaymentHistory?.tdsPercentage !== "" &&
+    Number(estimatePaymentHistory?.tdsPercentage) > 0;
 
   return (
     <Modal
@@ -616,6 +670,91 @@ const EstimatePaymentRegister = ({
             </ModalHeader>
 
             <ModalBody className="max-h-[60vh] overflow-auto">
+              {estimatePaymentHistory && (
+                <div className="mb-4 rounded-xl border bg-gray-50 p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500">Total Amount</p>
+                      <p className="font-semibold">
+                        ₹ {estimatePaymentHistory.totalAmount ?? 0}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">Received</p>
+                      <p className="font-semibold text-green-600">
+                        ₹ {estimatePaymentHistory.receivedAmount ?? 0}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">Outstanding</p>
+                      <p className="font-semibold text-red-600">
+                        ₹ {estimatePaymentHistory.outstandingAmount ?? 0}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">Payments</p>
+                      <p className="font-semibold">
+                        {estimatePaymentHistory.totalPaymentReceipts ?? 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">TDS (%)</p>
+                      <p className="font-semibold">
+                        {estimatePaymentHistory.tdsPercentage ?? "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {Array.isArray(estimatePaymentHistory?.paymentHistory) &&
+                estimatePaymentHistory.paymentHistory.length > 0 && (
+                  <div className="mb-4 rounded-xl border p-4">
+                    <h3 className="mb-3 text-sm font-semibold">
+                      Payment History
+                    </h3>
+
+                    <div className="space-y-2">
+                      {estimatePaymentHistory.paymentHistory.map((payment) => (
+                        <div
+                          key={payment.paymentReceiptId}
+                          className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">
+                              ₹ {Number(payment.amount ?? 0).toFixed(2)}
+                            </span>
+                            <span className="text-gray-500">|</span>
+                            <span>{payment.paymentDate || "-"}</span>
+                            <span className="text-gray-500">|</span>
+                            <span>{payment.paymentMode || "-"}</span>
+                          </div>
+
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-medium ${
+                              payment.status === "APPROVED"
+                                ? "bg-green-100 text-green-700"
+                                : payment.status === "PENDING"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {payment.status || "UNKNOWN"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              {/* {estimatePaymentHistory &&
+                (!Array.isArray(estimatePaymentHistory.paymentHistory) ||
+                  estimatePaymentHistory.paymentHistory.length === 0) && (
+                  <div className="mb-4 rounded-xl border p-4 text-sm text-gray-500">
+                    No previous payment history found.
+                  </div>
+                )} */}
               <form
                 id="payment-register-form"
                 onSubmit={handleSubmit(submitHandler, (formErrors) => {
@@ -760,6 +899,7 @@ const EstimatePaymentRegister = ({
                             render={({ field }) => (
                               <Select
                                 label="TDS"
+                                isDisabled={hasRegisteredTds}
                                 selectedKeys={
                                   new Set([field.value ? "true" : "false"])
                                 }
@@ -782,6 +922,7 @@ const EstimatePaymentRegister = ({
                                 <Select
                                   label="TDS Percentage"
                                   isRequired
+                                  isDisabled={hasRegisteredTds}
                                   selectedKeys={
                                     field.value !== undefined &&
                                     field.value !== null &&
@@ -794,8 +935,6 @@ const EstimatePaymentRegister = ({
                                       Array.from(keys)?.[0] || "";
                                     field.onChange(selectedValue);
                                   }}
-                                  isInvalid={!!error}
-                                  errorMessage={error?.message}
                                 >
                                   <SelectItem key="10">10%</SelectItem>
                                   <SelectItem key="2">2%</SelectItem>

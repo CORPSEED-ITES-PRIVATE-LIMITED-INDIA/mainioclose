@@ -753,6 +753,30 @@ export const confirmAdvanceTaxInvoiceEInvoiceAndCreateProject =
       }
     },
   );
+export const getEstimatePaymentHistory =
+  createAsyncThunk(
+    "getEstimatePaymentHistory",
+    async ({ estimateId, userId }, { rejectWithValue }) => {
+      try {
+        /*
+         * The backend path variable is named invoiceId.
+         * As required by the frontend flow, requestId is passed
+         * in that path position.
+         */
+        const response = await api.get(
+          `/accountService/api/v1/estimates/payment/${estimateId}?userId=${userId}`
+        );
+
+        return response.data;
+      } catch (error) {
+        return rejectWithValue(
+          error?.response?.data ||
+            error?.message ||
+            "Failed to get Estimate Payment History",
+        );
+      }
+    },
+  );
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -797,6 +821,7 @@ const AccountSlice = createSlice({
     advanceTaxInvoiceRequestCreateError: null,
     advanceTaxInvoiceRequestApproving: false,
     advanceTaxInvoiceRequestApproveError: null,
+    estimatePaymentHistory:null
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -1237,6 +1262,18 @@ const AccountSlice = createSlice({
     });
     builder.addCase(confirmEInvoice.rejected, (state) => {
       state.loading = "rejected";
+    });
+    builder.addCase(getEstimatePaymentHistory.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getEstimatePaymentHistory.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.estimatePaymentHistory = action.payload;
+    });
+    builder.addCase(getEstimatePaymentHistory.rejected, (state) => {
+      state.loading = "rejected";
+      state.estimatePaymentHistory = null;
+
     });
   },
 });
