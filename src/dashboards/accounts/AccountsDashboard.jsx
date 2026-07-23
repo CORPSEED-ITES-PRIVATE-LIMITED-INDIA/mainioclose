@@ -1453,7 +1453,7 @@ export default function AccountsDashboard() {
       }),
     );
 
-    dispatch(getTDSCollectionSummary());
+    // dispatch(getTDSCollectionSummary());
   }, [dispatch, userId, period, fromDate, toDate]);
 
   useEffect(() => {
@@ -1502,7 +1502,7 @@ export default function AccountsDashboard() {
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1.25fr_0.85fr_0.95fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
           <RevenueCollectionChart
             data={billingVsCollection}
             loading={billingVsCollectionLoading}
@@ -1513,7 +1513,7 @@ export default function AccountsDashboard() {
           />
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[0.95fr_1.1fr_0.95fr]">
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
           <ApprovalQueue
             data={approvalQueueData}
             loading={approvalQueueLoading}
