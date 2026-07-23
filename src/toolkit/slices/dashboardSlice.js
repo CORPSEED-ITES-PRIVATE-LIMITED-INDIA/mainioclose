@@ -623,6 +623,73 @@ export const getClientGSTCollected = createAsyncThunk(
     }
   },
 );
+export const getVendorAssignmentCount = createAsyncThunk(
+  "getVendorAssignmentCount",
+  async (
+    { solutionId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+       `/operationService/api/product-vendor-dashboard/${solutionId}/vendor-wise-assignment-count`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Wise Assignment Count",
+      );
+    }
+  },
+);
+export const getProcurementProcessFlow = createAsyncThunk(
+  "getProcurementProcessFlow",
+  async (
+    { solutionId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+       `/operationService/api/product-vendor-dashboard/product/${solutionId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Wise Assignment Count",
+      );
+    }
+  },
+);
+export const getAllVendorRFQs = createAsyncThunk(
+  "getAllVendorRFQs",
+  async (
+    { solutionId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+       `/operationService/api/product-vendor-dashboard/rfqs?productId=${solutionId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Wise Assignment Count",
+      );
+    }
+  },
+);
+
 
 const DashboardSlice = createSlice({
   name: "dashboard",
@@ -723,7 +790,10 @@ const DashboardSlice = createSlice({
     topOutstandingCompanies:[],
     recentPayments: [],
 
-    clientGST :[]
+    clientGST :[],
+    vendorWiseAssignmentCount:[],
+    procurementProcessFlow:[],
+    vendorRFQs:[]
   },
   extraReducers: (builder) => {
     builder.addCase(getLeadsDataByMonth.pending, (state) => {
@@ -1205,6 +1275,64 @@ const DashboardSlice = createSlice({
       getClientGSTCollected.rejected,
       (state, action) => {
         state.clientGST = [];
+      },
+    );
+
+    builder.addCase(getVendorAssignmentCount.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getVendorAssignmentCount.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.vendorWiseAssignmentCount = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getVendorAssignmentCount.rejected,
+      (state, action) => {
+        state.vendorWiseAssignmentCount = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getProcurementProcessFlow.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getProcurementProcessFlow.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.procurementProcessFlow = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getProcurementProcessFlow.rejected,
+      (state, action) => {
+        state.procurementProcessFlow = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getAllVendorRFQs.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getAllVendorRFQs.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.vendorRFQs = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getAllVendorRFQs.rejected,
+      (state, action) => {
+        state.vendorRFQs = [];
+        state.loading = false;
       },
     );
   },
