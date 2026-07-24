@@ -2,6 +2,7 @@ import {
   addToast,
   Button,
   Chip,
+  DatePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -13,6 +14,8 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -27,7 +30,10 @@ import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { getAllCompaniesForApprovals } from "../toolkit/slices/accountSlice";
+import {
+  getActivePaymentLedgerForPaymentRegister,
+  getAllCompaniesForApprovals,
+} from "../toolkit/slices/accountSlice";
 import {
   approvedCompanyInAccount,
   approvedCompanyInLeads,
@@ -38,6 +44,12 @@ import {
 } from "../toolkit/slices/operationSlice";
 import dayjs from "dayjs";
 import { inrCurrency } from "../common";
+import { getAllPaymentType } from "../toolkit/slices/settingSlice";
+
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+
+import FileUploader from "../components/FileUploader";
+import NewSelect from "../components/NewSelect";
 
 const columns = [
   { name: "ID", uid: "expenseId" },
@@ -73,12 +85,29 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const INITIAL_APPROVAL_PAYMENT_DATA = {
+  paymentBy: "",
+  paymentTypeId: "",
+  receivedAmount: "",
+  paymentReceivedDate: "",
+  paymentMode: "",
+  bankLedgerId: "",
+  transactionReference: "",
+  paymentProof: "",
+};
+
 const Expense = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const count = useSelector((state) => state.operation.expenseList?.length);
   const data = useSelector((state) => state.operation.expenseList);
+
+  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+  const paymentLegerList = useSelector(
+    (state) => state.account.paymentLegerList,
+  );
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -100,14 +129,164 @@ const Expense = () => {
     rejectionRemark: "",
     projectId: null,
     expenseId: null,
+    expenseAmount: 0,
     userId,
   });
 
+  const validateApprovalPayment = () => {
+    const validationErrors = {};
+
+    if (!approvalPaymentData.paymentBy) {
+      validationErrors.paymentBy = "Person doing payment is required";
+    }
+
+    if (!approvalPaymentData.paymentProof) {
+      validationErrors.paymentProof = "Payment proof is required";
+    }
+
+    // For client payment, only payment proof is required
+    if (approvalPaymentData.paymentBy === "CLIENT") {
+      setApprovalPaymentErrors(validationErrors);
+      return Object.keys(validationErrors).length === 0;
+    }
+
+    // Existing validation for Corpseed payment
+    if (approvalPaymentData.paymentBy === "CORPSEED") {
+      const receivedAmount = Number(approvalPaymentData.receivedAmount);
+
+      if (!approvalPaymentData.paymentTypeId) {
+        validationErrors.paymentTypeId = "Payment type is required";
+      }
+
+      if (
+        approvalPaymentData.receivedAmount === "" ||
+        !Number.isFinite(receivedAmount) ||
+        receivedAmount <= 0
+      ) {
+        validationErrors.receivedAmount =
+          "Received amount must be greater than zero";
+      }
+
+      if (
+        Number(statusData.expenseAmount || 0) > 0 &&
+        receivedAmount > Number(statusData.expenseAmount)
+      ) {
+        validationErrors.receivedAmount =
+          "Received amount cannot exceed expense amount";
+      }
+
+      if (!approvalPaymentData.paymentReceivedDate) {
+        validationErrors.paymentReceivedDate =
+          "Payment received date is required";
+      }
+
+      if (!approvalPaymentData.paymentMode) {
+        validationErrors.paymentMode = "Payment mode is required";
+      }
+
+      if (!approvalPaymentData.bankLedgerId) {
+        validationErrors.bankLedgerId = "Bank/Cash ledger is required";
+      }
+
+      if (
+        approvalPaymentData.paymentMode !== "CASH" &&
+        !approvalPaymentData.transactionReference?.trim()
+      ) {
+        validationErrors.transactionReference =
+          "Transaction reference is required";
+      }
+    }
+
+    setApprovalPaymentErrors(validationErrors);
+
+    return Object.keys(validationErrors).length === 0;
+  };
+
+  const [approvalPaymentData, setApprovalPaymentData] = useState(
+    INITIAL_APPROVAL_PAYMENT_DATA,
+  );
+
+  const [approvalPaymentErrors, setApprovalPaymentErrors] = useState({});
+
+  const [isPaymentProofUploading, setIsPaymentProofUploading] = useState(false);
+
+  const [isApprovalSubmitting, setIsApprovalSubmitting] = useState(false);
+
   const hasSearchFilter = Boolean(filterValue);
+
+  const selectedPaymentMode = approvalPaymentData.paymentMode;
+
+  const hasPaymentModeSelected = Boolean(
+    String(selectedPaymentMode || "").trim(),
+  );
+
+  const isCashPaymentMode =
+    String(selectedPaymentMode || "")
+      .trim()
+      .toUpperCase() === "CASH";
+
+  const isCashLedger = (ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  };
+
+  const filteredPaymentLedgerList = !hasPaymentModeSelected
+    ? []
+    : isCashPaymentMode
+      ? (paymentLegerList || []).filter(isCashLedger)
+      : (paymentLegerList || []).filter((ledger) => !isCashLedger(ledger));
+
+  const handlePaymentModeChange = (paymentMode) => {
+    setApprovalPaymentData((prev) => ({
+      ...prev,
+      paymentMode,
+      bankLedgerId: "",
+    }));
+
+    setApprovalPaymentErrors((prev) => ({
+      ...prev,
+      paymentMode: "",
+      bankLedgerId: "",
+    }));
+  };
+
+  const handlePaymentByChange = (paymentBy) => {
+    setApprovalPaymentData((prev) => ({
+      ...prev,
+      paymentBy,
+
+      // Clear Corpseed-specific fields when client is selected
+      paymentTypeId: paymentBy === "CLIENT" ? "" : prev.paymentTypeId,
+      receivedAmount:
+        paymentBy === "CLIENT"
+          ? ""
+          : prev.receivedAmount || String(statusData.expenseAmount || ""),
+      paymentReceivedDate:
+        paymentBy === "CLIENT" ? "" : prev.paymentReceivedDate,
+      paymentMode: paymentBy === "CLIENT" ? "" : prev.paymentMode,
+      bankLedgerId: paymentBy === "CLIENT" ? "" : prev.bankLedgerId,
+      transactionReference:
+        paymentBy === "CLIENT" ? "" : prev.transactionReference,
+    }));
+
+    setApprovalPaymentErrors({});
+  };
 
   useEffect(() => {
     dispatch(getExpenseListByUserId(filteration));
   }, [dispatch, filteration]);
+
+  useEffect(() => {
+    dispatch(getAllPaymentType());
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -142,81 +321,170 @@ const Expense = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleChangeExpenseStatus = (value) => {
-    if (value.status === "APPROVED") {
-      dispatch(
+  const resetApprovalModal = () => {
+    setApprovalPaymentData(INITIAL_APPROVAL_PAYMENT_DATA);
+    setApprovalPaymentErrors({});
+    setIsPaymentProofUploading(false);
+
+    setStatusData({
+      status: null,
+      rejectionRemark: "",
+      projectId: null,
+      expenseId: null,
+      expenseAmount: 0,
+      userId,
+    });
+  };
+
+  const handleApproveExpense = async () => {
+    if (isPaymentProofUploading) {
+      addToast({
+        title: "Payment proof is still uploading",
+        color: "warning",
+      });
+      return;
+    }
+
+    if (!validateApprovalPayment()) {
+      return;
+    }
+
+    try {
+      setIsApprovalSubmitting(true);
+
+      const response = await dispatch(
         approvedAndDisapprovedExpense({
-          ...value,
-          userId,
-          data: { status: value?.status },
-        }),
-      )
-        .then((resp) => {
-          console.log("djkjkjkjkjkjkjkjkjkjkfs", resp);
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Expense status updated successfully !.",
-              color: "success",
-            });
-            dispatch(getExpenseListByUserId(filteration));
-            onClose();
-            setStatusData({
-              status: null,
-              rejectionRemark: "",
-              projectId: null,
-              expenseId: null,
-              userId,
-            });
-          } else {
-            addToast({ title: resp.payload.data.message, color: "danger" });
-          }
-        })
-        .catch(() => {
-          addToast({
-            title: "Something went wrong in accounts",
-            color: "danger",
-          });
-        });
-    } else {
-      dispatch(
-        approvedAndDisapprovedExpense({
-          ...statusData,
+          projectId: statusData.projectId,
+          expenseId: statusData.expenseId,
           userId,
           data: {
-            status: statusData?.status,
-            rejectionRemark: statusData?.rejectionRemark,
+            status: "APPROVED",
+            paymentBy: approvalPaymentData.paymentBy,
+            paymentProof: approvalPaymentData.paymentProof,
+
+            ...(approvalPaymentData.paymentBy === "CORPSEED"
+              ? {
+                  paymentTypeId: Number(approvalPaymentData.paymentTypeId),
+                  amount: Number(
+                    Number(approvalPaymentData.receivedAmount).toFixed(2),
+                  ),
+                  paymentDate: approvalPaymentData.paymentReceivedDate,
+                  paymentMode: approvalPaymentData.paymentMode,
+                  bankLedgerId: Number(approvalPaymentData.bankLedgerId),
+                  transactionReference:
+                    approvalPaymentData.paymentMode === "CASH"
+                      ? ""
+                      : approvalPaymentData.transactionReference.trim(),
+                }
+              : {
+                  paymentTypeId: null,
+                  amount: null,
+                  paymentDate: null,
+                  paymentMode: null,
+                  bankLedgerId: null,
+                  transactionReference: null,
+                }),
           },
         }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Expense status updated successfully !.",
-              color: "success",
-            });
-            dispatch(getExpenseListByUserId(filteration));
-            onClose();
-            setStatusData({
-              status: null,
-              rejectionRemark: "",
-              projectId: null,
-              expenseId: null,
-              userId,
-            });
-          } else {
-            addToast({ title: resp.payload.data.message, color: "danger" });
-          }
-        })
-        .catch(() => {
-          addToast({
-            title: "Something went wrong in accounts",
-            color: "danger",
-          });
+      );
+
+      if (response?.meta?.requestStatus === "fulfilled") {
+        addToast({
+          title: "Expense approved successfully",
+          color: "success",
         });
+
+        dispatch(getExpenseListByUserId(filteration));
+        resetApprovalModal();
+        onClose();
+        return;
+      }
+
+      addToast({
+        title:
+          response?.payload?.data?.message ||
+          response?.payload?.message ||
+          "Failed to approve expense",
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong",
+        color: "danger",
+      });
+    } finally {
+      setIsApprovalSubmitting(false);
     }
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
+  const handleChangeExpenseStatus = async () => {
+    if (!statusData.rejectionRemark?.trim()) {
+      addToast({
+        title: "Remark is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    try {
+      const response = await dispatch(
+        approvedAndDisapprovedExpense({
+          projectId: statusData.projectId,
+          expenseId: statusData.expenseId,
+          userId,
+          data: {
+            status: statusData.status,
+            rejectionRemark: statusData.rejectionRemark.trim(),
+          },
+        }),
+      );
+
+      if (response?.meta?.requestStatus === "fulfilled") {
+        addToast({
+          title: "Expense status updated successfully",
+          color: "success",
+        });
+
+        dispatch(getExpenseListByUserId(filteration));
+        resetApprovalModal();
+        onClose();
+        return;
+      }
+
+      addToast({
+        title:
+          response?.payload?.data?.message ||
+          response?.payload?.message ||
+          "Failed to update expense status",
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong",
+        color: "danger",
+      });
+    }
+  };
+
+  const updateApprovalPaymentField = (fieldName, value) => {
+    setApprovalPaymentData((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+
+    setApprovalPaymentErrors((prev) => ({
+      ...prev,
+      [fieldName]: "",
+    }));
+  };
+
+  const renderCell = (rowData, columnKey) => {
     switch (columnKey) {
       case "unbilledNumber":
         return (
@@ -271,11 +539,28 @@ const Expense = () => {
               <DropdownItem
                 key="approved"
                 onPress={() => {
-                  handleChangeExpenseStatus({
+                  setStatusData({
                     status: "APPROVED",
+                    rejectionRemark: "",
                     projectId: rowData?.projectId,
                     expenseId: rowData?.expenseId,
+                    expenseAmount: Number(rowData?.amount || 0),
+                    userId,
                   });
+
+                  setApprovalPaymentData({
+                    paymentBy: "",
+                    paymentTypeId: "",
+                    receivedAmount: String(rowData?.amount ?? ""),
+                    paymentReceivedDate: "",
+                    paymentMode: "",
+                    bankLedgerId: "",
+                    transactionReference: "",
+                    paymentProof: "",
+                  });
+
+                  setApprovalPaymentErrors({});
+                  onOpen();
                 }}
               >
                 APPROVED
@@ -332,7 +617,7 @@ const Expense = () => {
       default:
         return rowData[columnKey] || "-";
     }
-  }, []);
+  };
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -459,7 +744,7 @@ const Expense = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    data.length,
+    data?.length,
     onSearchChange,
     hasSearchFilter,
     filteration?.status,
@@ -480,11 +765,8 @@ const Expense = () => {
           color="primary"
           page={filteration?.page}
           total={pages}
-          onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-            if (e > filteration?.page) {
-              dispatch(getAllNewCompanies({ ...filteration, page: e }));
-            }
+          onChange={(page) => {
+            setFilteration((prev) => ({ ...prev, page }));
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
@@ -552,34 +834,263 @@ const Expense = () => {
           )}
         </TableBody>
       </Table>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        size={statusData.status === "APPROVED" ? "2xl" : "md"}
+        isDismissable={false}
+        isKeyboardDismissDisabled
+      >
         <ModalContent>
-          {(onClose) => (
+          {(modalClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Update status
+                {statusData.status === "APPROVED"
+                  ? "Approve Expense"
+                  : "Update Expense Status"}
               </ModalHeader>
+
               <ModalBody>
-                <Textarea
-                  label="Remark"
-                  isRequired
-                  value={statusData.rejectionRemark}
-                  onChange={(e) =>
-                    setStatusData((prev) => ({
-                      ...prev,
-                      rejectionRemark: e.target.value,
-                    }))
-                  }
-                />
+                {statusData.status === "APPROVED" ? (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Select
+                      label="Payment Initiator"
+                      placeholder="Select the payment Initiator"
+                      isRequired
+                      selectedKeys={
+                        approvalPaymentData.paymentBy
+                          ? new Set([approvalPaymentData.paymentBy])
+                          : new Set([])
+                      }
+                      isInvalid={Boolean(approvalPaymentErrors.paymentBy)}
+                      errorMessage={approvalPaymentErrors.paymentBy}
+                      onSelectionChange={(keys) =>
+                        handlePaymentByChange(Array.from(keys)?.[0] || "")
+                      }
+                      className="md:col-span-2"
+                    >
+                      <SelectItem key="CLIENT">Client</SelectItem>
+                      <SelectItem key="CORPSEED">Corpseed</SelectItem>
+                    </Select>
+
+                    {approvalPaymentData.paymentBy === "CORPSEED" && (
+                      <>
+                        <div>
+                          <NewSelect
+                            isRequired
+                            label="Payment Type"
+                            data={
+                              Array.isArray(paymentTypeList)
+                                ? paymentTypeList
+                                : []
+                            }
+                            labelKey="name"
+                            valueKey="id"
+                            value={approvalPaymentData.paymentTypeId}
+                            onChange={(value) =>
+                              updateApprovalPaymentField("paymentTypeId", value)
+                            }
+                          />
+
+                          {approvalPaymentErrors.paymentTypeId && (
+                            <p className="mt-1 text-xs text-danger">
+                              {approvalPaymentErrors.paymentTypeId}
+                            </p>
+                          )}
+                        </div>
+
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          inputMode="decimal"
+                          label="Received Amount"
+                          placeholder="Enter received amount"
+                          isRequired
+                          value={approvalPaymentData.receivedAmount}
+                          isInvalid={Boolean(
+                            approvalPaymentErrors.receivedAmount,
+                          )}
+                          errorMessage={approvalPaymentErrors.receivedAmount}
+                          onKeyDown={(event) => {
+                            if (["-", "+", "e", "E"].includes(event.key)) {
+                              event.preventDefault();
+                            }
+                          }}
+                          onChange={(event) => {
+                            const value = event.target.value;
+
+                            if (
+                              value !== "" &&
+                              !/^\d*(\.\d{0,2})?$/.test(value)
+                            ) {
+                              return;
+                            }
+
+                            updateApprovalPaymentField("receivedAmount", value);
+                          }}
+                        />
+
+                        <DatePicker
+                          label="Payment Received Date"
+                          isRequired
+                          showMonthAndYearPickers
+                          maxValue={today(getLocalTimeZone())}
+                          value={
+                            approvalPaymentData.paymentReceivedDate &&
+                            /^\d{4}-\d{2}-\d{2}$/.test(
+                              approvalPaymentData.paymentReceivedDate,
+                            )
+                              ? parseDate(
+                                  approvalPaymentData.paymentReceivedDate,
+                                )
+                              : null
+                          }
+                          isInvalid={Boolean(
+                            approvalPaymentErrors.paymentReceivedDate,
+                          )}
+                          errorMessage={
+                            approvalPaymentErrors.paymentReceivedDate
+                          }
+                          onChange={(value) =>
+                            updateApprovalPaymentField(
+                              "paymentReceivedDate",
+                              value ? value.toString() : "",
+                            )
+                          }
+                        />
+
+                        <Select
+                          label="Payment Mode"
+                          placeholder="Select payment mode"
+                          isRequired
+                          selectedKeys={
+                            approvalPaymentData.paymentMode
+                              ? new Set([approvalPaymentData.paymentMode])
+                              : new Set([])
+                          }
+                          isInvalid={Boolean(approvalPaymentErrors.paymentMode)}
+                          errorMessage={approvalPaymentErrors.paymentMode}
+                          onSelectionChange={(keys) =>
+                            handlePaymentModeChange(Array.from(keys)?.[0] || "")
+                          }
+                        >
+                          <SelectItem key="CASH">Cash</SelectItem>
+                          <SelectItem key="UPI">UPI</SelectItem>
+                          <SelectItem key="CARD">Card</SelectItem>
+                          <SelectItem key="BANK_TRANSFER">
+                            Bank Transfer
+                          </SelectItem>
+                          <SelectItem key="CHEQUE">Cheque</SelectItem>
+                        </Select>
+
+                        <div>
+                          <NewSelect
+                            isRequired
+                            isDisabled={!hasPaymentModeSelected}
+                            label="Select Bank/Cash"
+                            data={filteredPaymentLedgerList}
+                            labelKey="ledgerName"
+                            valueKey="id"
+                            value={approvalPaymentData.bankLedgerId}
+                            onChange={(value) =>
+                              updateApprovalPaymentField("bankLedgerId", value)
+                            }
+                          />
+
+                          {approvalPaymentErrors.bankLedgerId && (
+                            <p className="mt-1 text-xs text-danger">
+                              {approvalPaymentErrors.bankLedgerId}
+                            </p>
+                          )}
+                        </div>
+
+                        {approvalPaymentData.paymentMode !== "CASH" && (
+                          <Input
+                            label="Transaction Reference / UTR Number"
+                            placeholder="Enter reference number"
+                            isRequired
+                            value={approvalPaymentData.transactionReference}
+                            isInvalid={Boolean(
+                              approvalPaymentErrors.transactionReference,
+                            )}
+                            errorMessage={
+                              approvalPaymentErrors.transactionReference
+                            }
+                            onChange={(event) =>
+                              updateApprovalPaymentField(
+                                "transactionReference",
+                                event.target.value,
+                              )
+                            }
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {approvalPaymentData.paymentBy && (
+                      <div className="md:col-span-2">
+                        <FileUploader
+                          label="Payment Proof"
+                          placeholder="Upload payment proof"
+                          isRequired
+                          uploadingType="single"
+                          value={approvalPaymentData.paymentProof}
+                          errorMessage={approvalPaymentErrors.paymentProof}
+                          onUploadingChange={setIsPaymentProofUploading}
+                          onChange={(uploadedUrl) =>
+                            updateApprovalPaymentField(
+                              "paymentProof",
+                              uploadedUrl || "",
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Textarea
+                    label="Remark"
+                    isRequired
+                    value={statusData.rejectionRemark}
+                    onChange={(event) =>
+                      setStatusData((prev) => ({
+                        ...prev,
+                        rejectionRemark: event.target.value,
+                      }))
+                    }
+                  />
+                )}
               </ModalBody>
+
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+                <Button
+                  variant="light"
+                  onPress={() => {
+                    resetApprovalModal();
+                    modalClose();
+                  }}
+                >
                   Close
                 </Button>
+
                 <Button
                   color="primary"
-                  isDisabled={statusData.remark === ""}
-                  onPress={handleChangeExpenseStatus}
+                  isLoading={
+                    statusData.status === "APPROVED"
+                      ? isApprovalSubmitting
+                      : false
+                  }
+                  isDisabled={
+                    statusData.status === "APPROVED"
+                      ? isPaymentProofUploading
+                      : !statusData.rejectionRemark?.trim()
+                  }
+                  onPress={
+                    statusData.status === "APPROVED"
+                      ? handleApproveExpense
+                      : handleChangeExpenseStatus
+                  }
                 >
                   Submit
                 </Button>

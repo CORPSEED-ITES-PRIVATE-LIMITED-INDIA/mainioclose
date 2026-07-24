@@ -285,11 +285,44 @@ export const createVendor = createAsyncThunk(
 
 export const getAllVendors = createAsyncThunk(
   "getAllVendors",
-  async ({ page, size, search, userId }) => {
-    const response = await api.get(
-      `/operationService/api/vendors?userId=${userId}&page=${page}&size=${size}&keyword=${search}`,
-    );
-    return response.data;
+  async (
+    {
+      page = 1,
+      size = 10,
+      search = "",
+      userId,
+      status,
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        page,
+        size,
+      };
+
+      if (search?.trim()) {
+        params.keyword = search.trim();
+      }
+
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      const response = await api.get(
+        "/operationService/api/vendors",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch vendors",
+      );
+    }
   },
 );
 

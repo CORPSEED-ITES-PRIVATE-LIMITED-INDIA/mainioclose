@@ -13,8 +13,10 @@ import {
   CalendarDays,
   ChevronDown,
   Clock3,
+  FileCheck,
   FileCheck2,
   Filter,
+  NotebookPen,
   ReceiptIndianRupee,
   ShieldCheck,
   TrendingDown,
@@ -276,6 +278,15 @@ const buildBillingStats = (billingOverview, approvalQueueData) => {
       change: `${tdsItems.length} cases`,
       changeColor: "text-rose-600",
       suffix: "pending",
+    },
+    {
+      title: "Performance",
+      value: "75 %",
+      icon: NotebookPen,
+      tone: "emerald",
+      // change: `${tdsItems.length} cases`,
+      changeColor: "text-rose-600",
+      // suffix: "%",
     },
   ];
 };
@@ -1496,7 +1507,7 @@ export default function AccountsDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-6">
           {billingStats.map((item) => (
             <StatCard key={item.title} item={item} />
           ))}

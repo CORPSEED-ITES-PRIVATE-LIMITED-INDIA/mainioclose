@@ -49,7 +49,7 @@ const columns = [
   { name: "CONTACT", uid: "contact" },
   { name: "GST / PAN", uid: "taxDetail" },
   { name: "STATUS", uid: "status" },
-  { name: "VERIFIED", uid: "verified" },
+  // { name: "VERIFIED", uid: "verified" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -108,6 +108,7 @@ const VendorsData = () => {
     : vendorList?.content || [];
 
   const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [modalMode, setModalMode] = useState("create");
@@ -127,17 +128,25 @@ const VendorsData = () => {
   const auditUserId = toNumberOrNull(userId);
 
   const refetchVendors = useCallback(
-    (search = "") => {
+    (search = filterValue, status = statusFilter) => {
       dispatch(
         getAllVendors({
           userId,
           page: pagination.page,
           size: pagination.size,
           search: search,
+          status: status === "ALL" ? null : status,
         }),
       );
     },
-    [dispatch, pagination.page, pagination.size],
+    [
+      dispatch,
+      userId,
+      pagination.page,
+      pagination.size,
+      filterValue,
+      statusFilter,
+    ],
   );
 
   useEffect(() => {
@@ -404,11 +413,20 @@ const VendorsData = () => {
       ...prev,
       page: 1,
     }));
-    refetchVendors();
   }, []);
 
   const onClear = useCallback(() => {
     setFilterValue("");
+    setPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, []);
+
+  const onStatusFilterChange = useCallback((keys) => {
+    const selectedStatus = Array.from(keys)[0] || "ALL";
+
+    setStatusFilter(selectedStatus);
     setPagination((prev) => ({
       ...prev,
       page: 1,
@@ -497,23 +515,25 @@ const VendorsData = () => {
         return (
           <Chip
             size="sm"
-            color={rowData?.status === "Active" ? "success" : "danger"}
+            color={
+              rowData?.status?.toUpperCase() === "ACTIVE" ? "success" : "danger"
+            }
             variant="flat"
           >
             {rowData?.status || "-"}
           </Chip>
         );
 
-      case "verified":
-        return (
-          <Chip
-            size="sm"
-            color={rowData?.verified ? "success" : "warning"}
-            variant="flat"
-          >
-            {rowData?.verified ? "Verified" : "Not Verified"}
-          </Chip>
-        );
+      // case "verified":
+      //   return (
+      //     <Chip
+      //       size="sm"
+      //       color={rowData?.verified ? "success" : "warning"}
+      //       variant="flat"
+      //     >
+      //       {rowData?.verified ? "Verified" : "Not Verified"}
+      //     </Chip>
+      //   );
 
       case "actions":
         return (
@@ -567,13 +587,30 @@ const VendorsData = () => {
             onValueChange={onSearchChange}
           />
 
-          <Button
-            color="primary"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={openCreateModal}
-          >
-            Add Vendor
-          </Button>
+          <div className="flex w-full items-end gap-2 sm:w-auto">
+            <Select
+              aria-label="Filter vendors by status"
+              className="w-full sm:w-44"
+              selectedKeys={new Set([statusFilter])}
+              onSelectionChange={onStatusFilterChange}
+            >
+              <SelectItem key="ALL">All Vendors</SelectItem>
+              <SelectItem key="PROSPECTIVE">Prospective</SelectItem>
+              <SelectItem key="ONBOARDING">Onboarding</SelectItem>
+              <SelectItem key="ACTIVE">Active</SelectItem>
+              {/* <SelectItem key="INACTIVE">Inactive</SelectItem> */}
+              {/* <SelectItem key="BLACKLISTED">Blacklisted</SelectItem> */}
+              {/* <SelectItem key="SUSPENDED">Suspended</SelectItem> */}
+            </Select>
+
+            <Button
+              color="primary"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={openCreateModal}
+            >
+              Add Vendor
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -603,7 +640,9 @@ const VendorsData = () => {
     onClear,
     onRowsPerPageChange,
     onSearchChange,
+    onStatusFilterChange,
     pagination.size,
+    statusFilter,
   ]);
 
   const bottomContent = useMemo(() => {

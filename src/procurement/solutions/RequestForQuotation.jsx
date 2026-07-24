@@ -143,6 +143,32 @@ const getStatusColor = (status) => {
   return "default";
 };
 
+const formatVendorStatus = (status) => {
+  return String(status || "UNKNOWN")
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getVendorStatusIcon = (status) => {
+  switch (String(status || "").toUpperCase()) {
+    case "ACTIVE":
+      return "🟢";
+
+    case "ONBOARDING":
+      return "🟡";
+
+    case "PROSPECTIVE":
+      return "🔵";
+
+    case "INACTIVE":
+      return "🔴";
+
+    default:
+      return "⚪";
+  }
+};
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function TagsInput({
@@ -508,6 +534,16 @@ const RequestForQuotation = () => {
     () => normalizePageContent(vendorResponse),
     [vendorResponse],
   );
+
+  const vendorOptions = useMemo(() => {
+    return (vendorList || []).map((vendor) => ({
+      ...vendor,
+      vendorDisplayLabel: `${getVendorStatusIcon(vendor?.status)} ${
+        vendor?.name || "Unnamed Vendor"
+      }  •  ${formatVendorStatus(vendor?.status)}`,
+    }));
+  }, [vendorList]);
+
   const count = useMemo(
     () => getTotalElements(rfqResponse, rfqList.length),
     [rfqResponse, rfqList.length],
@@ -1524,13 +1560,14 @@ const RequestForQuotation = () => {
                             label="Select Vendors"
                             isRequired
                             selectionMode="multiple"
-                            data={vendorList || []}
-                            labelKey="name"
+                            data={vendorOptions}
+                            labelKey="vendorDisplayLabel"
                             valueKey="id"
+                            placeholder="Search and select vendors"
                             onChange={(keys) =>
                               field.onChange(Array.from(keys))
                             }
-                            value={field?.value}
+                            value={field.value}
                             isInvalid={!!errors.vendorIds}
                             errorMessage={errors.vendorIds?.message}
                           />
