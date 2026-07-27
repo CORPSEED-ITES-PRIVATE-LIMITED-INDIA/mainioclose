@@ -677,6 +677,110 @@ export const getVendorsDashboardSummaryByProductId = createAsyncThunk(
     return response.data;
   },
 );
+export const getAllAccountsRestrictionRequests = createAsyncThunk(
+  "getAllAccountsRestrictionRequests",
+  async (
+    {
+      userId,
+      page = 1,
+      size = 10,
+      status = null,
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        page,
+        size,
+      };
+
+      if (status) {
+        params.status = status;
+      }
+
+      const response = await api.get(
+        "/operationService/api/vendors/restriction-requests/accounts",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Accounts restriction requests",
+      );
+    }
+  },
+);
+export const getAllAdminRestrictionRequests = createAsyncThunk(
+  "getAllAdminRestrictionRequests",
+  async (
+    {
+      userId,
+      page = 1,
+      size = 10,
+      status = "PENDING_ADMIN",
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId,
+        page,
+        size,
+      };
+
+      if (status) {
+        params.status = status;
+      }
+
+      const response = await api.get(
+        "/operationService/api/vendors/restriction-requests/admin",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Admin restriction requests",
+      );
+    }
+  },
+);
+export const createRestrictionForVendor = createAsyncThunk(
+  "createRestrictionForVendor",
+  async ({id,userId,data}) => {
+    const response = await api.post(
+      `/operationService/api/vendors/${id}/restrict?userId=${userId}`,
+      data
+    );
+    return response.data;
+  },
+);
+export const approveAccountRestrictionRequest = createAsyncThunk(
+  "approveAccountRestrictionRequest",
+  async ({requestId,userId,data}) => {
+    const response = await api.put(
+      `/operationService/api/vendors/restriction-requests/${requestId}/accounts-review?userId=${userId}`,
+      data
+    );
+    return response.data;
+  },
+);
+export const approveAdminRestrictionRequest = createAsyncThunk(
+  "approveAdminRestrictionRequest",
+  async ({requestId,userId,data}) => {
+    const response = await api.put(
+      `/operationService/api/vendors/restriction-requests/${requestId}/admin-review?userId=${userId}`,
+      data
+    );
+    return response.data;
+  },
+);
 
 const VendorsSlice = createSlice({
   name: "vendors",
@@ -703,6 +807,28 @@ const VendorsSlice = createSlice({
     rfqVendorsError: null,
     vendorListBasedOnService: [],
     vendorSummary: {},
+    accountsRestrictionRequests: {
+  content: [],
+  totalElements: 0,
+  totalPages: 0,
+  size: 10,
+  number: 0,
+  numberOfElements: 0,
+  first: true,
+  last: true,
+  empty: true,
+},
+    adminRestrictionRequests: {
+  content: [],
+  totalElements: 0,
+  totalPages: 0,
+  size: 10,
+  number: 0,
+  numberOfElements: 0,
+  first: true,
+  last: true,
+  empty: true,
+},
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -958,6 +1084,71 @@ const VendorsSlice = createSlice({
         state.vendorSummary = {};
       },
     );
+    builder.addCase(getAllAccountsRestrictionRequests.pending, (state) => {
+      state.loading = "pending";
+    });
+
+    builder.addCase(
+  getAllAccountsRestrictionRequests.fulfilled,
+  (state, action) => {
+    state.accountsRestrictionRequests =
+      action.payload || {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+        numberOfElements: 0,
+        first: true,
+        last: true,
+        empty: true,
+      };
+  },
+);
+
+    builder.addCase(
+      getAllAccountsRestrictionRequests.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.accountsRestrictionRequests = [];
+      },
+    );
+    builder.addCase(getAllAdminRestrictionRequests.pending, (state) => {
+      state.loading = "pending";
+    });
+     builder.addCase(
+  getAllAdminRestrictionRequests.fulfilled,
+  (state, action) => {
+    state.adminRestrictionRequests =
+      action.payload || {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+        numberOfElements: 0,
+        first: true,
+        last: true,
+        empty: true,
+      };
+  },
+);
+builder.addCase(
+  getAllAdminRestrictionRequests.rejected,
+  (state) => {
+    state.adminRestrictionRequests = {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      size: 10,
+      number: 0,
+      numberOfElements: 0,
+      first: true,
+      last: true,
+      empty: true,
+    };
+  },
+);
   },
 });
 

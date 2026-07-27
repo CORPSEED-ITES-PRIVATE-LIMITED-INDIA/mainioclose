@@ -152,6 +152,11 @@ export const navItems = [
         key: "vendorDetails",
         icon: "User",
       },
+      {
+        title: "Vendor Restrictions",
+        url: "accounts/vendorRestrictions",
+        key: "vendorRestrictions",
+      },
       // {
       //   title: "Estimate",
       //   url: "accounts/orgEstimate",
@@ -236,6 +241,12 @@ export const navItems = [
         icon: "",
         url: "admin/discountedEstimate",
         key: "discountedEstimate",
+      },
+      {
+        title: "Vendor Restrictions",
+        icon: "",
+        url: "admin/vendorRestrictions",
+        key: "vendorRestrictions",
       },
     ],
   },
@@ -534,6 +545,12 @@ export const accountNavItems = [
     key: "poPayments",
     icon: "FileText",
   },
+  {
+    title: "Vendor Restrictions",
+    url: "accounts/vendorRestrictions",
+    key: "vendorRestrictions",
+    icon: "FileText",
+  },
 
   {
     title: "Procurement PR",
@@ -549,7 +566,7 @@ export const accountNavItems = [
     icon: "FileText",
   },
   {
-    title: "Vendor details",
+    title: "Vendor Details",
     url: "accounts/vendorDetails",
     key: "vendorDetails",
     icon: "User2",

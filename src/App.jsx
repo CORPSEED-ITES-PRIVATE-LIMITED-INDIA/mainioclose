@@ -34,6 +34,7 @@ import OperationsLegal from "./legal/OperationsLegal";
 import ProcurementVendors from "./legal/ProcurementVendors";
 import CompanyDocuments from "./legal/CompanyDocuments";
 import PaymentVerification from "./legal/PaymentVerification";
+import AdminVendorRestrictionApproval from "./admin/AdminVendorRestrictionApproval";
 
 function App() {
   const dispatch = useDispatch();
@@ -86,6 +87,10 @@ function App() {
             <Route
               path="admin/discountedEstimate"
               element={<DiscountedEstimateApproval />}
+            />
+            <Route
+              path="admin/vendorRestrictions"
+              element={<AdminVendorRestrictionApproval />}
             />
 
             {ProcurementRouting()}

@@ -29,10 +29,18 @@ import {
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { EllipsisVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  EllipsisVertical,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Ban,
+} from "lucide-react";
 import { useParams } from "react-router-dom";
 import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../../common";
 import {
+  createRestrictionForVendor,
   createVendor,
   deleteVendor,
   getAllVendors,
@@ -41,6 +49,7 @@ import {
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Select as AntSelect } from "antd";
 import NewSelect from "../../components/NewSelect";
+import FileUploader from "../../components/FileUploader";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -62,6 +71,15 @@ const initialVendorForm = {
   panNumber: "",
   status: "Active",
   verified: "true",
+};
+
+const initialRestrictionForm = {
+  vendorId: null,
+  restrictionType: "SUSPENSION",
+  reason: "",
+  restrictionStartDate: "",
+  restrictionEndDate: "",
+  attachmentUrl: "",
 };
 
 const toNumberOrNull = (value) => {
@@ -96,6 +114,13 @@ const VendorsData = () => {
 
   const vendorModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const restrictionModal = useDisclosure();
+
+  const [restrictionForm, setRestrictionForm] = useState(
+    initialRestrictionForm,
+  );
+
+  const [restrictionErrors, setRestrictionErrors] = useState({});
 
   const vendorList = useSelector((state) => state.vendors.vendorList);
   const loading = useSelector((state) => state.vendors.loading);
@@ -193,6 +218,167 @@ const VendorsData = () => {
   const openDeleteModal = (vendor) => {
     setSelectedVendor(vendor);
     deleteModal.onOpen();
+  };
+
+  const resetRestrictionForm = () => {
+    setRestrictionForm(initialRestrictionForm);
+    setRestrictionErrors({});
+  };
+
+  const openRestrictionModal = (vendor) => {
+    if (vendor?.status?.toUpperCase() !== "ACTIVE") {
+      addToast({
+        title: "Only active vendors can be restricted",
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedVendor(vendor);
+
+    setRestrictionForm({
+      ...initialRestrictionForm,
+      vendorId: toNumberOrNull(vendor?.id),
+    });
+
+    setRestrictionErrors({});
+    restrictionModal.onOpen();
+  };
+
+  const handleRestrictionInputChange = (field, value) => {
+    setRestrictionForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    setRestrictionErrors((previous) => ({
+      ...previous,
+      [field]: "",
+    }));
+  };
+
+  const handleRestrictionTypeChange = (keys) => {
+    const restrictionType = Array.from(keys)[0] || "SUSPENSION";
+
+    setRestrictionForm((previous) => ({
+      ...previous,
+      restrictionType,
+      restrictionStartDate:
+        restrictionType === "BLACKLIST" ? "" : previous.restrictionStartDate,
+      restrictionEndDate:
+        restrictionType === "BLACKLIST" ? "" : previous.restrictionEndDate,
+    }));
+
+    setRestrictionErrors({});
+  };
+  const validateRestrictionForm = () => {
+    const errors = {};
+
+    if (!auditUserId) {
+      errors.userId = "User ID is required";
+    }
+
+    if (!restrictionForm.vendorId) {
+      errors.vendorId = "Vendor ID is required";
+    }
+
+    if (!restrictionForm.restrictionType) {
+      errors.restrictionType = "Restriction type is required";
+    }
+
+    if (!restrictionForm.reason.trim()) {
+      errors.reason = "Restriction reason is required";
+    } else if (restrictionForm.reason.trim().length > 2000) {
+      errors.reason = "Restriction reason cannot exceed 2000 characters";
+    }
+
+    if (restrictionForm.restrictionType === "SUSPENSION") {
+      if (!restrictionForm.restrictionStartDate) {
+        errors.restrictionStartDate = "Restriction start date is required";
+      }
+
+      if (!restrictionForm.restrictionEndDate) {
+        errors.restrictionEndDate = "Restriction end date is required";
+      }
+
+      if (
+        restrictionForm.restrictionStartDate &&
+        restrictionForm.restrictionEndDate &&
+        restrictionForm.restrictionEndDate <
+          restrictionForm.restrictionStartDate
+      ) {
+        errors.restrictionEndDate = "End date cannot be before start date";
+      }
+    }
+
+    if (restrictionForm.attachmentUrl.trim().length > 1000) {
+      errors.attachmentUrl = "Attachment URL cannot exceed 1000 characters";
+    }
+
+    setRestrictionErrors(errors);
+
+    if (errors.userId) {
+      addToast({
+        title: errors.userId,
+        color: "danger",
+      });
+    }
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmitRestriction = async () => {
+    if (!validateRestrictionForm()) return;
+
+    const vendorId = toNumberOrNull(restrictionForm.vendorId);
+
+    const data = {
+      vendorId,
+      restrictionType: restrictionForm.restrictionType,
+      reason: restrictionForm.reason.trim(),
+
+      restrictionStartDate:
+        restrictionForm.restrictionType === "SUSPENSION"
+          ? restrictionForm.restrictionStartDate
+          : null,
+
+      restrictionEndDate:
+        restrictionForm.restrictionType === "SUSPENSION"
+          ? restrictionForm.restrictionEndDate
+          : null,
+
+      attachmentUrl: restrictionForm.attachmentUrl.trim() || null,
+    };
+
+    try {
+      await dispatch(
+        createRestrictionForVendor({
+          id: vendorId,
+          userId: auditUserId,
+          data,
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "Restriction request created",
+        description: "The request has been sent to Accounts for approval.",
+        color: "success",
+      });
+
+      restrictionModal.onClose();
+      resetRestrictionForm();
+      setSelectedVendor(null);
+      refetchVendors();
+    } catch (error) {
+      addToast({
+        title: "Failed to create restriction request",
+        description: getErrorMessage(
+          error,
+          "Please check the details and try again.",
+        ),
+        color: "danger",
+      });
+    }
   };
 
   const validateVendorForm = () => {
@@ -535,7 +721,9 @@ const VendorsData = () => {
       //     </Chip>
       //   );
 
-      case "actions":
+      case "actions": {
+        const isActiveVendor = rowData?.status?.toUpperCase() === "ACTIVE";
+
         return (
           <div className="flex items-center justify-center gap-2">
             <Dropdown>
@@ -554,6 +742,18 @@ const VendorsData = () => {
                   Edit Vendor
                 </DropdownItem>
 
+                {isActiveVendor ? (
+                  <DropdownItem
+                    key="restrict"
+                    className="text-warning"
+                    color="warning"
+                    startContent={<Ban className="h-4 w-4" />}
+                    onPress={() => openRestrictionModal(rowData)}
+                  >
+                    Suspend / Blacklist
+                  </DropdownItem>
+                ) : null}
+
                 <DropdownItem
                   key="delete"
                   className="text-danger"
@@ -567,6 +767,7 @@ const VendorsData = () => {
             </Dropdown>
           </div>
         );
+      }
 
       default:
         return rowData?.[columnKey] || "-";
@@ -943,6 +1144,142 @@ const VendorsData = () => {
                   onPress={handleDeleteVendor}
                 >
                   Delete
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={restrictionModal.isOpen}
+        onOpenChange={restrictionModal.onOpenChange}
+        size="2xl"
+        isDismissable={false}
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <span>Restrict Vendor</span>
+
+                <span className="text-sm font-normal text-default-500">
+                  Create a suspension or blacklist request for Accounts
+                  approval.
+                </span>
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="rounded-lg border border-warning-200 bg-warning-50 p-3">
+                  <p className="font-semibold text-warning-700">
+                    {selectedVendor?.name || "-"}
+                  </p>
+
+                  <p className="text-xs text-warning-600">
+                    Vendor ID: {selectedVendor?.id || "-"}
+                  </p>
+                </div>
+
+                <Select
+                  isRequired
+                  label="Restriction Type"
+                  selectedKeys={new Set([restrictionForm.restrictionType])}
+                  onSelectionChange={handleRestrictionTypeChange}
+                  isInvalid={Boolean(restrictionErrors.restrictionType)}
+                  errorMessage={restrictionErrors.restrictionType}
+                >
+                  <SelectItem key="SUSPENSION">Suspension</SelectItem>
+
+                  <SelectItem key="BLACKLIST">Blacklist</SelectItem>
+                </Select>
+
+                <Textarea
+                  isRequired
+                  label="Restriction Reason"
+                  placeholder="Enter the reason for restricting this vendor"
+                  minRows={4}
+                  maxLength={2000}
+                  value={restrictionForm.reason}
+                  onValueChange={(value) =>
+                    handleRestrictionInputChange("reason", value)
+                  }
+                  isInvalid={Boolean(restrictionErrors.reason)}
+                  errorMessage={restrictionErrors.reason}
+                />
+
+                {restrictionForm.restrictionType === "SUSPENSION" && (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Input
+                      isRequired
+                      type="date"
+                      label="Restriction Start Date"
+                      min={new Date().toISOString().split("T")[0]}
+                      value={restrictionForm.restrictionStartDate}
+                      onValueChange={(value) =>
+                        handleRestrictionInputChange(
+                          "restrictionStartDate",
+                          value,
+                        )
+                      }
+                      isInvalid={Boolean(
+                        restrictionErrors.restrictionStartDate,
+                      )}
+                      errorMessage={restrictionErrors.restrictionStartDate}
+                    />
+
+                    <Input
+                      isRequired
+                      type="date"
+                      label="Restriction End Date"
+                      min={
+                        restrictionForm.restrictionStartDate ||
+                        new Date().toISOString().split("T")[0]
+                      }
+                      value={restrictionForm.restrictionEndDate}
+                      onValueChange={(value) =>
+                        handleRestrictionInputChange(
+                          "restrictionEndDate",
+                          value,
+                        )
+                      }
+                      isInvalid={Boolean(restrictionErrors.restrictionEndDate)}
+                      errorMessage={restrictionErrors.restrictionEndDate}
+                    />
+                  </div>
+                )}
+
+                <FileUploader
+                  label="Supporting Attachment"
+                  placeholder="Upload supporting document"
+                  uploadingType="single"
+                  value={restrictionForm.attachmentUrl}
+                  onChange={(uploadedUrl) =>
+                    handleRestrictionInputChange(
+                      "attachmentUrl",
+                      uploadedUrl || "",
+                    )
+                  }
+                  errorMessage={restrictionErrors.attachmentUrl}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    resetRestrictionForm();
+                    setSelectedVendor(null);
+                    modalClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="warning"
+                  startContent={<Ban className="h-4 w-4" />}
+                  onPress={handleSubmitRestriction}
+                >
+                  Submit Request
                 </Button>
               </ModalFooter>
             </>
