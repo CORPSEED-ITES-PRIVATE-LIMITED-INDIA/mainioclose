@@ -597,6 +597,10 @@ function AdminVendorRestrictionApproval() {
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <span className="text-sm text-default-400">
+          Total {totalElements} request
+          {totalElements === 1 ? "" : "s"}
+        </span>
         <Select
           label="Filter by Status"
           className="w-full sm:w-64"
@@ -607,11 +611,6 @@ function AdminVendorRestrictionApproval() {
             <SelectItem key={option.key}>{option.label}</SelectItem>
           ))}
         </Select>
-
-        <span className="text-sm text-default-400">
-          Total {totalElements} request
-          {totalElements === 1 ? "" : "s"}
-        </span>
       </div>
 
       <Table

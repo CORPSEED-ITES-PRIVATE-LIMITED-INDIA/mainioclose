@@ -150,6 +150,31 @@ const formatVendorStatus = (status) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const RESTRICTED_VENDOR_STATUSES = new Set(["BLACKLISTED", "SUSPENDED"]);
+
+const isVendorRestricted = (vendor) => {
+  if (!vendor) return false;
+
+  const possibleStatuses = [
+    vendor?.status,
+    vendor?.vendorStatus,
+    vendor?.restrictionStatus,
+    vendor?.vendorRestrictionStatus,
+    vendor?.restrictionType,
+    vendor?.vendorRestrictionType,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toUpperCase());
+
+  return (
+    possibleStatuses.some((status) => RESTRICTED_VENDOR_STATUSES.has(status)) ||
+    vendor?.isBlacklisted === true ||
+    vendor?.blacklisted === true ||
+    vendor?.isSuspended === true ||
+    vendor?.suspended === true
+  );
+};
+
 const getVendorStatusIcon = (status) => {
   switch (String(status || "").toUpperCase()) {
     case "ACTIVE":
@@ -536,13 +561,20 @@ const RequestForQuotation = () => {
   );
 
   const vendorOptions = useMemo(() => {
-    return (vendorList || []).map((vendor) => ({
-      ...vendor,
-      vendorDisplayLabel: `${getVendorStatusIcon(vendor?.status)} ${
-        vendor?.name || "Unnamed Vendor"
-      }  •  ${formatVendorStatus(vendor?.status)}`,
-    }));
+    return (vendorList || [])
+      .filter((vendor) => !isVendorRestricted(vendor))
+      .map((vendor) => ({
+        ...vendor,
+        vendorDisplayLabel: `${getVendorStatusIcon(vendor?.status)} ${
+          vendor?.name || "Unnamed Vendor"
+        }  •  ${formatVendorStatus(vendor?.status)}`,
+      }));
   }, [vendorList]);
+
+  const selectableVendorIdSet = useMemo(
+    () => new Set(vendorOptions.map((vendor) => String(vendor?.id))),
+    [vendorOptions],
+  );
 
   const count = useMemo(
     () => getTotalElements(rfqResponse, rfqList.length),
@@ -737,9 +769,14 @@ const RequestForQuotation = () => {
       contactPersonMobile: rowData?.contactPersonMobile || "",
       attachmentUrl: rowData?.attachmentUrl || "",
       vendorIds: getRfqVendors(rowData)
+        .filter((vendor) => !isVendorRestricted(vendor))
         .map((vendor) => vendor?.vendorId)
         .filter(Boolean)
-        .map(String),
+        .map(String)
+        .filter(
+          (vendorId) =>
+            vendorOptions.length === 0 || selectableVendorIdSet.has(vendorId),
+        ),
     });
 
     rfqModal.onOpen();
@@ -821,6 +858,21 @@ const RequestForQuotation = () => {
       return;
     }
 
+    const selectedVendorIds = (values.vendorIds || []).map(String);
+    const unavailableVendorSelected = selectedVendorIds.some(
+      (vendorId) => !selectableVendorIdSet.has(vendorId),
+    );
+
+    if (unavailableVendorSelected) {
+      addToast({
+        title: "Vendor Not Available",
+        description:
+          "A selected vendor is blacklisted, suspended, or no longer available. Please select another vendor.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
       title: values.title,
       description: values.description,
@@ -837,7 +889,7 @@ const RequestForQuotation = () => {
       contactPersonEmail: values.contactPersonEmail,
       contactPersonMobile: values.contactPersonMobile,
       attachmentUrl: getUploadedFileValue(values.attachmentUrl),
-      vendorIds: values.vendorIds.map(Number),
+      vendorIds: selectedVendorIds.map(Number),
     };
 
     const isEditMode = Boolean(selectedRfq?.id);
