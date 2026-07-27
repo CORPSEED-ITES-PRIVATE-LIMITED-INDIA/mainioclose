@@ -799,9 +799,8 @@ const VendorsData = () => {
               <SelectItem key="PROSPECTIVE">Prospective</SelectItem>
               <SelectItem key="ONBOARDING">Onboarding</SelectItem>
               <SelectItem key="ACTIVE">Active</SelectItem>
-              {/* <SelectItem key="INACTIVE">Inactive</SelectItem> */}
-              {/* <SelectItem key="BLACKLISTED">Blacklisted</SelectItem> */}
-              {/* <SelectItem key="SUSPENDED">Suspended</SelectItem> */}
+              <SelectItem key="BLACKLISTED">Blacklisted</SelectItem>
+              <SelectItem key="SUSPENDED">Suspended</SelectItem>
             </Select>
 
             <Button
