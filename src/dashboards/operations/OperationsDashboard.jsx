@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   Button,
   Card,
@@ -18,6 +18,12 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "@heroui/react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import {
+  getProjectOverviewCards,
+  getUserProjectDashboard,
+} from "../../toolkit/slices/dashboardSlice.js";
 import {
   AlertTriangle,
   BarChart3,
@@ -30,7 +36,6 @@ import {
   Filter,
   FolderOpen,
   Gauge,
-  IndianRupee,
   Layers3,
   PackageCheck,
   ShieldCheck,
@@ -38,68 +43,115 @@ import {
   Workflow,
 } from "lucide-react";
 
-const stats = [
-  {
-    title: "Total Projects",
-    value: "86",
-    icon: BriefcaseBusiness,
+const PROJECT_STATUS_ORDER = [
+  "OPEN",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+  "REFUNDED",
+  "REOPENED",
+];
+
+const topCardConfig = {
+  OPEN: {
+    title: "Open",
+    icon: FolderOpen,
     bg: "bg-blue-50",
     iconColor: "text-blue-600",
-    change: "100%",
     changeColor: "text-blue-600",
-    suffix: "portfolio",
   },
-  {
-    title: "New Projects",
-    value: "16",
-    icon: FileText,
-    bg: "bg-slate-100",
-    iconColor: "text-slate-600",
-    change: "18.6%",
-    changeColor: "text-slate-700",
-    suffix: "of total",
-  },
-  {
+  IN_PROGRESS: {
     title: "In Progress",
-    value: "42",
-    icon: FolderOpen,
+    icon: Workflow,
     bg: "bg-indigo-50",
     iconColor: "text-indigo-600",
-    change: "48.8%",
     changeColor: "text-indigo-600",
-    suffix: "of total",
   },
-  {
+  COMPLETED: {
     title: "Completed",
-    value: "18",
     icon: CheckCircle2,
     bg: "bg-green-50",
     iconColor: "text-green-600",
-    change: "20.9%",
     changeColor: "text-green-600",
-    suffix: "of total",
   },
-  {
-    title: "Rework",
-    value: "10",
+  CANCELLED: {
+    title: "Cancelled",
     icon: AlertTriangle,
-    bg: "bg-orange-50",
-    iconColor: "text-orange-600",
-    change: "11.6%",
-    changeColor: "text-orange-600",
-    suffix: "of total",
+    bg: "bg-red-50",
+    iconColor: "text-red-600",
+    changeColor: "text-red-600",
   },
-  {
-    title: "Average Completion",
-    value: "64%",
-    icon: Gauge,
-    bg: "bg-cyan-50",
-    iconColor: "text-cyan-600",
-    change: "Across all projects",
-    changeColor: "text-cyan-600",
-    suffix: "",
+  REFUNDED: {
+    title: "Refunded",
+    icon: BriefcaseBusiness,
+    bg: "bg-amber-50",
+    iconColor: "text-amber-600",
+    changeColor: "text-amber-600",
   },
-];
+  REOPENED: {
+    title: "Reopened",
+    icon: FileText,
+    bg: "bg-purple-50",
+    iconColor: "text-purple-600",
+    changeColor: "text-purple-600",
+  },
+};
+
+function toFiniteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function formatPercentage(value) {
+  const percentage = toFiniteNumber(value);
+  return `${percentage.toFixed(2).replace(/\.00$/, "")}%`;
+}
+
+function getRootDashboardData(response) {
+  if (
+    response?.data &&
+    typeof response.data === "object" &&
+    !Array.isArray(response.data)
+  ) {
+    return response.data;
+  }
+
+  return response || {};
+}
+
+function buildTopCards(response) {
+  const root = getRootDashboardData(response);
+  const totalProjects = toFiniteNumber(root?.totalProjects);
+  const statusCounts = Array.isArray(root?.statusCounts)
+    ? root.statusCounts
+    : [];
+
+  const countByStatus = statusCounts.reduce((result, item) => {
+    const status = String(item?.status || "")
+      .trim()
+      .toUpperCase();
+
+    if (status) {
+      result[status] = toFiniteNumber(item?.count);
+    }
+
+    return result;
+  }, {});
+
+  return PROJECT_STATUS_ORDER.map((status) => {
+    const config = topCardConfig[status];
+    const count = countByStatus[status] ?? 0;
+    const percentage = totalProjects > 0 ? (count / totalProjects) * 100 : 0;
+
+    return {
+      ...config,
+      type: status,
+      value: String(count),
+      change: formatPercentage(percentage),
+      suffix: "of total",
+    };
+  });
+}
 
 const milestoneOverview = [
   {
@@ -154,48 +206,51 @@ const milestoneOverview = [
   },
 ];
 
-const projectStatus = [
-  {
-    title: "New",
-    subtitle: "Recently created projects",
-    count: 16,
-    value: 18.6,
-    color: "default",
+const projectStageConfig = {
+  NEW: {
     icon: FileText,
+    color: "default",
     bg: "bg-slate-100",
     iconColor: "text-slate-600",
   },
-  {
-    title: "In Progress",
-    subtitle: "Active milestone execution",
-    count: 42,
-    value: 48.8,
-    color: "primary",
+  IN_PROGRESS: {
     icon: FolderOpen,
+    color: "primary",
     bg: "bg-blue-50",
     iconColor: "text-blue-600",
   },
-  {
-    title: "Completed",
-    subtitle: "All milestones completed",
-    count: 18,
-    value: 20.9,
-    color: "success",
+  AWAITING_DOCUMENTS: {
+    icon: FileText,
+    color: "warning",
+    bg: "bg-amber-50",
+    iconColor: "text-amber-600",
+  },
+  DELAYED: {
+    icon: AlertTriangle,
+    color: "danger",
+    bg: "bg-red-50",
+    iconColor: "text-red-600",
+  },
+  COMPLETED: {
     icon: CheckCircle2,
+    color: "success",
     bg: "bg-green-50",
     iconColor: "text-green-600",
   },
-  {
-    title: "Rework",
-    subtitle: "Sent back for correction",
-    count: 10,
-    value: 11.6,
-    color: "warning",
+  REWORK: {
     icon: AlertTriangle,
+    color: "warning",
     bg: "bg-orange-50",
     iconColor: "text-orange-600",
   },
-];
+};
+
+const defaultProjectStageConfig = {
+  icon: Workflow,
+  color: "default",
+  bg: "bg-slate-100",
+  iconColor: "text-slate-600",
+};
 
 const projects = [
   {
@@ -428,6 +483,90 @@ function StatCard({ item }) {
   );
 }
 
+function TopProjectCards({
+  cards,
+  loading = "idle",
+  error = null,
+  userId,
+  onRetry,
+}) {
+  const isLoading = loading === "pending";
+  const hasError = loading === "error";
+
+  if (!userId) {
+    return (
+      <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-5 text-center">
+        <p className="text-xs font-semibold text-amber-800">
+          User ID is missing from the route.
+        </p>
+        <p className="mt-1 text-[11px] text-amber-700">
+          Open this page using a route containing :userId.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return Array.from({ length: 6 }, (_, index) => (
+      <Card
+        key={index}
+        className="animate-pulse rounded-xl border border-slate-200 shadow-sm"
+      >
+        <CardBody className="p-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
+            <div className="min-w-0 flex-1">
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="mt-2 h-5 w-14 rounded bg-slate-200" />
+              <div className="mt-2 h-2.5 w-20 rounded bg-slate-100" />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    ));
+  }
+
+  if (hasError) {
+    return (
+      <div className="col-span-full flex flex-col items-center rounded-xl border border-red-200 bg-red-50 px-3 py-5 text-center">
+        <AlertTriangle size={22} className="text-red-500" />
+        <p className="mt-2 text-xs font-semibold text-red-700">
+          Unable to load project summary
+        </p>
+        <p className="mt-1 text-[11px] text-red-600">
+          {error || "Something went wrong while fetching project summary."}
+        </p>
+        <Button
+          size="sm"
+          color="danger"
+          variant="flat"
+          className="mt-3"
+          onPress={onRetry}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return (
+      <div className="col-span-full rounded-xl border border-slate-200 bg-white px-3 py-5 text-center shadow-sm">
+        <p className="text-xs font-semibold text-slate-700">
+          No project summary found
+        </p>
+        <p className="mt-1 text-[11px] text-slate-500">
+          The API returned no values for the top cards.
+        </p>
+      </div>
+    );
+  }
+
+  return cards.map((item, index) => (
+    <StatCard key={`${item.type || item.title}-${index}`} item={item} />
+  ));
+}
+
 function MilestoneOverview() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
@@ -490,69 +629,150 @@ function MilestoneOverview() {
   );
 }
 
-function ProjectStatusOverview() {
+function ProjectStatusOverview({
+  cards = [],
+  totalProjects = 0,
+  loading = "idle",
+  error = null,
+  userId,
+  onRetry,
+}) {
+  const isLoading = loading === "pending";
+  const hasError = loading === "error";
+
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-3 pb-0">
         <SectionTitle
           title="Project Stage Overview"
-          subtitle="New, In Progress, Completed and Rework by percentage"
+          subtitle={
+            totalProjects > 0
+              ? `${totalProjects} projects in the selected period`
+              : "Live project stage distribution"
+          }
+          action={null}
         />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
-        <div className="space-y-3">
-          {projectStatus.map((item) => {
-            const Icon = item.icon;
-
-            return (
+      <CardBody className="px-3 pb-3" aria-live="polite">
+        {!userId ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-4 text-center">
+            <p className="text-xs font-semibold text-amber-800">
+              User information is not available.
+            </p>
+            <p className="mt-1 text-[11px] text-amber-700">
+              Open this page using a route containing :userId.
+            </p>
+          </div>
+        ) : isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((item) => (
               <div
-                key={item.title}
-                className="rounded-xl border border-slate-100 px-3 py-3"
+                key={item}
+                className="animate-pulse rounded-xl border border-slate-100 px-3 py-3"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${item.bg}`}
-                  >
-                    <Icon size={17} className={item.iconColor} />
+                  <div className="h-9 w-9 rounded-full bg-slate-200" />
+                  <div className="flex-1">
+                    <div className="h-3 w-28 rounded bg-slate-200" />
+                    <div className="mt-2 h-2.5 w-40 rounded bg-slate-100" />
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-slate-900">
-                      {item.title}
-                    </p>
-                    {item.subtitle && (
-                      <p className="truncate text-[11px] text-slate-500">
-                        {item.subtitle}
-                      </p>
-                    )}
-                  </div>
-
-                  <p className="shrink-0 text-xs font-bold text-slate-950">
-                    {item.count}
-                  </p>
-
-                  <p className="shrink-0 text-[11px] text-slate-500">
-                    {item.value}%
-                  </p>
+                  <div className="h-3 w-8 rounded bg-slate-200" />
+                  <div className="h-3 w-10 rounded bg-slate-100" />
                 </div>
-
-                <div className="mt-3 pl-12">
-                  <Progress
-                    aria-label={item.title}
-                    value={item.value}
-                    color={item.color}
-                    size="sm"
-                    radius="full"
-                    classNames={{
-                      track: "bg-slate-100",
-                    }}
-                  />
-                </div>
+                <div className="mt-3 ml-12 h-1.5 rounded-full bg-slate-100" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : hasError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-4 text-center">
+            <AlertTriangle className="mx-auto text-red-500" size={22} />
+            <p className="mt-2 text-xs font-semibold text-red-700">
+              Unable to load project stages
+            </p>
+            <p className="mt-1 text-[11px] text-red-600">
+              {error || "Something went wrong while fetching the overview."}
+            </p>
+            <Button
+              size="sm"
+              color="danger"
+              variant="flat"
+              className="mt-3"
+              onPress={onRetry}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : !Array.isArray(cards) || cards.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-5 text-center">
+            <p className="text-xs font-semibold text-slate-700">
+              No project stage data found
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              There are no projects for the selected period.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {cards.map((item, index) => {
+              const config =
+                projectStageConfig[item.type] || defaultProjectStageConfig;
+              const Icon = config.icon;
+              const count = Number(item.count) || 0;
+              const percentage = Math.min(
+                100,
+                Math.max(0, Number(item.percentage) || 0),
+              );
+
+              return (
+                <div
+                  key={item.type || index}
+                  className="rounded-xl border border-slate-100 px-3 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bg}`}
+                    >
+                      <Icon size={17} className={config.iconColor} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-900">
+                        {item.label || item.type}
+                      </p>
+                      {item.description && (
+                        <p className="truncate text-[11px] text-slate-500">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="shrink-0 text-xs font-bold text-slate-950">
+                      {count}
+                    </p>
+
+                    <p className="w-14 shrink-0 text-right text-[11px] text-slate-500">
+                      {percentage.toFixed(2).replace(/\.00$/, "")}%
+                    </p>
+                  </div>
+
+                  <div className="mt-3 pl-12">
+                    <Progress
+                      aria-label={item.label || item.type}
+                      value={percentage}
+                      color={config.color}
+                      size="sm"
+                      radius="full"
+                      classNames={{
+                        track: "bg-slate-100",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
@@ -1029,6 +1249,63 @@ function MilestoneDefinitionCard() {
 }
 
 export default function OperationsDashboard() {
+  const dispatch = useDispatch();
+  const routeParams = useParams();
+  const rawUserId = routeParams.userId ?? routeParams.id;
+  const parsedUserId = Number(rawUserId);
+  const userId =
+    rawUserId !== undefined &&
+    rawUserId !== null &&
+    rawUserId !== "" &&
+    Number.isFinite(parsedUserId) &&
+    parsedUserId > 0
+      ? parsedUserId
+      : null;
+
+  const {
+    projectOverviewData = null,
+    projectOverviewCards = [],
+    projectOverviewLoading = "idle",
+    projectOverviewError = null,
+    userProjectDashboard = null,
+    userProjectDashboardLoading = "idle",
+    userProjectDashboardError = null,
+  } = useSelector((state) => state.dashboard || {});
+
+  const topCards = useMemo(
+    () => buildTopCards(userProjectDashboard),
+    [userProjectDashboard],
+  );
+
+  const fetchProjectOverview = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(
+      getProjectOverviewCards({
+        userId,
+        currentMonth: true,
+      }),
+    );
+  }, [dispatch, userId]);
+
+  const fetchUserProjectDashboard = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(
+      getUserProjectDashboard({
+        userId,
+        currentMonth: true,
+      }),
+    );
+  }, [dispatch, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    fetchProjectOverview();
+    fetchUserProjectDashboard();
+  }, [fetchProjectOverview, fetchUserProjectDashboard, userId]);
+
   return (
     <div className="max-h-[85vh] overflow-auto overflow-x-hidden bg-slate-50 text-slate-900">
       <div className="w-full p-2 sm:p-3 lg:p-4">
@@ -1054,7 +1331,7 @@ export default function OperationsDashboard() {
               className="h-9 rounded-lg border-slate-200 text-xs"
               startContent={<CalendarDays size={14} />}
             >
-              July 2026
+              Current Month
             </Button>
 
             <Button
@@ -1063,7 +1340,7 @@ export default function OperationsDashboard() {
               className="h-9 rounded-lg border-slate-200 text-xs"
               startContent={<Users size={14} />}
             >
-              All Owners
+              User ID: {userId || "Not found"}
             </Button>
 
             <Button
@@ -1077,16 +1354,27 @@ export default function OperationsDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-          {stats.map((item) => (
-            <StatCard key={item.title} item={item} />
-          ))}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+          <TopProjectCards
+            cards={topCards}
+            loading={userProjectDashboardLoading}
+            error={userProjectDashboardError}
+            userId={userId}
+            onRetry={fetchUserProjectDashboard}
+          />
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">
           <PortfolioCompletionChart />
           <MilestoneOverview />
-          <ProjectStatusOverview />
+          <ProjectStatusOverview
+            cards={projectOverviewCards}
+            totalProjects={projectOverviewData?.totalProjects || 0}
+            loading={projectOverviewLoading}
+            error={projectOverviewError}
+            userId={userId}
+            onRetry={fetchProjectOverview}
+          />
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">

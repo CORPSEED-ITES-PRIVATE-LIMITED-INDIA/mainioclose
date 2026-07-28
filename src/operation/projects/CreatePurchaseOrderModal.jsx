@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "@heroui/react";
 import { createProcurementPurchaseOrder } from "../../toolkit/slices/operationSlice";
+import { getVendorById } from "../../toolkit/slices/vendorsSlice";
 import FileUploader from "../../components/FileUploader";
 import NewTextEditor from "../../components/NewTextEditor";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -71,6 +72,18 @@ const CreatePurchaseOrderModal = ({
   const [form] = Form.useForm();
 
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+  const vendorDetails = useSelector((state) => state.vendors.vendorDetails);
+  const vendorDetailsLoading = useSelector((state) => state.vendors.loading);
+
+  const vendorGstRegistrationType = String(
+    vendorDetails?.gstRegistrationType || "",
+  ).toUpperCase();
+  const vendorGstNumber = String(vendorDetails?.gstNumber || "")
+    .trim()
+    .toUpperCase();
+  const vendorGstStateCode = vendorGstNumber.substring(0, 2);
+
+  const resolvedTaxType = vendorGstStateCode === "09" ? "CGST_SGST" : "IGST";
 
   const paymentTypeOptions = useMemo(() => {
     if (!Array.isArray(paymentTypeList)) return [];
@@ -87,6 +100,17 @@ const CreatePurchaseOrderModal = ({
     }
   }, [dispatch, open]);
 
+  useEffect(() => {
+    if (open && vendorId) {
+      dispatch(
+        getVendorById({
+          data: {},
+          vendorId: Number(vendorId),
+        }),
+      );
+    }
+  }, [dispatch, open, vendorId]);
+
   const watchedFinalAmount = Form.useWatch("finalAmount", form);
   const watchedGstRate = Form.useWatch("gstRate", form);
   const watchedTdsPercentage = Form.useWatch("tdsPercentage", form);
@@ -98,7 +122,7 @@ const CreatePurchaseOrderModal = ({
     const finalAmount = Number(watchedFinalAmount || 0);
     const gstRate = Number(watchedGstRate || 0);
     const tdsPercentage = Number(watchedTdsPercentage || 0);
-    const taxType = watchedTaxType || "CGST_SGST";
+    const taxType = watchedTaxType || "IGST";
 
     /*
      * Existing GST calculation remains unchanged.
@@ -156,7 +180,7 @@ const CreatePurchaseOrderModal = ({
       gstRate: 18,
       tdsPercentage: 0,
       tdsAmount: 0,
-      taxType: "CGST_SGST",
+      taxType: "IGST",
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
       remarks: "",
@@ -175,6 +199,14 @@ const CreatePurchaseOrderModal = ({
     createdBy,
     userId,
   ]);
+
+  useEffect(() => {
+    if (!open || !vendorDetails?.id) return;
+
+    form.setFieldsValue({
+      taxType: resolvedTaxType,
+    });
+  }, [open, form, vendorDetails?.id, resolvedTaxType]);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -210,6 +242,7 @@ const CreatePurchaseOrderModal = ({
 
       finalAmount: Number(values.finalAmount || 0),
       gstRate: Number(values.gstRate || 0),
+      taxType: values.taxType || resolvedTaxType,
 
       tdsPercentage: Number(values.tdsPercentage || 0),
       tdsAmount: Number(values.tdsAmount || 0),
@@ -393,7 +426,11 @@ const CreatePurchaseOrderModal = ({
             name="taxType"
             rules={[{ required: true, message: "Please select tax type" }]}
           >
-            <Select placeholder="Select tax type" options={taxTypeOptions} />
+            <Select
+              placeholder="Tax type will be selected automatically"
+              options={taxTypeOptions}
+              disabled
+            />
           </Form.Item>
 
           <Form.Item label="CGST Amount" name="cgstAmount">
@@ -554,7 +591,12 @@ const CreatePurchaseOrderModal = ({
             Cancel
           </Button>
 
-          <Button type="primary" htmlType="submit">
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={vendorDetailsLoading === "pending"}
+            disabled={vendorDetailsLoading === "pending"}
+          >
             Create Purchase Order
           </Button>
         </div>

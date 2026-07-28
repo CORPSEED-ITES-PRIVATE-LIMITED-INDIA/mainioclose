@@ -214,92 +214,44 @@ const RaiseProcurementPaymentRequestModal = ({
     control,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      invoiceAmount: "",
-      payableAmount: "",
       completionRemarks: "",
       proofAttachmentUrls: [],
-
-      tdsActive: "NO",
-      tdsPercentage: "",
-
-      gstActive: "NO",
-      gstStateCode: "",
-      gstPercentage: "",
     },
   });
 
-  const tdsActive = watch("tdsActive");
-  const gstActive = watch("gstActive");
-  const gstStateCode = watch("gstStateCode");
-  const gstPercentage = watch("gstPercentage");
-  const invoiceAmount = watch("invoiceAmount");
+  const poFinalAmount = Number(procurementOrder?.finalAmount || 0);
+  const poGstRate = Number(procurementOrder?.gstRate || 0);
+  const poTdsPercentage = Number(procurementOrder?.tdsPercentage || 0);
 
-  const vendorGSTRegistrationType = procurementOrder?.vendorGSTRegistrationType;
+  const poCgstAmount = Number(procurementOrder?.cgstAmount || 0);
+  const poSgstAmount = Number(procurementOrder?.sgstAmount || 0);
+  const poIgstAmount = Number(procurementOrder?.igstAmount || 0);
 
-  const isRegisteredVendor = vendorGSTRegistrationType === "REGISTERED";
+  const poTdsAmount = Number(procurementOrder?.tdsAmount || 0);
+  const poTotalTaxAmount = Number(procurementOrder?.totalTaxAmount || 0);
+  const poGrandTotal = Number(procurementOrder?.grandTotal || 0);
 
-  const isInternationalVendor = vendorGSTRegistrationType === "INTERNATIONAL";
+  const poTaxType =
+    poIgstAmount > 0
+      ? "IGST"
+      : poCgstAmount > 0 || poSgstAmount > 0
+        ? "CGST_SGST"
+        : null;
 
-  const gstCalculation = useMemo(() => {
-    const taxableAmount = Number(invoiceAmount || 0);
-    const gstRate = Number(gstPercentage || 0);
-    const isUpState = String(gstStateCode) === "09";
+  const isGstApplicable = poTotalTaxAmount > 0;
+  const isTdsApplicable = poTdsAmount > 0 || poTdsPercentage > 0;
 
-    if (gstActive !== "YES" || !gstRate) {
-      return {
-        gstAmount: 0,
-        cgstRate: 0,
-        sgstRate: 0,
-        igstRate: 0,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        igstAmount: 0,
-        totalWithGst: taxableAmount,
-      };
-    }
+  useEffect(() => {
+    if (!open) return;
 
-    const gstAmount =
-      taxableAmount > 0
-        ? Number(((taxableAmount * gstRate) / 100).toFixed(2))
-        : 0;
-
-    if (isUpState) {
-      const halfRate = Number((gstRate / 2).toFixed(2));
-      const cgstAmount = Number((gstAmount / 2).toFixed(2));
-      const sgstAmount = Number((gstAmount - cgstAmount).toFixed(2));
-
-      return {
-        gstAmount,
-        cgstRate: halfRate,
-        sgstRate: halfRate,
-        igstRate: 0,
-        cgstAmount,
-        sgstAmount,
-        igstAmount: 0,
-        totalWithGst: Number((taxableAmount + gstAmount).toFixed(2)),
-      };
-    }
-
-    return {
-      gstAmount,
-      cgstRate: 0,
-      sgstRate: 0,
-      igstRate: gstRate,
-      cgstAmount: 0,
-      sgstAmount: 0,
-      igstAmount: gstAmount,
-      totalWithGst: Number((taxableAmount + gstAmount).toFixed(2)),
-    };
-  }, [gstActive, gstPercentage, gstStateCode, invoiceAmount]);
-
-  const selectedState = GST_STATE_OPTIONS.find(
-    (state) => state.code === gstStateCode,
-  );
+    reset({
+      completionRemarks: "",
+      proofAttachmentUrls: [],
+    });
+  }, [open, procurementOrder, reset]);
 
   const handleClose = () => {
     reset();
@@ -317,40 +269,37 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
-    const isTdsActive = !isInternationalVendor && values.tdsActive === "YES";
-
-    const isGstActive = isRegisteredVendor && values.gstActive === "YES";
-
     const payload = {
-      invoiceAmount: Number(values.invoiceAmount || 0),
-      payableAmount: Number(values.payableAmount || 0),
+      invoiceAmount: poFinalAmount,
+      payableAmount: poGrandTotal,
       completionRemarks: values.completionRemarks,
       proofAttachmentUrls: Array.isArray(values.proofAttachmentUrls)
         ? values.proofAttachmentUrls
         : [],
       createdBy: Number(createdBy),
 
-      tdsActive: isTdsActive,
-      tdsPercentage: isTdsActive ? Number(values.tdsPercentage || 0) : null,
+      tdsActive: isTdsApplicable,
+      tdsPercentage: isTdsApplicable ? poTdsPercentage : null,
+      tdsAmount: isTdsApplicable ? poTdsAmount : 0,
 
-      gstActive: isGstActive,
-      gstStateCode: isGstActive ? values.gstStateCode : null,
-      gstStateName: isGstActive ? selectedState?.name || null : null,
-      gstPercentage: isGstActive ? Number(values.gstPercentage || 0) : null,
+      gstActive: isGstApplicable,
+      gstStateCode: null,
+      gstStateName: null,
+      gstPercentage: isGstApplicable ? poGstRate : null,
 
-      gstAmount: isGstActive ? gstCalculation.gstAmount : 0,
+      gstAmount: isGstApplicable ? poTotalTaxAmount : 0,
 
-      cgstRate: isGstActive ? gstCalculation.cgstRate : 0,
-      sgstRate: isGstActive ? gstCalculation.sgstRate : 0,
-      igstRate: isGstActive ? gstCalculation.igstRate : 0,
+      cgstRate:
+        poTaxType === "CGST_SGST" ? Number((poGstRate / 2).toFixed(2)) : 0,
+      sgstRate:
+        poTaxType === "CGST_SGST" ? Number((poGstRate / 2).toFixed(2)) : 0,
+      igstRate: poTaxType === "IGST" ? poGstRate : 0,
 
-      cgstAmount: isGstActive ? gstCalculation.cgstAmount : 0,
-      sgstAmount: isGstActive ? gstCalculation.sgstAmount : 0,
-      igstAmount: isGstActive ? gstCalculation.igstAmount : 0,
+      cgstAmount: poCgstAmount,
+      sgstAmount: poSgstAmount,
+      igstAmount: poIgstAmount,
 
-      totalWithGst: isGstActive
-        ? gstCalculation.totalWithGst
-        : Number(values.invoiceAmount || 0),
+      totalWithGst: Number((poFinalAmount + poTotalTaxAmount).toFixed(2)),
     };
 
     const resultAction = await dispatch(
@@ -383,33 +332,13 @@ const RaiseProcurementPaymentRequestModal = ({
     });
   };
 
-  useEffect(() => {
-    if (!open || !procurementOrder) return;
-
-    const gstValue = vendorGSTRegistrationType === "REGISTERED" ? "YES" : "NO";
-
-    const tdsValue =
-      vendorGSTRegistrationType === "INTERNATIONAL" ? "NO" : "YES";
-
-    setValue("gstActive", gstValue);
-    setValue("tdsActive", tdsValue);
-
-    if (gstValue === "NO") {
-      setValue("gstPercentage", "");
-      setValue("gstStateCode", "");
-    }
-
-    if (tdsValue === "NO") {
-      setValue("tdsPercentage", "");
-    }
-  }, [open, procurementOrder, vendorGSTRegistrationType, setValue]);
   return (
     <Modal
       isOpen={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) handleClose();
       }}
-      size="2xl"
+      size="xl"
       placement="center"
       classNames={{
         base: "max-h-[88vh]",
@@ -423,7 +352,6 @@ const RaiseProcurementPaymentRequestModal = ({
         >
           <ModalHeader className="flex shrink-0 flex-col gap-1 border-b border-default-200">
             <span>Raise Procurement Payment Request</span>
-            {console.log(procurementOrder)}
 
             <span className="text-xs font-normal text-default-500">
               PO Number: {procurementOrder?.poNumber || "-"}
@@ -431,236 +359,74 @@ const RaiseProcurementPaymentRequestModal = ({
           </ModalHeader>
 
           <ModalBody className="flex-1 gap-4 overflow-y-auto px-6 py-4">
-            <Input
-              label="Invoice Amount"
-              placeholder="Enter invoice amount"
-              type="number"
-              step="0.01"
-              min="0"
-              variant="bordered"
-              {...register("invoiceAmount", {
-                required: "Invoice amount is required",
-                min: {
-                  value: 0,
-                  message: "Invoice amount cannot be negative",
-                },
-              })}
-              isInvalid={Boolean(errors.invoiceAmount)}
-              errorMessage={errors.invoiceAmount?.message}
-            />
-
-            <Input
-              label="Payable Amount"
-              placeholder="Enter payable amount"
-              type="number"
-              step="0.01"
-              min="0"
-              variant="bordered"
-              {...register("payableAmount", {
-                required: "Payable amount is required",
-                min: {
-                  value: 0,
-                  message: "Payable amount cannot be negative",
-                },
-              })}
-              isInvalid={Boolean(errors.payableAmount)}
-              errorMessage={errors.payableAmount?.message}
-            />
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Controller
-                name="tdsActive"
-                control={control}
-                rules={{
-                  required: "Please select TDS option",
-                }}
-                render={({ field }) => (
-                  <Select
-                    isDisabled
-                    label="Apply TDS?"
-                    placeholder="Select TDS option"
-                    variant="bordered"
-                    selectedKeys={field.value ? [field.value] : []}
-                    onSelectionChange={() => {}}
-                    isInvalid={Boolean(errors.tdsActive)}
-                    errorMessage={errors.tdsActive?.message}
-                  >
-                    <SelectItem key="NO">No</SelectItem>
-                    <SelectItem key="YES">Yes</SelectItem>
-                  </Select>
-                )}
-              />
-
-              {!isInternationalVendor && tdsActive === "YES" && (
-                <Controller
-                  name="tdsPercentage"
-                  control={control}
-                  rules={{
-                    required: "Please select TDS percentage",
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      label="TDS Percentage"
-                      placeholder="Select TDS percentage"
-                      variant="bordered"
-                      selectedKeys={field.value ? [String(field.value)] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] || "";
-                        field.onChange(selected);
-                      }}
-                      isInvalid={Boolean(errors.tdsPercentage)}
-                      errorMessage={errors.tdsPercentage?.message}
-                    >
-                      <SelectItem key="1">1%</SelectItem>
-                      <SelectItem key="2">2%</SelectItem>
-                      <SelectItem key="5">5%</SelectItem>
-                      <SelectItem key="10">10%</SelectItem>
-                    </Select>
-                  )}
-                />
-              )}
-            </div>
-
             <div className="rounded-xl border border-default-200 p-4">
-              <div className="mb-3 text-sm font-medium">GST Details</div>
+              <div className="mb-3 text-sm font-semibold">Payment Summary</div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Controller
-                  name="gstActive"
-                  control={control}
-                  rules={{
-                    required: "Please select GST option",
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      isDisabled
-                      label="Apply GST?"
-                      placeholder="Select GST option"
-                      variant="bordered"
-                      selectedKeys={new Set(field.value ? [field.value] : [])}
-                      onSelectionChange={() => {}}
-                      isInvalid={Boolean(errors.gstActive)}
-                      errorMessage={errors.gstActive?.message}
-                    >
-                      <SelectItem key="NO">No</SelectItem>
-                      <SelectItem key="YES">Yes</SelectItem>
-                    </Select>
-                  )}
-                />
+              <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                  <span className="text-default-500">Base Amount</span>
+                  <span className="font-medium">
+                    {formatAmount(poFinalAmount)}
+                  </span>
+                </div>
 
-                {isRegisteredVendor && gstActive === "YES" && (
-                  <Controller
-                    name="gstStateCode"
-                    control={control}
-                    rules={{
-                      required: "Please select state code",
-                    }}
-                    render={({ field }) => (
-                      <Select
-                        label="State Code"
-                        placeholder="Select state"
-                        variant="bordered"
-                        selectedKeys={
-                          new Set(field.value ? [String(field.value)] : [])
-                        }
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] || "";
-                          field.onChange(String(selected));
-                        }}
-                        isInvalid={Boolean(errors.gstStateCode)}
-                        errorMessage={errors.gstStateCode?.message}
-                      >
-                        {GST_STATE_OPTIONS.map((state) => (
-                          <SelectItem
-                            key={state.code}
-                            textValue={`${state.code} - ${state.name}`}
-                          >
-                            {state.code} - {state.name}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    )}
-                  />
+                {isGstApplicable && (
+                  <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                    <span className="text-default-500">GST ({poGstRate}%)</span>
+                    <span className="font-medium">
+                      {formatAmount(poTotalTaxAmount)}
+                    </span>
+                  </div>
                 )}
 
-                {isRegisteredVendor && gstActive === "YES" && (
-                  <Controller
-                    name="gstPercentage"
-                    control={control}
-                    rules={{
-                      required: "Please select GST percentage",
-                    }}
-                    render={({ field }) => (
-                      <Select
-                        label="GST Percentage"
-                        placeholder="Select GST percentage"
-                        variant="bordered"
-                        selectedKeys={
-                          new Set(field.value ? [String(field.value)] : [])
-                        }
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] || "";
-                          field.onChange(String(selected));
-                        }}
-                        isInvalid={Boolean(errors.gstPercentage)}
-                        errorMessage={errors.gstPercentage?.message}
-                      >
-                        <SelectItem key="5">5%</SelectItem>
-                        <SelectItem key="12">12%</SelectItem>
-                        <SelectItem key="18">18%</SelectItem>
-                        <SelectItem key="28">28%</SelectItem>
-                      </Select>
-                    )}
-                  />
+                {poTaxType === "CGST_SGST" && (
+                  <>
+                    <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                      <span className="text-default-500">CGST</span>
+                      <span className="font-medium">
+                        {formatAmount(poCgstAmount)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                      <span className="text-default-500">SGST</span>
+                      <span className="font-medium">
+                        {formatAmount(poSgstAmount)}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {poTaxType === "IGST" && (
+                  <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                    <span className="text-default-500">IGST</span>
+                    <span className="font-medium">
+                      {formatAmount(poIgstAmount)}
+                    </span>
+                  </div>
+                )}
+
+                {isTdsApplicable && (
+                  <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                    <span className="text-default-500">
+                      TDS ({poTdsPercentage}%)
+                    </span>
+                    <span className="font-medium text-danger">
+                      - {formatAmount(poTdsAmount)}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {isRegisteredVendor && gstActive === "YES" && (
-                <div className="mt-4 rounded-lg bg-default-50 p-3 text-xs text-default-600">
-                  <div className="mb-2 font-medium text-default-700">
-                    GST Calculation
-                  </div>
+              <div className="mt-4 flex items-center justify-between rounded-lg border border-primary-200 bg-primary-50 p-4">
+                <span className="font-semibold text-primary">
+                  Total Payable Amount
+                </span>
 
-                  {String(gstStateCode) === "09" ? (
-                    <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
-                      <span>
-                        CGST ({gstCalculation.cgstRate}%):{" "}
-                        {formatAmount(gstCalculation.cgstAmount)}
-                      </span>
-
-                      <span>
-                        SGST ({gstCalculation.sgstRate}%):{" "}
-                        {formatAmount(gstCalculation.sgstAmount)}
-                      </span>
-
-                      <span>
-                        Total GST: {formatAmount(gstCalculation.gstAmount)}
-                      </span>
-
-                      <span>
-                        Total With GST:{" "}
-                        {formatAmount(gstCalculation.totalWithGst)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
-                      <span>
-                        IGST ({gstCalculation.igstRate}%):{" "}
-                        {formatAmount(gstCalculation.igstAmount)}
-                      </span>
-
-                      <span>
-                        Total GST: {formatAmount(gstCalculation.gstAmount)}
-                      </span>
-
-                      <span>
-                        Total With GST:{" "}
-                        {formatAmount(gstCalculation.totalWithGst)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                <span className="text-lg font-bold text-primary">
+                  {formatAmount(poGrandTotal)}
+                </span>
+              </div>
             </div>
 
             <Textarea

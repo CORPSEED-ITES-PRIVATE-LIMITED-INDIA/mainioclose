@@ -58,7 +58,7 @@ import {
 } from "../toolkit/slices/operationSlice.js";
 
 const columns = [
-  { name: "REQUEST", uid: "request" },
+  { name: "VENDOR", uid: "vendor" },
   { name: "QUOTATION / VENDOR", uid: "quotationVendor" },
   { name: "LEGAL", uid: "legal" },
   { name: "STATUS", uid: "status" },
@@ -867,17 +867,11 @@ const ProcurementVendors = () => {
       const agreementUrl = getAgreementUrl(rowData);
 
       switch (columnKey) {
-        case "request":
+        case "vendor":
           return (
             <div className="flex max-w-[260px] flex-col">
               <span className="font-semibold text-foreground">
-                {rowData?.legalRequestTitle || "-"}
-              </span>
-              <span className="text-xs text-default-500">
-                ID: {rowData?.id || "-"}
-              </span>
-              <span className="line-clamp-2 text-xs text-default-500">
-                {rowData?.notes || "-"}
+                {rowData?.vendorName || rowData?.vendorId || "-"}
               </span>
             </div>
           );
@@ -893,12 +887,7 @@ const ProcurementVendors = () => {
                     "-"}
                 </span>
               </span>
-              <span>
-                Vendor:{" "}
-                <span className="font-semibold">
-                  {rowData?.vendorName || rowData?.vendorId || "-"}
-                </span>
-              </span>
+              <span></span>
             </div>
           );
 

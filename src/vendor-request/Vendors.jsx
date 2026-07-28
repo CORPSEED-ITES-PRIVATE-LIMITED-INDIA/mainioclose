@@ -31,6 +31,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { EllipsisVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Select as AntSelect } from "antd";
+import {
+  getAllCitiesByStateName,
+  getAllCountries,
+  getAllStatesByCountryName,
+} from "../toolkit/slices/commonSlice";
 import {
   createVendor,
   deleteVendor,
@@ -46,7 +52,7 @@ const columns = [
   { name: "CONTACT", uid: "contact" },
   { name: "GST / PAN", uid: "taxDetail" },
   { name: "STATUS", uid: "status" },
-  { name: "VERIFIED", uid: "verified" },
+  // { name: "VERIFIED", uid: "verified" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -56,6 +62,63 @@ const gstRegistrationTypeOptions = [
   { label: "SEZ", value: "SEZ" },
   { label: "International", value: "INTERNATIONAL" },
 ];
+
+const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+const GST_STATE_CODES = {
+  "jammu & kashmir": ["01"],
+  "jammu and kashmir": ["01"],
+  "himachal pradesh": ["02"],
+  punjab: ["03"],
+  chandigarh: ["04"],
+  uttarakhand: ["05"],
+  haryana: ["06"],
+  delhi: ["07"],
+  rajasthan: ["08"],
+  "uttar pradesh": ["09"],
+  bihar: ["10"],
+  sikkim: ["11"],
+  "arunachal pradesh": ["12"],
+  nagaland: ["13"],
+  manipur: ["14"],
+  mizoram: ["15"],
+  tripura: ["16"],
+  meghalaya: ["17"],
+  assam: ["18"],
+  "west bengal": ["19"],
+  jharkhand: ["20"],
+  odisha: ["21"],
+  orissa: ["21"],
+  chhattisgarh: ["22"],
+  "madhya pradesh": ["23"],
+  gujarat: ["24"],
+  "dadra & nagar haveli and daman & diu": ["26"],
+  "dadra and nagar haveli and daman and diu": ["26"],
+  "dadra & nagar haveli and daman and diu": ["26"],
+  maharashtra: ["27"],
+  "andhra pradesh": ["28", "37"],
+  "andhra pradesh (legacy code – before bifurcation)": ["28"],
+  "andhra pradesh (legacy code - before bifurcation)": ["28"],
+  "andhra pradesh (current)": ["37"],
+  karnataka: ["29"],
+  goa: ["30"],
+  lakshadweep: ["31"],
+  kerala: ["32"],
+  "tamil nadu": ["33"],
+  puducherry: ["34"],
+  pondicherry: ["34"],
+  "andaman & nicobar islands": ["35"],
+  "andaman and nicobar islands": ["35"],
+  telangana: ["36"],
+  ladakh: ["38"],
+  "other territory": ["97"],
+  "other territory (special gst registration)": ["97"],
+  "other country": ["99"],
+  "other country (for specified foreign gst registrations)": ["99"],
+};
+
+const normalizeStateName = (value = "") =>
+  value.trim().toLowerCase().replace(/\s+/g, " ");
 
 const initialVendorForm = {
   name: "",
@@ -67,6 +130,10 @@ const initialVendorForm = {
   panNumber: "",
   status: "Active",
   verified: "true",
+  fullAddress: "",
+  country: "",
+  state: "",
+  city: "",
 };
 
 const toNumberOrNull = (value) => {
@@ -108,6 +175,10 @@ const Vendors = () => {
   const updateLoading = useSelector((state) => state.vendors.updateLoading);
   const deleteLoading = useSelector((state) => state.vendors.deleteLoading);
 
+  const countryList = useSelector((state) => state.common.countriesList || []);
+  const statesList = useSelector((state) => state.common.statesList || []);
+  const citiesList = useSelector((state) => state.common.citiesList || []);
+
   const data = Array.isArray(vendorList)
     ? vendorList
     : vendorList?.content || [];
@@ -148,6 +219,10 @@ const Vendors = () => {
     refetchVendors();
   }, [refetchVendors]);
 
+  useEffect(() => {
+    dispatch(getAllCountries());
+  }, [dispatch]);
+
   const resetForm = () => {
     setVendorForm(initialVendorForm);
     setSelectedVendor(null);
@@ -161,16 +236,51 @@ const Vendors = () => {
         [field]: value,
       };
 
-      if (
-        field === "gstRegistrationType" &&
-        value !== "REGISTERED" &&
-        value !== "SEZ"
-      ) {
-        updatedForm.gstNumber = "";
+      if (field === "gstRegistrationType") {
+        if (value !== "REGISTERED" && value !== "SEZ") {
+          updatedForm.gstNumber = "";
+        }
+
+        updatedForm.state = "";
+        updatedForm.city = "";
+
+        if (value === "INTERNATIONAL") {
+          updatedForm.country = "";
+        } else if (value) {
+          updatedForm.country = "India";
+          dispatch(getAllStatesByCountryName("India"));
+        } else {
+          updatedForm.country = "";
+        }
       }
 
       return updatedForm;
     });
+  };
+
+  const handleCountryChange = (value) => {
+    setVendorForm((prev) => ({
+      ...prev,
+      country: value || "",
+      state: "",
+      city: "",
+    }));
+
+    if (value) {
+      dispatch(getAllStatesByCountryName(value));
+    }
+  };
+
+  const handleStateChange = (value) => {
+    setVendorForm((prev) => ({
+      ...prev,
+      state: value || "",
+      city: "",
+    }));
+
+    if (value) {
+      dispatch(getAllCitiesByStateName(value));
+    }
   };
 
   const openCreateModal = () => {
@@ -193,7 +303,20 @@ const Vendors = () => {
       panNumber: vendor?.panNumber || "",
       status: vendor?.status || "Active",
       verified: String(Boolean(vendor?.verified)),
+      fullAddress: vendor?.fullAddress || "",
+      country: vendor?.country || vendor?.Country || "",
+      state: vendor?.state || "",
+      city: vendor?.city || "",
     });
+
+    const existingCountry = vendor?.country || vendor?.Country || "";
+    if (existingCountry) {
+      dispatch(getAllStatesByCountryName(existingCountry));
+    }
+
+    if (vendor?.state) {
+      dispatch(getAllCitiesByStateName(vendor.state));
+    }
 
     vendorModal.onOpen();
   };
@@ -258,9 +381,78 @@ const Vendors = () => {
       return false;
     }
 
+    if (isGstNumberRequired) {
+      const formattedGstNumber = vendorForm.gstNumber.trim().toUpperCase();
+
+      if (!GST_REGEX.test(formattedGstNumber)) {
+        addToast({
+          title: "Invalid GST number",
+          description: "Enter a valid 15-character GST number.",
+          color: "danger",
+        });
+        return false;
+      }
+
+      const stateName = normalizeStateName(vendorForm.state);
+      const allowedStateGstCodes = GST_STATE_CODES[stateName] || [];
+      const enteredGstCode = formattedGstNumber.substring(0, 2);
+
+      if (allowedStateGstCodes.length === 0) {
+        addToast({
+          title: "GST state code is unavailable",
+          description: `GST code is not configured for ${vendorForm.state}.`,
+          color: "danger",
+        });
+        return false;
+      }
+
+      if (!allowedStateGstCodes.includes(enteredGstCode)) {
+        addToast({
+          title: "GST number does not match selected state",
+          description: `${vendorForm.state} GST code is ${allowedStateGstCodes.join(
+            " or ",
+          )}, but the entered GST number starts with ${enteredGstCode}.`,
+          color: "danger",
+        });
+        return false;
+      }
+    }
+
     if (!vendorForm.panNumber.trim()) {
       addToast({
         title: "PAN number is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!vendorForm.fullAddress.trim()) {
+      addToast({
+        title: "Full address is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!vendorForm.country) {
+      addToast({
+        title: "Country is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!vendorForm.state) {
+      addToast({
+        title: "State is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!vendorForm.city) {
+      addToast({
+        title: "City is required",
         color: "danger",
       });
       return false;
@@ -289,6 +481,10 @@ const Vendors = () => {
           : auditUserId,
       updatedBy: auditUserId,
       verified: vendorForm.verified === "true",
+      fullAddress: vendorForm.fullAddress.trim(),
+      country: vendorForm.country,
+      state: vendorForm.state,
+      city: vendorForm.city,
     };
   };
 
@@ -556,16 +752,16 @@ const Vendors = () => {
           </Chip>
         );
 
-      case "verified":
-        return (
-          <Chip
-            size="sm"
-            color={rowData?.verified ? "success" : "warning"}
-            variant="flat"
-          >
-            {rowData?.verified ? "Verified" : "Not Verified"}
-          </Chip>
-        );
+      // case "verified":
+      //   return (
+      //     <Chip
+      //       size="sm"
+      //       color={rowData?.verified ? "success" : "warning"}
+      //       variant="flat"
+      //     >
+      //       {rowData?.verified ? "Verified" : "Not Verified"}
+      //     </Chip>
+      //   );
 
       case "actions":
         return (
@@ -877,6 +1073,72 @@ const Vendors = () => {
                       <SelectItem key="true">Verified</SelectItem>
                       <SelectItem key="false">Not Verified</SelectItem>
                     </Select>
+
+                    <Textarea
+                      isRequired
+                      className="md:col-span-2"
+                      label="Full Address"
+                      name="fullAddress"
+                      placeholder="Enter complete vendor address"
+                      minRows={2}
+                      value={vendorForm.fullAddress}
+                      onValueChange={(value) =>
+                        handleInputChange("fullAddress", value)
+                      }
+                    />
+
+                    <AntSelect
+                      showSearch
+                      allowClear={
+                        vendorForm.gstRegistrationType === "INTERNATIONAL"
+                      }
+                      className="w-full"
+                      placeholder="Select Country"
+                      value={vendorForm.country || undefined}
+                      options={
+                        vendorForm.gstRegistrationType === "INTERNATIONAL"
+                          ? countryList.filter(
+                              (country) =>
+                                country?.name?.toLowerCase() !== "india",
+                            )
+                          : countryList
+                      }
+                      fieldNames={{ label: "name", value: "name" }}
+                      optionFilterProp="name"
+                      disabled={
+                        Boolean(vendorForm.gstRegistrationType) &&
+                        vendorForm.gstRegistrationType !== "INTERNATIONAL"
+                      }
+                      onChange={handleCountryChange}
+                    />
+
+                    <AntSelect
+                      showSearch
+                      allowClear
+                      className="w-full"
+                      placeholder="Select State"
+                      value={vendorForm.state || undefined}
+                      options={statesList}
+                      fieldNames={{ label: "name", value: "name" }}
+                      optionFilterProp="name"
+                      disabled={!vendorForm.country}
+                      onChange={handleStateChange}
+                    />
+
+                    <AntSelect
+                      showSearch
+                      allowClear
+                      className="w-full"
+                      placeholder="Select City"
+                      value={vendorForm.city || undefined}
+                      options={citiesList}
+                      fieldNames={{ label: "name", value: "name" }}
+                      optionFilterProp="name"
+                      disabled={!vendorForm.state}
+                      onChange={(value) =>
+                        handleInputChange("city", value || "")
+                      }
+                    />
 
                     <Textarea
                       className="md:col-span-2"

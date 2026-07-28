@@ -282,6 +282,19 @@ export const createVendor = createAsyncThunk(
     }
   },
 );
+export const getVendorById = createAsyncThunk(
+  "getVendorById",
+  async ({ data, vendorId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/vendors/${vendorId}`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  },
+);
 
 export const getAllVendors = createAsyncThunk(
   "getAllVendors",
@@ -782,6 +795,8 @@ export const approveAdminRestrictionRequest = createAsyncThunk(
   },
 );
 
+
+
 const VendorsSlice = createSlice({
   name: "vendors",
   initialState: {
@@ -829,6 +844,7 @@ const VendorsSlice = createSlice({
   last: true,
   empty: true,
 },
+vendorDetails:{}
   },
   extraReducers: (builder) => {
     builder.addCase(allVendorsCategory.pending, (state) => {
@@ -1066,6 +1082,19 @@ const VendorsSlice = createSlice({
     });
 
     builder.addCase(getVendorsDashboardSummaryByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorDetails =  action.payload || {};
+    });
+
+    builder.addCase(getVendorById.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.vendorDetails = {};
+    });
+
+    builder.addCase(getVendorById.pending, (state) => {
       state.loading = "pending";
     });
 
