@@ -909,7 +909,7 @@ const VendorsData = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[62vh] w-full rounded-xl border border-default-200",
+          wrapper: "max-h-[52vh] w-full rounded-xl border border-default-200",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

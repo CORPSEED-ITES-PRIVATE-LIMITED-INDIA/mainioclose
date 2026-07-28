@@ -67,6 +67,12 @@ const Layoutpage = () => {
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department,
   );
+
+  const departmentsdfgsd = useSelector(
+    (state) => state?.auth?.getDepartmentDetail,
+  );
+
+  console.log("departmentsdfgsd ----->    ", departmentsdfgsd);
   const pathname = location.pathname;
   const segments = pathname.split("/");
   const userIndex = segments.indexOf("erp");

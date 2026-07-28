@@ -81,6 +81,7 @@ import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
 import {
   getAllMilestoneStatusesForOperations,
+  getUserDetailById,
   getUsersListByDepartmentId,
 } from "../../toolkit/slices/commonSlice";
 import {
@@ -106,6 +107,7 @@ import {
   getVendorsBasedOnService,
 } from "../../toolkit/slices/vendorsSlice";
 import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
+import SingleFileUploader from "../../components/SingleFileUploader";
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -464,6 +466,26 @@ const verifySchema = z.object({
   remarks: z.string().min(1, "Remarks is required"),
 });
 
+const expenseSchema = z.object({
+  expenseCategory: z.string().min(1, "Please select expense category"),
+
+  amount: z.coerce
+    .number({
+      invalid_type_error: "Please enter amount",
+    })
+    .positive("Amount must be greater than 0"),
+
+  remark: z.string().trim().min(1, "Please enter remark"),
+
+  expenseDate: z.string().min(1, "Please select expense date"),
+
+  attachmentUrl: z.string().min(1, "Please upload payment proof"),
+
+  externalReference: z.string().trim().optional(),
+
+  currencyCode: z.string().min(1, "Please select currency"),
+});
+
 const ProjectDetails = () => {
   const dispatch = useDispatch();
   const lastHistoryRequestRef = useRef(null);
@@ -610,11 +632,15 @@ const ProjectDetails = () => {
   const [noteText, setNoteText] = useState("");
   const [replyParentId, setReplyParentId] = useState(null);
   const [expenseData, setExpenseData] = useState({
+    departmentId: "",
     amount: "",
-    expenseType: "",
+    expenseCategory: "",
     remark: "",
     expenseDate: "",
-    paymentMedium: "",
+    attachmentUrl: "",
+    externalReference: "",
+    currencyCode: "",
+    createdByUserId: userId,
   });
 
   const [isLegalDocUploading, setIsLegalDocUploading] = useState(false);
@@ -658,12 +684,42 @@ const ProjectDetails = () => {
   const isCertificationMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "certification";
 
+  const userDetailById = useSelector((state) => state.common.userDetailById);
+
+  const userDetailByIdLoading = useSelector(
+    (state) => state.common.userDetailByIdLoading,
+  );
+
   // useEffect(() => {
   //   dispatch(getOperationProjectDetailById({ projectId, userId }));
   //   dispatch(getAllMilestoneStatusesForOperations());
   //   dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
   //   dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   // }, [projectId]);
+
+  const {
+    control: expenseControl,
+    handleSubmit: handleExpenseSubmit,
+    formState: { errors: expenseErrors, isSubmitting: isExpenseSubmitting },
+    reset: resetExpenseForm,
+  } = useForm({
+    resolver: zodResolver(expenseSchema),
+    defaultValues: {
+      expenseCategory: "",
+      amount: "",
+      remark: "",
+      expenseDate: "",
+      attachmentUrl: "",
+      externalReference: "",
+      currencyCode: "INR",
+    },
+  });
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(getUserDetailById(Number(userId)));
+    }
+  }, [dispatch, userId]);
 
   const normalizeReworkAttachment = (fileMeta) => {
     if (!fileMeta) return null;
@@ -1916,36 +1972,91 @@ const ProjectDetails = () => {
         addToast({ title: "Something went wrong !.", color: "danger" });
       });
   };
-  const handleAddExpense = () => {
-    dispatch(
-      addExpensesInProject({
-        projectId,
-        data: { ...expenseData, createdByUserId: Number(userId) },
-      }),
-    ).then((resp) => {
-      console.log("dsjkhksgjgkjgj", resp);
+
+  const handleAddExpense = async (formData) => {
+    const departmentId = Number(userDetailById?.userDepartment?.id);
+    const createdByUserId = Number(userDetailById?.id);
+
+    if (!departmentId) {
+      addToast({
+        title: "Department not found",
+        description: "The user's department details are unavailable.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!createdByUserId) {
+      addToast({
+        title: "User not found",
+        description: "The user details are unavailable.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const payload = {
+      departmentId,
+      expenseCategory: formData.expenseCategory,
+      amount: Number(formData.amount),
+      remark: formData.remark.trim(),
+      expenseDate: formData.expenseDate,
+      createdByUserId,
+      attachmentUrl: formData.attachmentUrl,
+      externalReference: formData.externalReference?.trim() || "",
+      currencyCode: formData.currencyCode,
+    };
+
+    try {
+      const resp = await dispatch(
+        addExpensesInProject({
+          projectId: Number(projectId),
+          data: payload,
+        }),
+      );
+
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Expense added successfully !.",
+          title: "Expense added successfully!",
           color: "success",
         });
-        expenseModal.onClose();
-        setExpenseData({
+
+        resetExpenseForm({
+          expenseCategory: "",
           amount: "",
-          expenseType: "",
-          description: "",
+          remark: "",
           expenseDate: "",
+          attachmentUrl: "",
+          externalReference: "",
+          currencyCode: "INR",
         });
+
+        expenseModal.onClose();
         setActivityType("ALL");
-        dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
-      } else {
-        addToast({
-          title: resp?.payload?.status,
-          color: "danger",
-          description: resp?.payload?.message,
-        });
+
+        dispatch(
+          getActivitiesByProjectId({
+            projectId,
+            page: 1,
+            size: 50,
+          }),
+        );
+
+        return;
       }
-    });
+
+      addToast({
+        title: resp?.payload?.status || "Unable to add expense",
+        description: resp?.payload?.message,
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title: "Something went wrong!",
+        description: error?.message,
+        color: "danger",
+      });
+    }
   };
 
   const [draggedDoc, setDraggedDoc] = useState(null);
@@ -5026,134 +5137,210 @@ const ProjectDetails = () => {
       <Modal
         size="2xl"
         isOpen={expenseModal.isOpen}
-        onOpenChange={expenseModal.onOpenChange}
+        onOpenChange={(isOpen) => {
+          expenseModal.onOpenChange(isOpen);
+
+          if (!isOpen && !isExpenseSubmitting) {
+            resetExpenseForm({
+              expenseCategory: "",
+              amount: "",
+              remark: "",
+              expenseDate: "",
+              attachmentUrl: "",
+              externalReference: "",
+              currencyCode: "INR",
+            });
+          }
+        }}
+        isDismissable={!isExpenseSubmitting}
+        hideCloseButton={isExpenseSubmitting}
       >
         <ModalContent>
           {(onClose) => (
             <Form
               className="w-full"
-              onSubmit={(e) => {
-                e.preventDefault();
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-                handleAddExpense(data);
-              }}
+              onSubmit={handleExpenseSubmit(handleAddExpense)}
             >
               <ModalHeader>Add Expense</ModalHeader>
-              <ModalBody className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <Select
-                  label="Expense Type"
-                  name="expenseType"
-                  isRequired
-                  selectedKeys={[expenseData?.expenseType]}
-                  onSelectionChange={(keys) => {
-                    const value = Array.from(keys)[0];
-                    setExpenseData({
-                      ...expenseData,
-                      expenseType: value,
-                    });
-                  }}
-                  errorMessage={"please select status"}
-                >
-                  {[
-                    { label: "Government Fee", value: "Government Fee" },
-                    { label: "Travel Fee", value: "Travel Fee" },
-                    { label: "Filing Fee", value: "Filing Fee" },
-                  ].map((item) => (
-                    <SelectItem key={item.value.toString()} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </Select>
 
-                <Input
-                  label="Amount"
-                  type="number"
+              <ModalBody className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="expenseCategory"
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <Select
+                      label="Expense Category"
+                      isRequired
+                      selectedKeys={
+                        field.value ? new Set([field.value]) : new Set()
+                      }
+                      onSelectionChange={(keys) => {
+                        field.onChange(Array.from(keys)[0] || "");
+                      }}
+                      isInvalid={!!expenseErrors.expenseCategory}
+                      errorMessage={expenseErrors.expenseCategory?.message}
+                    >
+                      <SelectItem key="GOVERNMENT_FEE">
+                        Government Fee
+                      </SelectItem>
+
+                      <SelectItem key="TRAVEL_FEE">Travel Fee</SelectItem>
+
+                      <SelectItem key="FILING_FEE">Filing Fee</SelectItem>
+                    </Select>
+                  )}
+                />
+
+                <Controller
                   name="amount"
-                  isRequired
-                  errorMessage="please enter amount"
-                  value={expenseData.amount}
-                  startContent={<IndianRupee className="h-4 w-4" />}
-                  onChange={(e) =>
-                    setExpenseData((prev) => ({
-                      ...prev,
-                      amount: allowOnlyNumbers(e.target.value),
-                    }))
-                  }
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <Input
+                      label="Amount"
+                      type="number"
+                      inputMode="decimal"
+                      min="0.01"
+                      step="0.01"
+                      isRequired
+                      startContent={<IndianRupee className="h-4 w-4" />}
+                      value={field.value?.toString() || ""}
+                      onValueChange={field.onChange}
+                      isInvalid={!!expenseErrors.amount}
+                      errorMessage={expenseErrors.amount?.message}
+                    />
+                  )}
                 />
 
-                <Select
-                  name="paymentMedium"
-                  selectedKeys={
-                    expenseData?.paymentMedium
-                      ? new Set([expenseData?.paymentMedium])
-                      : new Set([])
-                  }
-                  onSelectionChange={(keys) => {
-                    const value = Array.from(keys)[0];
-                    setExpenseData({
-                      ...expenseData,
-                      paymentMedium: value,
-                    });
-                  }}
-                  label="Payment Mode"
-                  isRequired
-                  errorMessage="please select payment mode"
-                >
-                  <SelectItem key="CASH">Cash</SelectItem>
-                  <SelectItem key="UPI">UPI</SelectItem>
-                  <SelectItem key="CARD">Card</SelectItem>
-                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
-                  <SelectItem key="CHEQUE">Cheque</SelectItem>
-                </Select>
-
-                <DatePicker
-                  isRequired
-                  label="Expense date"
-                  showMonthAndYearPickers
-                  errorMessage="Please select the date."
-                  value={
-                    expenseData.expenseDate
-                      ? parseDate(
-                          dayjs(expenseData.expenseDate).format("YYYY-MM-DD"),
-                        )
-                      : null
-                  }
-                  onChange={(e) => {
-                    const dateStr = toCalendarDate(e).toString(); // 2026-03-13
-
-                    const isoDate = dayjs(dateStr)
-                      .hour(dayjs().hour())
-                      .minute(dayjs().minute())
-                      .second(dayjs().second())
-                      .millisecond(dayjs().millisecond())
-                      .toISOString();
-
-                    setExpenseData((prev) => ({
-                      ...prev,
-                      expenseDate: isoDate,
-                    }));
-                  }}
+                <Controller
+                  name="currencyCode"
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <Select
+                      label="Currency"
+                      isRequired
+                      selectedKeys={
+                        field.value ? new Set([field.value]) : new Set()
+                      }
+                      onSelectionChange={(keys) => {
+                        field.onChange(Array.from(keys)[0] || "");
+                      }}
+                      isInvalid={!!expenseErrors.currencyCode}
+                      errorMessage={expenseErrors.currencyCode?.message}
+                    >
+                      <SelectItem key="INR">INR - Indian Rupee</SelectItem>
+                      <SelectItem key="USD">USD - US Dollar</SelectItem>
+                      <SelectItem key="EUR">EUR - Euro</SelectItem>
+                      <SelectItem key="AED">AED - UAE Dirham</SelectItem>
+                    </Select>
+                  )}
                 />
 
-                <Textarea
-                  label="Remark"
+                <Controller
+                  name="expenseDate"
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Expense Date"
+                      showMonthAndYearPickers
+                      isRequired
+                      value={
+                        field.value
+                          ? parseDate(dayjs(field.value).format("YYYY-MM-DD"))
+                          : null
+                      }
+                      onChange={(date) => {
+                        if (!date) {
+                          field.onChange("");
+                          return;
+                        }
+
+                        const selectedDate = toCalendarDate(date).toString();
+
+                        const isoDate = dayjs(selectedDate)
+                          .hour(dayjs().hour())
+                          .minute(dayjs().minute())
+                          .second(dayjs().second())
+                          .millisecond(dayjs().millisecond())
+                          .toISOString();
+
+                        field.onChange(isoDate);
+                      }}
+                      isInvalid={!!expenseErrors.expenseDate}
+                      errorMessage={expenseErrors.expenseDate?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="externalReference"
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      label="External Reference"
+                      placeholder="Enter transaction or receipt reference"
+                      value={field.value || ""}
+                      isInvalid={!!expenseErrors.externalReference}
+                      errorMessage={expenseErrors.externalReference?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="attachmentUrl"
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <div className="md:col-span-2">
+                      <SingleFileUploader
+                        label="Payment Proof"
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value || "");
+                        }}
+                        isRequired
+                        isInvalid={!!expenseErrors.attachmentUrl}
+                        errorMessage={expenseErrors.attachmentUrl?.message}
+                      />
+                    </div>
+                  )}
+                />
+
+                <Controller
                   name="remark"
-                  isRequired
-                  errorMessage="please enter description"
-                  value={expenseData.remark}
-                  onChange={(e) =>
-                    setExpenseData((prev) => ({
-                      ...prev,
-                      remark: e.target.value,
-                    }))
-                  }
+                  control={expenseControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      label="Remark"
+                      placeholder="Enter expense details"
+                      isRequired
+                      className="md:col-span-2"
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                      isInvalid={!!expenseErrors.remark}
+                      errorMessage={expenseErrors.remark?.message}
+                    />
+                  )}
                 />
               </ModalBody>
 
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
-                <Button color="primary" type="submit">
-                  Submit
+              <ModalFooter className="flex w-full justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="flat"
+                  isDisabled={isExpenseSubmitting}
+                  onPress={onClose}
+                >
+                  Close
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isExpenseSubmitting}
+                  isDisabled={isExpenseSubmitting}
+                >
+                  {isExpenseSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </ModalFooter>
             </Form>

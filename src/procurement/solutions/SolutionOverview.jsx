@@ -1002,7 +1002,7 @@ const SolutionOverview = () => {
 
               <div className="flex items-center gap-2">
                 <Chip size="sm" color="primary" variant="flat">
-                  {vendorRFQs.length} RFQs
+                  {vendorRFQs?.length} RFQs
                 </Chip>
 
                 <Button
@@ -1048,7 +1048,7 @@ const SolutionOverview = () => {
                   </thead>
 
                   <tbody>
-                    {Array.isArray(vendorRFQs) && vendorRFQs.length > 0 ? (
+                    {Array.isArray(vendorRFQs) && vendorRFQs?.length > 0 ? (
                       vendorRFQs.map((rfq) => {
                         const vendorsInvited = rfq.vendorsInvited ?? 0;
                         const quotationsReceived = rfq.quotationsReceived ?? 0;

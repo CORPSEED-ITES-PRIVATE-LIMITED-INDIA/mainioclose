@@ -1705,6 +1705,7 @@ const CompanyAndUnitsInLead = () => {
                 <Select
                   showSearch
                   allowClear
+                  optionFilterProp="name"
                   options={companyTypeList}
                   fieldNames={{ label: "name", value: "id" }}
                   placeholder="Select Company Structure"

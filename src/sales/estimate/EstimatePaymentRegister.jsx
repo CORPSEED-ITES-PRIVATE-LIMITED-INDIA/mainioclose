@@ -350,7 +350,10 @@ const EstimatePaymentRegister = ({
     .trim()
     .toUpperCase();
 
-  const isInternationalUnit = normalizedGstRegistrationType === "INTERNATIONAL";
+  // const isInternationalUnit = normalizedGstRegistrationType === "INTERNATIONAL";
+  const isInternationalUnit =
+    normalizedGstRegistrationType === "UNREGISTERED" ||
+    normalizedGstRegistrationType === "INTERNATIONAL";
 
   const shouldShowTds = !isInternationalUnit;
 

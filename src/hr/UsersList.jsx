@@ -96,6 +96,19 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
+function requireFulfilled(action, fallbackMessage) {
+  if (action?.meta?.requestStatus === "fulfilled") {
+    return action;
+  }
+
+  const payloadMessage =
+    action?.payload?.message ||
+    action?.payload?.data?.message ||
+    (typeof action?.payload === "string" ? action.payload : null);
+
+  throw new Error(payloadMessage || action?.error?.message || fallbackMessage);
+}
+
 const INITIAL_VISIBLE_COLUMNS = [
   "fullName",
   "email",
@@ -107,50 +120,71 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = (flags) =>
-  z.object({
-    employeeId: z.string().min(1, "Please enter employee id"),
-    userName: z.string().min(1, "Please enter username"),
-    email: z.string().min(1, "Please enter a valid email"),
-    personalEmail: z.string().optional(),
-    contactNo: z.string().min(10, "Please enter a valid contact number"),
-    companyMobile: z.string().optional(),
-    role: z.array(z.string()).min(1, "Please select at least one role"),
-    departmentId: z.string().min(1, "Please select a department"),
-    designationId: z.string().min(1, "Please select a designation"),
-    epfNo: z.string().optional(),
-    aadharCard: z.string().min(1, "Please enter aadhar card number"),
-    panNumber: z.string().min(1, "Please enter pan number"),
-    managerId: z.string().optional(),
-    managerFlag: z.boolean().optional(),
-    lockerSize: z.string().optional(),
-    expInYear: z.string().min(1, "Please enter experience in years"),
-    expInMonth: z.string().min(1, "Please enter experience in months"),
-    dateOfJoining: z.string().min(1, "please select date of joining."),
-    type: z.string().min(1, "please select the gender."),
-    maritalStatus: z.string().min(1, "please select the status."),
-    ...(flags?.maritalStatus === "Married"
-      ? {
-          spouseName: z.string().min(1, "Please enter spouse name"),
-          spouseContactNo: z.string().optional(),
-        }
-      : {}),
-    fatherName: z.string().min(1, "Please enter father's name"),
-    fatherOccupation: z.string().optional(),
-    fatherContactNo: z.string().optional(),
-    motherName: z.string().min(1, "Please enter mother's name"),
-    motherContactNo: z.string().optional(),
-    nationality: z.string().optional(),
-    language: z.string().optional(),
-    ...(flags?.master
-      ? {
-          master: z.boolean().optional(),
-          backupTeam: z.boolean().optional(),
-        }
-      : {}),
-    emergencyNumber: z.string().optional(),
-    permanentAddress: z.string().min(1, "Please enter permanent address"),
-    residentialAddress: z.string().optional(),
-  });
+  z
+    .object({
+      employeeId: z.string().min(1, "Please enter employee id"),
+      userName: z.string().min(1, "Please enter username"),
+      email: z
+        .string()
+        .trim()
+        .min(1, "Please enter email")
+        .email("Please enter a valid email"),
+      personalEmail: z
+        .union([
+          z.literal(""),
+          z.string().email("Please enter a valid personal email"),
+        ])
+        .optional(),
+      contactNo: z.string().length(10, "Contact number must contain 10 digits"),
+      companyMobile: z.string().optional(),
+      role: z.array(z.string()).min(1, "Please select at least one role"),
+      departmentId: z.string().min(1, "Please select a department"),
+      designationId: z.string().min(1, "Please select a designation"),
+      epfNo: z.string().optional(),
+      aadharCard: z
+        .string()
+        .length(12, "Aadhar card number must contain 12 digits"),
+      panNumber: z.string().length(10, "PAN number must contain 10 characters"),
+      managerId: z.string().optional(),
+      managerFlag: z.boolean().optional(),
+      lockerSize: z.string().optional(),
+      expInYear: z.string().min(1, "Please enter experience in years"),
+      expInMonth: z.string().min(1, "Please enter experience in months"),
+      dateOfJoining: z.string().min(1, "please select date of joining."),
+      type: z.string().min(1, "please select the gender."),
+      maritalStatus: z.string().min(1, "please select the status."),
+      ...(flags?.maritalStatus === "Married"
+        ? {
+            spouseName: z.string().min(1, "Please enter spouse name"),
+            spouseContactNo: z.string().optional(),
+          }
+        : {}),
+      fatherName: z.string().min(1, "Please enter father's name"),
+      fatherOccupation: z.string().optional(),
+      fatherContactNo: z.string().optional(),
+      motherName: z.string().min(1, "Please enter mother's name"),
+      motherContactNo: z.string().optional(),
+      nationality: z.string().optional(),
+      language: z.string().optional(),
+      ...(flags?.master
+        ? {
+            master: z.boolean().optional(),
+            backupTeam: z.boolean().optional(),
+          }
+        : {}),
+      emergencyNumber: z.string().optional(),
+      permanentAddress: z.string().min(1, "Please enter permanent address"),
+      residentialAddress: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.managerFlag && !values.managerId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["managerId"],
+          message: "Please select a manager name",
+        });
+      }
+    });
 
 const defaultValues = {
   employeeId: "",
@@ -258,10 +292,12 @@ const UsersList = () => {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     watch,
     reset,
     getValues,
+    setValue,
+    clearErrors,
   } = useForm({
     resolver: zodResolver(formSchema(formFlags)),
     defaultValues,
@@ -277,6 +313,18 @@ const UsersList = () => {
   useEffect(() => {
     reset(getValues());
   }, [formFlags]);
+
+  const isManagerFlagEnabled = Boolean(watch("managerFlag"));
+
+  useEffect(() => {
+    if (!isManagerFlagEnabled) {
+      setValue("managerId", "", {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+      clearErrors("managerId");
+    }
+  }, [isManagerFlagEnabled, setValue, clearErrors]);
 
   const handleEdit = useCallback(
     (data) => {
@@ -298,7 +346,7 @@ const UsersList = () => {
         role: data?.role,
         epfNo: data?.epfNo,
         aadharCard: data?.aadharCard,
-        managerId: String(data?.managers?.id),
+        managerId: data?.managers?.id ? String(data.managers.id) : "",
         managerFlag: Boolean(data?.managerFlag ?? data?.isManager ?? false),
         expInMonth: String(data?.expInMonth),
         expInYear: String(data?.expInYear),
@@ -334,275 +382,187 @@ const UsersList = () => {
     [data, reset, dispatch, onOpen],
   );
 
-  const onSubmit = (values) => {
-    values.departmentId = Number(values?.departmentId);
-    values.designationId = Number(values?.designationId);
-    if (rowItem) {
-      values.id = rowItem?.id;
-      let tempObj = {
-        id: rowItem?.id,
-        userName: values?.userName,
-        email: values?.email,
-        designationId: Number(values?.designationId),
-        departmentId: Number(values?.departmentId),
-        role: values?.role,
-        isManager: Boolean(values?.managerFlag),
-        bucketSize: Number(values?.lockerSize),
-        lockerSize: Number(values?.lockerSize),
-      };
-      dispatch(updateUserData(tempObj))
-        .then((response) => {
-          console.log("Response in auth1", response);
-          if (response.meta.requestStatus === "fulfilled") {
-            dispatch(updateLeadByHr(values))
-              .then((res) => {
-                console.log("Response in Lead1", res);
-                if (res.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "SUCCESS",
-                    description: "User updated successfully in Leads !.",
-                    color: "success",
-                  });
+  const onSubmit = async (formValues) => {
+    const managerFlag = Boolean(formValues?.managerFlag);
+    const managerId =
+      managerFlag && formValues?.managerId
+        ? Number(formValues.managerId)
+        : null;
 
-                  dispatch(
-                    updateUserInAccounts({
-                      id: rowItem?.id,
-                      fullName: values?.userName,
-                      email: values?.email,
-                      designation: res?.payload?.data?.userDesignation?.name,
-                      department: res?.payload?.data?.userDepartment?.name,
-                      role: res?.payload?.data?.role,
-                      isManager: Boolean(values?.managerFlag),
-                      bucketSize: Number(values?.lockerSize),
-                      lockerSize: Number(values?.lockerSize),
-                    }),
-                  ).then((acco) => {
-                    console.log("Response   account1", acco);
-                    if (acco.meta.requestStatus === "fulfilled") {
-                      addToast({
-                        title: "SUCCESS",
-                        description: "User updated in Accounts",
-                        color: "success",
-                      });
-                      dispatch(
-                        updateUsersInOperations({
-                          id: rowItem?.id,
-                          data: {
-                            id: rowItem?.id,
-                            fullName: values?.userName,
-                            email: values?.email,
-                            contactNo: values?.contactNo,
-                            designationId: values?.designationId,
-                            departmentIds: [values?.departmentId],
-                            roleIds: acco?.payload?.userRole?.map(
-                              (role) => role?.id,
-                            ),
-                            managerId: values?.managerId
-                              ? values?.managerId
-                              : userId,
-                            managerFlag: Boolean(values?.managerFlag),
-                            bucketSize: Number(values?.lockerSize),
-                            lockerSize: Number(values?.lockerSize),
-                          },
-                        }),
-                      ).then((oper) => {
-                        console.log("Response   operation1", oper);
-                        if (oper.meta.requestStatus === "fulfilled") {
-                          addToast({
-                            title: "SUCCESS",
-                            description: "User updated in operation",
-                            color: "success",
-                          });
-                          setRowItem(null);
-                          onClose();
-                          reset(defaultValues);
-                          dispatch(getAllUsers());
-                        } else {
-                          addToast({
-                            title: "ERROR",
-                            description: "Something went wrong in Operations",
-                            color: "danger",
-                          });
-                        }
-                      });
-                    } else {
-                      addToast({
-                        title: "ERROR",
-                        description: "Something went wrong in Accounts",
-                        color: "danger",
-                      });
-                    }
-                  });
-                } else {
-                  addToast({
-                    title: "ERROR",
-                    description: "Something went wrong !.",
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "ERROR",
-                  description: "Something went wrong !.",
-                  color: "danger",
-                });
-              });
-          } else {
-            addToast({
-              title: "ERROR",
-              description: "Something went wrong !.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() => {
-          addToast({
-            title: "ERROR",
-            description: "Something went wrong !.",
-            color: "danger",
-          });
+    const values = {
+      ...formValues,
+      departmentId: Number(formValues?.departmentId),
+      designationId: Number(formValues?.designationId),
+      managerFlag,
+      managerId,
+    };
+
+    try {
+      if (rowItem) {
+        values.id = rowItem.id;
+
+        const authResponse = await dispatch(
+          updateUserData({
+            id: rowItem.id,
+            userName: values.userName,
+            email: values.email,
+            designationId: values.designationId,
+            departmentId: values.departmentId,
+            role: values.role,
+            isManager: values.managerFlag,
+            bucketSize: Number(values.lockerSize),
+            lockerSize: Number(values.lockerSize),
+          }),
+        );
+        requireFulfilled(authResponse, "Failed to update user in Auth");
+
+        const hrResponse = await dispatch(updateLeadByHr(values));
+        requireFulfilled(hrResponse, "Failed to update user in HR");
+
+        const updatedUser = hrResponse?.payload?.data;
+
+        const accountsResponse = await dispatch(
+          updateUserInAccounts({
+            id: rowItem.id,
+            fullName: values.userName,
+            email: values.email,
+            designation: updatedUser?.userDesignation?.name,
+            department: updatedUser?.userDepartment?.name,
+            role: updatedUser?.role,
+            isManager: values.managerFlag,
+            bucketSize: Number(values.lockerSize),
+            lockerSize: Number(values.lockerSize),
+          }),
+        );
+        requireFulfilled(accountsResponse, "Failed to update user in Accounts");
+
+        const operationsResponse = await dispatch(
+          updateUsersInOperations({
+            id: rowItem.id,
+            data: {
+              id: rowItem.id,
+              fullName: values.userName,
+              email: values.email,
+              contactNo: values.contactNo,
+              designationId: values.designationId,
+              departmentIds: [values.departmentId],
+              roleIds:
+                accountsResponse?.payload?.userRole?.map((role) => role.id) ||
+                [],
+              managerId: values.managerId,
+              managerFlag: values.managerFlag,
+              bucketSize: Number(values.lockerSize),
+              lockerSize: Number(values.lockerSize),
+            },
+          }),
+        );
+        requireFulfilled(
+          operationsResponse,
+          "Failed to update user in Operations",
+        );
+
+        addToast({
+          title: "SUCCESS",
+          description: "User updated successfully",
+          color: "success",
         });
-    } else {
-      const authData = {
-        email: values?.email,
-        role: values?.role,
-        designation: Number(values?.designationId),
-        userName: values?.userName,
-        department: Number(values?.departmentId),
-        designationId: Number(values?.designationId),
-        departmentId: Number(values?.departmentId),
-        isManager: Boolean(values?.managerFlag),
-        bucketSize: Number(values?.lockerSize),
-        lockerSize: Number(values?.lockerSize),
-      };
 
-      dispatch(createNewUserInAuth(authData))
-        .then((resp) => {
-          if (resp.meta.requestStatus !== "fulfilled") {
-            addToast({
-              title: "ERROR",
-              description:
-                resp?.payload?.message ||
-                resp?.payload ||
-                "Failed to create user in Auth",
-              color: "danger",
-            });
-            return;
-          }
+        setRowItem(null);
+      } else {
+        const authResponse = await dispatch(
+          createNewUserInAuth({
+            email: values.email,
+            role: values.role,
+            designation: values.designationId,
+            userName: values.userName,
+            department: values.departmentId,
+            designationId: values.designationId,
+            departmentId: values.departmentId,
+            isManager: values.managerFlag,
+            bucketSize: Number(values.lockerSize),
+            lockerSize: Number(values.lockerSize),
+          }),
+        );
+        requireFulfilled(authResponse, "Failed to create user in Auth");
 
-          const temp = resp?.payload?.data?.data;
+        const authUser = authResponse?.payload?.data?.data;
 
-          if (!temp?.userId) {
-            addToast({
-              title: "ERROR",
-              description: "Auth user created but userId not received",
-              color: "danger",
-            });
-            return;
-          }
+        if (!authUser?.userId) {
+          throw new Error("Auth user created but userId was not received");
+        }
 
-          const obj = {
-            id: temp.userId,
-            isManager: Boolean(values?.managerFlag),
+        const hrResponse = await dispatch(
+          createUserByHr({
             ...values,
-          };
+            id: authUser.userId,
+            isManager: values.managerFlag,
+          }),
+        );
+        requireFulfilled(hrResponse, "Failed to create user in HR");
 
-          dispatch(createUserByHr(obj)).then((info) => {
-            if (info.meta.requestStatus !== "fulfilled") {
-              addToast({
-                title: "ERROR",
-                description:
-                  info?.payload?.message ||
-                  info?.payload ||
-                  "Failed to create user in HR",
-                color: "danger",
-              });
-              return;
-            }
+        const createdUser = hrResponse?.payload?.data;
 
-            const userInfo = info?.payload?.data;
+        if (!createdUser?.id) {
+          throw new Error("HR user created but user details were not received");
+        }
 
-            if (!userInfo?.id) {
-              addToast({
-                title: "ERROR",
-                description: "HR user created but user details not received",
-                color: "danger",
-              });
-              return;
-            }
+        const accountsResponse = await dispatch(
+          createUserInAccounts({
+            id: createdUser.id,
+            username: createdUser.fullName,
+            email: createdUser.email,
+            designation: createdUser?.userDesignation?.name,
+            department: createdUser?.userDepartment?.name,
+            role: createdUser.role,
+            isManager: values.managerFlag,
+            bucketSize: Number(values.lockerSize),
+            lockerSize: Number(values.lockerSize),
+          }),
+        );
+        requireFulfilled(accountsResponse, "Failed to create user in Accounts");
 
-            dispatch(
-              createUserInAccounts({
-                id: userInfo?.id,
-                username: userInfo?.fullName,
-                email: userInfo?.email,
-                designation: userInfo?.userDesignation?.name,
-                department: userInfo?.userDepartment?.name,
-                role: userInfo?.role,
-                isManager: Boolean(values?.managerFlag),
-                bucketSize: Number(values?.lockerSize),
-                lockerSize: Number(values?.lockerSize),
-              }),
-            ).then((acc) => {
-              if (acc.meta.requestStatus !== "fulfilled") {
-                addToast({
-                  title: "ERROR",
-                  description:
-                    acc?.payload?.message ||
-                    acc?.payload ||
-                    "Failed to create user in Accounts",
-                  color: "danger",
-                });
-                return;
-              }
+        const operationsResponse = await dispatch(
+          createUsersInOperations({
+            id: createdUser.id,
+            fullName: createdUser.fullName,
+            email: createdUser.email,
+            contactNo: createdUser.contactNo,
+            designationId: values.designationId,
+            departmentIds: [values.departmentId],
+            roleIds: authUser?.role?.map((role) => role.id) || [],
+            managerId: values.managerFlag
+              ? createdUser?.managers?.id || values.managerId
+              : null,
+            managerFlag: values.managerFlag,
+            bucketSize: Number(values.lockerSize),
+            lockerSize: Number(values.lockerSize),
+          }),
+        );
+        requireFulfilled(
+          operationsResponse,
+          "Failed to create user in Operations",
+        );
 
-              dispatch(
-                createUsersInOperations({
-                  id: userInfo?.id,
-                  fullName: userInfo?.fullName,
-                  email: userInfo?.email,
-                  contactNo: userInfo?.contactNo,
-                  designationId: Number(values?.designationId),
-                  departmentIds: [Number(values?.departmentId)],
-                  roleIds: temp?.role?.map((role) => role?.id) || [],
-                  managerId: userInfo?.managers?.id || userId,
-                  managerFlag: Boolean(values?.managerFlag),
-                  bucketSize: Number(values?.lockerSize),
-                }),
-              ).then((oper) => {
-                if (oper.meta.requestStatus !== "fulfilled") {
-                  addToast({
-                    title: "ERROR",
-                    description:
-                      oper?.payload?.message ||
-                      oper?.payload ||
-                      "Failed to create user in Operations",
-                    color: "danger",
-                  });
-                  return;
-                }
-
-                addToast({
-                  title: "SUCCESS",
-                  description: "User created successfully",
-                  color: "success",
-                });
-
-                onClose();
-                reset(defaultValues);
-                dispatch(getAllUsers(filteration));
-              });
-            });
-          });
-        })
-        .catch((error) => {
-          addToast({
-            title: "ERROR",
-            description: error?.message || "Something went wrong",
-            color: "danger",
-          });
+        addToast({
+          title: "SUCCESS",
+          description: "User created successfully",
+          color: "success",
         });
+      }
+
+      onClose();
+      reset(defaultValues);
+      setFormFlags({
+        maritalStatus: false,
+        master: false,
+      });
+      await dispatch(getAllUsers(filteration));
+    } catch (error) {
+      addToast({
+        title: "ERROR",
+        description: error?.message || "Something went wrong",
+        color: "danger",
+      });
     }
   };
 
@@ -853,6 +813,10 @@ const UsersList = () => {
                 onOpen();
                 setRowItem(null);
                 reset(defaultValues);
+                setFormFlags({
+                  maritalStatus: false,
+                  master: false,
+                });
               }}
               endContent={<Plus />}
             >
@@ -1007,8 +971,8 @@ const UsersList = () => {
                             isRequired
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.userName?.message}
-                            // isInvalid={!!errors.userName}
+                            errorMessage={errors.employeeId?.message}
+                            isInvalid={!!errors.employeeId}
                           />
                         )}
                       />
@@ -1022,7 +986,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.userName?.message}
-                            // isInvalid={!!errors.userName}
+                            isInvalid={!!errors.userName}
                           />
                         )}
                       />
@@ -1045,7 +1009,7 @@ const UsersList = () => {
                               field.onChange(formatEmail(e.target.value))
                             }
                             errorMessage={errors.email?.message}
-                            // isInvalid={!!errors.email}
+                            isInvalid={!!errors.email}
                           />
                         )}
                       />
@@ -1066,6 +1030,8 @@ const UsersList = () => {
                             onChange={(e) =>
                               field.onChange(formatEmail(e.target.value))
                             }
+                            isInvalid={!!errors.personalEmail}
+                            errorMessage={errors.personalEmail?.message}
                           />
                         )}
                       />
@@ -1082,7 +1048,7 @@ const UsersList = () => {
                             }
                             maxLength={10}
                             errorMessage={errors.contactNo?.message}
-                            // isInvalid={!!errors.contactNo}
+                            isInvalid={!!errors.contactNo}
                           />
                         )}
                       />
@@ -1113,7 +1079,7 @@ const UsersList = () => {
                               field.onChange(Array.from(keys))
                             }
                             errorMessage={errors.role?.message}
-                            // isInvalid={!!errors.role}
+                            isInvalid={!!errors.role}
                           >
                             {allRoles?.length > 0 ? (
                               allRoles.map((ele) => (
@@ -1143,12 +1109,14 @@ const UsersList = () => {
                               const value = Array.from(keys)[0];
                               if (value) {
                                 field.onChange(value);
+                                setValue("managerId", "");
+                                clearErrors("managerId");
                                 dispatch(getDesiginationById(value));
                                 dispatch(getManagerById(value));
                               }
                             }}
                             errorMessage={errors.departmentId?.message}
-                            // isInvalid={!!errors.departmentId}
+                            isInvalid={!!errors.departmentId}
                           >
                             {departmentList?.length > 0 ? (
                               departmentList.map((ele) => (
@@ -1182,7 +1150,7 @@ const UsersList = () => {
                               if (value) field.onChange(value);
                             }}
                             errorMessage={errors.designationId?.message}
-                            // isInvalid={!!errors.designationId}
+                            isInvalid={!!errors.designationId}
                           >
                             {allDesiginationListById?.length > 0 ? (
                               allDesiginationListById.map((ele) => (
@@ -1230,7 +1198,7 @@ const UsersList = () => {
                               )
                             }
                             errorMessage={errors.aadharCard?.message}
-                            // isInvalid={!!errors.aadharCard}
+                            isInvalid={!!errors.aadharCard}
                           />
                         )}
                       />
@@ -1248,37 +1216,11 @@ const UsersList = () => {
                               field.onChange(formatPANInput(e.target.value))
                             }
                             errorMessage={errors.panNumber?.message}
-                            // isInvalid={!!errors.panNumber}
+                            isInvalid={!!errors.panNumber}
                           />
                         )}
                       />
 
-                      <Controller
-                        name="managerId"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Manager name"
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) field.onChange(value);
-                            }}
-                          >
-                            {managerListById?.length > 0 ? (
-                              managerListById.map((item) => (
-                                <SelectItem key={item.id} value={item.id}>
-                                  {item.fullName}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem key="no-managers" value="" isDisabled>
-                                No managers available
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
-                      />
                       <Controller
                         name="managerFlag"
                         control={control}
@@ -1293,7 +1235,13 @@ const UsersList = () => {
                             onSelectionChange={(keys) => {
                               const value = Array.from(keys)[0];
                               if (value !== undefined) {
-                                field.onChange(value === "true");
+                                const managerFlag = value === "true";
+                                field.onChange(managerFlag);
+
+                                if (!managerFlag) {
+                                  setValue("managerId", "");
+                                  clearErrors("managerId");
+                                }
                               }
                             }}
                           >
@@ -1303,6 +1251,42 @@ const UsersList = () => {
                             <SelectItem key="false" value="false">
                               False
                             </SelectItem>
+                          </Select>
+                        )}
+                      />
+
+                      <Controller
+                        name="managerId"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="Manager name"
+                            isRequired={isManagerFlagEnabled}
+                            isDisabled={!isManagerFlagEnabled}
+                            selectedKeys={field.value ? [field.value] : []}
+                            onSelectionChange={(keys) => {
+                              const value = Array.from(keys)[0];
+                              field.onChange(
+                                value !== undefined ? String(value) : "",
+                              );
+                            }}
+                            isInvalid={!!errors.managerId}
+                            errorMessage={errors.managerId?.message}
+                          >
+                            {managerListById?.length > 0 ? (
+                              managerListById.map((item) => (
+                                <SelectItem
+                                  key={String(item.id)}
+                                  value={String(item.id)}
+                                >
+                                  {item.fullName}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem key="no-managers" value="" isDisabled>
+                                No managers available
+                              </SelectItem>
+                            )}
                           </Select>
                         )}
                       />
@@ -1331,7 +1315,7 @@ const UsersList = () => {
                               field.onChange(allowOnlyNumbers(e.target.value))
                             }
                             errorMessage={errors.expInYear?.message}
-                            // isInvalid={!!errors.expInYear}
+                            isInvalid={!!errors.expInYear}
                           />
                         )}
                       />
@@ -1351,6 +1335,7 @@ const UsersList = () => {
                               field.onChange(value);
                             }}
                             errorMessage={errors.expInMonth?.message}
+                            isInvalid={!!errors.expInMonth}
                           />
                         )}
                       />
@@ -1374,7 +1359,7 @@ const UsersList = () => {
                                 field.onChange(iso);
                               }}
                               errorMessage={errors.dateOfJoining?.message}
-                              // isInvalid={!!errors.dateOfJoining}
+                              isInvalid={!!errors.dateOfJoining}
                             />
                           );
                         }}
@@ -1393,7 +1378,7 @@ const UsersList = () => {
                               if (value) field.onChange(value);
                             }}
                             errorMessage={errors.type?.message}
-                            // isInvalid={!!errors.type}
+                            isInvalid={!!errors.type}
                           >
                             {[
                               { label: "Male", value: "male" },
@@ -1427,7 +1412,7 @@ const UsersList = () => {
                               }
                             }}
                             errorMessage={errors.maritalStatus?.message}
-                            // isInvalid={!!errors.maritalStatus}
+                            isInvalid={!!errors.maritalStatus}
                           >
                             {[
                               { label: "Married", value: "Married" },
@@ -1453,7 +1438,7 @@ const UsersList = () => {
                                 value={field.value}
                                 onChange={(e) => field.onChange(e.target.value)}
                                 errorMessage={errors.spouseName?.message}
-                                // isInvalid={!!errors.spouseName}
+                                isInvalid={!!errors.spouseName}
                               />
                             )}
                           />
@@ -1487,7 +1472,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.fatherName?.message}
-                            // isInvalid={!!errors.fatherName}
+                            isInvalid={!!errors.fatherName}
                           />
                         )}
                       />
@@ -1529,7 +1514,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.motherName?.message}
-                            // isInvalid={!!errors.motherName}
+                            isInvalid={!!errors.motherName}
                           />
                         )}
                       />
@@ -1665,7 +1650,7 @@ const UsersList = () => {
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             errorMessage={errors.permanentAddress?.message}
-                            // isInvalid={!!errors.permanentAddress}
+                            isInvalid={!!errors.permanentAddress}
                           />
                         )}
                       />
@@ -1687,9 +1672,22 @@ const UsersList = () => {
                   </div>
                 </ModalBody>
                 <ModalFooter>
-                  <Button onPress={onClose}>Cancel</Button>
-                  <Button color="primary" type="submit">
-                    Submit
+                  <Button onPress={onClose} isDisabled={isSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button
+                    color="primary"
+                    type="submit"
+                    isLoading={isSubmitting}
+                    isDisabled={isSubmitting}
+                  >
+                    {isSubmitting
+                      ? rowItem
+                        ? "Updating..."
+                        : "Submitting..."
+                      : rowItem
+                        ? "Update"
+                        : "Submit"}
                   </Button>
                 </ModalFooter>
               </form>
