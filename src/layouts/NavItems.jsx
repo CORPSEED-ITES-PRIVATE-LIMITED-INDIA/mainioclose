@@ -327,6 +327,12 @@ export const navItems = [
         key: "approvals",
       },
       {
+        title: "Expenses",
+        icon: "",
+        url: "operation/expenses",
+        key: "expenses",
+      },
+      {
         title: "Settings",
         icon: "",
         url: "operation/settings",
@@ -855,6 +861,12 @@ export const operationEmpItems = [
     icon: "FileText",
     url: "operation/approvals",
     key: "approvals",
+  },
+  {
+    title: "Expenses",
+    icon: "FileText",
+    url: "operation/expenses",
+    key: "expenses",
   },
 ];
 

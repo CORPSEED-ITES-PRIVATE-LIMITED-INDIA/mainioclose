@@ -684,7 +684,7 @@ export const addExpensesInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/projects/expenses?projectId=${projectId}`,
+        `/operationService/api/projects/${projectId}/activities/createExpenses`,
         data,
       );
       return response.data;
@@ -1418,6 +1418,38 @@ export const reopenOperationChat = createAsyncThunk(
   },
 );
 
+export const getExpenseApprovalQueueList = createAsyncThunk(
+  "operation/getExpenseApprovalQueueList",
+  async ({ userId, approvalStage, approvalStatus }, { rejectWithValue }) => {
+    try {
+      const params = {
+        userId: Number(userId),
+        approvalStage,
+      };
+
+      // approvalStatus is optional.
+      if (approvalStatus && approvalStatus !== "ALL") {
+        params.approvalStatus = approvalStatus;
+      }
+
+      const response = await api.get(
+        "/operationService/api/projects/expenses/approval-queue",
+        {
+          params,
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Failed to fetch expense approval queue",
+        },
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -1447,6 +1479,9 @@ export const OperationSlice = createSlice({
     compnyDocumentListByCompanyIdAndUnitId: [],
     departmentUsers: [],
     vendorLegalRequests: [],
+    expenseApprovalQueueList: [],
+    expenseApprovalQueueLoading: false,
+    expenseApprovalQueueError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1852,6 +1887,36 @@ export const OperationSlice = createSlice({
         state.loading = "rejected";
       },
     );
+
+    builder.addCase(getExpenseApprovalQueueList.pending, (state) => {
+      state.expenseApprovalQueueLoading = true;
+      state.expenseApprovalQueueError = null;
+    });
+
+    builder.addCase(getExpenseApprovalQueueList.fulfilled, (state, action) => {
+      state.expenseApprovalQueueLoading = false;
+
+      const response = action.payload?.data || action.payload;
+
+      if (Array.isArray(response)) {
+        state.expenseApprovalQueueList = response;
+      } else if (Array.isArray(response?.content)) {
+        state.expenseApprovalQueueList = response.content;
+      } else if (Array.isArray(response?.data)) {
+        state.expenseApprovalQueueList = response.data;
+      } else {
+        state.expenseApprovalQueueList = [];
+      }
+    });
+
+    builder.addCase(getExpenseApprovalQueueList.rejected, (state, action) => {
+      state.expenseApprovalQueueLoading = false;
+      state.expenseApprovalQueueList = [];
+      state.expenseApprovalQueueError =
+        action.payload?.message ||
+        action.payload ||
+        "Failed to fetch expense approval queue";
+    });
   },
 });
 

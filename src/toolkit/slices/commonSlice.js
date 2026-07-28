@@ -679,6 +679,27 @@ export const updateUserMailConfig = createAsyncThunk(
   },
 );
 
+export const getUserDetailById = createAsyncThunk(
+  "common/getUserDetailById",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/leadService/api/v1/users/getUser", {
+        params: {
+          id: userId,
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Unable to get user details",
+        },
+      );
+    }
+  },
+);
+
 const CommonSlice = createSlice({
   name: "common",
   initialState: {
@@ -727,6 +748,9 @@ const CommonSlice = createSlice({
     statesByCountry: {},
     citiesByState: {},
     userMailConfigs: [],
+    userDetailById: null,
+    userDetailByIdLoading: false,
+    userDetailByIdError: null,
   },
   reducers: {
     handleReset: (state) => {
@@ -1283,6 +1307,21 @@ const CommonSlice = createSlice({
     });
     builder.addCase(getAllUserMailConfigs.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(getUserDetailById.pending, (state) => {
+      state.userDetailByIdLoading = true;
+      state.userDetailByIdError = null;
+      state.userDetailById = null;
+    });
+    builder.addCase(getUserDetailById.fulfilled, (state, action) => {
+      state.userDetailByIdLoading = false;
+      state.userDetailById = action.payload?.data || action.payload;
+    });
+    builder.addCase(getUserDetailById.rejected, (state, action) => {
+      state.userDetailByIdLoading = false;
+      state.userDetailByIdError =
+        action.payload?.message || "Unable to get user details";
     });
   },
 });

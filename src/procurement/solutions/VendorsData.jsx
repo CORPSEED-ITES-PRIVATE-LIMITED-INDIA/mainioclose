@@ -1147,6 +1147,7 @@ const VendorsData = () => {
           wrapper:
             "min-h-0 w-full max-w-full flex-1 overflow-auto overscroll-contain rounded-xl border border-default-200",
           table: "min-w-[760px] table-fixed",
+          wrapper: "max-h-[52vh] w-full rounded-xl border border-default-200",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

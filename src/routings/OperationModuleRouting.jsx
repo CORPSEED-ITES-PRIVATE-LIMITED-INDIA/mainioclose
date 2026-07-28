@@ -11,6 +11,7 @@ import LegalRequests from "../operation/legal/LegalRequests";
 import ProjectPurchaseOrder from "../operation/projects/ProjectPurchaseOrder";
 import ProjectPR from "../operation/projects/ProjectPR";
 import ManagerApprovals from "../operation/approval/ManagerApprovals";
+import Expenses from "../operation/expenses/Expenses";
 
 const OperationModuleRouting = () => {
   return (
@@ -34,6 +35,7 @@ const OperationModuleRouting = () => {
       />
       <Route path="operation/legalRequests" element={<LegalRequests />} />
       <Route path="operation/approvals" element={<ManagerApprovals />} />
+      <Route path="operation/expenses" element={<Expenses />} />
       <Route path="operation/settings" element={<OperationsSettings />}>
         <Route index element={<Navigate to="userMap" replace />} />
         <Route path="userMap" element={<UserMapWithProduct />} />

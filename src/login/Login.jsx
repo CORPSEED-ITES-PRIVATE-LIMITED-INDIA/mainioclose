@@ -30,7 +30,7 @@ const Login = () => {
               setLoading("fulfilled");
               dispatch(getDepartmentOfUser(resp?.payload?.id)).then(
                 (response) => {
-                  console.log("resp 11111", response);
+                  console.log("Department detail resp 11111", response);
                   dispatch(
                     toggleAutoOnFeature({
                       userId: resp?.payload?.id,

@@ -273,8 +273,8 @@ const ProcurementPaymentRequest = () => {
         } else {
           //handle error
           addToast({
-            title: "Error",
-            description: resp.payload || "Something went wrong",
+            title: resp?.payload?.errorCode,
+            description: resp?.payload?.message || "Something went wrong",
             color: "danger",
           });
         }
@@ -381,11 +381,14 @@ const ProcurementPaymentRequest = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem
-                onPress={() => handleActionPress(rowData, "Release")}
-              >
-                Release payment
-              </DropdownItem>
+              {rowData?.status === "APPROVED" && (
+                <DropdownItem
+                  onPress={() => handleActionPress(rowData, "Release")}
+                >
+                  Release payment
+                </DropdownItem>
+              )}
+
               {isPending && (
                 <>
                   <DropdownItem
@@ -482,6 +485,10 @@ const ProcurementPaymentRequest = () => {
                 {[
                   { label: "PENDING", uid: "PENDING" },
                   { label: "APPROVED", uid: "APPROVED" },
+                  { label: "UNDER_REVIEW", uid: "UNDER_REVIEW" },
+                  { label: "PAYMENT_PROCESSING", uid: "PAYMENT_PROCESSING" },
+                  { label: "PAYMENT_RELEASED", uid: "PAYMENT_RELEASED" },
+                  { label: "ON_HOLD", uid: "ON_HOLD" },
                   { label: "REJECTED", uid: "REJECTED" },
                 ].map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
