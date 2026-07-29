@@ -8,9 +8,7 @@ import {
   InputNumber,
   Modal,
   Select,
-  Space,
 } from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "@heroui/react";
@@ -22,27 +20,19 @@ import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 
 const { TextArea } = Input;
 
-const paymentTermOptions = [
-  { label: "100% Advance", value: "100% Advance" },
-  {
-    label: "50% Advance + 50% After Completion",
-    value: "50% Advance + 50% After Completion",
-  },
-  {
-    label: "30% Advance + 70% After Completion",
-    value: "30% Advance + 70% After Completion",
-  },
-  { label: "Milestone Based Payment", value: "Milestone Based Payment" },
-  {
-    label: "Payment After Work Completion",
-    value: "Payment After Work Completion",
-  },
-];
-
 const taxTypeOptions = [
   { label: "CGST + SGST", value: "CGST_SGST" },
   { label: "IGST", value: "IGST" },
 ];
+
+const GST_REGISTRATION_TYPE = Object.freeze({
+  REGISTERED: "REGISTERED",
+  UNREGISTERED: "UNREGISTERED",
+  SEZ: "SEZ",
+  INTERNATIONAL: "INTERNATIONAL",
+});
+
+const COMPANY_GST_STATE_CODE = "09";
 
 const roundAmount = (value) => {
   return Number(Number(value || 0).toFixed(2));
@@ -75,15 +65,60 @@ const CreatePurchaseOrderModal = ({
   const vendorDetails = useSelector((state) => state.vendors.vendorDetails);
   const vendorDetailsLoading = useSelector((state) => state.vendors.loading);
 
+  /*
+   * Prevent stale Redux vendor data from a previously opened vendor
+   * from affecting the current purchase order calculation.
+   */
+  const currentVendorDetails =
+    Number(vendorDetails?.id) === Number(vendorId) ? vendorDetails : null;
+
   const vendorGstRegistrationType = String(
-    vendorDetails?.gstRegistrationType || "",
-  ).toUpperCase();
-  const vendorGstNumber = String(vendorDetails?.gstNumber || "")
+    currentVendorDetails?.gstRegistrationType || "",
+  )
     .trim()
     .toUpperCase();
+
+  const vendorGstNumber = String(currentVendorDetails?.gstNumber || "")
+    .trim()
+    .toUpperCase();
+
   const vendorGstStateCode = vendorGstNumber.substring(0, 2);
 
-  const resolvedTaxType = vendorGstStateCode === "09" ? "CGST_SGST" : "IGST";
+  const isRegisteredVendor =
+    vendorGstRegistrationType === GST_REGISTRATION_TYPE.REGISTERED;
+  const isUnregisteredVendor =
+    vendorGstRegistrationType === GST_REGISTRATION_TYPE.UNREGISTERED;
+  const isSezVendor = vendorGstRegistrationType === GST_REGISTRATION_TYPE.SEZ;
+  const isInternationalVendor =
+    vendorGstRegistrationType === GST_REGISTRATION_TYPE.INTERNATIONAL;
+
+  /*
+   * Purchase-order business rules used here:
+   *
+   * REGISTERED:
+   *   GST is applicable.
+   *   Net payable = Taxable + GST - TDS.
+   *
+   * UNREGISTERED / SEZ:
+   *   GST is zero under the application's stated rule.
+   *   Net payable = Taxable - TDS.
+   *
+   * INTERNATIONAL:
+   *   GST and TDS are zero under the application's stated rule.
+   *   Net payable = Taxable.
+   *
+   * TDS is calculated on the taxable/final amount, never on GST.
+   */
+  const isGstApplicable = isRegisteredVendor;
+  const isTdsApplicable = !isInternationalVendor;
+
+  const resolvedTaxType = useMemo(() => {
+    if (!isGstApplicable || vendorGstStateCode.length !== 2) {
+      return null;
+    }
+
+    return vendorGstStateCode === COMPANY_GST_STATE_CODE ? "CGST_SGST" : "IGST";
+  }, [isGstApplicable, vendorGstStateCode]);
 
   const paymentTypeOptions = useMemo(() => {
     if (!Array.isArray(paymentTypeList)) return [];
@@ -119,40 +154,42 @@ const CreatePurchaseOrderModal = ({
     React.useState(false);
 
   const taxCalculation = useMemo(() => {
-    const finalAmount = Number(watchedFinalAmount || 0);
-    const gstRate = Number(watchedGstRate || 0);
-    const tdsPercentage = Number(watchedTdsPercentage || 0);
-    const taxType = watchedTaxType || "IGST";
+    const finalAmount = roundAmount(watchedFinalAmount);
+    const gstRate = isGstApplicable ? Number(watchedGstRate || 0) : 0;
+    const tdsPercentage = isTdsApplicable
+      ? Number(watchedTdsPercentage || 0)
+      : 0;
+    const taxType = isGstApplicable ? watchedTaxType : null;
 
-    /*
-     * Existing GST calculation remains unchanged.
-     */
-    const totalTaxAmount = roundAmount((finalAmount * gstRate) / 100);
+    const totalTaxAmount = isGstApplicable
+      ? roundAmount((finalAmount * gstRate) / 100)
+      : 0;
 
     let cgstAmount = 0;
     let sgstAmount = 0;
     let igstAmount = 0;
 
-    if (taxType === "IGST") {
+    if (totalTaxAmount > 0 && taxType === "IGST") {
       igstAmount = totalTaxAmount;
-    } else {
+    } else if (totalTaxAmount > 0 && taxType === "CGST_SGST") {
       cgstAmount = roundAmount(totalTaxAmount / 2);
 
       /*
-       * Subtraction avoids any one-paise rounding mismatch.
+       * Subtraction avoids a one-paise split-rounding mismatch.
        */
       sgstAmount = roundAmount(totalTaxAmount - cgstAmount);
     }
 
     /*
-     * TDS is calculated on Final Amount.
+     * TDS is calculated only on the taxable/final amount.
+     * GST is never included in the TDS base.
      */
-    const tdsAmount = roundAmount((finalAmount * tdsPercentage) / 100);
+    const tdsAmount = isTdsApplicable
+      ? roundAmount((finalAmount * tdsPercentage) / 100)
+      : 0;
 
-    /*
-     * Grand Total = Final Amount + GST - TDS
-     */
-    const grandTotal = roundAmount(finalAmount + totalTaxAmount - tdsAmount);
+    const grossInvoiceAmount = roundAmount(finalAmount + totalTaxAmount);
+    const grandTotal = roundAmount(grossInvoiceAmount - tdsAmount);
 
     return {
       cgstAmount,
@@ -160,6 +197,7 @@ const CreatePurchaseOrderModal = ({
       igstAmount,
       totalTaxAmount,
       tdsAmount,
+      grossInvoiceAmount,
       grandTotal,
     };
   }, [
@@ -167,6 +205,8 @@ const CreatePurchaseOrderModal = ({
     watchedGstRate,
     watchedTdsPercentage,
     watchedTaxType,
+    isGstApplicable,
+    isTdsApplicable,
   ]);
 
   useEffect(() => {
@@ -177,10 +217,10 @@ const CreatePurchaseOrderModal = ({
       vendorId: Number(vendorId || 0),
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
-      gstRate: 18,
+      gstRate: 0,
       tdsPercentage: 0,
       tdsAmount: 0,
-      taxType: "IGST",
+      taxType: null,
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
       remarks: "",
@@ -201,12 +241,27 @@ const CreatePurchaseOrderModal = ({
   ]);
 
   useEffect(() => {
-    if (!open || !vendorDetails?.id) return;
+    if (!open || !currentVendorDetails?.id) return;
+
+    const existingDomesticTds = Number(
+      form.getFieldValue("tdsPercentage") || 0,
+    );
 
     form.setFieldsValue({
-      taxType: resolvedTaxType,
+      gstRate: isGstApplicable
+        ? Number(form.getFieldValue("gstRate") || 18)
+        : 0,
+      taxType: isGstApplicable ? resolvedTaxType : null,
+      tdsPercentage: isTdsApplicable ? existingDomesticTds : 0,
     });
-  }, [open, form, vendorDetails?.id, resolvedTaxType]);
+  }, [
+    open,
+    form,
+    currentVendorDetails?.id,
+    isGstApplicable,
+    isTdsApplicable,
+    resolvedTaxType,
+  ]);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -234,25 +289,68 @@ const CreatePurchaseOrderModal = ({
       return;
     }
 
+    if (!vendorGstRegistrationType) {
+      addToast({
+        title: "Vendor GST type missing",
+        description:
+          "The vendor GST registration type could not be resolved. Please refresh the vendor details.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      !isRegisteredVendor &&
+      !isUnregisteredVendor &&
+      !isSezVendor &&
+      !isInternationalVendor
+    ) {
+      addToast({
+        title: "Unsupported GST type",
+        description: `Unsupported vendor GST registration type: ${vendorGstRegistrationType}`,
+        color: "danger",
+      });
+      return;
+    }
+
+    if (isRegisteredVendor && !resolvedTaxType) {
+      addToast({
+        title: "Vendor GSTIN missing",
+        description:
+          "A valid GST number is required to determine CGST/SGST or IGST for a registered vendor.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (taxCalculation.grandTotal < 0) {
+      addToast({
+        title: "Invalid payable amount",
+        description: "TDS cannot be greater than the taxable amount plus GST.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
       procurementAssignmentId: Number(procurementAssignmentId || 0),
       vendorId: Number(vendorId || 0),
 
       poReferenceNumber: values.poReferenceNumber?.trim() || "",
 
-      finalAmount: Number(values.finalAmount || 0),
-      gstRate: Number(values.gstRate || 0),
-      taxType: values.taxType || resolvedTaxType,
+      finalAmount: roundAmount(values.finalAmount),
+      gstRate: isGstApplicable ? Number(values.gstRate || 0) : 0,
+      taxType: isGstApplicable ? values.taxType || resolvedTaxType : null,
 
-      tdsPercentage: Number(values.tdsPercentage || 0),
-      tdsAmount: Number(values.tdsAmount || 0),
+      tdsPercentage: isTdsApplicable ? Number(values.tdsPercentage || 0) : 0,
+      tdsAmount: taxCalculation.tdsAmount,
 
-      cgstAmount: Number(values.cgstAmount || 0),
-      sgstAmount: Number(values.sgstAmount || 0),
-      igstAmount: Number(values.igstAmount || 0),
+      cgstAmount: taxCalculation.cgstAmount,
+      sgstAmount: taxCalculation.sgstAmount,
+      igstAmount: taxCalculation.igstAmount,
 
-      totalTaxAmount: Number(values.totalTaxAmount || 0),
-      grandTotal: Number(values.grandTotal || 0),
+      totalTaxAmount: taxCalculation.totalTaxAmount,
+      grandTotal: taxCalculation.grandTotal,
 
       scopeOfWork: values.scopeOfWork?.trim() || "",
       termsAndConditions: values.termsAndConditions?.trim() || "",
@@ -341,7 +439,7 @@ const CreatePurchaseOrderModal = ({
           </Form.Item>
 
           <Form.Item
-            label="Final Amount"
+            label="Taxable / Final Amount"
             name="finalAmount"
             rules={[
               {
@@ -362,12 +460,21 @@ const CreatePurchaseOrderModal = ({
           <Form.Item
             label="GST Rate (%)"
             name="gstRate"
-            rules={[
-              {
-                required: true,
-                message: "Please enter GST rate",
-              },
-            ]}
+            rules={
+              isGstApplicable
+                ? [
+                    {
+                      required: true,
+                      message: "Please enter GST rate",
+                    },
+                  ]
+                : []
+            }
+            extra={
+              isGstApplicable
+                ? "GST is applicable because the vendor is registered."
+                : "GST is not applicable for this vendor registration type."
+            }
           >
             <InputNumber
               style={{ width: "100%" }}
@@ -375,7 +482,10 @@ const CreatePurchaseOrderModal = ({
               min={0}
               max={100}
               precision={2}
-              placeholder="Enter GST rate"
+              placeholder={
+                isGstApplicable ? "Enter GST rate" : "GST not applicable"
+              }
+              disabled={!isGstApplicable}
             />
           </Form.Item>
 
@@ -384,16 +494,20 @@ const CreatePurchaseOrderModal = ({
             name="tdsPercentage"
             rules={[
               {
-                required: true,
+                required: isTdsApplicable,
                 message: "Please enter TDS percentage",
               },
               {
                 validator: (_, value) => {
-                  const percentage = Number(value);
+                  if (!isTdsApplicable) {
+                    return Promise.resolve();
+                  }
 
                   if (value === null || value === undefined || value === "") {
                     return Promise.resolve();
                   }
+
+                  const percentage = Number(value);
 
                   if (
                     Number.isNaN(percentage) ||
@@ -409,31 +523,47 @@ const CreatePurchaseOrderModal = ({
                 },
               },
             ]}
+            extra={
+              isInternationalVendor
+                ? "TDS is disabled under the application's international-vendor rule."
+                : "TDS is calculated on the taxable/final amount only."
+            }
           >
             <InputNumber
-              className="w-full"
+              rootClassName="tds-percentage-input"
               style={{ width: "100%" }}
               min={0}
               max={100}
               precision={2}
-              placeholder="Enter TDS percentage"
-              addonAfter="%"
+              placeholder={
+                isTdsApplicable ? "Enter TDS percentage" : "TDS not applicable"
+              }
+              disabled={!isTdsApplicable}
             />
           </Form.Item>
 
           <Form.Item
             label="Tax Type"
             name="taxType"
-            rules={[{ required: true, message: "Please select tax type" }]}
+            rules={
+              isGstApplicable
+                ? [{ required: true, message: "Please select tax type" }]
+                : []
+            }
           >
             <Select
-              placeholder="Tax type will be selected automatically"
+              placeholder={
+                isGstApplicable
+                  ? "Tax type will be selected automatically"
+                  : "Not applicable"
+              }
               options={taxTypeOptions}
               disabled
+              allowClear
             />
           </Form.Item>
 
-          <Form.Item label="CGST Amount" name="cgstAmount">
+          {/* <Form.Item label="CGST Amount" name="cgstAmount">
             <InputNumber
               className="w-full"
               style={{ width: "100%" }}
@@ -461,7 +591,7 @@ const CreatePurchaseOrderModal = ({
               precision={2}
               disabled
             />
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item label="Total Tax Amount" name="totalTaxAmount">
             <InputNumber
@@ -483,7 +613,7 @@ const CreatePurchaseOrderModal = ({
             />
           </Form.Item>
 
-          <Form.Item label="Grand Total" name="grandTotal">
+          <Form.Item label="Net Payable Amount" name="grandTotal">
             <InputNumber
               className="w-full"
               style={{ width: "100%" }}
