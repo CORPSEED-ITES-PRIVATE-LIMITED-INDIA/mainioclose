@@ -9,6 +9,7 @@ import {
   addToast,
   Button,
   Chip,
+  DatePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -46,6 +47,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import FileUploader from "../components/FileUploader.jsx";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import {
   agreementDecisionForVendorLegalRequest,
   getAllVendorQuotationLegalRequests,
@@ -331,6 +333,8 @@ const ProcurementVendors = () => {
 
   const [sendToProcurementData, setSendToProcurementData] = useState({
     agreementFileUrl: "",
+    expiryDate: "",
+    validityDays: 0,
     remarks: "",
   });
 
@@ -446,11 +450,16 @@ const ProcurementVendors = () => {
   const handleOpenSendToProcurement = useCallback(
     (rowData) => {
       const agreementUrl = getAgreementUrl(rowData);
+      const expiryDate = rowData?.expiryDate
+        ? dayjs(rowData.expiryDate).format("YYYY-MM-DD")
+        : "";
 
       setSelectedRequest(rowData);
       setSendToProcurementData({
         agreementFileUrl: agreementUrl,
-        remarks: rowData?.statusReason || "",
+        expiryDate,
+        validityDays: Number(rowData?.validityDays || 0),
+        remarks: rowData?.remarks || rowData?.statusReason || "",
       });
       sendToProcurementModal.onOpen();
     },
@@ -486,8 +495,44 @@ const ProcurementVendors = () => {
       return;
     }
 
+    if (
+      !sendToProcurementData.expiryDate ||
+      !dayjs(sendToProcurementData.expiryDate).isValid()
+    ) {
+      addToast({
+        title: "Expiry date required",
+        description: "Please select a valid agreement expiry date.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (dayjs(sendToProcurementData.expiryDate).isBefore(dayjs(), "day")) {
+      addToast({
+        title: "Invalid expiry date",
+        description: "Agreement expiry date cannot be before today.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const validityDays = Number(sendToProcurementData.validityDays);
+
+    if (!Number.isFinite(validityDays) || validityDays < 0) {
+      addToast({
+        title: "Invalid validity",
+        description: "Validity days must be zero or greater.",
+        color: "danger",
+      });
+      return;
+    }
+
     const payload = {
       agreementFileUrl: sendToProcurementData.agreementFileUrl,
+      expiryDate: dayjs(sendToProcurementData.expiryDate)
+        .endOf("day")
+        .toISOString(),
+      validityDays,
       remarks: sendToProcurementData.remarks || "",
     };
 
@@ -511,7 +556,12 @@ const ProcurementVendors = () => {
 
         sendToProcurementModal.onClose();
         setSelectedRequest(null);
-        setSendToProcurementData({ agreementFileUrl: "", remarks: "" });
+        setSendToProcurementData({
+          agreementFileUrl: "",
+          expiryDate: "",
+          validityDays: 0,
+          remarks: "",
+        });
         fetchLegalRequests();
       } else {
         addToast({
@@ -1309,6 +1359,70 @@ const ProcurementVendors = () => {
                 }
               />
 
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <DatePicker
+                  label="Agreement Expiry Date"
+                  isRequired
+                  variant="bordered"
+                  className="w-full"
+                  minValue={today(getLocalTimeZone())}
+                  value={
+                    sendToProcurementData.expiryDate
+                      ? parseDate(
+                          dayjs(sendToProcurementData.expiryDate).format(
+                            "YYYY-MM-DD",
+                          ),
+                        )
+                      : null
+                  }
+                  onChange={(date) => {
+                    const expiryDate = date ? date.toString() : "";
+
+                    const validityDays = expiryDate
+                      ? Math.max(
+                          dayjs(expiryDate)
+                            .startOf("day")
+                            .diff(dayjs().startOf("day"), "day"),
+                          0,
+                        )
+                      : 0;
+
+                    setSendToProcurementData((prev) => ({
+                      ...prev,
+                      expiryDate,
+                      validityDays,
+                    }));
+                  }}
+                />
+
+                <Input
+                  type="number"
+                  label="Validity Days"
+                  isRequired
+                  variant="bordered"
+                  min={0}
+                  step={1}
+                  value={String(sendToProcurementData.validityDays ?? 0)}
+                  onValueChange={(value) => {
+                    const parsedValue = Number(value);
+
+                    const validityDays =
+                      Number.isFinite(parsedValue) && parsedValue >= 0
+                        ? Math.floor(parsedValue)
+                        : 0;
+
+                    setSendToProcurementData((prev) => ({
+                      ...prev,
+                      validityDays,
+                      expiryDate: dayjs()
+                        .startOf("day")
+                        .add(validityDays, "day")
+                        .format("YYYY-MM-DD"),
+                    }));
+                  }}
+                />
+              </div>
+
               <Textarea
                 label="Remarks"
                 value={sendToProcurementData.remarks}
@@ -1329,6 +1443,8 @@ const ProcurementVendors = () => {
                   setSelectedRequest(null);
                   setSendToProcurementData({
                     agreementFileUrl: "",
+                    expiryDate: "",
+                    validityDays: 0,
                     remarks: "",
                   });
                 }}

@@ -269,25 +269,32 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
+    const invoiceAmount = Number((poFinalAmount + poTotalTaxAmount).toFixed(2));
+
+    const payableAmount = Number(poGrandTotal.toFixed(2));
+
     const payload = {
-      invoiceAmount: poFinalAmount,
-      payableAmount: poGrandTotal,
-      completionRemarks: values.completionRemarks,
-      proofAttachmentUrls: Array.isArray(values.proofAttachmentUrls)
-        ? values.proofAttachmentUrls
-        : [],
-      createdBy: Number(createdBy),
+      invoiceAmount,
+      payableAmount,
 
       tdsActive: isTdsApplicable,
       tdsPercentage: isTdsApplicable ? poTdsPercentage : null,
       tdsAmount: isTdsApplicable ? poTdsAmount : 0,
 
       gstActive: isGstApplicable,
+      gstPercentage: isGstApplicable ? poGstRate : null,
+      gstAmount: isGstApplicable ? poTotalTaxAmount : 0,
+
+      totalWithGst: invoiceAmount,
+
+      completionRemarks: values.completionRemarks,
+      proofAttachmentUrls: Array.isArray(values.proofAttachmentUrls)
+        ? values.proofAttachmentUrls
+        : [],
+      createdBy: Number(createdBy),
+
       gstStateCode: null,
       gstStateName: null,
-      gstPercentage: isGstApplicable ? poGstRate : null,
-
-      gstAmount: isGstApplicable ? poTotalTaxAmount : 0,
 
       cgstRate:
         poTaxType === "CGST_SGST" ? Number((poGstRate / 2).toFixed(2)) : 0,
@@ -298,8 +305,6 @@ const RaiseProcurementPaymentRequestModal = ({
       cgstAmount: poCgstAmount,
       sgstAmount: poSgstAmount,
       igstAmount: poIgstAmount,
-
-      totalWithGst: Number((poFinalAmount + poTotalTaxAmount).toFixed(2)),
     };
 
     const resultAction = await dispatch(
