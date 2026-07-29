@@ -21,6 +21,8 @@ import {
   ModalFooter,
   ModalHeader,
   Form,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -29,12 +31,14 @@ import { useParams } from "react-router-dom";
 import {
   approveProcurementPaymentRequest,
   getAllPaymentApprovals,
+  getActivePaymentLedgerForPaymentRegister,
   getProcurementPaymentRequestList,
   getProcurementPurchaseOrder,
   rejectProcurementPaymentRequest,
   releaseProcurementPaymentRequest,
 } from "../toolkit/slices/accountSlice";
 import { inrCurrency } from "../common";
+import NewSelect from "../components/NewSelect";
 import dayjs from "dayjs";
 
 const columns = [
@@ -100,6 +104,36 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const isEnabledFlag = (value) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  return ["true", "yes", "1", "active"].includes(normalized);
+};
+
+const roundMoney = (value) =>
+  Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+
+const getApprovalTdsData = (paymentRequest) => {
+  const tdsEnabled = isEnabledFlag(paymentRequest?.tdsActive);
+
+  if (!tdsEnabled) {
+    return {
+      tdsActive: "NO",
+      tdsAmount: 0,
+    };
+  }
+
+  const invoiceAmount = Number(paymentRequest?.invoiceAmount || 0);
+  const payableAmount = Number(paymentRequest?.payableAmount || 0);
+
+  return {
+    tdsActive: "YES",
+    tdsAmount: roundMoney(Math.max(invoiceAmount - payableAmount, 0)),
+  };
+};
+
 const ProcurementPaymentRequest = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
@@ -108,6 +142,9 @@ const ProcurementPaymentRequest = () => {
   );
   const data = useSelector(
     (state) => state.account.procurementPaymentRequestList?.data?.content,
+  );
+  const paymentLedgerList = useSelector(
+    (state) => state.account.paymentLegerList,
   );
   const approveModal = useDisclosure();
   const rejectModal = useDisclosure();
@@ -128,12 +165,61 @@ const ProcurementPaymentRequest = () => {
     status: "PENDING",
   });
   const [rowItem, setRowItem] = useState(null);
+  const [approvePaymentMode, setApprovePaymentMode] = useState("");
+  const [approveBankLedgerId, setApproveBankLedgerId] = useState("");
+
+  const approvalTdsData = useMemo(() => getApprovalTdsData(rowItem), [rowItem]);
 
   const hasSearchFilter = Boolean(filterValue);
+
+  const hasApprovePaymentModeSelected = Boolean(
+    String(approvePaymentMode || "").trim(),
+  );
+
+  const isApproveCashPaymentMode =
+    String(approvePaymentMode || "")
+      .trim()
+      .toUpperCase() === "CASH";
+
+  const isCashLedger = (ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  };
+
+  const filteredApprovePaymentLedgerList = useMemo(() => {
+    if (!hasApprovePaymentModeSelected) {
+      return [];
+    }
+
+    const ledgers = Array.isArray(paymentLedgerList) ? paymentLedgerList : [];
+
+    return isApproveCashPaymentMode
+      ? ledgers.filter(isCashLedger)
+      : ledgers.filter((ledger) => !isCashLedger(ledger));
+  }, [
+    hasApprovePaymentModeSelected,
+    isApproveCashPaymentMode,
+    paymentLedgerList,
+  ]);
+
+  const resetApprovePaymentFields = useCallback(() => {
+    setApprovePaymentMode("");
+    setApproveBankLedgerId("");
+  }, []);
 
   useEffect(() => {
     dispatch(getProcurementPaymentRequestList(filteration));
   }, [dispatch, filteration]);
+
+  useEffect(() => {
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -169,6 +255,7 @@ const ProcurementPaymentRequest = () => {
   const handleActionPress = (item, key) => {
     setRowItem(item);
     if (key === "Approved") {
+      resetApprovePaymentFields();
       approveModal.onOpen();
     } else if (key === "Rejected") {
       rejectModal.onOpen();
@@ -178,11 +265,18 @@ const ProcurementPaymentRequest = () => {
   };
 
   const handleApproveRequest = (values) => {
-    // Implementation for handling approve request
+    const payload = {
+      ...values,
+      paymentMode: approvePaymentMode,
+      bankLedgerId: Number(approveBankLedgerId),
+      tdsActive: approvalTdsData.tdsActive,
+      tdsAmount: approvalTdsData.tdsAmount,
+    };
+
     dispatch(
       approveProcurementPaymentRequest({
         paymentRequestId: rowItem?.id,
-        data: values,
+        data: payload,
         userId,
       }),
     )
@@ -194,6 +288,7 @@ const ProcurementPaymentRequest = () => {
             color: "success",
           });
           approveModal.onClose();
+          resetApprovePaymentFields();
           setRowItem(null);
           dispatch(getProcurementPaymentRequestList(filteration));
         } else {
@@ -568,7 +663,9 @@ const ProcurementPaymentRequest = () => {
           onChange={(e) => {
             setFilteration((prev) => ({ ...prev, page: e }));
             if (e > filteration?.page) {
-              dispatch(getAllNewCompanies({ ...filteration, page: e }));
+              dispatch(
+                getProcurementPaymentRequestList({ ...filteration, page: e }),
+              );
             }
           }}
         />
@@ -629,7 +726,7 @@ const ProcurementPaymentRequest = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.companyId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -641,7 +738,13 @@ const ProcurementPaymentRequest = () => {
       <Modal
         size="2xl"
         isOpen={approveModal.isOpen}
-        onOpenChange={approveModal.onOpenChange}
+        onOpenChange={(isOpen) => {
+          approveModal.onOpenChange(isOpen);
+
+          if (!isOpen) {
+            resetApprovePaymentFields();
+          }
+        }}
       >
         <ModalContent>
           {(onClose) => (
@@ -649,22 +752,109 @@ const ProcurementPaymentRequest = () => {
               className="w-full"
               onSubmit={(e) => {
                 e.preventDefault();
-                let data = Object.fromEntries(new FormData(e.currentTarget));
-                handleApproveRequest(data);
+
+                if (!approvePaymentMode) {
+                  addToast({
+                    title: "Payment mode is required",
+                    color: "danger",
+                  });
+                  return;
+                }
+
+                if (!approveBankLedgerId) {
+                  addToast({
+                    title: "Bank/Cash ledger is required",
+                    color: "danger",
+                  });
+                  return;
+                }
+
+                const formData = Object.fromEntries(
+                  new FormData(e.currentTarget),
+                );
+
+                handleApproveRequest(formData);
               }}
             >
               <ModalHeader>Approve Request</ModalHeader>
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
+              <ModalBody className="grid grid-cols-1 gap-4 w-full md:grid-cols-2">
+                <Select
+                  label="Payment Mode"
+                  placeholder="Select payment mode"
+                  isRequired
+                  selectedKeys={
+                    approvePaymentMode
+                      ? new Set([approvePaymentMode])
+                      : new Set([])
+                  }
+                  onSelectionChange={(keys) => {
+                    const selectedValue = Array.from(keys)?.[0] || "";
+                    setApprovePaymentMode(String(selectedValue));
+                    setApproveBankLedgerId("");
+                  }}
+                >
+                  <SelectItem key="CASH">Cash</SelectItem>
+                  <SelectItem key="UPI">UPI</SelectItem>
+                  <SelectItem key="CARD">Card</SelectItem>
+                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem key="CHEQUE">Cheque</SelectItem>
+                </Select>
+
+                <NewSelect
+                  isRequired
+                  isDisabled={!hasApprovePaymentModeSelected}
+                  label={
+                    isApproveCashPaymentMode
+                      ? "Select Cash Ledger"
+                      : "Select Bank Ledger"
+                  }
+                  placeholder={
+                    !hasApprovePaymentModeSelected
+                      ? "Select payment mode first"
+                      : isApproveCashPaymentMode
+                        ? "Select cash ledger"
+                        : "Select bank ledger"
+                  }
+                  data={filteredApprovePaymentLedgerList}
+                  labelKey="ledgerName"
+                  valueKey="id"
+                  value={approveBankLedgerId}
+                  onChange={(value) => {
+                    setApproveBankLedgerId(value ? String(value) : "");
+                  }}
+                />
+
                 <Input
+                  label="TDS Applicable"
+                  value={approvalTdsData.tdsActive}
+                  isReadOnly
+                />
+
+                <Input
+                  label="TDS Amount"
+                  value={approvalTdsData.tdsAmount.toFixed(2)}
+                  isReadOnly
+                />
+
+                <Input
+                  className="md:col-span-2"
                   label="Comment"
                   name="comment"
                   isRequired
-                  errorMessage="please enter a comment"
+                  errorMessage="Please enter a comment"
                 />
               </ModalBody>
 
               <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
+                <Button
+                  type="button"
+                  onPress={() => {
+                    resetApprovePaymentFields();
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
                 <Button color="primary" type="submit">
                   Submit
                 </Button>
