@@ -42,38 +42,26 @@ import {
   getAllAdvanceTaxInvoiceRequests,
 } from "../toolkit/slices/accountSlice";
 import AdvanceTaxInvoiceView from "./AdvanceTaxInvoiceView";
+import { getEstimateByEstimateId } from "../toolkit/slices/leadSlice";
+import NewEstimatePreview from "../sales/leads/leadEstimate/NewEstimatePreview";
 
 const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const COLUMNS = [
   { name: "DATE", uid: "createdAt" },
-  { name: "REQUEST ID", uid: "requestId" },
+  { name: "COMPANY / UNIT", uid: "companyName" },
+  { name: "CONTACT", uid: "contactName" },
+  { name: "SOLUTION", uid: "solutionName" },
   { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
-  { name: "REQUESTED BY", uid: "requestedByName" },
   { name: "ESTIMATE TOTAL", uid: "estimateGrandTotal", align: "end" },
   { name: "REQUESTED AMOUNT", uid: "requestedAmount", align: "end" },
   { name: "APPROVED AMOUNT", uid: "approvedAmount", align: "end" },
+  { name: "REQUEST REMARKS", uid: "requestRemarks" },
+  { name: "REQUESTED BY", uid: "requestedByName" },
+  { name: "GST TYPE", uid: "gstRegistrationType" },
   { name: "REQUEST STATUS", uid: "requestStatus" },
-  { name: "INVOICE NUMBER", uid: "invoiceNumber" },
-  { name: "INVOICE TOTAL", uid: "invoiceGrandTotal", align: "end" },
-  { name: "RECEIVED", uid: "receivedAmount", align: "end" },
-  { name: "E-INVOICE", uid: "invoiceStatus", align: "end" },
-  {
-    name: "PENDING RECEIVED",
-    uid: "pendingReceivedAmount",
-    align: "end",
-  },
-  {
-    name: "AVAILABLE OUTSTANDING",
-    uid: "availableOutstandingAmount",
-    align: "end",
-  },
-  { name: "OUTSTANDING", uid: "outstandingAmount", align: "end" },
-  { name: "PAYMENT STATUS", uid: "invoicePaymentStatus" },
-  { name: "REVIEWED BY", uid: "reviewedByName" },
-  { name: "REVIEWED AT", uid: "reviewedAt" },
-  { name: "MESSAGE", uid: "message" },
+  { name: "REVIEW DETAILS", uid: "reviewDetails" },
   { name: "ACTIONS", uid: "actions", align: "center" },
 ];
 
@@ -259,6 +247,8 @@ const buildTaxInvoiceData = (item) => {
 const AdvanceInvoices = () => {
   const dispatch = useDispatch();
   const params = useParams();
+  const { userId } = useParams();
+  const viewModal = useDisclosure();
 
   const {
     allAdvanceTaxInvoiceRequests,
@@ -271,7 +261,7 @@ const AdvanceInvoices = () => {
   const [status, setStatus] = useState("PENDING");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(50);
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewRemarks, setReviewRemarks] = useState("");
@@ -284,6 +274,7 @@ const AdvanceInvoices = () => {
   const [selectedEInvoiceRequest, setSelectedEInvoiceRequest] = useState(null);
   const [eInvoiceForm, setEInvoiceForm] = useState(EMPTY_E_INVOICE_FORM);
   const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
+  const [estimateDetail, setEstimateDetail] = useState(null);
 
   const currentUserId = useMemo(() => {
     return Number(params?.userId || params?.id || getLoggedInUserId());
@@ -307,6 +298,27 @@ const AdvanceInvoices = () => {
     );
   }, [dispatch, currentUserId, status, page, size]);
 
+  const handleViewEstimate = (rowData, type) => {
+    dispatch(
+      getEstimateByEstimateId({ estimateId: rowData?.estimateId, userId }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          let data = resp?.payload;
+          setEstimateDetail(data);
+          viewModal.onOpen();
+        } else {
+          addToast({
+            title: "There is Some Issue in estimate",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "There is Some Issue in estimate", color: "danger" }),
+      );
+  };
+
   const filteredRequests = useMemo(() => {
     const searchText = search.trim().toLowerCase();
 
@@ -318,8 +330,14 @@ const AdvanceInvoices = () => {
       const values = [
         item?.requestId,
         item?.publicUuid,
+        item?.companyName,
+        item?.unitName,
+        item?.contactName,
+        item?.solutionName,
         item?.estimateNumber,
         item?.requestedByName,
+        item?.requestRemarks,
+        item?.gstRegistrationType,
         item?.invoiceNumber,
         item?.requestStatus,
         item?.invoicePaymentStatus,
@@ -607,27 +625,45 @@ const AdvanceInvoices = () => {
           </div>
         );
 
-      case "requestId":
+      case "estimateNumber":
         return (
-          <div className="whitespace-nowrap">
-            <p className="text-xs font-semibold text-slate-900">
-              {item?.requestId ?? "-"}
+          <span
+            className="whitespace-nowrap text-xs font-semibold text-blue-600 cursor-pointer hover:underline"
+            onClick={() => handleViewEstimate(item, "ESTIMATE")}
+          >
+            {item?.estimateNumber || "-"}
+          </span>
+        );
+
+      case "companyName":
+        return (
+          <div className="min-w-[180px]">
+            <p className="text-xs font-medium text-slate-900">
+              {item?.companyName || "-"}
             </p>
 
-            <p
-              title={item?.publicUuid}
-              className="mt-1 max-w-[145px] truncate text-[10px] text-slate-500"
-            >
-              {item?.publicUuid || "-"}
+            <p className="mt-1 text-[10px] text-slate-500">
+              Unit: {item?.unitName || "-"}
             </p>
           </div>
         );
 
-      case "estimateNumber":
+      case "contactName":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold text-blue-600">
-            {item?.estimateNumber || "-"}
-          </span>
+          <div className="whitespace-nowrap">
+            <p className="text-xs font-medium text-slate-900">
+              {item?.contactName || "-"}
+            </p>
+          </div>
+        );
+
+      case "solutionName":
+        return (
+          <div className="whitespace-nowrap">
+            <p className="text-xs font-medium text-slate-900">
+              {item?.solutionName || "-"}
+            </p>
+          </div>
         );
 
       case "requestedByName":
@@ -635,10 +671,6 @@ const AdvanceInvoices = () => {
           <div className="whitespace-nowrap">
             <p className="text-xs font-medium text-slate-900">
               {item?.requestedByName || "-"}
-            </p>
-
-            <p className="mt-1 text-[10px] text-slate-500">
-              User ID: {item?.requestedByUserId ?? "-"}
             </p>
           </div>
         );
@@ -654,25 +686,29 @@ const AdvanceInvoices = () => {
         );
 
       case "approvedAmount":
-      case "receivedAmount":
         return (
           <span className="whitespace-nowrap text-xs font-semibold text-emerald-700">
             {formatAmount(item?.[columnKey])}
           </span>
         );
 
-      case "pendingReceivedAmount":
+      case "requestRemarks":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold text-amber-700">
-            {formatAmount(item?.pendingReceivedAmount)}
-          </span>
+          <p
+            title={item?.requestRemarks}
+            className="max-w-[220px] line-clamp-2 text-xs text-slate-700"
+          >
+            {item?.requestRemarks || "-"}
+          </p>
         );
 
-      case "outstandingAmount":
+      case "gstRegistrationType":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold text-rose-600">
-            {formatAmount(item?.outstandingAmount)}
-          </span>
+          <div className="flex min-w-[100px] flex-col gap-1">
+            <Chip size="sm" variant="flat" color="secondary">
+              {formatStatus(item?.gstRegistrationType)}
+            </Chip>
+          </div>
         );
 
       case "requestStatus":
@@ -685,59 +721,27 @@ const AdvanceInvoices = () => {
             {item?.requestStatus || "-"}
           </Chip>
         );
-      case "invoiceStatus":
-        return (
-          <Chip
-            size="sm"
-            color={getStatusColor(item?.invoiceStatus)}
-            variant="flat"
-          >
-            {item?.invoiceStatus || "-"}
-          </Chip>
-        );
 
-      case "invoiceNumber":
+      case "reviewDetails":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold text-blue-600">
-            {item?.invoiceNumber || "-"}
-          </span>
-        );
+          <div className="min-w-[145px]">
+            <p className="text-xs font-medium text-slate-900">
+              {item?.reviewedByName || "Not reviewed"}
+            </p>
 
-      case "invoicePaymentStatus":
-        return item?.invoicePaymentStatus ? (
-          <Chip
-            size="sm"
-            color={getPaymentStatusColor(item?.invoicePaymentStatus)}
-            variant="flat"
-          >
-            {formatStatus(item?.invoicePaymentStatus)}
-          </Chip>
-        ) : (
-          "-"
-        );
+            <p className="mt-1 text-[10px] text-slate-500">
+              {formatDateTime(item?.reviewedAt)}
+            </p>
 
-      case "reviewedByName":
-        return (
-          <span className="whitespace-nowrap text-xs">
-            {item?.reviewedByName || "-"}
-          </span>
-        );
-
-      case "reviewedAt":
-        return (
-          <span className="whitespace-nowrap text-xs">
-            {formatDateTime(item?.reviewedAt)}
-          </span>
-        );
-
-      case "message":
-        return (
-          <p
-            title={item?.message}
-            className="max-w-[250px] line-clamp-2 text-xs text-slate-700"
-          >
-            {item?.message || "-"}
-          </p>
+            {item?.reviewRemarks ? (
+              <p
+                title={item?.reviewRemarks}
+                className="mt-1 max-w-[180px] truncate text-[10px] text-slate-500"
+              >
+                {item.reviewRemarks}
+              </p>
+            ) : null}
+          </div>
         );
 
       case "actions": {
@@ -856,7 +860,6 @@ const AdvanceInvoices = () => {
             <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
               <Select
                 size="sm"
-                label="Status"
                 className="w-full sm:w-48"
                 selectedKeys={new Set([status])}
                 onSelectionChange={(keys) => {
@@ -868,23 +871,6 @@ const AdvanceInvoices = () => {
               >
                 {STATUS_OPTIONS.map((item) => (
                   <SelectItem key={item}>{item}</SelectItem>
-                ))}
-              </Select>
-
-              <Select
-                size="sm"
-                label="Rows"
-                className="w-full sm:w-32"
-                selectedKeys={new Set([String(size)])}
-                onSelectionChange={(keys) => {
-                  const selectedSize = Number(Array.from(keys)[0] || 10);
-
-                  setSize(selectedSize);
-                  setPage(1);
-                }}
-              >
-                {PAGE_SIZE_OPTIONS.map((item) => (
-                  <SelectItem key={String(item)}>{item} rows</SelectItem>
                 ))}
               </Select>
             </div>
@@ -904,7 +890,7 @@ const AdvanceInvoices = () => {
             classNames={{
               wrapper:
                 "max-h-[calc(100vh-280px)] border border-slate-200 shadow-none",
-              table: "min-w-[1960px]",
+              table: "min-w-[1820px]",
               th: "bg-slate-50 text-[11px] font-semibold text-slate-500",
               td: "text-xs text-slate-700",
             }}
@@ -1201,6 +1187,31 @@ const AdvanceInvoices = () => {
                 >
                   {isAttachmentUploading ? "Uploading..." : "Confirm E Invoice"}
                 </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="4xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <NewEstimatePreview
+                  details={estimateDetail}
+                  viewType={"ESTIMATE"}
+                />
+              </ModalBody>
+              <ModalFooter className="flex justify-end">
+                <Button onPress={onClose}>Cancel</Button>
               </ModalFooter>
             </>
           )}

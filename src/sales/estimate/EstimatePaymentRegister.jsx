@@ -31,6 +31,7 @@ import {
   getActivePaymentLedgerForPaymentRegister,
   getEstimatePaymentHistory,
 } from "../../toolkit/slices/accountSlice";
+import { Paperclip } from "lucide-react";
 
 const paymentTenureOptions = [
   { label: "NET 0", value: "NET 0", days: 0 },
@@ -112,6 +113,8 @@ const regularPaymentSchema = z.object({
     .trim()
     .min(1, "Transaction reference number is required"),
   paymentProof: z.string().trim().min(1, "Payment proof is required"),
+  poNumber: z.string().optional(),
+  poAttachmentUrl: z.string().optional(),
   remarks: z.string().optional(),
   bankLedgerId: z.string().optional(),
 
@@ -290,6 +293,80 @@ const EstimatePaymentRegister = ({
   const tdsActive = watch("tdsActive");
   const paymentMode = watch("paymentMode");
 
+  const paymentHistory = Array.isArray(estimatePaymentHistory?.paymentHistory)
+    ? estimatePaymentHistory.paymentHistory
+    : [];
+
+  // First payment = oldest payment-history transaction.
+  const firstPayment = [...paymentHistory].sort((a, b) => {
+    const firstDate = new Date(a?.createdAt || a?.paymentDate || 0).getTime();
+    const secondDate = new Date(b?.createdAt || b?.paymentDate || 0).getTime();
+
+    return firstDate - secondDate;
+  })[0];
+
+  const isPurchaseOrderPayment = (payment) => {
+    if (!payment) {
+      return false;
+    }
+
+    const paymentType = paymentTypeList?.find(
+      (item) => Number(item?.id) === Number(payment?.paymentTypeId),
+    );
+
+    const paymentTypeName = String(paymentType?.name || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      (paymentTypeName.includes("purchase") &&
+        paymentTypeName.includes("order")) ||
+      Boolean(
+        payment?.poNumber ||
+          payment?.poAttachmentUrl ||
+          payment?.paymentTerms ||
+          payment?.paymentTermsDays,
+      )
+    );
+  };
+
+  // Get the first/oldest Purchase Order record from payment history.
+  // This is used only for sending PO details silently in the next payment payload.
+  const purchaseOrderHistoryPayment = [...paymentHistory]
+    .sort((a, b) => {
+      const firstDate = new Date(a?.createdAt || a?.paymentDate || 0).getTime();
+
+      const secondDate = new Date(
+        b?.createdAt || b?.paymentDate || 0,
+      ).getTime();
+
+      return firstDate - secondDate;
+    })
+    .find((payment) => isPurchaseOrderPayment(payment));
+
+  const isFirstPaymentPurchaseOrder = isPurchaseOrderPayment(firstPayment);
+
+  // Prefer the exact payment type used in the first PO transaction.
+  const purchaseOrderPaymentType =
+    paymentTypeList?.find(
+      (item) => Number(item?.id) === Number(firstPayment?.paymentTypeId),
+    ) ||
+    paymentTypeList?.find((item) => {
+      const paymentTypeName = String(item?.name || "")
+        .trim()
+        .toLowerCase();
+
+      return (
+        paymentTypeName.includes("purchase") &&
+        paymentTypeName.includes("order")
+      );
+    });
+
+  const isForcedPurchaseOrderRegularPayment =
+    Boolean(firstPayment) &&
+    isFirstPaymentPurchaseOrder &&
+    Boolean(purchaseOrderPaymentType?.id);
+
   useEffect(() => {
     setValue("bankLedgerId", "");
   }, [paymentMode, setValue]);
@@ -325,17 +402,25 @@ const EstimatePaymentRegister = ({
       ? paymentTypeList
       : [];
 
+    // Only when the first receipt is PO:
+    // lock the payment type as Purchase Order Payment.
+    if (isForcedPurchaseOrderRegularPayment) {
+      return [purchaseOrderPaymentType];
+    }
+
     const lockedPaymentTypeId = estimateItem?.paymentTypeId;
 
-    const allowedApiPaymentTypes =
-      lockedPaymentTypeId !== undefined && lockedPaymentTypeId !== null
-        ? apiPaymentTypes.filter(
-            (item) => String(item?.id) === String(lockedPaymentTypeId),
-          )
-        : apiPaymentTypes;
-
-    return allowedApiPaymentTypes;
-  }, [paymentTypeList, estimateItem?.paymentTypeId]);
+    return lockedPaymentTypeId !== undefined && lockedPaymentTypeId !== null
+      ? apiPaymentTypes.filter(
+          (item) => String(item?.id) === String(lockedPaymentTypeId),
+        )
+      : apiPaymentTypes;
+  }, [
+    paymentTypeList,
+    estimateItem?.paymentTypeId,
+    isForcedPurchaseOrderRegularPayment,
+    purchaseOrderPaymentType,
+  ]);
 
   const selectedPaymentType = availablePaymentTypeList.find(
     (item) => String(item?.id) === String(selectedPaymentTypeId),
@@ -363,7 +448,8 @@ const EstimatePaymentRegister = ({
 
   const shouldShowPurchaseOrderFields =
     normalizedPaymentTypeName.includes("purchase") &&
-    normalizedPaymentTypeName.includes("order");
+    normalizedPaymentTypeName.includes("order") &&
+    !isForcedPurchaseOrderRegularPayment;
 
   const shouldShowRegularPaymentFields = !shouldShowPurchaseOrderFields;
 
@@ -483,6 +569,30 @@ const EstimatePaymentRegister = ({
   }, [estimateItem, setValue]);
 
   useEffect(() => {
+    if (!isForcedPurchaseOrderRegularPayment || !purchaseOrderPaymentType?.id) {
+      return;
+    }
+
+    // Keep Purchase Order Payment selected and fixed.
+    setValue("paymentTypeId", String(purchaseOrderPaymentType.id), {
+      shouldValidate: true,
+      shouldDirty: false,
+    });
+
+    // Show regular/full-payment fields, not PO tenure/attachment fields.
+    setValue("paymentFlow", PAYMENT_FLOW.REGULAR, {
+      shouldValidate: true,
+      shouldDirty: false,
+    });
+
+    // Do not retain first PO registration form values.
+  }, [
+    isForcedPurchaseOrderRegularPayment,
+    purchaseOrderPaymentType?.id,
+    setValue,
+  ]);
+
+  useEffect(() => {
     if (shouldShowPurchaseOrderFields) {
       setValue("paymentFlow", PAYMENT_FLOW.PURCHASE_ORDER);
 
@@ -547,6 +657,14 @@ const EstimatePaymentRegister = ({
   };
 
   const submitHandler = async (values) => {
+    if (isForcedPurchaseOrderRegularPayment) {
+      values.paymentTypeId = String(purchaseOrderPaymentType.id);
+
+      // Although payment type remains PO, submit through regular-payment flow.
+      // Therefore amount, bank ledger, payment mode, UTR and proof are sent.
+      values.paymentFlow = PAYMENT_FLOW.REGULAR;
+    }
+
     try {
       if (shouldShowPaymentTenure && !values.paymentTerms) {
         addToast({
@@ -582,10 +700,23 @@ const EstimatePaymentRegister = ({
 
             paymentTypeId: Number(values.paymentTypeId),
             paymentDate: values.paymentDate,
-            paymentTerms: null,
-            paymentTermsDays: null,
-            poNumber: "",
-            poAttachmentUrl: "",
+            paymentTerms: isForcedPurchaseOrderRegularPayment
+              ? (purchaseOrderHistoryPayment?.paymentTerms ?? null)
+              : null,
+
+            paymentTermsDays: isForcedPurchaseOrderRegularPayment
+              ? (purchaseOrderHistoryPayment?.paymentTermsDays ?? null)
+              : null,
+
+            // Do not show these fields in the form.
+            // Reuse the values saved in the previous PO payment-history record.
+            poNumber: isForcedPurchaseOrderRegularPayment
+              ? purchaseOrderHistoryPayment?.poNumber || ""
+              : "",
+
+            poAttachmentUrl: isForcedPurchaseOrderRegularPayment
+              ? purchaseOrderHistoryPayment?.poAttachmentUrl || ""
+              : "",
 
             // TDS is not applicable for international units
             tdsActive: isInternationalUnit ? false : Boolean(values.tdsActive),
@@ -656,6 +787,28 @@ const EstimatePaymentRegister = ({
     estimatePaymentHistory?.tdsPercentage !== "" &&
     Number(estimatePaymentHistory?.tdsPercentage) > 0;
 
+  const getPaymentTypeName = (paymentTypeId) => {
+    const paymentType = paymentTypeList?.find(
+      (item) => Number(item.id) === Number(paymentTypeId),
+    );
+
+    return (
+      paymentType?.name || paymentType?.paymentTypeName || "Purchase Order"
+    );
+  };
+
+  const getBankLedgerName = (bankLedgerId) => {
+    if (!bankLedgerId) {
+      return "";
+    }
+
+    const selectedLedger = paymentLegerList?.find(
+      (ledger) => Number(ledger?.id) === Number(bankLedgerId),
+    );
+
+    return selectedLedger?.ledgerName || "";
+  };
+
   return (
     <Modal
       size="4xl"
@@ -714,40 +867,167 @@ const EstimatePaymentRegister = ({
               )}
               {Array.isArray(estimatePaymentHistory?.paymentHistory) &&
                 estimatePaymentHistory.paymentHistory.length > 0 && (
-                  <div className="mb-4 rounded-xl border p-4">
-                    <h3 className="mb-3 text-sm font-semibold">
-                      Payment History
-                    </h3>
+                  <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Payment History
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Payment receipts and Purchase Order details
+                        </p>
+                      </div>
 
-                    <div className="space-y-2">
-                      {estimatePaymentHistory.paymentHistory.map((payment) => (
-                        <div
-                          key={payment.paymentReceiptId}
-                          className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                        >
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold">
-                              ₹ {Number(payment.amount ?? 0).toFixed(2)}
-                            </span>
-                            <span className="text-gray-500">|</span>
-                            <span>{payment.paymentDate || "-"}</span>
-                            <span className="text-gray-500">|</span>
-                            <span>{payment.paymentMode || "-"}</span>
-                          </div>
+                      <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                        {estimatePaymentHistory.paymentHistory.length} Receipt
+                        {estimatePaymentHistory.paymentHistory.length > 1
+                          ? "s"
+                          : ""}
+                      </span>
+                    </div>
 
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${
-                              payment.status === "APPROVED"
-                                ? "bg-green-100 text-green-700"
-                                : payment.status === "PENDING"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
+                    <div className="space-y-3">
+                      {estimatePaymentHistory.paymentHistory.map((payment) => {
+                        const isPurchaseOrder = Boolean(
+                          payment.poNumber ||
+                            payment.poAttachmentUrl ||
+                            payment.paymentTerms ||
+                            payment.paymentTermsDays,
+                        );
+
+                        const attachmentUrl = isPurchaseOrder
+                          ? payment.poAttachmentUrl
+                          : payment.paymentProof;
+
+                        const bankLedgerName = getBankLedgerName(
+                          payment.bankLedgerId,
+                        );
+
+                        return (
+                          <div
+                            key={payment.paymentReceiptId}
+                            className="rounded-xl border border-gray-200 bg-gradient-to-r from-white to-gray-50 px-4 py-3 transition-shadow hover:shadow-sm"
                           >
-                            {payment.status || "UNKNOWN"}
-                          </span>
-                        </div>
-                      ))}
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                                  <span className="font-semibold text-gray-900">
+                                    ₹ {Number(payment.amount ?? 0).toFixed(2)}
+                                  </span>
+
+                                  <span className="text-gray-300">•</span>
+
+                                  <span className="text-gray-600">
+                                    {payment.paymentDate || "-"}
+                                  </span>
+
+                                  {payment.paymentMode && (
+                                    <>
+                                      <span className="text-gray-300">•</span>
+                                      <span className="text-gray-600">
+                                        {payment.paymentMode.replaceAll(
+                                          "_",
+                                          " ",
+                                        )}
+                                      </span>
+                                    </>
+                                  )}
+
+                                  {bankLedgerName && (
+                                    <>
+                                      <span className="text-gray-300">•</span>
+                                      <span className="font-medium text-slate-700">
+                                        {bankLedgerName}
+                                      </span>
+                                    </>
+                                  )}
+
+                                  <span className="text-gray-300">•</span>
+
+                                  <span className="font-medium text-blue-700">
+                                    {getPaymentTypeName(payment.paymentTypeId)}
+                                  </span>
+                                </div>
+
+                                {isPurchaseOrder && (
+                                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                                    {payment.poNumber && (
+                                      <>
+                                        <span className="rounded-md bg-violet-50 px-2 py-1 font-medium text-violet-700">
+                                          PO No: {payment.poNumber}
+                                        </span>
+                                        <span className="text-gray-300">•</span>
+                                      </>
+                                    )}
+
+                                    {payment.paymentTerms && (
+                                      <>
+                                        <span className="text-gray-600">
+                                          Terms: {payment.paymentTerms}
+                                          {payment.paymentTermsDays !== null &&
+                                          payment.paymentTermsDays !== undefined
+                                            ? ` (${payment.paymentTermsDays} Days)`
+                                            : ""}
+                                        </span>
+                                        <span className="text-gray-300">•</span>
+                                      </>
+                                    )}
+
+                                    <span className="font-medium text-orange-700">
+                                      Purchase Order
+                                    </span>
+                                  </div>
+                                )}
+
+                                {payment.remarks && (
+                                  <p className="mt-2 truncate text-xs text-gray-500">
+                                    Remarks: {payment.remarks}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 self-start md:self-center">
+                                {attachmentUrl && (
+                                  <Button
+                                    isIconOnly
+                                    as="a"
+                                    href={attachmentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="sm"
+                                    variant="flat"
+                                    color="primary"
+                                    aria-label={
+                                      isPurchaseOrder
+                                        ? "Open PO attachment"
+                                        : "Open payment proof"
+                                    }
+                                    title={
+                                      isPurchaseOrder
+                                        ? "Open PO attachment"
+                                        : "Open payment proof"
+                                    }
+                                  >
+                                    <Paperclip size={16} />
+                                  </Button>
+                                )}
+
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                    payment.status === "APPROVED"
+                                      ? "bg-green-100 text-green-700"
+                                      : payment.status === "PENDING"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {payment.status || "UNKNOWN"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -782,8 +1062,12 @@ const EstimatePaymentRegister = ({
                         data={availablePaymentTypeList}
                         labelKey="name"
                         valueKey="id"
+                        isDisabled={isForcedPurchaseOrderRegularPayment}
                         value={field.value ?? ""}
                         onChange={(value) => {
+                          if (isForcedPurchaseOrderRegularPayment) {
+                            return;
+                          }
                           field.onChange(value);
 
                           const nextPaymentType = availablePaymentTypeList.find(
@@ -902,7 +1186,7 @@ const EstimatePaymentRegister = ({
                             render={({ field }) => (
                               <Select
                                 label="TDS"
-                                isDisabled={hasRegisteredTds}
+                                // isDisabled={hasRegisteredTds}
                                 selectedKeys={
                                   new Set([field.value ? "true" : "false"])
                                 }
@@ -925,7 +1209,7 @@ const EstimatePaymentRegister = ({
                                 <Select
                                   label="TDS Percentage"
                                   isRequired
-                                  isDisabled={hasRegisteredTds}
+                                  // isDisabled={hasRegisteredTds}
                                   selectedKeys={
                                     field.value !== undefined &&
                                     field.value !== null &&

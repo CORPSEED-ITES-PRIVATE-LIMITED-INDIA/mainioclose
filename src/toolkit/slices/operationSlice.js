@@ -684,7 +684,7 @@ export const addExpensesInProject = createAsyncThunk(
   async ({ projectId, data }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/operationService/api/projects/${projectId}/activities/createExpenses`,
+        `/operationService/api/projects/expenses?projectId=${projectId}`,
         data,
       );
       return response.data;
@@ -1450,6 +1450,115 @@ export const getExpenseApprovalQueueList = createAsyncThunk(
   },
 );
 
+export const updateCrtExpenseDecision = createAsyncThunk(
+  "operation/updateCrtExpenseDecision",
+  async ({ projectId, expenseId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/expenses/${expenseId}/crt-decision`,
+        data,
+        {
+          params: {
+            projectId,
+            userId,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data?.errorMessage ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to update CRT expense status",
+      );
+    }
+  },
+);
+
+export const getExpensePaymentQueueList = createAsyncThunk(
+  "operation/getExpensePaymentQueueList",
+  async ({ userId, paymentStatus }, { rejectWithValue }) => {
+    try {
+      const normalizedUserId = Number(userId);
+
+      if (!Number.isFinite(normalizedUserId) || normalizedUserId <= 0) {
+        return rejectWithValue("Valid user ID is required");
+      }
+
+      const params = {
+        userId: normalizedUserId,
+      };
+
+      // paymentStatus is optional in the backend API.
+      if (
+        paymentStatus &&
+        paymentStatus !== "ALL" &&
+        String(paymentStatus).trim() !== ""
+      ) {
+        params.paymentStatus = paymentStatus;
+      }
+
+      const response = await api.get(
+        "/operationService/api/projects/expenses/payment-queue",
+        { params },
+      );
+
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to fetch expense payment queue",
+      );
+    }
+  },
+);
+
+export const updateExpenseAccountsDecision = createAsyncThunk(
+  "operation/updateExpenseAccountsDecision",
+  async ({ expenseId, projectId, userId, data }, { rejectWithValue }) => {
+    try {
+      const normalizedExpenseId = Number(expenseId);
+      const normalizedProjectId = Number(projectId);
+      const normalizedUserId = Number(userId);
+
+      if (!Number.isFinite(normalizedExpenseId) || normalizedExpenseId <= 0) {
+        return rejectWithValue("Valid expense ID is required");
+      }
+
+      if (!Number.isFinite(normalizedProjectId) || normalizedProjectId <= 0) {
+        return rejectWithValue("Valid project ID is required");
+      }
+
+      if (!Number.isFinite(normalizedUserId) || normalizedUserId <= 0) {
+        return rejectWithValue("Valid user ID is required");
+      }
+
+      const response = await api.put(
+        `/operationService/api/projects/expenses/${normalizedExpenseId}/accounts-decision`,
+        data,
+        {
+          params: {
+            projectId: normalizedProjectId,
+            userId: normalizedUserId,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data ||
+          error?.message ||
+          "Failed to update accounts expense decision",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -1482,6 +1591,11 @@ export const OperationSlice = createSlice({
     expenseApprovalQueueList: [],
     expenseApprovalQueueLoading: false,
     expenseApprovalQueueError: null,
+    expensePaymentQueueList: [],
+    expensePaymentQueueLoading: false,
+    expensePaymentQueueError: null,
+    accountsDecisionLoading: false,
+    accountsDecisionError: null,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -1916,6 +2030,55 @@ export const OperationSlice = createSlice({
         action.payload?.message ||
         action.payload ||
         "Failed to fetch expense approval queue";
+    });
+
+    builder.addCase(getExpensePaymentQueueList.pending, (state) => {
+      state.expensePaymentQueueLoading = true;
+      state.expensePaymentQueueError = null;
+    });
+
+    builder.addCase(getExpensePaymentQueueList.fulfilled, (state, action) => {
+      state.expensePaymentQueueLoading = false;
+      state.expensePaymentQueueList = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+
+    builder.addCase(getExpensePaymentQueueList.rejected, (state, action) => {
+      state.expensePaymentQueueLoading = false;
+      state.expensePaymentQueueList = [];
+      state.expensePaymentQueueError =
+        action.payload || "Failed to fetch expense payment queue";
+    });
+
+    builder.addCase(updateExpenseAccountsDecision.pending, (state) => {
+      state.accountsDecisionLoading = true;
+      state.accountsDecisionError = null;
+    });
+
+    builder.addCase(
+      updateExpenseAccountsDecision.fulfilled,
+      (state, action) => {
+        state.accountsDecisionLoading = false;
+
+        const updatedExpense = action.payload;
+        const updatedExpenseId = updatedExpense?.expenseId;
+
+        if (updatedExpenseId) {
+          state.expensePaymentQueueList = state.expensePaymentQueueList.map(
+            (expense) =>
+              expense?.expenseId === updatedExpenseId
+                ? updatedExpense
+                : expense,
+          );
+        }
+      },
+    );
+
+    builder.addCase(updateExpenseAccountsDecision.rejected, (state, action) => {
+      state.accountsDecisionLoading = false;
+      state.accountsDecisionError =
+        action.payload || "Failed to update accounts expense decision";
     });
   },
 });

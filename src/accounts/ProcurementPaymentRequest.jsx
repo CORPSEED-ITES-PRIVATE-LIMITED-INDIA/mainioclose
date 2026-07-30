@@ -736,7 +736,6 @@ const ProcurementPaymentRequest = () => {
       </Table>
 
       <Modal
-        size="2xl"
         isOpen={approveModal.isOpen}
         onOpenChange={(isOpen) => {
           approveModal.onOpenChange(isOpen);
