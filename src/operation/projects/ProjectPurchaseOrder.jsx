@@ -24,6 +24,7 @@ import {
   Select,
   SelectItem,
   Form,
+  DatePicker,
 } from "@heroui/react";
 import {
   ArrowLeft,
@@ -45,7 +46,10 @@ import {
 import { getVendorDetailInProject } from "../../toolkit/slices/vendorsSlice";
 import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
 import { Controller, useForm } from "react-hook-form";
-import FileUploader from "../../components/FileUploader";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import SingleFileUploader from "../../components/SingleFileUploader";
+import NewSelect from "../../components/NewSelect";
+import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 
 const columns = [
   { name: "PO NUMBER", uid: "poNumber" },
@@ -60,45 +64,6 @@ const columns = [
   { name: "CREATED DATE", uid: "createdDate" },
   { name: "ATTACHMENTS", uid: "attachmentUrls" },
   { name: "ACTIONS", uid: "actions" },
-];
-
-const GST_STATE_OPTIONS = [
-  { code: "01", name: "Jammu & Kashmir" },
-  { code: "02", name: "Himachal Pradesh" },
-  { code: "03", name: "Punjab" },
-  { code: "04", name: "Chandigarh" },
-  { code: "05", name: "Uttarakhand" },
-  { code: "06", name: "Haryana" },
-  { code: "07", name: "Delhi" },
-  { code: "08", name: "Rajasthan" },
-  { code: "09", name: "Uttar Pradesh" },
-  { code: "10", name: "Bihar" },
-  { code: "11", name: "Sikkim" },
-  { code: "12", name: "Arunachal Pradesh" },
-  { code: "13", name: "Nagaland" },
-  { code: "14", name: "Manipur" },
-  { code: "15", name: "Mizoram" },
-  { code: "16", name: "Tripura" },
-  { code: "17", name: "Meghalaya" },
-  { code: "18", name: "Assam" },
-  { code: "19", name: "West Bengal" },
-  { code: "20", name: "Jharkhand" },
-  { code: "21", name: "Odisha" },
-  { code: "22", name: "Chhattisgarh" },
-  { code: "23", name: "Madhya Pradesh" },
-  { code: "24", name: "Gujarat" },
-  { code: "26", name: "Dadra & Nagar Haveli and Daman & Diu" },
-  { code: "27", name: "Maharashtra" },
-  { code: "29", name: "Karnataka" },
-  { code: "30", name: "Goa" },
-  { code: "31", name: "Lakshadweep" },
-  { code: "32", name: "Kerala" },
-  { code: "33", name: "Tamil Nadu" },
-  { code: "34", name: "Puducherry" },
-  { code: "35", name: "Andaman & Nicobar Islands" },
-  { code: "36", name: "Telangana" },
-  { code: "37", name: "Andhra Pradesh" },
-  { code: "38", name: "Ladakh" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
@@ -199,6 +164,22 @@ const getAttachmentUrls = (rowData) => {
   return [];
 };
 
+const preventNegativeNumberInput = (event) => {
+  if (["-", "+", "e", "E"].includes(event.key)) {
+    event.preventDefault();
+  }
+};
+
+const toTwoDecimalAmount = (value) => {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return Number(amount.toFixed(2));
+};
+
 const RaiseProcurementPaymentRequestModal = ({
   open,
   onClose,
@@ -209,16 +190,35 @@ const RaiseProcurementPaymentRequestModal = ({
   const dispatch = useDispatch();
   const [isFileUploading, setIsFileUploading] = useState(false);
 
+  const paymentLedgerList = useSelector(
+    (state) => state.account.paymentLegerList,
+  );
+
   const {
-    register,
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      completionRemarks: "",
-      proofAttachmentUrls: [],
+      amount: "",
+      paymentDate: "",
+      paymentMode: "",
+      bankLedgerId: "",
+      transactionReference: "",
+      paymentProof: "",
+
+      gstActive: false,
+      gstPercentage: "",
+
+      tdsActive: false,
+      tds: {
+        tdsPercentage: "",
+      },
+
+      remarks: "",
     },
   });
 
@@ -234,24 +234,151 @@ const RaiseProcurementPaymentRequestModal = ({
   const poTotalTaxAmount = Number(procurementOrder?.totalTaxAmount || 0);
   const poGrandTotal = Number(procurementOrder?.grandTotal || 0);
 
-  const poTaxType =
-    poIgstAmount > 0
-      ? "IGST"
-      : poCgstAmount > 0 || poSgstAmount > 0
-        ? "CGST_SGST"
-        : null;
+  const defaultGstActive = poTotalTaxAmount > 0 || poGstRate > 0;
+  const defaultTdsActive = poTdsAmount > 0 || poTdsPercentage > 0;
 
-  const isGstApplicable = poTotalTaxAmount > 0;
-  const isTdsApplicable = poTdsAmount > 0 || poTdsPercentage > 0;
+  const vendorGSTNumber = String(procurementOrder?.vendorGSTNumber || "")
+    .trim()
+    .toUpperCase();
+
+  const isUttarPradeshVendor = vendorGSTNumber.startsWith("09");
+
+  const resolvedGstType = isUttarPradeshVendor ? "CGST_SGST" : "IGST";
+
+  const amount = watch("amount");
+  const paymentMode = watch("paymentMode");
+  const gstActive = watch("gstActive");
+  const gstPercentage = watch("gstPercentage");
+  const tdsActive = watch("tdsActive");
+  const selectedTdsPercentage = watch("tds.tdsPercentage");
+
+  const baseAmount = toTwoDecimalAmount(amount);
+
+  const calculatedGstAmount = gstActive
+    ? toTwoDecimalAmount((baseAmount * Number(gstPercentage || 0)) / 100)
+    : 0;
+
+  const calculatedCgstAmount =
+    gstActive && resolvedGstType === "CGST_SGST"
+      ? toTwoDecimalAmount(calculatedGstAmount / 2)
+      : 0;
+
+  const calculatedSgstAmount =
+    gstActive && resolvedGstType === "CGST_SGST"
+      ? toTwoDecimalAmount(calculatedGstAmount / 2)
+      : 0;
+
+  const calculatedIgstAmount =
+    gstActive && resolvedGstType === "IGST" ? calculatedGstAmount : 0;
+
+  const calculatedTdsAmount = tdsActive
+    ? toTwoDecimalAmount(
+        (baseAmount * Number(selectedTdsPercentage || 0)) / 100,
+      )
+    : 0;
+
+  const calculatedInvoiceAmount = toTwoDecimalAmount(
+    baseAmount + calculatedGstAmount,
+  );
+
+  const calculatedPayableAmount = toTwoDecimalAmount(
+    calculatedInvoiceAmount - calculatedTdsAmount,
+  );
+
+  const hasPaymentModeSelected = Boolean(String(paymentMode || "").trim());
+
+  const isCashPaymentMode =
+    String(paymentMode || "")
+      .trim()
+      .toUpperCase() === "CASH";
+
+  const isCashLedger = useCallback((ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  }, []);
+
+  const filteredPaymentLedgerList = useMemo(() => {
+    if (!hasPaymentModeSelected) {
+      return [];
+    }
+
+    const ledgers = Array.isArray(paymentLedgerList) ? paymentLedgerList : [];
+
+    return isCashPaymentMode
+      ? ledgers.filter(isCashLedger)
+      : ledgers.filter((ledger) => !isCashLedger(ledger));
+  }, [
+    hasPaymentModeSelected,
+    isCashLedger,
+    isCashPaymentMode,
+    paymentLedgerList,
+  ]);
+
+  useEffect(() => {
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, [dispatch]);
+
+  useEffect(() => {
+    setValue("bankLedgerId", "");
+  }, [paymentMode, setValue]);
+
+  useEffect(() => {
+    if (!gstActive) {
+      setValue("gstPercentage", "");
+    }
+  }, [gstActive, setValue]);
+
+  useEffect(() => {
+    if (!tdsActive) {
+      setValue("tds.tdsPercentage", "");
+    }
+  }, [tdsActive, setValue]);
 
   useEffect(() => {
     if (!open) return;
 
+    const defaultAmount =
+      poFinalAmount > 0 ? poFinalAmount : poGrandTotal > 0 ? poGrandTotal : "";
+
     reset({
-      completionRemarks: "",
-      proofAttachmentUrls: [],
+      amount: defaultAmount !== "" ? String(defaultAmount) : "",
+      paymentDate: "",
+      paymentMode: "",
+      bankLedgerId: "",
+      transactionReference: "",
+      paymentProof: "",
+
+      gstActive: defaultGstActive,
+      gstPercentage: defaultGstActive && poGstRate > 0 ? String(poGstRate) : "",
+
+      tdsActive: defaultTdsActive,
+      tds: {
+        tdsPercentage:
+          defaultTdsActive && poTdsPercentage > 0
+            ? String(poTdsPercentage)
+            : "",
+      },
+
+      remarks: "",
     });
-  }, [open, procurementOrder, reset]);
+  }, [
+    defaultGstActive,
+    defaultTdsActive,
+    open,
+    poFinalAmount,
+    poGrandTotal,
+    poGstRate,
+    poTdsPercentage,
+    procurementOrder,
+    reset,
+  ]);
 
   const handleClose = () => {
     reset();
@@ -269,42 +396,107 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
-    const invoiceAmount = Number((poFinalAmount + poTotalTaxAmount).toFixed(2));
+    const paymentAmount = toTwoDecimalAmount(values.amount);
 
-    const payableAmount = Number(poGrandTotal.toFixed(2));
+    if (paymentAmount <= 0) {
+      addToast({
+        title: "Invalid amount",
+        description: "Payment amount must be greater than zero.",
+        color: "danger",
+      });
+      return;
+    }
 
+    const selectedGstPercentage = values.gstActive
+      ? toTwoDecimalAmount(values.gstPercentage)
+      : 0;
+
+    const selectedTdsRate = values.tdsActive
+      ? toTwoDecimalAmount(values.tds?.tdsPercentage)
+      : 0;
+
+    const gstAmount = values.gstActive
+      ? toTwoDecimalAmount((paymentAmount * selectedGstPercentage) / 100)
+      : 0;
+
+    const tdsAmount = values.tdsActive
+      ? toTwoDecimalAmount((paymentAmount * selectedTdsRate) / 100)
+      : 0;
+
+    const invoiceAmount = toTwoDecimalAmount(paymentAmount + gstAmount);
+
+    const payableAmount = toTwoDecimalAmount(invoiceAmount - tdsAmount);
+
+    const normalizedVendorGSTNumber = String(
+      procurementOrder?.vendorGSTNumber || "",
+    )
+      .trim()
+      .toUpperCase();
+
+    const vendorGstStateCode =
+      normalizedVendorGSTNumber.length >= 2
+        ? normalizedVendorGSTNumber.substring(0, 2)
+        : null;
+
+    const applyCgstSgst = values.gstActive && vendorGstStateCode === "09";
+
+    const applyIgst = values.gstActive && vendorGstStateCode !== "09";
+
+    const cgstAmount = applyCgstSgst ? toTwoDecimalAmount(gstAmount / 2) : 0;
+
+    const sgstAmount = applyCgstSgst ? toTwoDecimalAmount(gstAmount / 2) : 0;
+
+    const igstAmount = applyIgst ? gstAmount : 0;
+
+    /*
+     * IMPORTANT:
+     * Payload keys are intentionally unchanged.
+     * Only their values are now taken/calculated from the Raise PR form.
+     */
     const payload = {
       invoiceAmount,
       payableAmount,
 
-      tdsActive: isTdsApplicable,
-      tdsPercentage: isTdsApplicable ? poTdsPercentage : null,
-      tdsAmount: isTdsApplicable ? poTdsAmount : 0,
+      amount: paymentAmount,
+      paymentDate: values.paymentDate,
+      paymentMode: values.paymentMode,
+      bankLedgerId: Number(values.bankLedgerId),
+      transactionReference: String(values.transactionReference || "").trim(),
+      paymentProof: values.paymentProof,
+      proofAttachmentUrls: values.paymentProof ? [values.paymentProof] : [],
 
-      gstActive: isGstApplicable,
-      gstPercentage: isGstApplicable ? poGstRate : null,
-      gstAmount: isGstApplicable ? poTotalTaxAmount : 0,
+      tdsActive: Boolean(values.tdsActive),
+      tdsPercentage: values.tdsActive ? selectedTdsRate : null,
+      tdsAmount: values.tdsActive ? tdsAmount : 0,
+      tds: values.tdsActive
+        ? {
+            tdsPercentage: selectedTdsRate,
+          }
+        : null,
 
+      gstActive: Boolean(values.gstActive),
+      gstPercentage: values.gstActive ? selectedGstPercentage : null,
+      gstAmount: values.gstActive ? gstAmount : 0,
       totalWithGst: invoiceAmount,
 
-      completionRemarks: values.completionRemarks,
-      proofAttachmentUrls: Array.isArray(values.proofAttachmentUrls)
-        ? values.proofAttachmentUrls
-        : [],
+      remarks: values.remarks || "",
+      completionRemarks: values.remarks || "",
       createdBy: Number(createdBy),
 
-      gstStateCode: null,
+      gstStateCode: values.gstActive ? vendorGstStateCode : null,
       gstStateName: null,
 
-      cgstRate:
-        poTaxType === "CGST_SGST" ? Number((poGstRate / 2).toFixed(2)) : 0,
-      sgstRate:
-        poTaxType === "CGST_SGST" ? Number((poGstRate / 2).toFixed(2)) : 0,
-      igstRate: poTaxType === "IGST" ? poGstRate : 0,
+      cgstRate: applyCgstSgst
+        ? toTwoDecimalAmount(selectedGstPercentage / 2)
+        : 0,
+      sgstRate: applyCgstSgst
+        ? toTwoDecimalAmount(selectedGstPercentage / 2)
+        : 0,
+      igstRate: applyIgst ? selectedGstPercentage : 0,
 
-      cgstAmount: poCgstAmount,
-      sgstAmount: poSgstAmount,
-      igstAmount: poIgstAmount,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
     };
 
     const resultAction = await dispatch(
@@ -331,6 +523,7 @@ const RaiseProcurementPaymentRequestModal = ({
     addToast({
       title: "Failed to raise PR",
       description:
+        resultAction?.payload?.message ||
         resultAction?.payload ||
         "Something went wrong while creating payment request.",
       color: "danger",
@@ -343,17 +536,19 @@ const RaiseProcurementPaymentRequestModal = ({
       onOpenChange={(isOpen) => {
         if (!isOpen) handleClose();
       }}
-      size="xl"
-      placement="center"
+      size="4xl"
+      placement="top-center"
+      isDismissable={false}
+      isKeyboardDismissDisabled
       classNames={{
-        base: "max-h-[88vh]",
+        base: "max-h-[92vh]",
         body: "overflow-y-auto",
       }}
     >
       <ModalContent>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex max-h-[88vh] flex-col"
+          className="flex max-h-[92vh] flex-col"
         >
           <ModalHeader className="flex shrink-0 flex-col gap-1 border-b border-default-200">
             <span>Raise Procurement Payment Request</span>
@@ -371,97 +566,383 @@ const RaiseProcurementPaymentRequestModal = ({
                 <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
                   <span className="text-default-500">Base Amount</span>
                   <span className="font-medium">
-                    {formatAmount(poFinalAmount)}
+                    {formatAmount(baseAmount)}
                   </span>
                 </div>
 
-                {isGstApplicable && (
+                {gstActive && (
                   <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
-                    <span className="text-default-500">GST ({poGstRate}%)</span>
+                    <span className="text-default-500">
+                      GST ({Number(gstPercentage || 0)}%)
+                    </span>
                     <span className="font-medium">
-                      {formatAmount(poTotalTaxAmount)}
+                      {formatAmount(calculatedGstAmount)}
                     </span>
                   </div>
                 )}
 
-                {poTaxType === "CGST_SGST" && (
+                {gstActive && resolvedGstType === "CGST_SGST" && (
                   <>
                     <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
                       <span className="text-default-500">CGST</span>
                       <span className="font-medium">
-                        {formatAmount(poCgstAmount)}
+                        {formatAmount(calculatedCgstAmount)}
                       </span>
                     </div>
 
                     <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
                       <span className="text-default-500">SGST</span>
                       <span className="font-medium">
-                        {formatAmount(poSgstAmount)}
+                        {formatAmount(calculatedSgstAmount)}
                       </span>
                     </div>
                   </>
                 )}
 
-                {poTaxType === "IGST" && (
+                {gstActive && resolvedGstType === "IGST" && (
                   <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
                     <span className="text-default-500">IGST</span>
                     <span className="font-medium">
-                      {formatAmount(poIgstAmount)}
+                      {formatAmount(calculatedIgstAmount)}
                     </span>
                   </div>
                 )}
 
-                {isTdsApplicable && (
+                {tdsActive && (
                   <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
                     <span className="text-default-500">
-                      TDS ({poTdsPercentage}%)
+                      TDS ({Number(selectedTdsPercentage || 0)}%)
                     </span>
                     <span className="font-medium text-danger">
-                      - {formatAmount(poTdsAmount)}
+                      - {formatAmount(calculatedTdsAmount)}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 flex items-center justify-between rounded-lg border border-primary-200 bg-primary-50 p-4">
-                <span className="font-semibold text-primary">
-                  Total Payable Amount
-                </span>
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="flex items-center justify-between rounded-lg border border-default-200 bg-default-50 p-4">
+                  <span className="font-semibold">Invoice Amount</span>
+                  <span className="text-lg font-bold">
+                    {formatAmount(calculatedInvoiceAmount)}
+                  </span>
+                </div>
 
-                <span className="text-lg font-bold text-primary">
-                  {formatAmount(poGrandTotal)}
-                </span>
+                <div className="flex items-center justify-between rounded-lg border border-primary-200 bg-primary-50 p-4">
+                  <span className="font-semibold text-primary">
+                    Payable Amount
+                  </span>
+                  <span className="text-lg font-bold text-primary">
+                    {formatAmount(calculatedPayableAmount)}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <Textarea
-              label="Completion Remarks"
-              placeholder="Enter completion remarks"
-              minRows={3}
-              maxRows={4}
-              variant="bordered"
-              {...register("completionRemarks", {
-                required: "Completion remarks are required",
-              })}
-              isInvalid={Boolean(errors.completionRemarks)}
-              errorMessage={errors.completionRemarks?.message}
-            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Controller
+                name="amount"
+                control={control}
+                rules={{
+                  required: "Amount is required",
+                  validate: (value) =>
+                    Number(value) > 0 || "Amount must be greater than zero",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    inputMode="decimal"
+                    label="Payment Amount"
+                    placeholder="Enter amount"
+                    isRequired
+                    onKeyDown={preventNegativeNumberInput}
+                    isInvalid={Boolean(error)}
+                    errorMessage={error?.message}
+                    onChange={(event) => {
+                      const value = event.target.value;
 
-            <Controller
-              name="proofAttachmentUrls"
-              control={control}
-              render={({ field }) => (
-                <FileUploader
-                  label="Proof Attachment"
-                  placeholder="Upload proof attachments"
-                  uploadingType="multiple"
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  onUploadingChange={setIsFileUploading}
-                  errorMessage={errors.proofAttachmentUrls?.message}
+                      if (value === "") {
+                        field.onChange("");
+                        return;
+                      }
+
+                      if (!/^\d*(\.\d{0,2})?$/.test(value)) {
+                        return;
+                      }
+
+                      field.onChange(value);
+                    }}
+                  />
+                )}
+              />
+
+              <Controller
+                name="paymentDate"
+                control={control}
+                rules={{
+                  required: "Payment date is required",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    isRequired
+                    label="Payment Date"
+                    showMonthAndYearPickers
+                    maxValue={today(getLocalTimeZone())}
+                    isInvalid={Boolean(error)}
+                    errorMessage={error?.message}
+                    value={
+                      field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                        ? parseDate(field.value)
+                        : null
+                    }
+                    onChange={(value) => {
+                      field.onChange(value ? value.toString() : "");
+                    }}
+                  />
+                )}
+              />
+
+              <Controller
+                name="paymentMode"
+                control={control}
+                rules={{
+                  required: "Payment mode is required",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <Select
+                    label="Payment Mode"
+                    isRequired
+                    selectedKeys={
+                      field.value ? new Set([field.value]) : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      field.onChange(Array.from(keys)?.[0] || "");
+                    }}
+                    isInvalid={Boolean(error)}
+                    errorMessage={error?.message}
+                  >
+                    <SelectItem key="CASH">Cash</SelectItem>
+                    <SelectItem key="UPI">UPI</SelectItem>
+                    <SelectItem key="CARD">Card</SelectItem>
+                    <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                    <SelectItem key="CHEQUE">Cheque</SelectItem>
+                  </Select>
+                )}
+              />
+
+              <Controller
+                name="bankLedgerId"
+                control={control}
+                rules={{
+                  required: "Bank/Cash ledger is required",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <div>
+                    <NewSelect
+                      isRequired
+                      isDisabled={!hasPaymentModeSelected}
+                      label={
+                        isCashPaymentMode
+                          ? "Select Cash Ledger"
+                          : "Select Bank Ledger"
+                      }
+                      placeholder={
+                        !hasPaymentModeSelected
+                          ? "Select payment mode first"
+                          : isCashPaymentMode
+                            ? "Select cash ledger"
+                            : "Select bank ledger"
+                      }
+                      data={filteredPaymentLedgerList}
+                      labelKey="ledgerName"
+                      valueKey="id"
+                      value={field.value ?? ""}
+                      onChange={(value) => {
+                        field.onChange(value ? String(value) : "");
+                      }}
+                    />
+
+                    {error?.message && (
+                      <p className="mt-1 text-xs text-danger">
+                        {error.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+
+              <Controller
+                name="gstActive"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    label="GST Applicable"
+                    selectedKeys={new Set([field.value ? "true" : "false"])}
+                    onSelectionChange={(keys) => {
+                      field.onChange(Array.from(keys)?.[0] === "true");
+                    }}
+                  >
+                    <SelectItem key="true">Yes</SelectItem>
+                    <SelectItem key="false">No</SelectItem>
+                  </Select>
+                )}
+              />
+
+              {gstActive && (
+                <Controller
+                  name="gstPercentage"
+                  control={control}
+                  rules={{
+                    required: "GST rate is required",
+                  }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label="GST Rate"
+                      isRequired
+                      selectedKeys={
+                        field.value
+                          ? new Set([String(field.value)])
+                          : new Set([])
+                      }
+                      onSelectionChange={(keys) => {
+                        field.onChange(Array.from(keys)?.[0] || "");
+                      }}
+                      isInvalid={Boolean(error)}
+                      errorMessage={error?.message}
+                    >
+                      <SelectItem key="5">5%</SelectItem>
+                      <SelectItem key="12">12%</SelectItem>
+                      <SelectItem key="18">18%</SelectItem>
+                      <SelectItem key="28">28%</SelectItem>
+                    </Select>
+                  )}
                 />
               )}
-            />
+
+              {gstActive && (
+                <Input
+                  label="GST Type"
+                  value={
+                    resolvedGstType === "CGST_SGST" ? "CGST + SGST" : "IGST"
+                  }
+                  isReadOnly
+                />
+              )}
+
+              <Controller
+                name="tdsActive"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    label="TDS Applicable"
+                    selectedKeys={new Set([field.value ? "true" : "false"])}
+                    onSelectionChange={(keys) => {
+                      field.onChange(Array.from(keys)?.[0] === "true");
+                    }}
+                  >
+                    <SelectItem key="true">Yes</SelectItem>
+                    <SelectItem key="false">No</SelectItem>
+                  </Select>
+                )}
+              />
+
+              {tdsActive && (
+                <Controller
+                  name="tds.tdsPercentage"
+                  control={control}
+                  rules={{
+                    required: "TDS percentage is required",
+                  }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      label="TDS Percentage"
+                      isRequired
+                      selectedKeys={
+                        field.value !== undefined &&
+                        field.value !== null &&
+                        field.value !== ""
+                          ? new Set([String(field.value)])
+                          : new Set([])
+                      }
+                      onSelectionChange={(keys) => {
+                        field.onChange(Array.from(keys)?.[0] || "");
+                      }}
+                      isInvalid={Boolean(error)}
+                      errorMessage={error?.message}
+                    >
+                      <SelectItem key="2">2%</SelectItem>
+                      <SelectItem key="10">10%</SelectItem>
+                    </Select>
+                  )}
+                />
+              )}
+
+              <Controller
+                name="transactionReference"
+                control={control}
+                rules={{
+                  required: "Transaction reference number is required",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <Input
+                    {...field}
+                    label="Transaction Reference Number / UTR Number"
+                    placeholder="Enter transaction reference"
+                    isRequired
+                    isInvalid={Boolean(error)}
+                    errorMessage={error?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name="paymentProof"
+                control={control}
+                rules={{
+                  required: "Payment proof is required",
+                }}
+                render={({ field, fieldState: { error } }) => (
+                  <div>
+                    <SingleFileUploader
+                      label="Payment Proof"
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value || "");
+                      }}
+                      onUploadingChange={setIsFileUploading}
+                      isRequired
+                      isInvalid={Boolean(error)}
+                      errorMessage={error?.message}
+                    />
+
+                    {error?.message && (
+                      <p className="mt-1 text-xs text-danger">
+                        {error.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+
+              <Controller
+                name="remarks"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    {...field}
+                    label="Remarks"
+                    placeholder="Enter remarks"
+                    minRows={3}
+                    maxRows={4}
+                    variant="bordered"
+                    className="md:col-span-2"
+                  />
+                )}
+              />
+            </div>
           </ModalBody>
 
           <ModalFooter className="shrink-0 border-t border-default-200 bg-background">
