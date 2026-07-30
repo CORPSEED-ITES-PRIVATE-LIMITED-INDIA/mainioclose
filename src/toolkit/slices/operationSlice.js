@@ -1559,6 +1559,72 @@ export const updateExpenseAccountsDecision = createAsyncThunk(
   },
 );
 
+export const createProjectLifecycleRequest = createAsyncThunk(
+  "operation/createProjectLifecycleRequest",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/project-lifecycle-requests",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to submit project lifecycle request",
+        },
+      );
+    }
+  },
+);
+
+export const getPendingProjectLifecycleRequests = createAsyncThunk(
+  "operation/getPendingProjectLifecycleRequests",
+  async ({ adminUserId, page = 0, size = 10 }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        "/operationService/api/project-lifecycle-requests/pending",
+        {
+          params: {
+            adminUserId,
+            page,
+            size,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to fetch pending lifecycle requests.",
+        },
+      );
+    }
+  },
+);
+
+export const decideProjectLifecycleRequest = createAsyncThunk(
+  "operation/decideProjectLifecycleRequest",
+  async ({ requestId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/operationService/api/project-lifecycle-requests/${requestId}/decision`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to update lifecycle request decision.",
+        },
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

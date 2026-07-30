@@ -38,9 +38,11 @@ import {
   CircleCheckBig,
   Eye,
   Filter,
+  EllipsisVertical,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
+  createProjectLifecycleRequest,
   createProjectsForOperations,
   getAllOperationsProject,
   getAllProjectsForOperations,
@@ -154,6 +156,7 @@ const Projects = () => {
   const { userId } = useParams();
   const formModal = useDisclosure();
   const viewModal = useDisclosure();
+  const lifecycleRequestModal = useDisclosure();
   const data = useSelector((state) => state.operation.projectListForOperation);
   const count = useSelector((state) => state.operation.projectCount) || "";
   const usersList = useSelector((state) => state?.common?.usersList);
@@ -179,6 +182,19 @@ const Projects = () => {
     statuses: "OPEN",
   });
   const [estimateDetail, setEstimateDetail] = useState(null);
+  const [selectedLifecycleProject, setSelectedLifecycleProject] =
+    useState(null);
+
+  const [lifecycleRequestData, setLifecycleRequestData] = useState({
+    actionType: "",
+    requestReason: "",
+  });
+
+  const [lifecycleRequestErrors, setLifecycleRequestErrors] = useState({
+    actionType: "",
+    requestReason: "",
+  });
+  const [isLifecycleSubmitting, setIsLifecycleSubmitting] = useState(false);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -263,113 +279,215 @@ const Projects = () => {
       );
   };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "projectNo":
-        return (
-          <div className="flex flex-col gap-0.5">
-            <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
-              {rowData?.projectNo}
-            </Link>
-          </div>
-        );
-      case "unbilledNumber":
-        return <p className="text-sm">{rowData?.unbilledNumber}</p>;
-      case "estimateNumber":
-        return (
-          <p
-            className="capitalize text-xs "
-            // onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
-          >
-            {rowData?.estimateNumber}
-          </p>
-        );
-      case "salesPersonName":
-        return <p className="text-sm">{rowData?.salesPersonName}</p>;
-      case "contactName":
-        return <p className="text-sm">{rowData?.contactName || "-"}</p>;
-      case "date":
-        return <p>{rowData?.date}</p>;
-      case "amount":
-        return (
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-bold">
+  const openLifecycleRequestModal = (project) => {
+    setSelectedLifecycleProject(project);
+
+    setLifecycleRequestData({
+      actionType: "",
+      requestReason: "",
+    });
+
+    setLifecycleRequestErrors({
+      actionType: "",
+      requestReason: "",
+    });
+
+    lifecycleRequestModal.onOpen();
+  };
+
+  const handleLifecycleRequestSubmit = async (event) => {
+    event.preventDefault();
+
+    const errors = {
+      actionType: lifecycleRequestData.actionType
+        ? ""
+        : "Action type is required",
+      requestReason: lifecycleRequestData.requestReason.trim()
+        ? ""
+        : "Request reason is required",
+    };
+
+    setLifecycleRequestErrors(errors);
+
+    if (errors.actionType || errors.requestReason) {
+      return;
+    }
+
+    const payload = {
+      projectId: Number(selectedLifecycleProject?.id),
+      actionType: lifecycleRequestData.actionType,
+      requestedById: Number(userId),
+      requestReason: lifecycleRequestData.requestReason.trim(),
+    };
+
+    setIsLifecycleSubmitting(true);
+
+    try {
+      const response = await dispatch(createProjectLifecycleRequest(payload));
+
+      if (response.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Project lifecycle request submitted successfully.",
+          color: "success",
+        });
+
+        lifecycleRequestModal.onClose();
+
+        dispatch(getAllProjectsForOperations(paginationData));
+        dispatch(getTotalCountForOperationProjects(userId));
+        return;
+      }
+
+      addToast({
+        title: "ERROR",
+        description:
+          response?.payload?.message ||
+          "Unable to submit project lifecycle request.",
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title: "ERROR",
+        description: "Unable to submit project lifecycle request.",
+        color: "danger",
+      });
+    } finally {
+      setIsLifecycleSubmitting(false);
+    }
+  };
+
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "projectNo":
+          return (
+            <div className="flex flex-col gap-0.5">
+              <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
+                {rowData?.projectNo}
+              </Link>
+            </div>
+          );
+        case "unbilledNumber":
+          return <p className="text-sm">{rowData?.unbilledNumber}</p>;
+        case "estimateNumber":
+          return (
+            <p
+              className="capitalize text-xs "
+              // onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
+            >
+              {rowData?.estimateNumber}
+            </p>
+          );
+        case "salesPersonName":
+          return <p className="text-sm">{rowData?.salesPersonName}</p>;
+        case "contactName":
+          return <p className="text-sm">{rowData?.contactName || "-"}</p>;
+        case "date":
+          return <p>{rowData?.date}</p>;
+        case "amount":
+          return (
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-bold">
+                {inrCurrency(rowData?.totalAmount)}
+              </p>
+              <p className="text-sm"> {inrCurrency(rowData?.dueAmount)}</p>
+            </div>
+          );
+        case "totalAmount":
+          return (
+            <p className="text-sm font-medium">
               {inrCurrency(rowData?.totalAmount)}
             </p>
-            <p className="text-sm"> {inrCurrency(rowData?.dueAmount)}</p>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <p className="text-sm font-medium">
-            {inrCurrency(rowData?.totalAmount)}
-          </p>
-        );
-      case "dueAmount":
-        return (
-          <p className="text-sm font-bold">{inrCurrency(rowData?.dueAmount)}</p>
-        );
-      case "status":
-        return (
-          <Chip
-            size="sm"
-            color={
-              rowData?.statusName === "COMPLETED"
-                ? "success"
-                : rowData?.statusName === "REJECTED"
-                  ? "danger"
-                  : rowData?.statusName === "ON_HOLD"
-                    ? "warning"
-                    : rowData?.statusName === "OPEN"
-                      ? "primary"
-                      : rowData?.statusName === "IN_PROGRESS"
-                        ? "warning"
-                        : "default"
-            }
-          >
-            {rowData?.statusName}
-          </Chip>
-        );
-      case "actions":
-        return (
-          <div className="flex items-center gap-2">
-            <Link to={`${rowData?.id}/projectDetail`}>
-              <div className="bg-gray-200 dark:bg-gray-700 rounded px-3 py-1.5 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
-                  View
-                </p>
-              </div>
-            </Link>
-          </div>
-        );
-      case "mileStone":
-        return (
-          <div>
-            <Progress
-              aria-label="Downloading..."
-              className="max-w-md"
-              color="success"
-              showValueLabel={true}
+          );
+        case "dueAmount":
+          return (
+            <p className="text-sm font-bold">
+              {inrCurrency(rowData?.dueAmount)}
+            </p>
+          );
+        case "status":
+          return (
+            <Chip
               size="sm"
-              value={rowData?.milestoneCompletionPercentage}
-            />
-          </div>
-        );
-      case "address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData.address || "-"}</span>
-            <span className="text-sm text-gray-400">
-              {[rowData?.city, rowData?.state, rowData?.country].join(",")}
-            </span>
-          </div>
-        );
+              color={
+                rowData?.statusName === "COMPLETED"
+                  ? "success"
+                  : rowData?.statusName === "REJECTED"
+                    ? "danger"
+                    : rowData?.statusName === "ON_HOLD"
+                      ? "warning"
+                      : rowData?.statusName === "OPEN"
+                        ? "primary"
+                        : rowData?.statusName === "IN_PROGRESS"
+                          ? "warning"
+                          : rowData?.statusName === "REOPEN"
+                            ? "primary"
+                            : "default"
+              }
+            >
+              {rowData?.statusName}
+            </Chip>
+          );
 
-      default:
-        return cellValue;
-    }
-  }, []);
+        case "mileStone":
+          return (
+            <div>
+              <Progress
+                aria-label="Downloading..."
+                className="max-w-md"
+                color="success"
+                showValueLabel={true}
+                size="sm"
+                value={rowData?.milestoneCompletionPercentage}
+              />
+            </div>
+          );
+        case "address":
+          return (
+            <div className="flex flex-col">
+              <span className="font-normal">{rowData.address || "-"}</span>
+              <span className="text-sm text-gray-400">
+                {[rowData?.city, rowData?.state, rowData?.country].join(",")}
+              </span>
+            </div>
+          );
+
+        case "actions":
+          return (
+            <div className="flex justify-center">
+              <Dropdown placement="bottom-end">
+                <DropdownTrigger>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    aria-label="Project actions"
+                  >
+                    <EllipsisVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu aria-label="Project actions">
+                  <DropdownItem
+                    key="lifecycle-request"
+                    description="Submit a force-close or reopen request"
+                    onPress={() => openLifecycleRequestModal(rowData)}
+                  >
+                    Force Close / Reopen
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return cellValue;
+      }
+    },
+    [openLifecycleRequestModal],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (paginationData?.page < pages) {
@@ -550,8 +668,14 @@ const Projects = () => {
               <DropdownItem key={"OPEN"} className="capitalize">
                 OPEN
               </DropdownItem>
+              <DropdownItem key={"REOPEN"} className="capitalize">
+                REOPEN
+              </DropdownItem>
               <DropdownItem key={"IN_PROGRESS"} className="capitalize">
                 IN_PROGRESS
+              </DropdownItem>
+              <DropdownItem key={"FORCE_CLOSED"} className="capitalize">
+                FORCE_CLOSED
               </DropdownItem>
               <DropdownItem key={"COMPLETED"} className="capitalize">
                 COMPLETED
@@ -965,6 +1089,97 @@ const Projects = () => {
                 <Button onPress={onClose}>Cancel</Button>
               </ModalFooter>
             </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={lifecycleRequestModal.isOpen}
+        onOpenChange={lifecycleRequestModal.onOpenChange}
+        size="lg"
+        isDismissable={!isLifecycleSubmitting}
+        hideCloseButton={isLifecycleSubmitting}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <form onSubmit={handleLifecycleRequestSubmit}>
+              <ModalHeader className="flex flex-col gap-1">
+                Force Close / Reopen Request
+                <span className="text-xs font-normal text-default-500">
+                  Project: {selectedLifecycleProject?.projectNo || "-"}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="gap-4">
+                <Select
+                  label="Action Type"
+                  placeholder="Select action type"
+                  isRequired
+                  selectedKeys={
+                    lifecycleRequestData.actionType
+                      ? new Set([lifecycleRequestData.actionType])
+                      : new Set([])
+                  }
+                  isInvalid={Boolean(lifecycleRequestErrors.actionType)}
+                  errorMessage={lifecycleRequestErrors.actionType}
+                  onSelectionChange={(keys) => {
+                    const actionType = Array.from(keys)[0] || "";
+
+                    setLifecycleRequestData((previous) => ({
+                      ...previous,
+                      actionType,
+                    }));
+
+                    setLifecycleRequestErrors((previous) => ({
+                      ...previous,
+                      actionType: "",
+                    }));
+                  }}
+                >
+                  <SelectItem key="FORCE_CLOSED">Force Closed</SelectItem>
+                  <SelectItem key="REOPEN">Reopen</SelectItem>
+                </Select>
+
+                <Textarea
+                  label="Request Reason"
+                  placeholder="Enter the reason for this request"
+                  minRows={4}
+                  isRequired
+                  value={lifecycleRequestData.requestReason}
+                  isInvalid={Boolean(lifecycleRequestErrors.requestReason)}
+                  errorMessage={lifecycleRequestErrors.requestReason}
+                  onChange={(event) => {
+                    setLifecycleRequestData((previous) => ({
+                      ...previous,
+                      requestReason: event.target.value,
+                    }));
+
+                    setLifecycleRequestErrors((previous) => ({
+                      ...previous,
+                      requestReason: "",
+                    }));
+                  }}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={onClose}
+                  isDisabled={isLifecycleSubmitting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isLifecycleSubmitting}
+                >
+                  Submit Request
+                </Button>
+              </ModalFooter>
+            </form>
           )}
         </ModalContent>
       </Modal>
