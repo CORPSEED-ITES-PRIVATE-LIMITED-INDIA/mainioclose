@@ -407,6 +407,21 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
+    const selectedLedgerId = Number(values.bankLedgerId);
+
+    const selectedLedger = (
+      Array.isArray(paymentLedgerList) ? paymentLedgerList : []
+    ).find((ledger) => Number(ledger?.id) === selectedLedgerId);
+
+    const selectedLedgerType = String(
+      selectedLedger?.ledgerType ||
+        (String(values.paymentMode || "").toUpperCase() === "CASH"
+          ? "CASH"
+          : "BANK"),
+    )
+      .trim()
+      .toUpperCase();
+
     const selectedGstPercentage = values.gstActive
       ? toTwoDecimalAmount(values.gstPercentage)
       : 0;
@@ -460,7 +475,9 @@ const RaiseProcurementPaymentRequestModal = ({
       amount: paymentAmount,
       paymentDate: values.paymentDate,
       paymentMode: values.paymentMode,
-      bankLedgerId: Number(values.bankLedgerId),
+      bankLedgerId: selectedLedgerId,
+      ledgerId: selectedLedgerId,
+      ledgerType: selectedLedgerType,
       transactionReference: String(values.transactionReference || "").trim(),
       paymentProof: values.paymentProof,
       proofAttachmentUrls: values.paymentProof ? [values.paymentProof] : [],
@@ -476,6 +493,7 @@ const RaiseProcurementPaymentRequestModal = ({
 
       gstActive: Boolean(values.gstActive),
       gstPercentage: values.gstActive ? selectedGstPercentage : null,
+      gstType: values.gstActive ? resolvedGstType : null,
       gstAmount: values.gstActive ? gstAmount : 0,
       totalWithGst: invoiceAmount,
 
@@ -819,16 +837,6 @@ const RaiseProcurementPaymentRequestModal = ({
                       <SelectItem key="28">28%</SelectItem>
                     </Select>
                   )}
-                />
-              )}
-
-              {gstActive && (
-                <Input
-                  label="GST Type"
-                  value={
-                    resolvedGstType === "CGST_SGST" ? "CGST + SGST" : "IGST"
-                  }
-                  isReadOnly
                 />
               )}
 
