@@ -2,7 +2,6 @@ import {
   addToast,
   Button,
   Chip,
-  DatePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -23,270 +22,252 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-  Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Info, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  ExternalLink,
+  RefreshCcw,
+  Search,
+} from "lucide-react";
+import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
-  getActivePaymentLedgerForPaymentRegister,
-  getAllCompaniesForApprovals,
-} from "../toolkit/slices/accountSlice";
-import {
-  approvedCompanyInAccount,
-  approvedCompanyInLeads,
-} from "../toolkit/slices/companySlice";
-import {
-  approvedAndDisapprovedExpense,
-  getExpenseListByUserId,
+  getExpensePaymentQueueList,
+  updateExpenseAccountsDecision,
 } from "../toolkit/slices/operationSlice";
-import dayjs from "dayjs";
-import { inrCurrency } from "../common";
-import { getAllPaymentType } from "../toolkit/slices/settingSlice";
-
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-
-import FileUploader from "../components/FileUploader";
-import NewSelect from "../components/NewSelect";
 
 const columns = [
-  { name: "ID", uid: "expenseId" },
-  { name: "UNBILL NO.", uid: "unbilledNumber" },
-  { name: "PROJECT NO.", uid: "projectNo" },
+  { name: "EXPENSE ID", uid: "expenseId" },
+  { name: "PROJECT", uid: "project" },
+  { name: "UNBILLED NO.", uid: "unbilledNumber" },
+  { name: "PRODUCT", uid: "productName" },
+  { name: "CATEGORY", uid: "expenseCategory" },
+  { name: "REQUESTED AMOUNT", uid: "requestedAmount" },
+  { name: "APPROVED AMOUNT", uid: "approvedAmount" },
+  { name: "PAID AMOUNT", uid: "paidAmount" },
+  { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
+  { name: "DEPARTMENT", uid: "department" },
+  { name: "CREATED BY", uid: "createdBy" },
   { name: "EXPENSE DATE", uid: "expenseDate" },
-  { name: "EXPENSE TYPE", uid: "expenseType" },
-  { name: "SERVICE", uid: "productName" },
-  { name: "PROJECT NAME", uid: "projectName" },
-  { name: "RAISED BY", uid: "createdByUserName" },
-  { name: "AMOUNT", uid: "amount" },
-  { name: "APPROVED BY", uid: "approvedByUserName" },
-  { name: "REMARK", uid: "remark" },
+  { name: "GENERATED DATE", uid: "createdDate" },
+  { name: "UPDATED DATE", uid: "updatedDate" },
+  { name: "APPROVAL STAGE", uid: "approvalStage" },
+  { name: "APPROVAL STATUS", uid: "approvalStatus" },
+  { name: "CRT STATUS", uid: "crtApprovalStatus" },
+  { name: "ACCOUNTS STATUS", uid: "accountsApprovalStatus" },
+  { name: "PAYMENT STATUS", uid: "paymentStatus" },
+  { name: "REFERENCE / REMARK", uid: "reference" },
+  { name: "ATTACHMENT", uid: "attachment" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
-
 const INITIAL_VISIBLE_COLUMNS = [
   "expenseId",
+  "project",
   "unbilledNumber",
-  "projectNo",
-  "expenseDate",
-  "expenseType",
   "productName",
-  "projectName",
-  "createdByUserName",
-  "amount",
-  "approvedByUserName",
-  "remark",
+  "expenseCategory",
+  "requestedAmount",
+  "approvedAmount",
+  "paidAmount",
+  "outstandingAmount",
+  "department",
+  "createdBy",
+  "expenseDate",
+  "createdDate",
+  "approvalStage",
+  "accountsApprovalStatus",
+  "paymentStatus",
+  "reference",
+  "attachment",
   "actions",
 ];
 
-const INITIAL_APPROVAL_PAYMENT_DATA = {
-  paymentBy: "",
-  paymentTypeId: "",
-  receivedAmount: "",
-  paymentReceivedDate: "",
-  paymentMode: "",
-  bankLedgerId: "",
-  transactionReference: "",
-  paymentProof: "",
+const PAYMENT_STATUS_OPTIONS = [
+  { label: "All Payment Statuses", value: "ALL" },
+  { label: "Not Initiated", value: "NOT_INITIATED" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Processing", value: "PROCESSING" },
+  { label: "Partially Paid", value: "PARTIALLY_PAID" },
+  { label: "Paid", value: "PAID" },
+  { label: "Failed", value: "FAILED" },
+  { label: "Reversed", value: "REVERSED" },
+  { label: "Cancelled", value: "CANCELLED" },
+];
+
+const ACCOUNT_DECISION_OPTIONS = [
+  { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
+  { label: "On Hold", value: "ON_HOLD" },
+];
+
+const INITIAL_DECISION_FORM = {
+  status: "",
+  approvedAmount: "",
+  remark: "",
+};
+
+const formatText = (value) => {
+  if (!value) return "-";
+
+  return String(value)
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  const parsedDate = dayjs(value);
+  return parsedDate.isValid() ? parsedDate.format("DD-MM-YYYY hh:mm A") : "-";
+};
+
+const formatCurrency = (amount, currencyCode = "INR") => {
+  if (amount === null || amount === undefined || amount === "") return "-";
+
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) return "-";
+
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: currencyCode || "INR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numericAmount);
+  } catch {
+    return `${currencyCode || "INR"} ${numericAmount.toFixed(2)}`;
+  }
+};
+
+const getApprovalStatusColor = (status) => {
+  switch (status) {
+    case "APPROVED":
+      return "success";
+    case "REJECTED":
+    case "CANCELLED":
+      return "danger";
+    case "PENDING":
+      return "warning";
+    case "ON_HOLD":
+      return "secondary";
+    default:
+      return "default";
+  }
+};
+
+const getPaymentStatusColor = (status) => {
+  switch (status) {
+    case "PAID":
+      return "success";
+    case "PENDING":
+    case "PROCESSING":
+      return "warning";
+    case "PARTIALLY_PAID":
+      return "secondary";
+    case "FAILED":
+    case "REVERSED":
+    case "CANCELLED":
+      return "danger";
+    case "NOT_INITIATED":
+    default:
+      return "default";
+  }
+};
+
+const getStageColor = (stage) => {
+  switch (stage) {
+    case "CRT_REVIEW":
+      return "primary";
+    case "ACCOUNTS_REVIEW":
+      return "secondary";
+    case "COMPLETED":
+      return "success";
+    default:
+      return "default";
+  }
 };
 
 const Expense = () => {
-  const { userId } = useParams();
   const dispatch = useDispatch();
+  const { userId } = useParams();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
-  const count = useSelector((state) => state.operation.expenseList?.length);
-  const data = useSelector((state) => state.operation.expenseList);
 
-  const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
-  const paymentLegerList = useSelector(
-    (state) => state.account.paymentLegerList,
+  const currentUser = useSelector((state) => state.auth?.currentUser);
+
+  const paymentQueue = useSelector(
+    (state) => state.operation.expensePaymentQueueList,
+  );
+  const paymentQueueLoading = useSelector(
+    (state) => state.operation.expensePaymentQueueLoading,
+  );
+  const paymentQueueError = useSelector(
+    (state) => state.operation.expensePaymentQueueError,
   );
 
-  const [filterValue, setFilterValue] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const resolvedUserId = Number(
+    userId || currentUser?.id || currentUser?.userId || currentUser?.employeeId,
+  );
+
+  const [searchValue, setSearchValue] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("NOT_INITIATED");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const [sortDescriptor, setSortDescriptor] = useState({
-    column: "age",
-    direction: "ascending",
-  });
-  const [filteration, setFilteration] = useState({
-    userId: userId,
-    page: 1,
-    size: 50,
-    status: "ALL",
+    column: "createdDate",
+    direction: "descending",
   });
 
-  const [statusData, setStatusData] = useState({
-    status: null,
-    rejectionRemark: "",
-    projectId: null,
-    expenseId: null,
-    expenseAmount: 0,
-    userId,
-  });
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [decisionForm, setDecisionForm] = useState(INITIAL_DECISION_FORM);
+  const [decisionErrors, setDecisionErrors] = useState({});
+  const [isDecisionSubmitting, setIsDecisionSubmitting] = useState(false);
 
-  const validateApprovalPayment = () => {
-    const validationErrors = {};
-
-    if (!approvalPaymentData.paymentBy) {
-      validationErrors.paymentBy = "Person doing payment is required";
+  const fetchPaymentQueue = useCallback(() => {
+    if (!resolvedUserId) {
+      addToast({
+        title: "User ID is required",
+        description: "Unable to load the expense payment queue.",
+        color: "danger",
+      });
+      return;
     }
 
-    if (!approvalPaymentData.paymentProof) {
-      validationErrors.paymentProof = "Payment proof is required";
-    }
-
-    // For client payment, only payment proof is required
-    if (approvalPaymentData.paymentBy === "CLIENT") {
-      setApprovalPaymentErrors(validationErrors);
-      return Object.keys(validationErrors).length === 0;
-    }
-
-    // Existing validation for Corpseed payment
-    if (approvalPaymentData.paymentBy === "CORPSEED") {
-      const receivedAmount = Number(approvalPaymentData.receivedAmount);
-
-      if (!approvalPaymentData.paymentTypeId) {
-        validationErrors.paymentTypeId = "Payment type is required";
+    dispatch(
+      getExpensePaymentQueueList({
+        userId: resolvedUserId,
+        paymentStatus,
+      }),
+    ).then((response) => {
+      if (response?.meta?.requestStatus === "rejected") {
+        addToast({
+          title: "Failed to load expense payment queue",
+          description:
+            response?.payload?.message ||
+            response?.payload ||
+            "Something went wrong while fetching expenses.",
+          color: "danger",
+        });
       }
-
-      if (
-        approvalPaymentData.receivedAmount === "" ||
-        !Number.isFinite(receivedAmount) ||
-        receivedAmount <= 0
-      ) {
-        validationErrors.receivedAmount =
-          "Received amount must be greater than zero";
-      }
-
-      if (
-        Number(statusData.expenseAmount || 0) > 0 &&
-        receivedAmount > Number(statusData.expenseAmount)
-      ) {
-        validationErrors.receivedAmount =
-          "Received amount cannot exceed expense amount";
-      }
-
-      if (!approvalPaymentData.paymentReceivedDate) {
-        validationErrors.paymentReceivedDate =
-          "Payment received date is required";
-      }
-
-      if (!approvalPaymentData.paymentMode) {
-        validationErrors.paymentMode = "Payment mode is required";
-      }
-
-      if (!approvalPaymentData.bankLedgerId) {
-        validationErrors.bankLedgerId = "Bank/Cash ledger is required";
-      }
-
-      if (
-        approvalPaymentData.paymentMode !== "CASH" &&
-        !approvalPaymentData.transactionReference?.trim()
-      ) {
-        validationErrors.transactionReference =
-          "Transaction reference is required";
-      }
-    }
-
-    setApprovalPaymentErrors(validationErrors);
-
-    return Object.keys(validationErrors).length === 0;
-  };
-
-  const [approvalPaymentData, setApprovalPaymentData] = useState(
-    INITIAL_APPROVAL_PAYMENT_DATA,
-  );
-
-  const [approvalPaymentErrors, setApprovalPaymentErrors] = useState({});
-
-  const [isPaymentProofUploading, setIsPaymentProofUploading] = useState(false);
-
-  const [isApprovalSubmitting, setIsApprovalSubmitting] = useState(false);
-
-  const hasSearchFilter = Boolean(filterValue);
-
-  const selectedPaymentMode = approvalPaymentData.paymentMode;
-
-  const hasPaymentModeSelected = Boolean(
-    String(selectedPaymentMode || "").trim(),
-  );
-
-  const isCashPaymentMode =
-    String(selectedPaymentMode || "")
-      .trim()
-      .toUpperCase() === "CASH";
-
-  const isCashLedger = (ledger) => {
-    const ledgerName = String(ledger?.ledgerName || "")
-      .trim()
-      .toLowerCase();
-
-    const ledgerType = String(ledger?.ledgerType || "")
-      .trim()
-      .toLowerCase();
-
-    return ledgerType === "cash" || ledgerName.includes("cash");
-  };
-
-  const filteredPaymentLedgerList = !hasPaymentModeSelected
-    ? []
-    : isCashPaymentMode
-      ? (paymentLegerList || []).filter(isCashLedger)
-      : (paymentLegerList || []).filter((ledger) => !isCashLedger(ledger));
-
-  const handlePaymentModeChange = (paymentMode) => {
-    setApprovalPaymentData((prev) => ({
-      ...prev,
-      paymentMode,
-      bankLedgerId: "",
-    }));
-
-    setApprovalPaymentErrors((prev) => ({
-      ...prev,
-      paymentMode: "",
-      bankLedgerId: "",
-    }));
-  };
-
-  const handlePaymentByChange = (paymentBy) => {
-    setApprovalPaymentData((prev) => ({
-      ...prev,
-      paymentBy,
-
-      // Clear Corpseed-specific fields when client is selected
-      paymentTypeId: paymentBy === "CLIENT" ? "" : prev.paymentTypeId,
-      receivedAmount:
-        paymentBy === "CLIENT"
-          ? ""
-          : prev.receivedAmount || String(statusData.expenseAmount || ""),
-      paymentReceivedDate:
-        paymentBy === "CLIENT" ? "" : prev.paymentReceivedDate,
-      paymentMode: paymentBy === "CLIENT" ? "" : prev.paymentMode,
-      bankLedgerId: paymentBy === "CLIENT" ? "" : prev.bankLedgerId,
-      transactionReference:
-        paymentBy === "CLIENT" ? "" : prev.transactionReference,
-    }));
-
-    setApprovalPaymentErrors({});
-  };
+    });
+  }, [dispatch, paymentStatus, resolvedUserId]);
 
   useEffect(() => {
-    dispatch(getExpenseListByUserId(filteration));
-  }, [dispatch, filteration]);
+    fetchPaymentQueue();
+  }, [fetchPaymentQueue]);
 
-  useEffect(() => {
-    dispatch(getAllPaymentType());
-    dispatch(getActivePaymentLedgerForPaymentRegister());
-  }, [dispatch]);
+  const expenseRows = useMemo(
+    () => (Array.isArray(paymentQueue) ? paymentQueue : []),
+    [paymentQueue],
+  );
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -297,809 +278,828 @@ const Expense = () => {
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...(data || [])];
+    const normalizedSearch = searchValue.trim().toLowerCase();
+    if (!normalizedSearch) return expenseRows;
 
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers?.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
-        ),
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
+    return expenseRows.filter((expense) => {
+      const searchableValues = [
+        expense?.expenseId,
+        expense?.activityId,
+        expense?.projectId,
+        expense?.projectNo,
+        expense?.projectName,
+        expense?.unbilledNumber,
+        expense?.productName,
+        expense?.raisedDepartmentId,
+        expense?.raisedDepartmentName,
+        expense?.expenseCategory,
+        expense?.requestedAmount,
+        expense?.approvedAmount,
+        expense?.paidAmount,
+        expense?.outstandingAmount,
+        expense?.currencyCode,
+        expense?.remark,
+        expense?.externalReference,
+        expense?.approvalStatus,
+        expense?.approvalStage,
+        expense?.crtApprovalStatus,
+        expense?.crtActionByUserName,
+        expense?.crtDecisionRemark,
+        expense?.accountsApprovalStatus,
+        expense?.accountsActionByUserName,
+        expense?.accountsDecisionRemark,
+        expense?.paymentStatus,
+        expense?.createdByUserId,
+        expense?.createdByUserName,
+      ];
 
-  const pages = Math.ceil(count / filteration?.size) || 1;
+      return searchableValues
+        .filter(
+          (value) => value !== null && value !== undefined && value !== "",
+        )
+        .some((value) =>
+          String(value).toLowerCase().includes(normalizedSearch),
+        );
+    });
+  }, [expenseRows, searchValue]);
 
   const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+    return [...filteredItems].sort((firstItem, secondItem) => {
+      const first = firstItem?.[sortDescriptor.column];
+      const second = secondItem?.[sortDescriptor.column];
 
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+      if (first === second) return 0;
+      if (first === null || first === undefined) return 1;
+      if (second === null || second === undefined) return -1;
+
+      const comparison = first < second ? -1 : 1;
+      return sortDescriptor.direction === "descending"
+        ? -comparison
+        : comparison;
     });
-  }, [sortDescriptor, filteredItems]);
+  }, [filteredItems, sortDescriptor]);
 
-  const resetApprovalModal = () => {
-    setApprovalPaymentData(INITIAL_APPROVAL_PAYMENT_DATA);
-    setApprovalPaymentErrors({});
-    setIsPaymentProofUploading(false);
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / rowsPerPage));
 
-    setStatusData({
-      status: null,
-      rejectionRemark: "",
-      projectId: null,
-      expenseId: null,
-      expenseAmount: 0,
-      userId,
-    });
-  };
+  useEffect(() => {
+    setPage((previousPage) => Math.min(previousPage, totalPages));
+  }, [totalPages]);
 
-  const handleApproveExpense = async () => {
-    if (isPaymentProofUploading) {
+  const paginatedItems = useMemo(() => {
+    const startIndex = (page - 1) * rowsPerPage;
+    return sortedItems.slice(startIndex, startIndex + rowsPerPage);
+  }, [page, rowsPerPage, sortedItems]);
+
+  const resetDecisionModal = useCallback(() => {
+    setSelectedExpense(null);
+    setDecisionForm(INITIAL_DECISION_FORM);
+    setDecisionErrors({});
+    setIsDecisionSubmitting(false);
+  }, []);
+
+  const openDecisionModal = useCallback(
+    (expense) => {
+      setSelectedExpense(expense);
+      setDecisionForm({
+        status: "",
+        approvedAmount:
+          expense?.approvedAmount !== null &&
+          expense?.approvedAmount !== undefined
+            ? String(expense.approvedAmount)
+            : String(expense?.requestedAmount ?? ""),
+        remark: "",
+      });
+      setDecisionErrors({});
+      onOpen();
+    },
+    [onOpen],
+  );
+
+  const validateDecisionForm = useCallback(() => {
+    const errors = {};
+    const requestedAmount = Number(selectedExpense?.requestedAmount || 0);
+    const approvedAmount = Number(decisionForm.approvedAmount);
+
+    if (!decisionForm.status) {
+      errors.status = "Status is required";
+    }
+
+    if (!decisionForm.remark?.trim()) {
+      errors.remark = "Remark is required";
+    }
+
+    if (decisionForm.status === "APPROVED") {
+      if (decisionForm.approvedAmount === "") {
+        errors.approvedAmount = "Approved amount is required";
+      } else if (!Number.isFinite(approvedAmount) || approvedAmount <= 0) {
+        errors.approvedAmount = "Approved amount must be greater than zero";
+      } else if (requestedAmount > 0 && approvedAmount > requestedAmount) {
+        errors.approvedAmount =
+          "Approved amount cannot exceed the requested amount";
+      }
+    }
+
+    setDecisionErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [decisionForm, selectedExpense]);
+
+  const handleAccountsDecision = useCallback(async () => {
+    if (!selectedExpense?.expenseId || !selectedExpense?.projectId) {
       addToast({
-        title: "Payment proof is still uploading",
-        color: "warning",
+        title: "Expense details are missing",
+        description: "Expense ID and project ID are required.",
+        color: "danger",
       });
       return;
     }
 
-    if (!validateApprovalPayment()) {
+    if (!resolvedUserId) {
+      addToast({
+        title: "User ID is required",
+        color: "danger",
+      });
       return;
     }
 
+    if (!validateDecisionForm()) return;
+
     try {
-      setIsApprovalSubmitting(true);
+      setIsDecisionSubmitting(true);
+
+      const payload = {
+        status: decisionForm.status,
+        approvedAmount:
+          decisionForm.status === "APPROVED"
+            ? Number(Number(decisionForm.approvedAmount).toFixed(2))
+            : null,
+        remark: decisionForm.remark.trim(),
+      };
 
       const response = await dispatch(
-        approvedAndDisapprovedExpense({
-          projectId: statusData.projectId,
-          expenseId: statusData.expenseId,
-          userId,
-          data: {
-            status: "APPROVED",
-            paymentBy: approvalPaymentData.paymentBy,
-            paymentProof: approvalPaymentData.paymentProof,
-
-            ...(approvalPaymentData.paymentBy === "CORPSEED"
-              ? {
-                  paymentTypeId: Number(approvalPaymentData.paymentTypeId),
-                  amount: Number(
-                    Number(approvalPaymentData.receivedAmount).toFixed(2),
-                  ),
-                  paymentDate: approvalPaymentData.paymentReceivedDate,
-                  paymentMode: approvalPaymentData.paymentMode,
-                  bankLedgerId: Number(approvalPaymentData.bankLedgerId),
-                  transactionReference:
-                    approvalPaymentData.paymentMode === "CASH"
-                      ? ""
-                      : approvalPaymentData.transactionReference.trim(),
-                }
-              : {
-                  paymentTypeId: null,
-                  amount: null,
-                  paymentDate: null,
-                  paymentMode: null,
-                  bankLedgerId: null,
-                  transactionReference: null,
-                }),
-          },
+        updateExpenseAccountsDecision({
+          expenseId: selectedExpense.expenseId,
+          projectId: selectedExpense.projectId,
+          userId: resolvedUserId,
+          data: payload,
         }),
       );
 
       if (response?.meta?.requestStatus === "fulfilled") {
         addToast({
-          title: "Expense approved successfully",
+          title: "Accounts decision updated successfully",
+          description: `Expense #${selectedExpense.expenseId} was updated.`,
           color: "success",
         });
 
-        dispatch(getExpenseListByUserId(filteration));
-        resetApprovalModal();
+        resetDecisionModal();
         onClose();
+        fetchPaymentQueue();
         return;
       }
 
       addToast({
-        title:
-          response?.payload?.data?.message ||
+        title: "Failed to update accounts decision",
+        description:
           response?.payload?.message ||
-          "Failed to approve expense",
+          response?.payload?.error ||
+          response?.payload ||
+          "Something went wrong while updating the expense.",
         color: "danger",
       });
     } catch (error) {
       addToast({
-        title:
+        title: "Failed to update accounts decision",
+        description:
           error?.response?.data?.message ||
           error?.message ||
-          "Something went wrong",
+          "Something went wrong while updating the expense.",
         color: "danger",
       });
     } finally {
-      setIsApprovalSubmitting(false);
+      setIsDecisionSubmitting(false);
     }
-  };
+  }, [
+    decisionForm,
+    dispatch,
+    fetchPaymentQueue,
+    onClose,
+    resetDecisionModal,
+    resolvedUserId,
+    selectedExpense,
+    validateDecisionForm,
+  ]);
 
-  const handleChangeExpenseStatus = async () => {
-    if (!statusData.rejectionRemark?.trim()) {
-      addToast({
-        title: "Remark is required",
-        color: "danger",
-      });
-      return;
-    }
+  const renderCell = useCallback(
+    (expense, columnKey) => {
+      const currencyCode = expense?.currencyCode || "INR";
 
-    try {
-      const response = await dispatch(
-        approvedAndDisapprovedExpense({
-          projectId: statusData.projectId,
-          expenseId: statusData.expenseId,
-          userId,
-          data: {
-            status: statusData.status,
-            rejectionRemark: statusData.rejectionRemark.trim(),
-          },
-        }),
-      );
+      switch (columnKey) {
+        case "expenseId":
+          return (
+            <span className="font-medium">#{expense?.expenseId ?? "-"}</span>
+          );
 
-      if (response?.meta?.requestStatus === "fulfilled") {
-        addToast({
-          title: "Expense status updated successfully",
-          color: "success",
-        });
+        case "project":
+          return (
+            <div className="flex max-w-[240px] flex-col">
+              <span className="truncate text-sm font-semibold">
+                {expense?.projectName || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                {expense?.projectNo ||
+                  `Project ID: ${expense?.projectId || "-"}`}
+              </span>
+            </div>
+          );
 
-        dispatch(getExpenseListByUserId(filteration));
-        resetApprovalModal();
-        onClose();
-        return;
-      }
+        case "unbilledNumber":
+          return (
+            <span className="whitespace-nowrap">
+              {expense?.unbilledNumber || "-"}
+            </span>
+          );
 
-      addToast({
-        title:
-          response?.payload?.data?.message ||
-          response?.payload?.message ||
-          "Failed to update expense status",
-        color: "danger",
-      });
-    } catch (error) {
-      addToast({
-        title:
-          error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong",
-        color: "danger",
-      });
-    }
-  };
+        case "productName":
+          return expense?.productName || "-";
 
-  const updateApprovalPaymentField = (fieldName, value) => {
-    setApprovalPaymentData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+        case "expenseCategory":
+          return (
+            <Chip size="sm" variant="flat">
+              {formatText(expense?.expenseCategory)}
+            </Chip>
+          );
 
-    setApprovalPaymentErrors((prev) => ({
-      ...prev,
-      [fieldName]: "",
-    }));
-  };
+        case "requestedAmount":
+          return (
+            <span className="whitespace-nowrap font-semibold">
+              {formatCurrency(expense?.requestedAmount, currencyCode)}
+            </span>
+          );
 
-  const renderCell = (rowData, columnKey) => {
-    switch (columnKey) {
-      case "unbilledNumber":
-        return (
-          <div className="flex flex-col">
-            <p>{rowData?.unbilledNumber}</p>
-            {rowData?.approvalStatus && (
+        case "approvedAmount":
+          return (
+            <span className="whitespace-nowrap">
+              {formatCurrency(expense?.approvedAmount, currencyCode)}
+            </span>
+          );
+
+        case "paidAmount":
+          return (
+            <span className="whitespace-nowrap">
+              {formatCurrency(expense?.paidAmount, currencyCode)}
+            </span>
+          );
+
+        case "outstandingAmount":
+          return (
+            <span className="whitespace-nowrap font-semibold">
+              {formatCurrency(expense?.outstandingAmount, currencyCode)}
+            </span>
+          );
+
+        case "department":
+          return (
+            <div className="flex flex-col">
+              <span>{expense?.raisedDepartmentName || "-"}</span>
+              {expense?.raisedDepartmentId && (
+                <span className="text-xs text-default-500">
+                  ID: {expense.raisedDepartmentId}
+                </span>
+              )}
+            </div>
+          );
+
+        case "createdBy":
+          return (
+            <div className="flex flex-col">
+              <span>{expense?.createdByUserName || "-"}</span>
+              {expense?.createdByUserId && (
+                <span className="text-xs text-default-500">
+                  User ID: {expense.createdByUserId}
+                </span>
+              )}
+            </div>
+          );
+
+        case "expenseDate":
+          return (
+            <span className="whitespace-nowrap">
+              {formatDateTime(expense?.expenseDate)}
+            </span>
+          );
+
+        case "createdDate":
+          return (
+            <span className="whitespace-nowrap">
+              {formatDateTime(expense?.createdDate)}
+            </span>
+          );
+
+        case "updatedDate":
+          return (
+            <span className="whitespace-nowrap">
+              {formatDateTime(expense?.updatedDate)}
+            </span>
+          );
+
+        case "approvalStage":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getStageColor(expense?.approvalStage)}
+            >
+              {formatText(expense?.approvalStage)}
+            </Chip>
+          );
+
+        case "approvalStatus":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getApprovalStatusColor(expense?.approvalStatus)}
+            >
+              {formatText(expense?.approvalStatus)}
+            </Chip>
+          );
+
+        case "crtApprovalStatus":
+          return (
+            <div className="flex flex-col gap-1">
               <Chip
                 size="sm"
-                color={
-                  rowData?.approvalStatus === "APPROVED"
-                    ? "success"
-                    : rowData?.approvalStatus === "REJECTED"
-                      ? "danger"
-                      : rowData?.approvalStatus === "ON_HOLD"
-                        ? "warning"
-                        : rowData?.approvalStatus === "PENDING"
-                          ? "secondary"
-                          : "default"
-                }
+                variant="flat"
+                color={getApprovalStatusColor(expense?.crtApprovalStatus)}
               >
-                {rowData?.approvalStatus}
+                {formatText(expense?.crtApprovalStatus)}
               </Chip>
-            )}
-          </div>
-        );
-      case "expenseDate":
-        return (
-          <p>{dayjs(rowData?.expenseDate).format("DD-MM-YYYY, HH:mm A")}</p>
-        );
-      case "amount":
-        return <p>{inrCurrency(rowData?.amount)}</p>;
+              {expense?.crtActionByUserName && (
+                <span className="text-xs text-default-500">
+                  By: {expense.crtActionByUserName}
+                </span>
+              )}
+            </div>
+          );
 
-      case "actions": {
-        const status = String(rowData?.approvalStatus || "")
-          .trim()
-          .toUpperCase();
-
-        // Do not show any action after final decision
-        if (["APPROVED", "REJECTED"].includes(status)) {
-          return null;
-        }
-
-        return (
-          <Dropdown showArrow>
-            <DropdownTrigger>
-              <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
-              </Button>
-            </DropdownTrigger>
-
-            <DropdownMenu>
-              <DropdownItem
-                key="approved"
-                onPress={() => {
-                  setStatusData({
-                    status: "APPROVED",
-                    rejectionRemark: "",
-                    projectId: rowData?.projectId,
-                    expenseId: rowData?.expenseId,
-                    expenseAmount: Number(rowData?.amount || 0),
-                    userId,
-                  });
-
-                  setApprovalPaymentData({
-                    paymentBy: "",
-                    paymentTypeId: "",
-                    receivedAmount: String(rowData?.amount ?? ""),
-                    paymentReceivedDate: "",
-                    paymentMode: "",
-                    bankLedgerId: "",
-                    transactionReference: "",
-                    paymentProof: "",
-                  });
-
-                  setApprovalPaymentErrors({});
-                  onOpen();
-                }}
+        case "accountsApprovalStatus":
+          return (
+            <div className="flex flex-col gap-1">
+              <Chip
+                size="sm"
+                variant="flat"
+                color={getApprovalStatusColor(expense?.accountsApprovalStatus)}
               >
-                APPROVED
-              </DropdownItem>
+                {formatText(expense?.accountsApprovalStatus)}
+              </Chip>
+              {expense?.accountsActionByUserName && (
+                <span className="text-xs text-default-500">
+                  By: {expense.accountsActionByUserName}
+                </span>
+              )}
+            </div>
+          );
 
-              <DropdownItem
-                key="pending"
-                onPress={() => {
-                  onOpen();
-                  setStatusData((prev) => ({
-                    ...prev,
-                    status: "PENDING",
-                    projectId: rowData?.projectId,
-                    expenseId: rowData?.expenseId,
-                  }));
-                }}
+        case "paymentStatus":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getPaymentStatusColor(expense?.paymentStatus)}
+            >
+              {formatText(expense?.paymentStatus)}
+            </Chip>
+          );
+
+        case "reference":
+          return (
+            <div className="flex max-w-[230px] flex-col">
+              <span
+                className="truncate text-sm"
+                title={expense?.externalReference || "-"}
               >
-                PENDING
-              </DropdownItem>
-
-              <DropdownItem
-                key="onHold"
-                onPress={() => {
-                  onOpen();
-                  setStatusData((prev) => ({
-                    ...prev,
-                    status: "ON_HOLD",
-                    projectId: rowData?.projectId,
-                    expenseId: rowData?.expenseId,
-                  }));
-                }}
+                {expense?.externalReference || "-"}
+              </span>
+              <span
+                className="truncate text-xs text-default-500"
+                title={expense?.remark || "-"}
               >
-                ON_HOLD
-              </DropdownItem>
+                {expense?.remark || "-"}
+              </span>
+            </div>
+          );
 
-              <DropdownItem
-                key="rejected"
-                onPress={() => {
-                  onOpen();
-                  setStatusData((prev) => ({
-                    ...prev,
-                    status: "REJECTED",
-                    projectId: rowData?.projectId,
-                    expenseId: rowData?.expenseId,
-                  }));
-                }}
-              >
-                REJECTED
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        );
-      }
-      default:
-        return rowData[columnKey] || "-";
-    }
-  };
+        case "attachment":
+          return expense?.attachmentUrl ? (
+            <Button
+              as="a"
+              href={expense.attachmentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="sm"
+              variant="flat"
+              color="primary"
+              startContent={<ExternalLink className="h-4 w-4" />}
+            >
+              View
+            </Button>
+          ) : (
+            "-"
+          );
 
-  const onNextPage = useCallback(() => {
-    if (filteration?.page < pages) {
-      setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
-    }
-  }, [filteration, pages]);
+        case "actions": {
+          const approvalStage = String(
+            expense?.approvalStage || "",
+          ).toUpperCase();
+          const crtStatus = String(
+            expense?.crtApprovalStatus || "",
+          ).toUpperCase();
+          const accountsStatus = String(
+            expense?.accountsApprovalStatus || "",
+          ).toUpperCase();
 
-  const onPreviousPage = useCallback(() => {
-    if (filteration?.page > 1) {
-      setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
-    }
-  }, [filteration]);
+          const canTakeDecision =
+            approvalStage === "ACCOUNTS_REVIEW" &&
+            crtStatus === "APPROVED" &&
+            !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
 
-  const onRowsPerPageChange = useCallback((e) => {
-    setFilteration((prev) => ({
-      ...prev,
-      size: Number(e.target.value),
-      page: 1,
-    }));
-  }, []);
+          if (!canTakeDecision) {
+            return <span className="text-default-400">-</span>;
+          }
 
-  const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setFilteration((prev) => ({ ...prev, page: 1 }));
-    } else {
-      setFilterValue("");
-    }
-  }, []);
-
-  const onClear = useCallback(() => {
-    setFilterValue("");
-    setFilteration((prev) => ({ ...prev, page: 1 }));
-  }, []);
-
-  const topContent = useMemo(() => {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-          />
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
+          return (
+            <Dropdown placement="bottom-end">
+              <DropdownTrigger>
                 <Button
-                  endContent={<ChevronDown />}
-                  variant="flat"
-                  className="capitalize"
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  aria-label={`Actions for expense ${expense?.expenseId}`}
                 >
-                  {filteration?.status}
+                  <EllipsisVertical className="h-5 w-5" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                selectionMode="single"
-                selectedKeys={[filteration.status]}
-                onSelectionChange={(selectedKeys) => {
-                  const selected = Array.from(selectedKeys)[0];
-                  setFilteration((prev) => ({
-                    ...prev,
-                    status: selected || prev.status,
-                  }));
-                }}
-              >
-                <DropdownItem key="ALL">ALL</DropdownItem>
-                <DropdownItem key="PENDING">PENDING</DropdownItem>
-                <DropdownItem key="ON_HOLD">ON_HOLD</DropdownItem>
-                <DropdownItem key="APPROVED">APPROVED</DropdownItem>
-                <DropdownItem key="REJECTED">REJECTED</DropdownItem>
+              <DropdownMenu aria-label="Expense accounts actions">
+                <DropdownItem
+                  key="update-accounts-decision"
+                  onPress={() => openDecisionModal(expense)}
+                >
+                  Update Status
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
+          );
+        }
+
+        default:
+          return expense?.[columnKey] ?? "-";
+      }
+    },
+    [openDecisionModal],
+  );
+
+  const topContent = useMemo(
+    () => (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <Input
+            isClearable
+            className="w-full max-w-[340px]"
+            placeholder="Search payment queue..."
+            startContent={<Search className="h-4 w-4" />}
+            value={searchValue}
+            onClear={() => {
+              setSearchValue("");
+              setPage(1);
+            }}
+            onValueChange={(value) => {
+              setSearchValue(value || "");
+              setPage(1);
+            }}
+          />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Select
+              className="w-full sm:w-[220px]"
+              selectedKeys={new Set([paymentStatus])}
+              onSelectionChange={(keys) => {
+                const selectedValue = Array.from(keys)[0];
+                if (!selectedValue) return;
+
+                setPaymentStatus(String(selectedValue));
+                setPage(1);
+              }}
+            >
+              {PAYMENT_STATUS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} textValue={option.label}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </Select>
+
             <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+              <DropdownTrigger>
+                <Button
+                  variant="flat"
+                  endContent={<ChevronDown className="h-4 w-4" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Table Columns"
+                aria-label="Visible payment queue columns"
                 closeOnSelect={false}
-                selectedKeys={visibleColumns}
                 selectionMode="multiple"
+                selectedKeys={visibleColumns}
                 onSelectionChange={setVisibleColumns}
               >
                 {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
+                  <DropdownItem key={column.uid}>{column.name}</DropdownItem>
                 ))}
               </DropdownMenu>
             </Dropdown>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} expense for approvals
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-small text-default-500">
+            Total {filteredItems.length} expenses
           </span>
-          <label className="flex items-center text-default-400 text-small">
+
+          <label className="flex items-center gap-2 text-small text-default-500">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
-              onChange={onRowsPerPageChange}
-              value={filteration?.size}
+              className="rounded-md border border-default-200 bg-transparent px-2 py-1 text-small outline-none"
+              value={rowsPerPage}
+              onChange={(event) => {
+                setRowsPerPage(Number(event.target.value));
+                setPage(1);
+              }}
             >
               <option value="5">5</option>
-              <option value="15">15</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
           </label>
         </div>
       </div>
-    );
-  }, [
-    filterValue,
-    visibleColumns,
-    onRowsPerPageChange,
-    data?.length,
-    onSearchChange,
-    hasSearchFilter,
-    filteration?.status,
-  ]);
+    ),
+    [
+      fetchPaymentQueue,
+      filteredItems.length,
+      paymentQueueLoading,
+      paymentStatus,
+      rowsPerPage,
+      searchValue,
+      visibleColumns,
+    ],
+  );
 
-  const bottomContent = useMemo(() => {
-    return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+  const bottomContent = useMemo(
+    () => (
+      <div className="flex items-center justify-between px-2 py-2">
+        <span className="text-small text-default-500">
+          Page {page} of {totalPages}
         </span>
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
-          page={filteration?.page}
-          total={pages}
-          onChange={(page) => {
-            setFilteration((prev) => ({ ...prev, page }));
-          }}
+          page={page}
+          total={totalPages}
+          onChange={setPage}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
-          <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onPreviousPage}
-          >
-            Previous
-          </Button>
-          <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onNextPage}
-          >
-            Next
-          </Button>
-        </div>
       </div>
-    );
-  }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
+    ),
+    [page, totalPages],
+  );
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
-        Expenses for approvals
-      </h1>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-sans text-2xl font-medium">
+          Expense Payment Queue
+        </h1>
+        <p className="mt-1 text-sm text-default-500">
+          Review expenses by payment status and track requested, approved, paid,
+          and outstanding amounts.
+        </p>
+      </div>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Expense payment queue table"
+        sortDescriptor={sortDescriptor}
+        onSortChange={setSortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          wrapper: "w-full md:max-h-[62vh] 2xl:max-h-[68vh]",
           table: "w-full",
         }}
-        // selectedKeys={selectedKeys}
-        // selectionMode="multiple"
-        sortDescriptor={sortDescriptor}
-        topContent={topContent}
-        topContentPlacement="outside"
-        // onSelectionChange={setSelectedKeys}
-        onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
           {(column) => (
             <TableColumn
               key={column.uid}
+              allowsSorting={column.uid !== "actions"}
               align={column.uid === "actions" ? "center" : "start"}
-              allowsSorting={column.sortable}
             >
               {column.name}
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
-          {(item) => (
-            <TableRow key={item.expenseId}>
+
+        <TableBody
+          isLoading={paymentQueueLoading}
+          items={paginatedItems}
+          emptyContent={
+            paymentQueueLoading
+              ? "Loading expense payment queue..."
+              : paymentQueueError?.message ||
+                paymentQueueError ||
+                "No expenses found"
+          }
+        >
+          {(expense) => (
+            <TableRow
+              key={
+                expense?.expenseId ||
+                expense?.activityId ||
+                `${expense?.projectId}-${expense?.externalReference}`
+              }
+            >
               {(columnKey) => (
-                <TableCell>{renderCell(item, columnKey)}</TableCell>
+                <TableCell>{renderCell(expense, columnKey)}</TableCell>
               )}
             </TableRow>
           )}
         </TableBody>
       </Table>
+
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        size={statusData.status === "APPROVED" ? "2xl" : "md"}
-        isDismissable={false}
-        isKeyboardDismissDisabled
+        size="lg"
+        isDismissable={!isDecisionSubmitting}
+        isKeyboardDismissDisabled={isDecisionSubmitting}
+        onClose={resetDecisionModal}
       >
         <ModalContent>
           {(modalClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {statusData.status === "APPROVED"
-                  ? "Approve Expense"
-                  : "Update Expense Status"}
+                Update Accounts Decision
+                <span className="text-sm font-normal text-default-500">
+                  Expense #{selectedExpense?.expenseId || "-"} ·{" "}
+                  {selectedExpense?.projectName || "-"}
+                </span>
               </ModalHeader>
 
               <ModalBody>
-                {statusData.status === "APPROVED" ? (
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <Select
-                      label="Payment Initiator"
-                      placeholder="Select the payment Initiator"
-                      isRequired
-                      selectedKeys={
-                        approvalPaymentData.paymentBy
-                          ? new Set([approvalPaymentData.paymentBy])
-                          : new Set([])
-                      }
-                      isInvalid={Boolean(approvalPaymentErrors.paymentBy)}
-                      errorMessage={approvalPaymentErrors.paymentBy}
-                      onSelectionChange={(keys) =>
-                        handlePaymentByChange(Array.from(keys)?.[0] || "")
-                      }
-                      className="md:col-span-2"
-                    >
-                      <SelectItem key="CLIENT">Client</SelectItem>
-                      <SelectItem key="CORPSEED">Corpseed</SelectItem>
-                    </Select>
-
-                    {approvalPaymentData.paymentBy === "CORPSEED" && (
-                      <>
-                        <div>
-                          <NewSelect
-                            isRequired
-                            label="Payment Type"
-                            data={
-                              Array.isArray(paymentTypeList)
-                                ? paymentTypeList
-                                : []
-                            }
-                            labelKey="name"
-                            valueKey="id"
-                            value={approvalPaymentData.paymentTypeId}
-                            onChange={(value) =>
-                              updateApprovalPaymentField("paymentTypeId", value)
-                            }
-                          />
-
-                          {approvalPaymentErrors.paymentTypeId && (
-                            <p className="mt-1 text-xs text-danger">
-                              {approvalPaymentErrors.paymentTypeId}
-                            </p>
-                          )}
-                        </div>
-
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          inputMode="decimal"
-                          label="Received Amount"
-                          placeholder="Enter received amount"
-                          isRequired
-                          value={approvalPaymentData.receivedAmount}
-                          isInvalid={Boolean(
-                            approvalPaymentErrors.receivedAmount,
-                          )}
-                          errorMessage={approvalPaymentErrors.receivedAmount}
-                          onKeyDown={(event) => {
-                            if (["-", "+", "e", "E"].includes(event.key)) {
-                              event.preventDefault();
-                            }
-                          }}
-                          onChange={(event) => {
-                            const value = event.target.value;
-
-                            if (
-                              value !== "" &&
-                              !/^\d*(\.\d{0,2})?$/.test(value)
-                            ) {
-                              return;
-                            }
-
-                            updateApprovalPaymentField("receivedAmount", value);
-                          }}
-                        />
-
-                        <DatePicker
-                          label="Payment Received Date"
-                          isRequired
-                          showMonthAndYearPickers
-                          maxValue={today(getLocalTimeZone())}
-                          value={
-                            approvalPaymentData.paymentReceivedDate &&
-                            /^\d{4}-\d{2}-\d{2}$/.test(
-                              approvalPaymentData.paymentReceivedDate,
-                            )
-                              ? parseDate(
-                                  approvalPaymentData.paymentReceivedDate,
-                                )
-                              : null
-                          }
-                          isInvalid={Boolean(
-                            approvalPaymentErrors.paymentReceivedDate,
-                          )}
-                          errorMessage={
-                            approvalPaymentErrors.paymentReceivedDate
-                          }
-                          onChange={(value) =>
-                            updateApprovalPaymentField(
-                              "paymentReceivedDate",
-                              value ? value.toString() : "",
-                            )
-                          }
-                        />
-
-                        <Select
-                          label="Payment Mode"
-                          placeholder="Select payment mode"
-                          isRequired
-                          selectedKeys={
-                            approvalPaymentData.paymentMode
-                              ? new Set([approvalPaymentData.paymentMode])
-                              : new Set([])
-                          }
-                          isInvalid={Boolean(approvalPaymentErrors.paymentMode)}
-                          errorMessage={approvalPaymentErrors.paymentMode}
-                          onSelectionChange={(keys) =>
-                            handlePaymentModeChange(Array.from(keys)?.[0] || "")
-                          }
-                        >
-                          <SelectItem key="CASH">Cash</SelectItem>
-                          <SelectItem key="UPI">UPI</SelectItem>
-                          <SelectItem key="CARD">Card</SelectItem>
-                          <SelectItem key="BANK_TRANSFER">
-                            Bank Transfer
-                          </SelectItem>
-                          <SelectItem key="CHEQUE">Cheque</SelectItem>
-                        </Select>
-
-                        <div>
-                          <NewSelect
-                            isRequired
-                            isDisabled={!hasPaymentModeSelected}
-                            label="Select Bank/Cash"
-                            data={filteredPaymentLedgerList}
-                            labelKey="ledgerName"
-                            valueKey="id"
-                            value={approvalPaymentData.bankLedgerId}
-                            onChange={(value) =>
-                              updateApprovalPaymentField("bankLedgerId", value)
-                            }
-                          />
-
-                          {approvalPaymentErrors.bankLedgerId && (
-                            <p className="mt-1 text-xs text-danger">
-                              {approvalPaymentErrors.bankLedgerId}
-                            </p>
-                          )}
-                        </div>
-
-                        {approvalPaymentData.paymentMode !== "CASH" && (
-                          <Input
-                            label="Transaction Reference / UTR Number"
-                            placeholder="Enter reference number"
-                            isRequired
-                            value={approvalPaymentData.transactionReference}
-                            isInvalid={Boolean(
-                              approvalPaymentErrors.transactionReference,
-                            )}
-                            errorMessage={
-                              approvalPaymentErrors.transactionReference
-                            }
-                            onChange={(event) =>
-                              updateApprovalPaymentField(
-                                "transactionReference",
-                                event.target.value,
-                              )
-                            }
-                          />
+                <div className="rounded-lg border border-default-200 bg-default-50 p-3">
+                  <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <span className="text-default-500">Requested Amount</span>
+                      <p className="font-semibold">
+                        {formatCurrency(
+                          selectedExpense?.requestedAmount,
+                          selectedExpense?.currencyCode,
                         )}
-                      </>
-                    )}
-
-                    {approvalPaymentData.paymentBy && (
-                      <div className="md:col-span-2">
-                        <FileUploader
-                          label="Payment Proof"
-                          placeholder="Upload payment proof"
-                          isRequired
-                          uploadingType="single"
-                          value={approvalPaymentData.paymentProof}
-                          errorMessage={approvalPaymentErrors.paymentProof}
-                          onUploadingChange={setIsPaymentProofUploading}
-                          onChange={(uploadedUrl) =>
-                            updateApprovalPaymentField(
-                              "paymentProof",
-                              uploadedUrl || "",
-                            )
-                          }
-                        />
-                      </div>
-                    )}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-default-500">
+                        Current Accounts Status
+                      </span>
+                      <p className="font-semibold">
+                        {formatText(selectedExpense?.accountsApprovalStatus)}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <Textarea
-                    label="Remark"
-                    isRequired
-                    value={statusData.rejectionRemark}
-                    onChange={(event) =>
-                      setStatusData((prev) => ({
-                        ...prev,
-                        rejectionRemark: event.target.value,
-                      }))
+                </div>
+
+                <Select
+                  label="Status"
+                  placeholder="Select accounts decision"
+                  isRequired
+                  selectedKeys={
+                    decisionForm.status
+                      ? new Set([decisionForm.status])
+                      : new Set([])
+                  }
+                  isInvalid={Boolean(decisionErrors.status)}
+                  errorMessage={decisionErrors.status}
+                  onSelectionChange={(keys) => {
+                    const status = String(Array.from(keys)[0] || "");
+
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      status,
+                      approvedAmount:
+                        status === "APPROVED"
+                          ? previous.approvedAmount ||
+                            String(selectedExpense?.requestedAmount ?? "")
+                          : "",
+                    }));
+                    setDecisionErrors((previous) => ({
+                      ...previous,
+                      status: "",
+                      approvedAmount: "",
+                    }));
+                  }}
+                >
+                  {ACCOUNT_DECISION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} textValue={option.label}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                  label="Approved Amount"
+                  placeholder="Enter approved amount"
+                  isRequired={decisionForm.status === "APPROVED"}
+                  isDisabled={decisionForm.status !== "APPROVED"}
+                  value={decisionForm.approvedAmount}
+                  isInvalid={Boolean(decisionErrors.approvedAmount)}
+                  errorMessage={decisionErrors.approvedAmount}
+                  onKeyDown={(event) => {
+                    if (["-", "+", "e", "E"].includes(event.key)) {
+                      event.preventDefault();
                     }
-                  />
-                )}
+                  }}
+                  onChange={(event) => {
+                    const value = event.target.value;
+
+                    if (value !== "" && !/^\d*(\.\d{0,2})?$/.test(value)) {
+                      return;
+                    }
+
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      approvedAmount: value,
+                    }));
+                    setDecisionErrors((previous) => ({
+                      ...previous,
+                      approvedAmount: "",
+                    }));
+                  }}
+                />
+
+                <Textarea
+                  label="Remark"
+                  placeholder="Enter accounts decision remark"
+                  minRows={3}
+                  isRequired
+                  value={decisionForm.remark}
+                  isInvalid={Boolean(decisionErrors.remark)}
+                  errorMessage={decisionErrors.remark}
+                  onValueChange={(value) => {
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      remark: value,
+                    }));
+                    setDecisionErrors((previous) => ({
+                      ...previous,
+                      remark: "",
+                    }));
+                  }}
+                />
               </ModalBody>
 
               <ModalFooter>
                 <Button
                   variant="light"
+                  isDisabled={isDecisionSubmitting}
                   onPress={() => {
-                    resetApprovalModal();
+                    resetDecisionModal();
                     modalClose();
                   }}
                 >
-                  Close
+                  Cancel
                 </Button>
-
                 <Button
                   color="primary"
-                  isLoading={
-                    statusData.status === "APPROVED"
-                      ? isApprovalSubmitting
-                      : false
-                  }
-                  isDisabled={
-                    statusData.status === "APPROVED"
-                      ? isPaymentProofUploading
-                      : !statusData.rejectionRemark?.trim()
-                  }
-                  onPress={
-                    statusData.status === "APPROVED"
-                      ? handleApproveExpense
-                      : handleChangeExpenseStatus
-                  }
+                  isLoading={isDecisionSubmitting}
+                  onPress={handleAccountsDecision}
                 >
-                  Submit
+                  Submit Decision
                 </Button>
               </ModalFooter>
             </>
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

@@ -881,9 +881,9 @@ const VendorsData = () => {
     switch (columnKey) {
       case "id":
         return (
-          <span className="text-sm font-medium text-foreground">
+          <div className="text-sm font-medium text-foreground">
             {rowData?.id || "-"}
-          </span>
+          </div>
         );
 
       // case "vendorCode":
@@ -1143,11 +1143,8 @@ const VendorsData = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          base: "flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden",
-          wrapper:
-            "min-h-0 w-full max-w-full flex-1 overflow-auto overscroll-contain rounded-xl border border-default-200",
-          table: "min-w-[760px] table-fixed",
-          wrapper: "max-h-[52vh] w-full rounded-xl border border-default-200",
+          wrapper: "2xl:max-h-[52vh] md:max-h-[48vh] w-full",
+          table: "w-full",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

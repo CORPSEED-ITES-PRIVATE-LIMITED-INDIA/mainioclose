@@ -547,7 +547,6 @@ const ProjectPR = () => {
       </Table>
 
       <Modal
-        size="2xl"
         isOpen={approveModal.isOpen}
         onOpenChange={approveModal.onOpenChange}
       >

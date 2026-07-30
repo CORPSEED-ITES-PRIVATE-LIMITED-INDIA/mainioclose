@@ -596,6 +596,11 @@ const ProjectDetails = () => {
     statusReason: "",
     changedById: null,
 
+    certificationTenure: "",
+    certificationExpiryDate: "",
+    certificationAttachmentUrl: "",
+    certificationTenureUnit: "",
+
     // For REWORK
     reworkDocuments: [],
     additionalReworkDocuments: [],
@@ -683,6 +688,10 @@ const ProjectDetails = () => {
 
   const isCertificationMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "certification";
+
+  const isCertificationCompleted =
+    isCertificationMilestone &&
+    statusObj?.newStatusName?.toUpperCase() === "COMPLETED";
 
   const userDetailById = useSelector((state) => state.common.userDetailById);
 
@@ -1109,7 +1118,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Assignee updated successfully !.",
+            title: "SUCCESS",
+            description: "Assignee updated successfully !.",
             color: "success",
           });
           assigneeModal.onClose();
@@ -1129,7 +1139,11 @@ const ProjectDetails = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -1138,7 +1152,7 @@ const ProjectDetails = () => {
   const handleStatusChange = () => {
     if (!statusObj?.newStatusName) {
       addToast({
-        title: "Status required",
+        title: "REQUIRED",
         description: "Please select status.",
         color: "danger",
       });
@@ -1147,11 +1161,52 @@ const ProjectDetails = () => {
 
     if (!statusObj?.statusReason?.trim()) {
       addToast({
-        title: "Reason required",
+        title: "REQUIRED",
         description: "Please enter reason.",
         color: "danger",
       });
       return;
+    }
+
+    if (isCertificationCompleted) {
+      if (
+        !statusObj.certificationTenure ||
+        Number(statusObj.certificationTenure) <= 0
+      ) {
+        addToast({
+          title: "REQUIRED",
+          description: "Certification tenure is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!statusObj.certificateExpiryDate) {
+        addToast({
+          title: "REQUIRED",
+          description: "Certificate expiry date is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!statusObj.certificationTenureUnit) {
+        addToast({
+          title: "REQUIRED",
+          description: "Certificate tennure unit is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!statusObj.certificationAttachmentUrl) {
+        addToast({
+          title: "REQUIRED",
+          description: "Certification attachment is required",
+          color: "danger",
+        });
+        return;
+      }
     }
 
     const isReworkStatus = statusObj.newStatusName === REWORK_STATUS_NAME;
@@ -1163,7 +1218,7 @@ const ProjectDetails = () => {
 
       if (selectedReworkDocs.length === 0) {
         addToast({
-          title: "Document required",
+          title: "REQUIRED",
           description: "Please select at least one document for rework.",
           color: "danger",
         });
@@ -1176,7 +1231,7 @@ const ProjectDetails = () => {
 
       if (docWithoutReason) {
         addToast({
-          title: "Document reason required",
+          title: "REQUIRED",
           description: `Please enter reason for ${docWithoutReason.documentName}.`,
           color: "danger",
         });
@@ -1202,6 +1257,13 @@ const ProjectDetails = () => {
         newStatusName: statusObj.newStatusName,
         statusReason: statusObj.statusReason.trim(),
         changedById: Number(userId),
+
+        ...(isCertificationCompleted && {
+          certificationTenure: Number(statusObj.certificationTenure),
+          certificateExpiryDate: statusObj.certificateExpiryDate,
+          certificationAttachmentUrl: statusObj.certificationAttachmentUrl,
+          certificationTenureUnit: statusObj.certificationTenureUnit,
+        }),
       };
 
       requestAction = updateAssignmentStatusForMileStone(normalPayload);
@@ -1211,7 +1273,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: isReworkStatus
+            title: "SUCCESS",
+            description: isReworkStatus
               ? "Milestone sent back for rework successfully!"
               : "Status updated successfully!",
             color: "success",
@@ -1224,6 +1287,10 @@ const ProjectDetails = () => {
             changedById: null,
             reworkDocuments: [],
             additionalReworkDocuments: [],
+            certificationTenure: "",
+            certificateExpiryDate: "",
+            certificationAttachmentUrl: "",
+            certificationTenureUnit: "",
           });
 
           statusModal.onClose();
@@ -1253,7 +1320,8 @@ const ProjectDetails = () => {
       })
       .catch(() => {
         addToast({
-          title: "Something went wrong!",
+          title: "ERROR",
+          description: "Something went wrong!",
           color: "danger",
         });
       });
@@ -1339,7 +1407,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Portal status updated successfully!",
+            title: "SUCCESS",
+            description: "Portal status updated successfully!",
             color: "success",
           });
 
@@ -1367,7 +1436,8 @@ const ProjectDetails = () => {
       })
       .catch(() => {
         addToast({
-          title: "Something went wrong!",
+          title: "ERROR",
+          description: "Something went wrong!",
           color: "danger",
         });
       });
@@ -1422,7 +1492,8 @@ const ProjectDetails = () => {
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Portal details deleted successfully!",
+          title: "SUCCESS",
+          description: "Portal details deleted successfully!",
           color: "success",
         });
 
@@ -1477,7 +1548,8 @@ const ProjectDetails = () => {
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Portal details updated successfully!",
+          title: "SUCCESS",
+          description: "Portal details updated successfully!",
           color: "success",
         });
 
@@ -1516,7 +1588,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Client login credentials is added !.",
+            title: "SUCCESS",
+            description: "Portal details added successfully!",
             color: "success",
           });
           setCredentials({
@@ -1539,7 +1612,11 @@ const ProjectDetails = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -1548,7 +1625,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Applicant type updated successfully !.",
+            title: "SUCCESS",
+            description: "Applicant type updated successfully !.",
             color: "success",
           });
           dispatch(getOperationProjectDetailById({ projectId, userId }));
@@ -1567,7 +1645,11 @@ const ProjectDetails = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -1699,7 +1781,8 @@ const ProjectDetails = () => {
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Document verified successfully!",
+          title: "SUCCESS",
+          description: "Document status updated successfully!",
           color: "success",
         });
         verifyModal.onClose();
@@ -1712,7 +1795,11 @@ const ProjectDetails = () => {
         fetchCompanyDocuments();
       } else {
         addToast({
-          title: "Something went wrong!",
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to update document status.",
           color: "danger",
         });
       }
@@ -1922,7 +2009,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Comment added successfully !.",
+            title: "SUCCESS",
+            description: "Comment added successfully !.",
             color: "success",
           });
           commentModal.onClose();
@@ -1939,7 +2027,11 @@ const ProjectDetails = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -1953,7 +2045,8 @@ const ProjectDetails = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Note added successfully !.",
+            title: "SUCCESS",
+            description: "Note added successfully !.",
             color: "success",
           });
           noteModal.onClose();
@@ -1962,14 +2055,18 @@ const ProjectDetails = () => {
           dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
         } else {
           addToast({
-            title: resp?.payload?.status,
+            title: "ERROR",
             color: "danger",
             description: resp?.payload?.message,
           });
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -2017,7 +2114,8 @@ const ProjectDetails = () => {
 
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Expense added successfully!",
+          title: "SUCCESS",
+          description: "Expense added successfully!",
           color: "success",
         });
 
@@ -2613,7 +2711,8 @@ const ProjectDetails = () => {
     dispatch(createProjectReopenRequest(payload)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Reopen request created successfully!",
+          title: "SUCCESS",
+          description: "Reopen request created successfully!",
           color: "success",
         });
 
@@ -3281,7 +3380,7 @@ const ProjectDetails = () => {
                         </p>
                       </div>
 
-                      <Button
+                      {/* <Button
                         isIconOnly
                         size="sm"
                         radius="full"
@@ -3289,7 +3388,7 @@ const ProjectDetails = () => {
                         onPress={onClose}
                       >
                         <X className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -3917,7 +4016,6 @@ const ProjectDetails = () => {
         isOpen={statusModal.isOpen}
         onOpenChange={statusModal.onOpenChange}
         size="2xl"
-        scrollBehavior="inside"
       >
         <ModalContent>
           {(onClose) => (
@@ -3972,6 +4070,91 @@ const ProjectDetails = () => {
                     }));
                   }}
                 />
+
+                {isCertificationCompleted && (
+                  <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary-200 bg-primary-50/40 p-4 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        Certification Details
+                      </p>
+                      <p className="text-xs text-default-500">
+                        Complete all certification details before marking this
+                        milestone as completed.
+                      </p>
+                    </div>
+
+                    <Select
+                      className="max-w-xs"
+                      isRequired
+                      items={[
+                        { label: "DAYS", value: "DAYS" },
+                        { label: "MONTHS", value: "MONTHS" },
+                        { label: "YEARS", value: "YEARS" },
+                      ]}
+                      label="Certification Period"
+                      placeholder="Select period"
+                      selectedKeys={[statusObj.certificationTenureUnit]}
+                      onSelectionChange={(keys) => {
+                        const temp = Array.from(keys)[0];
+                        setStatusObj((prev) => ({
+                          ...prev,
+                          certificationTenureUnit: temp,
+                        }));
+                      }}
+                    >
+                      {(item) => (
+                        <SelectItem key={item?.value}>{item.label}</SelectItem>
+                      )}
+                    </Select>
+
+                    <Input
+                      type="number"
+                      min={1}
+                      label="Certification Tenure (Years)"
+                      placeholder="Enter tenure"
+                      isRequired
+                      value={statusObj.certificationTenure}
+                      onChange={(e) =>
+                        setStatusObj((prev) => ({
+                          ...prev,
+                          certificationTenure: e.target.value,
+                        }))
+                      }
+                    />
+
+                    <DatePicker
+                      label="Certification Expiry Date"
+                      isRequired
+                      showMonthAndYearPickers
+                      minValue={today(getLocalTimeZone())}
+                      value={
+                        statusObj.certificateExpiryDate
+                          ? parseDate(statusObj.certificateExpiryDate)
+                          : null
+                      }
+                      onChange={(date) =>
+                        setStatusObj((prev) => ({
+                          ...prev,
+                          certificateExpiryDate: date ? date.toString() : "",
+                        }))
+                      }
+                    />
+
+                    <div className="md:col-span-2">
+                      <SingleFileUploader
+                        label="Certification Attachment"
+                        value={statusObj.certificationAttachmentUrl}
+                        onChange={(url) =>
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            certificationAttachmentUrl: url || "",
+                          }))
+                        }
+                        isRequired
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {isReworkSelected && (
                   <div className="space-y-4 rounded-xl border border-warning-200 bg-warning-50/40 p-4">
@@ -5248,6 +5431,7 @@ const ProjectDetails = () => {
                           ? parseDate(dayjs(field.value).format("YYYY-MM-DD"))
                           : null
                       }
+                      maxValue={today(getLocalTimeZone())}
                       onChange={(date) => {
                         if (!date) {
                           field.onChange("");

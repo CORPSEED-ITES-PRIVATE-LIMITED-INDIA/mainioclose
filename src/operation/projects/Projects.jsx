@@ -481,7 +481,7 @@ const Projects = () => {
         {/* Search Bar Row */}
         <div className="flex items-center w-full pb-0.5">
           <Select
-            className="max-w-[20%]"
+            className="max-w-[15%]"
             selectionMode="single"
             selectedKeys={[searchBy]}
             onSelectionChange={(e) => {
@@ -496,7 +496,7 @@ const Projects = () => {
           </Select>
           <Input
             isClearable
-            className="max-w-[22%]"
+            className="max-w-[30%]"
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}

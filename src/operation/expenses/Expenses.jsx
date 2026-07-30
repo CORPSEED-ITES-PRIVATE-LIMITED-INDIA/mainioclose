@@ -7,6 +7,11 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   Select,
   SelectItem,
@@ -16,9 +21,17 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
 } from "@heroui/react";
 
-import { ChevronDown, ExternalLink, RefreshCcw, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ExternalLink,
+  MoreVertical,
+  PencilLine,
+  RefreshCcw,
+  Search,
+} from "lucide-react";
 
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,7 +39,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
-import { getExpenseApprovalQueueList } from "../../toolkit/slices/operationSlice";
+import {
+  getExpenseApprovalQueueList,
+  updateCrtExpenseDecision,
+} from "../../toolkit/slices/operationSlice";
 
 const columns = [
   {
@@ -34,12 +50,28 @@ const columns = [
     uid: "project",
   },
   {
+    name: "PRODUCT",
+    uid: "productName",
+  },
+  {
     name: "EXPENSE CATEGORY",
     uid: "expenseCategory",
   },
   {
-    name: "AMOUNT",
-    uid: "amount",
+    name: "REQUESTED AMOUNT",
+    uid: "requestedAmount",
+  },
+  {
+    name: "APPROVED AMOUNT",
+    uid: "approvedAmount",
+  },
+  {
+    name: "PAID AMOUNT",
+    uid: "paidAmount",
+  },
+  {
+    name: "OUTSTANDING AMOUNT",
+    uid: "outstandingAmount",
   },
   {
     name: "DEPARTMENT",
@@ -54,6 +86,14 @@ const columns = [
     uid: "expenseDate",
   },
   {
+    name: "EXPENSE GENERATED DATE",
+    uid: "createdDate",
+  },
+  {
+    name: "LAST UPDATED DATE",
+    uid: "updatedDate",
+  },
+  {
     name: "APPROVAL STAGE",
     uid: "approvalStage",
   },
@@ -62,26 +102,52 @@ const columns = [
     uid: "approvalStatus",
   },
   {
+    name: "CRT STATUS",
+    uid: "crtApprovalStatus",
+  },
+  {
+    name: "ACCOUNTS STATUS",
+    uid: "accountsApprovalStatus",
+  },
+  {
+    name: "PAYMENT STATUS",
+    uid: "paymentStatus",
+  },
+  {
     name: "REFERENCE",
     uid: "externalReference",
   },
   {
-    name: "PAYMENT PROOF",
+    name: "ATTACHMENT",
     uid: "attachment",
+  },
+  {
+    name: "ACTION",
+    uid: "actions",
   },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
   "project",
+  "productName",
   "expenseCategory",
-  "amount",
+  "requestedAmount",
+  "approvedAmount",
+  "paidAmount",
+  "outstandingAmount",
   "department",
   "createdBy",
   "expenseDate",
+  "createdDate",
+  "updatedDate",
   "approvalStage",
   "approvalStatus",
+  "crtApprovalStatus",
+  "accountsApprovalStatus",
+  "paymentStatus",
   "externalReference",
   "attachment",
+  "actions",
 ];
 
 const approvalStageOptions = [
@@ -126,6 +192,21 @@ const approvalStatusOptions = [
   },
 ];
 
+const crtDecisionOptions = [
+  {
+    label: "Approved",
+    value: "APPROVED",
+  },
+  {
+    label: "Rejected",
+    value: "REJECTED",
+  },
+  {
+    label: "On Hold",
+    value: "ON_HOLD",
+  },
+];
+
 const formatText = (value) => {
   if (!value) {
     return "-";
@@ -135,20 +216,6 @@ const formatText = (value) => {
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/\b\w/g, (character) => character.toUpperCase());
-};
-
-const formatDate = (value) => {
-  if (!value) {
-    return "-";
-  }
-
-  const date = dayjs(value);
-
-  if (!date.isValid()) {
-    return "-";
-  }
-
-  return date.format("DD-MM-YYYY");
 };
 
 const formatDateTime = (value) => {
@@ -220,6 +287,29 @@ const getStageColor = (stage) => {
   }
 };
 
+const getPaymentStatusColor = (status) => {
+  switch (status) {
+    case "PAID":
+      return "success";
+
+    case "PENDING":
+    case "PROCESSING":
+      return "warning";
+
+    case "PARTIALLY_PAID":
+      return "secondary";
+
+    case "FAILED":
+    case "CANCELLED":
+    case "REVERSED":
+      return "danger";
+
+    case "NOT_INITIATED":
+    default:
+      return "default";
+  }
+};
+
 const Expenses = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
@@ -254,8 +344,18 @@ const Expenses = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    size: 10,
+    size: 50,
   });
+
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [decisionForm, setDecisionForm] = useState({
+    status: "",
+    expensePaidBy: "",
+    remark: "",
+  });
+  const [decisionErrors, setDecisionErrors] = useState({});
 
   const fetchExpenseApprovalQueue = useCallback(() => {
     if (!resolvedUserId) {
@@ -317,36 +417,40 @@ const Expenses = () => {
 
     return expenseRows.filter((item) => {
       const searchableValues = [
-        item?.id,
         item?.expenseId,
+        item?.activityId,
 
         item?.projectId,
-        item?.projectName,
         item?.projectNo,
-        item?.projectNumber,
-        item?.project?.name,
-        item?.project?.projectName,
-        item?.project?.projectNo,
+        item?.projectName,
+        item?.unbilledNumber,
+        item?.productName,
+
+        item?.raisedDepartmentId,
+        item?.raisedDepartmentName,
 
         item?.expenseCategory,
-        item?.category,
-
-        item?.amount,
+        item?.requestedAmount,
+        item?.approvedAmount,
+        item?.paidAmount,
+        item?.outstandingAmount,
         item?.currencyCode,
 
-        item?.departmentName,
-        item?.department?.name,
-
+        item?.createdByUserId,
         item?.createdByUserName,
-        item?.createdByName,
-        item?.createdBy?.fullName,
+        item?.expenseDate,
+        item?.createdDate,
+        item?.updatedDate,
+        item?.paymentCompletedDate,
 
         item?.remark,
         item?.externalReference,
 
         item?.approvalStage,
         item?.approvalStatus,
-        item?.status,
+        item?.crtApprovalStatus,
+        item?.accountsApprovalStatus,
+        item?.paymentStatus,
       ];
 
       return searchableValues
@@ -377,172 +481,415 @@ const Expenses = () => {
     return filteredItems.slice(startIndex, endIndex);
   }, [filteredItems, pagination.page, pagination.size]);
 
-  const renderCell = useCallback((expense, columnKey) => {
-    const projectName =
-      expense?.projectName ||
-      expense?.project?.projectName ||
-      expense?.project?.name;
+  const closeStatusModal = useCallback(() => {
+    if (isUpdatingStatus) {
+      return;
+    }
 
-    const projectNumber =
-      expense?.projectNo ||
-      expense?.projectNumber ||
-      expense?.project?.projectNo ||
-      expense?.project?.projectNumber;
+    setIsStatusModalOpen(false);
+    setSelectedExpense(null);
+    setDecisionForm({
+      status: "",
+      expensePaidBy: "",
+      remark: "",
+    });
+    setDecisionErrors({});
+  }, [isUpdatingStatus]);
 
-    const expenseCategory = expense?.expenseCategory || expense?.category;
+  const openStatusModal = useCallback((expense) => {
+    setSelectedExpense(expense);
+    setDecisionForm({
+      status: "",
+      expensePaidBy: "",
+      remark: "",
+    });
+    setDecisionErrors({});
+    setIsStatusModalOpen(true);
+  }, []);
 
-    const departmentName = expense?.departmentName || expense?.department?.name;
+  const validateDecisionForm = useCallback(() => {
+    const errors = {};
 
-    const createdByName =
-      expense?.createdByUserName ||
-      expense?.createdByName ||
-      expense?.createdBy?.fullName;
+    if (!decisionForm.status) {
+      errors.status = "Status is required";
+    }
 
-    const approvalStageValue = expense?.approvalStage || expense?.stage;
+    if (!decisionForm.remark.trim()) {
+      errors.remark = "Remark is required";
+    }
 
-    const approvalStatusValue = expense?.approvalStatus || expense?.status;
+    setDecisionErrors(errors);
 
-    const attachmentUrl =
-      expense?.attachmentUrl ||
-      expense?.paymentProofUrl ||
-      expense?.documentUrl;
+    return Object.keys(errors).length === 0;
+  }, [decisionForm]);
 
-    switch (columnKey) {
-      case "project":
-        return (
-          <div className="flex max-w-[230px] flex-col">
-            <span className="truncate text-sm font-semibold text-foreground">
-              {projectName || "-"}
-            </span>
+  const handleStatusUpdate = useCallback(async () => {
+    if (!validateDecisionForm()) {
+      return;
+    }
 
-            <span className="text-xs text-default-500">
-              {projectNumber
-                ? `Project No: ${projectNumber}`
-                : `Project ID: ${expense?.projectId || "-"}`}
-            </span>
-          </div>
-        );
+    if (!resolvedUserId) {
+      addToast({
+        title: "User not found",
+        description: "User ID is required to update the expense status.",
+        color: "danger",
+      });
+      return;
+    }
 
-      case "expenseCategory":
-        return (
-          <Chip size="sm" variant="flat">
-            {formatText(expenseCategory)}
-          </Chip>
-        );
+    if (!selectedExpense?.projectId || !selectedExpense?.expenseId) {
+      addToast({
+        title: "Expense details missing",
+        description: "Project ID and expense ID are required.",
+        color: "danger",
+      });
+      return;
+    }
 
-      case "amount":
-        return (
-          <span className="whitespace-nowrap font-semibold text-foreground">
-            {formatCurrency(expense?.amount, expense?.currencyCode)}
-          </span>
-        );
+    setIsUpdatingStatus(true);
 
-      case "department":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{departmentName || "-"}</span>
+    try {
+      await dispatch(
+        updateCrtExpenseDecision({
+          projectId: selectedExpense.projectId,
+          expenseId: selectedExpense.expenseId,
+          userId: resolvedUserId,
+          data: {
+            status: decisionForm.status,
+            remark: decisionForm.remark.trim(),
+            expensePaidBy: decisionForm.expensePaidBy || null,
+          },
+        }),
+      ).unwrap();
 
-            {expense?.departmentId && (
-              <span className="text-xs text-default-500">
-                ID: {expense.departmentId}
-              </span>
-            )}
-          </div>
-        );
+      addToast({
+        title: "Status updated",
+        description: "The CRT expense decision was updated successfully.",
+        color: "success",
+      });
 
-      case "createdBy":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{createdByName || "-"}</span>
+      setIsStatusModalOpen(false);
+      setSelectedExpense(null);
+      setDecisionForm({
+        status: "",
+        remark: "",
+      });
+      setDecisionErrors({});
 
-            {expense?.createdByUserId && (
-              <span className="text-xs text-default-500">
-                User ID: {expense.createdByUserId}
-              </span>
-            )}
-          </div>
-        );
+      fetchExpenseApprovalQueue();
+    } catch (error) {
+      addToast({
+        title: "Failed to update status",
+        description:
+          error?.message ||
+          error?.errorMessage ||
+          error ||
+          "Unable to update the CRT expense decision.",
+        color: "danger",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }, [
+    decisionForm,
+    dispatch,
+    fetchExpenseApprovalQueue,
+    resolvedUserId,
+    selectedExpense,
+    validateDecisionForm,
+  ]);
 
-      case "expenseDate":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm">{formatDate(expense?.expenseDate)}</span>
+  const renderCell = useCallback(
+    (expense, columnKey) => {
+      const currencyCode = expense?.currencyCode || "INR";
 
-            {expense?.createdAt && (
-              <span className="text-xs text-default-500">
-                Created: {formatDateTime(expense.createdAt)}
-              </span>
-            )}
-          </div>
-        );
-
-      case "approvalStage":
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={getStageColor(approvalStageValue)}
-          >
-            {formatText(approvalStageValue)}
-          </Chip>
-        );
-
-      case "approvalStatus":
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={getStatusColor(approvalStatusValue)}
-          >
-            {formatText(approvalStatusValue)}
-          </Chip>
-        );
-
-      case "externalReference":
-        return (
-          <div className="flex max-w-[200px] flex-col">
-            <span
-              className="truncate text-sm"
-              title={expense?.externalReference || "-"}
-            >
-              {expense?.externalReference || "-"}
-            </span>
-
-            {expense?.remark && (
+      switch (columnKey) {
+        case "project":
+          return (
+            <div className="flex max-w-[260px] flex-col">
               <span
-                className="truncate text-xs text-default-500"
-                title={expense.remark}
+                className="truncate text-sm font-semibold text-foreground"
+                title={expense?.projectName || "-"}
               >
-                {expense.remark}
+                {expense?.projectName || "-"}
               </span>
-            )}
-          </div>
-        );
 
-      case "attachment":
-        if (!attachmentUrl) {
-          return "-";
+              <span className="text-xs text-default-500">
+                {expense?.projectNo
+                  ? `Project No: ${expense.projectNo}`
+                  : `Project ID: ${expense?.projectId || "-"}`}
+              </span>
+
+              {expense?.unbilledNumber && (
+                <span className="text-xs text-default-500">
+                  Unbilled: {expense.unbilledNumber}
+                </span>
+              )}
+            </div>
+          );
+
+        case "productName":
+          return (
+            <span
+              className="block max-w-[200px] truncate text-sm"
+              title={expense?.productName || "-"}
+            >
+              {expense?.productName || "-"}
+            </span>
+          );
+
+        case "expenseCategory":
+          return (
+            <Chip size="sm" variant="flat">
+              {formatText(expense?.expenseCategory)}
+            </Chip>
+          );
+
+        case "requestedAmount":
+          return (
+            <span className="whitespace-nowrap font-semibold text-foreground">
+              {formatCurrency(expense?.requestedAmount, currencyCode)}
+            </span>
+          );
+
+        case "approvedAmount":
+          return (
+            <span className="whitespace-nowrap">
+              {expense?.approvedAmount === null ||
+              expense?.approvedAmount === undefined
+                ? "-"
+                : formatCurrency(expense.approvedAmount, currencyCode)}
+            </span>
+          );
+
+        case "paidAmount":
+          return (
+            <span className="whitespace-nowrap">
+              {formatCurrency(expense?.paidAmount, currencyCode)}
+            </span>
+          );
+
+        case "outstandingAmount":
+          return (
+            <span className="whitespace-nowrap font-semibold text-foreground">
+              {formatCurrency(expense?.outstandingAmount, currencyCode)}
+            </span>
+          );
+
+        case "department":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {expense?.raisedDepartmentName || "-"}
+              </span>
+
+              {expense?.raisedDepartmentId && (
+                <span className="text-xs text-default-500">
+                  ID: {expense.raisedDepartmentId}
+                </span>
+              )}
+            </div>
+          );
+
+        case "createdBy":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {expense?.createdByUserName || "-"}
+              </span>
+
+              {expense?.createdByUserId && (
+                <span className="text-xs text-default-500">
+                  User ID: {expense.createdByUserId}
+                </span>
+              )}
+            </div>
+          );
+
+        case "expenseDate":
+          return (
+            <span className="whitespace-nowrap text-sm">
+              {formatDateTime(expense?.expenseDate)}
+            </span>
+          );
+
+        case "createdDate":
+          return (
+            <span className="whitespace-nowrap text-sm">
+              {formatDateTime(expense?.createdDate)}
+            </span>
+          );
+
+        case "updatedDate":
+          return (
+            <span className="whitespace-nowrap text-sm">
+              {formatDateTime(expense?.updatedDate)}
+            </span>
+          );
+
+        case "approvalStage":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getStageColor(expense?.approvalStage)}
+            >
+              {formatText(expense?.approvalStage)}
+            </Chip>
+          );
+
+        case "approvalStatus":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getStatusColor(expense?.approvalStatus)}
+            >
+              {formatText(expense?.approvalStatus)}
+            </Chip>
+          );
+
+        case "crtApprovalStatus":
+          return (
+            <div className="flex flex-col gap-1">
+              <Chip
+                size="sm"
+                variant="flat"
+                color={getStatusColor(expense?.crtApprovalStatus)}
+              >
+                {formatText(expense?.crtApprovalStatus)}
+              </Chip>
+
+              {expense?.crtActionByUserName && (
+                <span className="text-xs text-default-500">
+                  By: {expense.crtActionByUserName}
+                </span>
+              )}
+            </div>
+          );
+
+        case "accountsApprovalStatus":
+          return (
+            <div className="flex flex-col gap-1">
+              <Chip
+                size="sm"
+                variant="flat"
+                color={getStatusColor(expense?.accountsApprovalStatus)}
+              >
+                {formatText(expense?.accountsApprovalStatus)}
+              </Chip>
+
+              {expense?.accountsActionByUserName && (
+                <span className="text-xs text-default-500">
+                  By: {expense.accountsActionByUserName}
+                </span>
+              )}
+            </div>
+          );
+
+        case "paymentStatus":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={getPaymentStatusColor(expense?.paymentStatus)}
+            >
+              {formatText(expense?.paymentStatus)}
+            </Chip>
+          );
+
+        case "externalReference":
+          return (
+            <div className="flex max-w-[220px] flex-col">
+              <span
+                className="truncate text-sm"
+                title={expense?.externalReference || "-"}
+              >
+                {expense?.externalReference || "-"}
+              </span>
+
+              {expense?.remark && (
+                <span
+                  className="truncate text-xs text-default-500"
+                  title={expense.remark}
+                >
+                  {expense.remark}
+                </span>
+              )}
+            </div>
+          );
+
+        case "attachment":
+          if (!expense?.attachmentUrl) {
+            return "-";
+          }
+
+          return (
+            <Button
+              as="a"
+              href={expense.attachmentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="sm"
+              variant="flat"
+              color="primary"
+              startContent={<ExternalLink className="h-4 w-4" />}
+            >
+              View
+            </Button>
+          );
+
+        case "actions": {
+          const canUpdateStatus =
+            expense?.approvalStage === "CRT_REVIEW" &&
+            !["APPROVED", "REJECTED", "CANCELLED"].includes(
+              expense?.approvalStatus,
+            );
+
+          return (
+            <Dropdown placement="bottom-end">
+              <DropdownTrigger>
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  aria-label={`Actions for expense ${expense?.expenseId || ""}`}
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownTrigger>
+
+              <DropdownMenu
+                aria-label="Expense actions"
+                disabledKeys={canUpdateStatus ? [] : ["updateStatus"]}
+                onAction={(key) => {
+                  if (key === "updateStatus" && canUpdateStatus) {
+                    openStatusModal(expense);
+                  }
+                }}
+              >
+                <DropdownItem
+                  key="updateStatus"
+                  startContent={<PencilLine className="h-4 w-4" />}
+                  description={
+                    canUpdateStatus
+                      ? "Approve, reject or place on hold"
+                      : "Available only during CRT review"
+                  }
+                >
+                  Update Status
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          );
         }
 
-        return (
-          <Button
-            as="a"
-            href={attachmentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            size="sm"
-            variant="flat"
-            color="primary"
-            startContent={<ExternalLink className="h-4 w-4" />}
-          >
-            View
-          </Button>
-        );
-
-      default:
-        return expense?.[columnKey] || "-";
-    }
-  }, []);
+        default:
+          return expense?.[columnKey] ?? "-";
+      }
+    },
+    [openStatusModal],
+  );
 
   const topContent = useMemo(() => {
     return (
@@ -573,7 +920,6 @@ const Expenses = () => {
 
           <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[200px_200px_auto_auto]">
             <Select
-              label="Approval Stage"
               selectedKeys={
                 approvalStage ? new Set([approvalStage]) : new Set([])
               }
@@ -598,7 +944,6 @@ const Expenses = () => {
             </Select>
 
             <Select
-              label="Approval Status"
               selectedKeys={
                 approvalStatus ? new Set([approvalStatus]) : new Set([])
               }
@@ -621,20 +966,6 @@ const Expenses = () => {
                 </SelectItem>
               ))}
             </Select>
-
-            <Button
-              color="primary"
-              variant="flat"
-              isLoading={expenseApprovalQueueLoading}
-              startContent={
-                !expenseApprovalQueueLoading && (
-                  <RefreshCcw className="h-4 w-4" />
-                )
-              }
-              onPress={fetchExpenseApprovalQueue}
-            >
-              Refresh
-            </Button>
 
             <Dropdown>
               <DropdownTrigger>
@@ -749,7 +1080,12 @@ const Expenses = () => {
       >
         <TableHeader columns={headerColumns}>
           {(column) => (
-            <TableColumn key={column.uid}>{column.name}</TableColumn>
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
           )}
         </TableHeader>
 
@@ -765,8 +1101,8 @@ const Expenses = () => {
           {(expense) => (
             <TableRow
               key={
-                expense?.id ||
                 expense?.expenseId ||
+                expense?.activityId ||
                 `${expense?.projectId}-${expense?.externalReference}`
               }
             >
@@ -777,6 +1113,153 @@ const Expenses = () => {
           )}
         </TableBody>
       </Table>
+
+      <Modal
+        isOpen={isStatusModalOpen}
+        placement="center"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            closeStatusModal();
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Update CRT Expense Status
+            <span className="text-sm font-normal text-default-500">
+              {selectedExpense?.projectName || "Project"}
+              {selectedExpense?.expenseId
+                ? ` • Expense ID: ${selectedExpense.expenseId}`
+                : ""}
+            </span>
+          </ModalHeader>
+
+          <ModalBody>
+            <div className="rounded-lg bg-default-100 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-default-500">Requested amount</span>
+                <span className="font-semibold">
+                  {formatCurrency(
+                    selectedExpense?.requestedAmount,
+                    selectedExpense?.currencyCode,
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <Select
+              isRequired
+              label="Status"
+              placeholder="Select status"
+              selectedKeys={
+                decisionForm.status
+                  ? new Set([decisionForm.status])
+                  : new Set([])
+              }
+              isInvalid={Boolean(decisionErrors.status)}
+              errorMessage={decisionErrors.status}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0];
+
+                setDecisionForm((previous) => ({
+                  ...previous,
+                  status: value ? String(value) : "",
+                }));
+
+                if (value) {
+                  setDecisionErrors((previous) => ({
+                    ...previous,
+                    status: undefined,
+                  }));
+                }
+              }}
+            >
+              {crtDecisionOptions.map((option) => (
+                <SelectItem key={option.value} textValue={option.label}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </Select>
+
+            <Select
+              isRequired
+              label="Expense Paid By"
+              placeholder="Select payer"
+              selectedKeys={
+                decisionForm.expensePaidBy
+                  ? new Set([decisionForm.expensePaidBy])
+                  : new Set([])
+              }
+              isInvalid={Boolean(decisionErrors.expensePaidBy)}
+              errorMessage={decisionErrors.expensePaidBy}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0];
+
+                setDecisionForm((previous) => ({
+                  ...previous,
+                  expensePaidBy: value ? String(value) : "",
+                }));
+
+                if (value) {
+                  setDecisionErrors((previous) => ({
+                    ...previous,
+                    expensePaidBy: undefined,
+                  }));
+                }
+              }}
+            >
+              <SelectItem key={"CLIENT"} textValue={"Client"}>
+                Client
+              </SelectItem>
+              <SelectItem key={"COMPANY"} textValue={"Company"}>
+                Company
+              </SelectItem>
+            </Select>
+
+            <Textarea
+              isRequired
+              label="Remark"
+              placeholder="Enter decision remark"
+              minRows={4}
+              maxRows={7}
+              value={decisionForm.remark}
+              isInvalid={Boolean(decisionErrors.remark)}
+              errorMessage={decisionErrors.remark}
+              onValueChange={(value) => {
+                setDecisionForm((previous) => ({
+                  ...previous,
+                  remark: value,
+                }));
+
+                if (value.trim()) {
+                  setDecisionErrors((previous) => ({
+                    ...previous,
+                    remark: undefined,
+                  }));
+                }
+              }}
+            />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              variant="flat"
+              isDisabled={isUpdatingStatus}
+              onPress={closeStatusModal}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              color="primary"
+              isLoading={isUpdatingStatus}
+              onPress={handleStatusUpdate}
+            >
+              Update Status
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };
