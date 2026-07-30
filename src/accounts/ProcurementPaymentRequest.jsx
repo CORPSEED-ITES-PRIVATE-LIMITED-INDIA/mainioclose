@@ -21,6 +21,8 @@ import {
   ModalFooter,
   ModalHeader,
   Form,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -28,11 +30,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
   approveProcurementPaymentRequest,
+  getActivePaymentLedgerForPaymentRegister,
   getProcurementPaymentRequestList,
   rejectProcurementPaymentRequest,
   releaseProcurementPaymentRequest,
 } from "../toolkit/slices/accountSlice";
 import { inrCurrency } from "../common";
+import NewSelect from "../components/NewSelect";
+import SingleFileUploader from "../components/SingleFileUploader";
 import dayjs from "dayjs";
 
 const columns = [
@@ -53,6 +58,16 @@ const columns = [
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
+
+const toTwoDecimalAmount = (value) => {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return Number(amount.toFixed(2));
+};
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -107,6 +122,9 @@ const ProcurementPaymentRequest = () => {
   const data = useSelector(
     (state) => state.account.procurementPaymentRequestList?.data?.content,
   );
+  const paymentLedgerList = useSelector(
+    (state) => state.account.paymentLegerList,
+  );
   const approveModal = useDisclosure();
   const rejectModal = useDisclosure();
   const releaseModal = useDisclosure();
@@ -126,11 +144,105 @@ const ProcurementPaymentRequest = () => {
     status: "PENDING",
   });
   const [rowItem, setRowItem] = useState(null);
+
+  const [releasePayableAmount, setReleasePayableAmount] = useState("");
+  const [releasePaymentMode, setReleasePaymentMode] = useState("");
+  const [releaseBankLedgerId, setReleaseBankLedgerId] = useState("");
+  const [releaseTdsActive, setReleaseTdsActive] = useState(false);
+  const [releaseTdsPercentage, setReleaseTdsPercentage] = useState("");
+  const [releaseTransactionReference, setReleaseTransactionReference] =
+    useState("");
+  const [releasePaymentDate, setReleasePaymentDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [releasePaymentProof, setReleasePaymentProof] = useState("");
+  const [isReleaseFileUploading, setIsReleaseFileUploading] = useState(false);
+  const [isReleaseSubmitting, setIsReleaseSubmitting] = useState(false);
+
   const hasSearchFilter = Boolean(filterValue);
+
+  const hasReleasePaymentModeSelected = Boolean(
+    String(releasePaymentMode || "").trim(),
+  );
+
+  const isReleaseCashPaymentMode =
+    String(releasePaymentMode || "")
+      .trim()
+      .toUpperCase() === "CASH";
+
+  const isCashLedger = useCallback((ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  }, []);
+
+  const filteredReleasePaymentLedgerList = useMemo(() => {
+    if (!hasReleasePaymentModeSelected) {
+      return [];
+    }
+
+    const ledgers = Array.isArray(paymentLedgerList) ? paymentLedgerList : [];
+
+    return isReleaseCashPaymentMode
+      ? ledgers.filter(isCashLedger)
+      : ledgers.filter((ledger) => !isCashLedger(ledger));
+  }, [
+    hasReleasePaymentModeSelected,
+    isCashLedger,
+    isReleaseCashPaymentMode,
+    paymentLedgerList,
+  ]);
+
+  // Maximum amount allowed for release, received from the backend row.
+  const releaseGrossPayableAmount = toTwoDecimalAmount(
+    rowItem?.grossPayableAmount ??
+      rowItem?.payableAmount ??
+      rowItem?.invoiceAmount ??
+      0,
+  );
+
+  // Custom amount entered by Accounts for the current payment release.
+  const releaseCustomPayableAmount = toTwoDecimalAmount(releasePayableAmount);
+
+  const isReleasePayableExceeded =
+    releaseCustomPayableAmount > releaseGrossPayableAmount;
+
+  const releaseTdsAmount = releaseTdsActive
+    ? toTwoDecimalAmount(
+        (releaseCustomPayableAmount * Number(releaseTdsPercentage || 0)) / 100,
+      )
+    : 0;
+
+  const releaseBankPaymentAmount = toTwoDecimalAmount(
+    releaseCustomPayableAmount - releaseTdsAmount,
+  );
+
+  const resetReleasePaymentFields = useCallback(() => {
+    setReleasePayableAmount("");
+    setReleasePaymentMode("");
+    setReleaseBankLedgerId("");
+    setReleaseTdsActive(false);
+    setReleaseTdsPercentage("");
+    setReleaseTransactionReference("");
+    setReleasePaymentDate(dayjs().format("YYYY-MM-DD"));
+    setReleasePaymentProof("");
+    setIsReleaseFileUploading(false);
+    setIsReleaseSubmitting(false);
+  }, []);
 
   useEffect(() => {
     dispatch(getProcurementPaymentRequestList(filteration));
   }, [dispatch, filteration]);
+
+  useEffect(() => {
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -170,6 +282,17 @@ const ProcurementPaymentRequest = () => {
     } else if (key === "Rejected") {
       rejectModal.onOpen();
     } else if (key === "Release") {
+      resetReleasePaymentFields();
+      setReleasePayableAmount(
+        String(
+          toTwoDecimalAmount(
+            item?.grossPayableAmount ??
+              item?.payableAmount ??
+              item?.invoiceAmount ??
+              0,
+          ),
+        ),
+      );
       releaseModal.onOpen();
     }
   };
@@ -247,41 +370,195 @@ const ProcurementPaymentRequest = () => {
       );
   };
 
-  const handlePaymentReleaseRequest = (remarks) => {
-    // Implementation for handling approve request
-    dispatch(
-      releaseProcurementPaymentRequest({
-        paymentRequestId: rowItem?.id,
-        data: { remarks },
-        userId,
-      }),
+  const handlePaymentReleaseRequest = async (remarks) => {
+    if (!rowItem?.id) {
+      addToast({
+        title: "Payment request missing",
+        description: "Please select a valid payment request.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (releaseCustomPayableAmount <= 0) {
+      addToast({
+        title: "Invalid payable amount",
+        description: "Payable amount must be greater than zero.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (isReleasePayableExceeded) {
+      addToast({
+        title: "Payable amount exceeds gross payable",
+        description: `Payable amount cannot exceed ${inrCurrency(
+          releaseGrossPayableAmount,
+        )}.`,
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!releasePaymentDate) {
+      addToast({
+        title: "Payment date is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (dayjs(releasePaymentDate).isAfter(dayjs(), "day")) {
+      addToast({
+        title: "Invalid payment date",
+        description: "Payment date cannot be in the future.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!releasePaymentMode) {
+      addToast({
+        title: "Payment mode is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!releaseBankLedgerId) {
+      addToast({
+        title: "Bank/Cash ledger is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (releaseTdsActive && !releaseTdsPercentage) {
+      addToast({
+        title: "TDS percentage is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (
+      !isReleaseCashPaymentMode &&
+      !String(releaseTransactionReference || "").trim()
+    ) {
+      addToast({
+        title: "Transaction number is required",
+        description: "Enter the transaction reference or UTR number.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!releasePaymentProof) {
+      addToast({
+        title: "Payment attachment is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (releaseBankPaymentAmount <= 0) {
+      addToast({
+        title: "Invalid bank/cash payment",
+        description: "Bank/Cash payment must be greater than zero after TDS.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const selectedLedger = (
+      Array.isArray(paymentLedgerList) ? paymentLedgerList : []
+    ).find((ledger) => Number(ledger?.id) === Number(releaseBankLedgerId));
+
+    const selectedLedgerType = String(
+      selectedLedger?.ledgerType ||
+        (isReleaseCashPaymentMode ? "CASH" : "BANK"),
     )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "SUCCESS",
-            description: "Payment released successfully !.",
-            color: "success",
-          });
-          releaseModal.onClose();
-          setRowItem(null);
-          dispatch(getProcurementPaymentRequestList(filteration));
-        } else {
-          //handle error
-          addToast({
-            title: resp?.payload?.errorCode,
-            description: resp?.payload?.message || "Something went wrong",
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({
-          title: "ERROR",
-          description: "Something went wrong",
-          color: "danger",
+      .trim()
+      .toUpperCase();
+
+    const payload = {
+      comment: remarks,
+      remarks,
+
+      paymentMode: releasePaymentMode,
+      bankLedgerId: Number(releaseBankLedgerId),
+      ledgerId: Number(releaseBankLedgerId),
+      ledgerType: selectedLedgerType,
+
+      transactionReference: String(releaseTransactionReference || "").trim(),
+
+      paymentDate: releasePaymentDate,
+
+      paymentProof: releasePaymentProof,
+      proofAttachmentUrls: releasePaymentProof ? [releasePaymentProof] : [],
+
+      tdsActive: releaseTdsActive ? "YES" : "NO",
+      tdsPercentage: releaseTdsActive ? Number(releaseTdsPercentage) : null,
+      tdsAmount: releaseTdsActive ? releaseTdsAmount : 0,
+
+      // Existing payload field remains unchanged. Its value is calculated
+      // from the custom paying amount after deducting TDS.
+      bankPaymentAmount: releaseBankPaymentAmount,
+
+      // Used only when the backend response already provides this ledger ID.
+      // Otherwise the backend should resolve its system TDS Payable ledger.
+      tdsPayableLedgerId: releaseTdsActive
+        ? Number(rowItem?.tdsPayableLedgerId || rowItem?.tdsLedgerId || 0) ||
+          null
+        : null,
+    };
+
+    setIsReleaseSubmitting(true);
+
+    try {
+      const resp = await dispatch(
+        releaseProcurementPaymentRequest({
+          paymentRequestId: rowItem.id,
+          data: payload,
+          userId,
         }),
       );
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Payment released successfully!",
+          color: "success",
+        });
+
+        releaseModal.onClose();
+        resetReleasePaymentFields();
+        setRowItem(null);
+        dispatch(getProcurementPaymentRequestList(filteration));
+        return;
+      }
+
+      addToast({
+        title: resp?.payload?.errorCode || "Payment release failed",
+        description:
+          resp?.payload?.message ||
+          resp?.payload?.data?.message ||
+          (typeof resp?.payload === "string" ? resp.payload : null) ||
+          "Something went wrong",
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title: "ERROR",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong",
+        color: "danger",
+      });
+    } finally {
+      setIsReleaseSubmitting(false);
+    }
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -712,9 +989,17 @@ const ProcurementPaymentRequest = () => {
         </ModalContent>
       </Modal>
       <Modal
-        size="2xl"
+        size="3xl"
         isOpen={releaseModal.isOpen}
-        onOpenChange={releaseModal.onOpenChange}
+        onOpenChange={(isOpen) => {
+          releaseModal.onOpenChange(isOpen);
+
+          if (!isOpen) {
+            resetReleasePaymentFields();
+          }
+        }}
+        isDismissable={!isReleaseSubmitting && !isReleaseFileUploading}
+        hideCloseButton={isReleaseSubmitting || isReleaseFileUploading}
       >
         <ModalContent>
           {(onClose) => (
@@ -723,14 +1008,194 @@ const ProcurementPaymentRequest = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+
                 handlePaymentReleaseRequest(
                   String(formData.get("remarks") || "").trim(),
                 );
               }}
             >
               <ModalHeader>Release Payment Request</ModalHeader>
-              <ModalBody className="grid md:grid-cols-1 gap-4 w-full">
+
+              <ModalBody className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-default-200 p-4 md:col-span-2">
+                  <div className="mb-3 text-sm font-semibold">
+                    Payment Summary
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                    <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                      <span className="text-default-500">Gross Payable</span>
+                      <span className="font-medium">
+                        {inrCurrency(releaseGrossPayableAmount)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                      <span className="text-default-500">TDS Deduction</span>
+                      <span className="font-medium">
+                        {inrCurrency(releaseTdsAmount)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
+                      <span className="text-default-500">
+                        Bank/Cash Payment
+                      </span>
+                      <span className="font-medium">
+                        {inrCurrency(releaseBankPaymentAmount)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 <Input
+                  type="number"
+                  label="Payable Amount"
+                  placeholder="Enter payable amount"
+                  value={releasePayableAmount}
+                  onValueChange={setReleasePayableAmount}
+                  min="0.01"
+                  max={String(releaseGrossPayableAmount)}
+                  step="0.01"
+                  isRequired
+                  isInvalid={isReleasePayableExceeded}
+                  errorMessage={
+                    isReleasePayableExceeded
+                      ? `Payable amount cannot exceed gross payable ${inrCurrency(
+                          releaseGrossPayableAmount,
+                        )}`
+                      : "Payable amount must be greater than zero"
+                  }
+                  description={`Maximum allowed: ${inrCurrency(
+                    releaseGrossPayableAmount,
+                  )}`}
+                  onKeyDown={(event) => {
+                    if (["-", "+", "e", "E"].includes(event.key)) {
+                      event.preventDefault();
+                    }
+                  }}
+                />
+
+                <Input
+                  type="date"
+                  label="Payment Date"
+                  value={releasePaymentDate}
+                  onValueChange={setReleasePaymentDate}
+                  max={dayjs().format("YYYY-MM-DD")}
+                  isRequired
+                />
+
+                <Select
+                  label="Payment Mode"
+                  placeholder="Select payment mode"
+                  isRequired
+                  selectedKeys={
+                    releasePaymentMode
+                      ? new Set([releasePaymentMode])
+                      : new Set([])
+                  }
+                  onSelectionChange={(keys) => {
+                    const selectedValue = Array.from(keys)?.[0] || "";
+                    setReleasePaymentMode(String(selectedValue));
+                    setReleaseBankLedgerId("");
+                  }}
+                >
+                  <SelectItem key="CASH">Cash</SelectItem>
+                  <SelectItem key="UPI">UPI</SelectItem>
+                  <SelectItem key="CARD">Card</SelectItem>
+                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem key="CHEQUE">Cheque</SelectItem>
+                </Select>
+
+                <NewSelect
+                  isRequired
+                  isDisabled={!hasReleasePaymentModeSelected}
+                  label={
+                    isReleaseCashPaymentMode
+                      ? "Select Cash Ledger"
+                      : "Select Bank Ledger"
+                  }
+                  placeholder={
+                    !hasReleasePaymentModeSelected
+                      ? "Select payment mode first"
+                      : isReleaseCashPaymentMode
+                        ? "Select cash ledger"
+                        : "Select bank ledger"
+                  }
+                  data={filteredReleasePaymentLedgerList}
+                  labelKey="ledgerName"
+                  valueKey="id"
+                  value={releaseBankLedgerId}
+                  onChange={(value) => {
+                    setReleaseBankLedgerId(value ? String(value) : "");
+                  }}
+                />
+
+                <Select
+                  label="TDS Applicable"
+                  selectedKeys={new Set([releaseTdsActive ? "true" : "false"])}
+                  onSelectionChange={(keys) => {
+                    const isActive = Array.from(keys)?.[0] === "true";
+                    setReleaseTdsActive(isActive);
+
+                    if (!isActive) {
+                      setReleaseTdsPercentage("");
+                    }
+                  }}
+                >
+                  <SelectItem key="true">Yes</SelectItem>
+                  <SelectItem key="false">No</SelectItem>
+                </Select>
+
+                {releaseTdsActive && (
+                  <Select
+                    label="TDS Percentage"
+                    placeholder="Select TDS percentage"
+                    isRequired
+                    selectedKeys={
+                      releaseTdsPercentage
+                        ? new Set([String(releaseTdsPercentage)])
+                        : new Set([])
+                    }
+                    onSelectionChange={(keys) => {
+                      setReleaseTdsPercentage(
+                        String(Array.from(keys)?.[0] || ""),
+                      );
+                    }}
+                  >
+                    <SelectItem key="2">2%</SelectItem>
+                    <SelectItem key="10">10%</SelectItem>
+                  </Select>
+                )}
+
+                <Input
+                  label="Transaction Reference / UTR Number"
+                  placeholder={
+                    isReleaseCashPaymentMode
+                      ? "Optional for cash payment"
+                      : "Enter transaction reference or UTR"
+                  }
+                  value={releaseTransactionReference}
+                  onValueChange={setReleaseTransactionReference}
+                  isRequired={
+                    hasReleasePaymentModeSelected && !isReleaseCashPaymentMode
+                  }
+                />
+
+                <div>
+                  <SingleFileUploader
+                    label="Payment Attachment"
+                    value={releasePaymentProof}
+                    onChange={(value) => {
+                      setReleasePaymentProof(value || "");
+                    }}
+                    onUploadingChange={setIsReleaseFileUploading}
+                    isRequired
+                  />
+                </div>
+
+                <Input
+                  className="md:col-span-2"
                   label="Remarks"
                   name="remarks"
                   isRequired
@@ -738,10 +1203,29 @@ const ProcurementPaymentRequest = () => {
                 />
               </ModalBody>
 
-              <ModalFooter className="flex justify-end gap-2 w-full">
-                <Button onPress={onClose}>Close</Button>
-                <Button color="primary" type="submit">
-                  Submit
+              <ModalFooter className="flex w-full justify-end gap-2">
+                <Button
+                  type="button"
+                  onPress={() => {
+                    resetReleasePaymentFields();
+                    onClose();
+                  }}
+                  isDisabled={isReleaseSubmitting || isReleaseFileUploading}
+                >
+                  Close
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isReleaseSubmitting || isReleaseFileUploading}
+                  isDisabled={
+                    isReleaseFileUploading ||
+                    releaseCustomPayableAmount <= 0 ||
+                    isReleasePayableExceeded
+                  }
+                >
+                  Release Payment
                 </Button>
               </ModalFooter>
             </Form>

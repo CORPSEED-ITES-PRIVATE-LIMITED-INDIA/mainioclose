@@ -24,7 +24,6 @@ import {
   Select,
   SelectItem,
   Form,
-  DatePicker,
 } from "@heroui/react";
 import {
   ArrowLeft,
@@ -46,10 +45,7 @@ import {
 import { getVendorDetailInProject } from "../../toolkit/slices/vendorsSlice";
 import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
 import { Controller, useForm } from "react-hook-form";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import SingleFileUploader from "../../components/SingleFileUploader";
-import NewSelect from "../../components/NewSelect";
-import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 
 const columns = [
   { name: "PO NUMBER", uid: "poNumber" },
@@ -190,33 +186,20 @@ const RaiseProcurementPaymentRequestModal = ({
   const dispatch = useDispatch();
   const [isFileUploading, setIsFileUploading] = useState(false);
 
-  const paymentLedgerList = useSelector(
-    (state) => state.account.paymentLegerList,
-  );
-
   const {
     control,
     handleSubmit,
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm({
     defaultValues: {
       amount: "",
-      paymentDate: "",
-      paymentMode: "",
-      bankLedgerId: "",
-      transactionReference: "",
       paymentProof: "",
 
       gstActive: false,
       gstPercentage: "",
-
-      tdsActive: false,
-      tds: {
-        tdsPercentage: "",
-      },
 
       remarks: "",
     },
@@ -224,18 +207,14 @@ const RaiseProcurementPaymentRequestModal = ({
 
   const poFinalAmount = Number(procurementOrder?.finalAmount || 0);
   const poGstRate = Number(procurementOrder?.gstRate || 0);
-  const poTdsPercentage = Number(procurementOrder?.tdsPercentage || 0);
-
   const poCgstAmount = Number(procurementOrder?.cgstAmount || 0);
   const poSgstAmount = Number(procurementOrder?.sgstAmount || 0);
   const poIgstAmount = Number(procurementOrder?.igstAmount || 0);
 
-  const poTdsAmount = Number(procurementOrder?.tdsAmount || 0);
   const poTotalTaxAmount = Number(procurementOrder?.totalTaxAmount || 0);
   const poGrandTotal = Number(procurementOrder?.grandTotal || 0);
 
   const defaultGstActive = poTotalTaxAmount > 0 || poGstRate > 0;
-  const defaultTdsActive = poTdsAmount > 0 || poTdsPercentage > 0;
 
   const vendorGSTNumber = String(procurementOrder?.vendorGSTNumber || "")
     .trim()
@@ -246,11 +225,8 @@ const RaiseProcurementPaymentRequestModal = ({
   const resolvedGstType = isUttarPradeshVendor ? "CGST_SGST" : "IGST";
 
   const amount = watch("amount");
-  const paymentMode = watch("paymentMode");
   const gstActive = watch("gstActive");
   const gstPercentage = watch("gstPercentage");
-  const tdsActive = watch("tdsActive");
-  const selectedTdsPercentage = watch("tds.tdsPercentage");
 
   const baseAmount = toTwoDecimalAmount(amount);
 
@@ -271,75 +247,17 @@ const RaiseProcurementPaymentRequestModal = ({
   const calculatedIgstAmount =
     gstActive && resolvedGstType === "IGST" ? calculatedGstAmount : 0;
 
-  const calculatedTdsAmount = tdsActive
-    ? toTwoDecimalAmount(
-        (baseAmount * Number(selectedTdsPercentage || 0)) / 100,
-      )
-    : 0;
-
   const calculatedInvoiceAmount = toTwoDecimalAmount(
     baseAmount + calculatedGstAmount,
   );
 
-  const calculatedPayableAmount = toTwoDecimalAmount(
-    calculatedInvoiceAmount - calculatedTdsAmount,
-  );
-
-  const hasPaymentModeSelected = Boolean(String(paymentMode || "").trim());
-
-  const isCashPaymentMode =
-    String(paymentMode || "")
-      .trim()
-      .toUpperCase() === "CASH";
-
-  const isCashLedger = useCallback((ledger) => {
-    const ledgerName = String(ledger?.ledgerName || "")
-      .trim()
-      .toLowerCase();
-
-    const ledgerType = String(ledger?.ledgerType || "")
-      .trim()
-      .toLowerCase();
-
-    return ledgerType === "cash" || ledgerName.includes("cash");
-  }, []);
-
-  const filteredPaymentLedgerList = useMemo(() => {
-    if (!hasPaymentModeSelected) {
-      return [];
-    }
-
-    const ledgers = Array.isArray(paymentLedgerList) ? paymentLedgerList : [];
-
-    return isCashPaymentMode
-      ? ledgers.filter(isCashLedger)
-      : ledgers.filter((ledger) => !isCashLedger(ledger));
-  }, [
-    hasPaymentModeSelected,
-    isCashLedger,
-    isCashPaymentMode,
-    paymentLedgerList,
-  ]);
-
-  useEffect(() => {
-    dispatch(getActivePaymentLedgerForPaymentRegister());
-  }, [dispatch]);
-
-  useEffect(() => {
-    setValue("bankLedgerId", "");
-  }, [paymentMode, setValue]);
+  const calculatedPayableAmount = calculatedInvoiceAmount;
 
   useEffect(() => {
     if (!gstActive) {
       setValue("gstPercentage", "");
     }
   }, [gstActive, setValue]);
-
-  useEffect(() => {
-    if (!tdsActive) {
-      setValue("tds.tdsPercentage", "");
-    }
-  }, [tdsActive, setValue]);
 
   useEffect(() => {
     if (!open) return;
@@ -349,33 +267,19 @@ const RaiseProcurementPaymentRequestModal = ({
 
     reset({
       amount: defaultAmount !== "" ? String(defaultAmount) : "",
-      paymentDate: "",
-      paymentMode: "",
-      bankLedgerId: "",
-      transactionReference: "",
       paymentProof: "",
 
       gstActive: defaultGstActive,
       gstPercentage: defaultGstActive && poGstRate > 0 ? String(poGstRate) : "",
 
-      tdsActive: defaultTdsActive,
-      tds: {
-        tdsPercentage:
-          defaultTdsActive && poTdsPercentage > 0
-            ? String(poTdsPercentage)
-            : "",
-      },
-
       remarks: "",
     });
   }, [
     defaultGstActive,
-    defaultTdsActive,
     open,
     poFinalAmount,
     poGrandTotal,
     poGstRate,
-    poTdsPercentage,
     procurementOrder,
     reset,
   ]);
@@ -407,40 +311,17 @@ const RaiseProcurementPaymentRequestModal = ({
       return;
     }
 
-    const selectedLedgerId = Number(values.bankLedgerId);
-
-    const selectedLedger = (
-      Array.isArray(paymentLedgerList) ? paymentLedgerList : []
-    ).find((ledger) => Number(ledger?.id) === selectedLedgerId);
-
-    const selectedLedgerType = String(
-      selectedLedger?.ledgerType ||
-        (String(values.paymentMode || "").toUpperCase() === "CASH"
-          ? "CASH"
-          : "BANK"),
-    )
-      .trim()
-      .toUpperCase();
-
     const selectedGstPercentage = values.gstActive
       ? toTwoDecimalAmount(values.gstPercentage)
-      : 0;
-
-    const selectedTdsRate = values.tdsActive
-      ? toTwoDecimalAmount(values.tds?.tdsPercentage)
       : 0;
 
     const gstAmount = values.gstActive
       ? toTwoDecimalAmount((paymentAmount * selectedGstPercentage) / 100)
       : 0;
 
-    const tdsAmount = values.tdsActive
-      ? toTwoDecimalAmount((paymentAmount * selectedTdsRate) / 100)
-      : 0;
-
     const invoiceAmount = toTwoDecimalAmount(paymentAmount + gstAmount);
 
-    const payableAmount = toTwoDecimalAmount(invoiceAmount - tdsAmount);
+    const payableAmount = invoiceAmount;
 
     const normalizedVendorGSTNumber = String(
       procurementOrder?.vendorGSTNumber || "",
@@ -464,32 +345,16 @@ const RaiseProcurementPaymentRequestModal = ({
     const igstAmount = applyIgst ? gstAmount : 0;
 
     /*
-     * IMPORTANT:
-     * Payload keys are intentionally unchanged.
-     * Only their values are now taken/calculated from the Raise PR form.
+     * Payment execution fields and TDS fields are intentionally omitted.
+     * They will be handled later in the payment-processing workflow.
      */
     const payload = {
       invoiceAmount,
       payableAmount,
 
       amount: paymentAmount,
-      paymentDate: values.paymentDate,
-      paymentMode: values.paymentMode,
-      bankLedgerId: selectedLedgerId,
-      ledgerId: selectedLedgerId,
-      ledgerType: selectedLedgerType,
-      transactionReference: String(values.transactionReference || "").trim(),
       paymentProof: values.paymentProof,
       proofAttachmentUrls: values.paymentProof ? [values.paymentProof] : [],
-
-      tdsActive: Boolean(values.tdsActive),
-      tdsPercentage: values.tdsActive ? selectedTdsRate : null,
-      tdsAmount: values.tdsActive ? tdsAmount : 0,
-      tds: values.tdsActive
-        ? {
-            tdsPercentage: selectedTdsRate,
-          }
-        : null,
 
       gstActive: Boolean(values.gstActive),
       gstPercentage: values.gstActive ? selectedGstPercentage : null,
@@ -625,17 +490,6 @@ const RaiseProcurementPaymentRequestModal = ({
                     </span>
                   </div>
                 )}
-
-                {tdsActive && (
-                  <div className="flex justify-between gap-3 rounded-lg bg-default-50 p-3">
-                    <span className="text-default-500">
-                      TDS ({Number(selectedTdsPercentage || 0)}%)
-                    </span>
-                    <span className="font-medium text-danger">
-                      - {formatAmount(calculatedTdsAmount)}
-                    </span>
-                  </div>
-                )}
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -698,101 +552,6 @@ const RaiseProcurementPaymentRequestModal = ({
               />
 
               <Controller
-                name="paymentDate"
-                control={control}
-                rules={{
-                  required: "Payment date is required",
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <DatePicker
-                    isRequired
-                    label="Payment Date"
-                    showMonthAndYearPickers
-                    maxValue={today(getLocalTimeZone())}
-                    isInvalid={Boolean(error)}
-                    errorMessage={error?.message}
-                    value={
-                      field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
-                        ? parseDate(field.value)
-                        : null
-                    }
-                    onChange={(value) => {
-                      field.onChange(value ? value.toString() : "");
-                    }}
-                  />
-                )}
-              />
-
-              <Controller
-                name="paymentMode"
-                control={control}
-                rules={{
-                  required: "Payment mode is required",
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <Select
-                    label="Payment Mode"
-                    isRequired
-                    selectedKeys={
-                      field.value ? new Set([field.value]) : new Set([])
-                    }
-                    onSelectionChange={(keys) => {
-                      field.onChange(Array.from(keys)?.[0] || "");
-                    }}
-                    isInvalid={Boolean(error)}
-                    errorMessage={error?.message}
-                  >
-                    <SelectItem key="CASH">Cash</SelectItem>
-                    <SelectItem key="UPI">UPI</SelectItem>
-                    <SelectItem key="CARD">Card</SelectItem>
-                    <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
-                    <SelectItem key="CHEQUE">Cheque</SelectItem>
-                  </Select>
-                )}
-              />
-
-              <Controller
-                name="bankLedgerId"
-                control={control}
-                rules={{
-                  required: "Bank/Cash ledger is required",
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <div>
-                    <NewSelect
-                      isRequired
-                      isDisabled={!hasPaymentModeSelected}
-                      label={
-                        isCashPaymentMode
-                          ? "Select Cash Ledger"
-                          : "Select Bank Ledger"
-                      }
-                      placeholder={
-                        !hasPaymentModeSelected
-                          ? "Select payment mode first"
-                          : isCashPaymentMode
-                            ? "Select cash ledger"
-                            : "Select bank ledger"
-                      }
-                      data={filteredPaymentLedgerList}
-                      labelKey="ledgerName"
-                      valueKey="id"
-                      value={field.value ?? ""}
-                      onChange={(value) => {
-                        field.onChange(value ? String(value) : "");
-                      }}
-                    />
-
-                    {error?.message && (
-                      <p className="mt-1 text-xs text-danger">
-                        {error.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              />
-
-              <Controller
                 name="gstActive"
                 control={control}
                 render={({ field }) => (
@@ -841,72 +600,6 @@ const RaiseProcurementPaymentRequestModal = ({
               )}
 
               <Controller
-                name="tdsActive"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label="TDS Applicable"
-                    selectedKeys={new Set([field.value ? "true" : "false"])}
-                    onSelectionChange={(keys) => {
-                      field.onChange(Array.from(keys)?.[0] === "true");
-                    }}
-                  >
-                    <SelectItem key="true">Yes</SelectItem>
-                    <SelectItem key="false">No</SelectItem>
-                  </Select>
-                )}
-              />
-
-              {tdsActive && (
-                <Controller
-                  name="tds.tdsPercentage"
-                  control={control}
-                  rules={{
-                    required: "TDS percentage is required",
-                  }}
-                  render={({ field, fieldState: { error } }) => (
-                    <Select
-                      label="TDS Percentage"
-                      isRequired
-                      selectedKeys={
-                        field.value !== undefined &&
-                        field.value !== null &&
-                        field.value !== ""
-                          ? new Set([String(field.value)])
-                          : new Set([])
-                      }
-                      onSelectionChange={(keys) => {
-                        field.onChange(Array.from(keys)?.[0] || "");
-                      }}
-                      isInvalid={Boolean(error)}
-                      errorMessage={error?.message}
-                    >
-                      <SelectItem key="2">2%</SelectItem>
-                      <SelectItem key="10">10%</SelectItem>
-                    </Select>
-                  )}
-                />
-              )}
-
-              <Controller
-                name="transactionReference"
-                control={control}
-                rules={{
-                  required: "Transaction reference number is required",
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <Input
-                    {...field}
-                    label="Transaction Reference Number / UTR Number"
-                    placeholder="Enter transaction reference"
-                    isRequired
-                    isInvalid={Boolean(error)}
-                    errorMessage={error?.message}
-                  />
-                )}
-              />
-
-              <Controller
                 name="paymentProof"
                 control={control}
                 rules={{
@@ -915,7 +608,7 @@ const RaiseProcurementPaymentRequestModal = ({
                 render={({ field, fieldState: { error } }) => (
                   <div>
                     <SingleFileUploader
-                      label="Payment Proof"
+                      label="Invoice"
                       value={field.value}
                       onChange={(value) => {
                         field.onChange(value || "");
