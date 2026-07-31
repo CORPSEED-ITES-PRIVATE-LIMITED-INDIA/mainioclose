@@ -43,6 +43,9 @@ import {
   getExpenseApprovalQueueList,
   updateCrtExpenseDecision,
 } from "../../toolkit/slices/operationSlice";
+import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
+import NewSelect from "../../components/NewSelect";
+import SingleFileUploader from "../../components/SingleFileUploader";
 
 const columns = [
   {
@@ -316,6 +319,10 @@ const Expenses = () => {
 
   const currentUser = useSelector((state) => state.auth.currentUser);
 
+  const paymentLedgerList = useSelector(
+    (state) => state.account.paymentLegerList,
+  );
+
   const expenseApprovalQueueList = useSelector(
     (state) => state.operation.expenseApprovalQueueList,
   );
@@ -353,9 +360,46 @@ const Expenses = () => {
   const [decisionForm, setDecisionForm] = useState({
     status: "",
     expensePaidBy: "",
+    paymentMode: "",
+    bankLedgerId: "",
+    transactionReference: "",
+    paymentProof: "",
     remark: "",
   });
   const [decisionErrors, setDecisionErrors] = useState({});
+
+  useEffect(() => {
+    dispatch(getActivePaymentLedgerForPaymentRegister());
+  }, [dispatch]);
+
+  const isCompanyPaidExpense = decisionForm.expensePaidBy === "COMPANY";
+  const isCashPaymentMode = decisionForm.paymentMode === "CASH";
+
+  const isCashLedger = useCallback((ledger) => {
+    const ledgerName = String(ledger?.ledgerName || "")
+      .trim()
+      .toLowerCase();
+    const ledgerType = String(ledger?.ledgerType || "")
+      .trim()
+      .toLowerCase();
+
+    return ledgerType === "cash" || ledgerName.includes("cash");
+  }, []);
+
+  const filteredPaymentLedgerList = useMemo(() => {
+    if (!decisionForm.paymentMode) {
+      return [];
+    }
+
+    return isCashPaymentMode
+      ? (paymentLedgerList || []).filter(isCashLedger)
+      : (paymentLedgerList || []).filter((ledger) => !isCashLedger(ledger));
+  }, [
+    decisionForm.paymentMode,
+    isCashPaymentMode,
+    isCashLedger,
+    paymentLedgerList,
+  ]);
 
   const fetchExpenseApprovalQueue = useCallback(() => {
     if (!resolvedUserId) {
@@ -491,6 +535,10 @@ const Expenses = () => {
     setDecisionForm({
       status: "",
       expensePaidBy: "",
+      paymentMode: "",
+      bankLedgerId: "",
+      transactionReference: "",
+      paymentProof: "",
       remark: "",
     });
     setDecisionErrors({});
@@ -501,6 +549,10 @@ const Expenses = () => {
     setDecisionForm({
       status: "",
       expensePaidBy: "",
+      paymentMode: "",
+      bankLedgerId: "",
+      transactionReference: "",
+      paymentProof: "",
       remark: "",
     });
     setDecisionErrors({});
@@ -512,6 +564,29 @@ const Expenses = () => {
 
     if (!decisionForm.status) {
       errors.status = "Status is required";
+    }
+
+    if (!decisionForm.expensePaidBy) {
+      errors.expensePaidBy = "Expense paid by is required";
+    }
+
+    if (decisionForm.expensePaidBy === "COMPANY") {
+      if (!decisionForm.paymentMode) {
+        errors.paymentMode = "Payment mode is required";
+      }
+
+      if (!decisionForm.bankLedgerId) {
+        errors.bankLedgerId = "Bank/Cash ledger is required";
+      }
+
+      if (!decisionForm.transactionReference.trim()) {
+        errors.transactionReference =
+          "Transaction reference number is required";
+      }
+
+      if (!decisionForm.paymentProof) {
+        errors.paymentProof = "Payment attachment is required";
+      }
     }
 
     if (!decisionForm.remark.trim()) {
@@ -558,6 +633,16 @@ const Expenses = () => {
             status: decisionForm.status,
             remark: decisionForm.remark.trim(),
             expensePaidBy: decisionForm.expensePaidBy || null,
+            paymentMode: isCompanyPaidExpense ? decisionForm.paymentMode : null,
+            bankLedgerId: isCompanyPaidExpense
+              ? Number(decisionForm.bankLedgerId)
+              : null,
+            transactionReference: isCompanyPaidExpense
+              ? decisionForm.transactionReference.trim()
+              : null,
+            paymentProof: isCompanyPaidExpense
+              ? decisionForm.paymentProof
+              : null,
           },
         }),
       ).unwrap();
@@ -572,6 +657,11 @@ const Expenses = () => {
       setSelectedExpense(null);
       setDecisionForm({
         status: "",
+        expensePaidBy: "",
+        paymentMode: "",
+        bankLedgerId: "",
+        transactionReference: "",
+        paymentProof: "",
         remark: "",
       });
       setDecisionErrors({});
@@ -594,6 +684,7 @@ const Expenses = () => {
     decisionForm,
     dispatch,
     fetchExpenseApprovalQueue,
+    isCompanyPaidExpense,
     resolvedUserId,
     selectedExpense,
     validateDecisionForm,
@@ -1115,6 +1206,7 @@ const Expenses = () => {
       </Table>
 
       <Modal
+        size="3xl"
         isOpen={isStatusModalOpen}
         placement="center"
         onOpenChange={(isOpen) => {
@@ -1198,6 +1290,14 @@ const Expenses = () => {
                 setDecisionForm((previous) => ({
                   ...previous,
                   expensePaidBy: value ? String(value) : "",
+                  ...(String(value) !== "COMPANY"
+                    ? {
+                        paymentMode: "",
+                        bankLedgerId: "",
+                        transactionReference: "",
+                        paymentProof: "",
+                      }
+                    : {}),
                 }));
 
                 if (value) {
@@ -1215,6 +1315,123 @@ const Expenses = () => {
                 Company
               </SelectItem>
             </Select>
+
+            {isCompanyPaidExpense && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Select
+                  isRequired
+                  label="Payment Mode"
+                  placeholder="Select payment mode"
+                  selectedKeys={
+                    decisionForm.paymentMode
+                      ? new Set([decisionForm.paymentMode])
+                      : new Set([])
+                  }
+                  isInvalid={Boolean(decisionErrors.paymentMode)}
+                  errorMessage={decisionErrors.paymentMode}
+                  onSelectionChange={(keys) => {
+                    const value = Array.from(keys)[0];
+
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      paymentMode: value ? String(value) : "",
+                      bankLedgerId: "",
+                    }));
+
+                    setDecisionErrors((previous) => ({
+                      ...previous,
+                      paymentMode: undefined,
+                      bankLedgerId: undefined,
+                    }));
+                  }}
+                >
+                  <SelectItem key="CASH">Cash</SelectItem>
+                  <SelectItem key="UPI">UPI</SelectItem>
+                  <SelectItem key="CARD">Card</SelectItem>
+                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem key="CHEQUE">Cheque</SelectItem>
+                </Select>
+
+                <div>
+                  <NewSelect
+                    isRequired
+                    label="Select Bank/Cash Ledger"
+                    data={filteredPaymentLedgerList}
+                    labelKey="ledgerName"
+                    valueKey="id"
+                    value={decisionForm.bankLedgerId}
+                    onChange={(value) => {
+                      setDecisionForm((previous) => ({
+                        ...previous,
+                        bankLedgerId: value || "",
+                      }));
+
+                      if (value) {
+                        setDecisionErrors((previous) => ({
+                          ...previous,
+                          bankLedgerId: undefined,
+                        }));
+                      }
+                    }}
+                  />
+                  {decisionErrors.bankLedgerId && (
+                    <p className="mt-1 text-xs text-danger">
+                      {decisionErrors.bankLedgerId}
+                    </p>
+                  )}
+                </div>
+
+                <Input
+                  isRequired
+                  label="Transaction Reference Number / UTR Number"
+                  placeholder="Enter transaction reference number"
+                  value={decisionForm.transactionReference}
+                  isInvalid={Boolean(decisionErrors.transactionReference)}
+                  errorMessage={decisionErrors.transactionReference}
+                  onValueChange={(value) => {
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      transactionReference: value,
+                    }));
+
+                    if (value.trim()) {
+                      setDecisionErrors((previous) => ({
+                        ...previous,
+                        transactionReference: undefined,
+                      }));
+                    }
+                  }}
+                />
+
+                <div>
+                  <SingleFileUploader
+                    label="Payment Attachment"
+                    value={decisionForm.paymentProof}
+                    onChange={(value) => {
+                      setDecisionForm((previous) => ({
+                        ...previous,
+                        paymentProof: value || "",
+                      }));
+
+                      if (value) {
+                        setDecisionErrors((previous) => ({
+                          ...previous,
+                          paymentProof: undefined,
+                        }));
+                      }
+                    }}
+                    isRequired={true}
+                    isInvalid={Boolean(decisionErrors.paymentProof)}
+                    errorMessage={decisionErrors.paymentProof}
+                  />
+                  {decisionErrors.paymentProof && (
+                    <p className="mt-1 text-xs text-danger">
+                      {decisionErrors.paymentProof}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Textarea
               isRequired
