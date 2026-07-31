@@ -778,6 +778,27 @@ export const getEstimatePaymentHistory =
     },
   );
 
+
+  export const rejectAdvanceTaxInvoiceRequest = createAsyncThunk(
+  "account/rejectAdvanceTaxInvoiceRequest",
+  async ({ requestId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/advance-tax-invoice-requests/${requestId}/reject`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Failed to reject advance tax invoice request",
+        },
+      );
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -821,7 +842,8 @@ const AccountSlice = createSlice({
     advanceTaxInvoiceRequestCreateError: null,
     advanceTaxInvoiceRequestApproving: false,
     advanceTaxInvoiceRequestApproveError: null,
-    estimatePaymentHistory:null
+    estimatePaymentHistory:null,
+    advanceTaxInvoiceRequestRejecting: false,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllCompaniesForApprovals.pending, (state) => {
@@ -1275,6 +1297,16 @@ const AccountSlice = createSlice({
       state.estimatePaymentHistory = null;
 
     });
+    builder
+  .addCase(rejectAdvanceTaxInvoiceRequest.pending, (state) => {
+    state.advanceTaxInvoiceRequestRejecting = true;
+  })
+  builder.addCase(rejectAdvanceTaxInvoiceRequest.fulfilled, (state) => {
+    state.advanceTaxInvoiceRequestRejecting = false;
+  })
+  builder.addCase(rejectAdvanceTaxInvoiceRequest.rejected, (state) => {
+    state.advanceTaxInvoiceRequestRejecting = false;
+  });
   },
 });
 

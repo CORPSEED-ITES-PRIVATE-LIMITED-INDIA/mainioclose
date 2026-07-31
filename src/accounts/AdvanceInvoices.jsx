@@ -38,6 +38,7 @@ import FileUploader from "../components/FileUploader";
 
 import {
   approveAdvanceTaxInvoiceRequest,
+  rejectAdvanceTaxInvoiceRequest,
   confirmAdvanceTaxInvoiceEInvoiceAndCreateProject,
   getAllAdvanceTaxInvoiceRequests,
 } from "../toolkit/slices/accountSlice";
@@ -255,6 +256,7 @@ const AdvanceInvoices = () => {
     advanceTaxInvoiceRequestsLoading,
     advanceTaxInvoiceRequestsError,
     advanceTaxInvoiceRequestApproving,
+    advanceTaxInvoiceRequestRejecting,
     advanceTaxInvoiceEInvoiceConfirming,
   } = useSelector((state) => state.account || {});
 
@@ -266,6 +268,10 @@ const AdvanceInvoices = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [reviewRemarks, setReviewRemarks] = useState("");
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+
+  const [selectedRejectRequest, setSelectedRejectRequest] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const confirmEInvoiceModal = useDisclosure();
   const taxInvoiceModal = useDisclosure();
@@ -444,6 +450,87 @@ const AdvanceInvoices = () => {
 
     addToast({
       title: "Approval failed",
+      description: getApiErrorMessage(action?.payload),
+      color: "danger",
+    });
+  };
+
+  const openRejectModal = (item) => {
+    if (String(item?.requestStatus || "").toUpperCase() !== "PENDING") {
+      addToast({
+        title: "Only pending requests can be rejected",
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedRejectRequest(item);
+    setRejectionReason("");
+    setIsRejectModalOpen(true);
+  };
+
+  const closeRejectModal = () => {
+    if (advanceTaxInvoiceRequestRejecting) return;
+
+    setSelectedRejectRequest(null);
+    setRejectionReason("");
+    setIsRejectModalOpen(false);
+  };
+
+  const handleRejectRequest = async () => {
+    if (!selectedRejectRequest?.requestId) {
+      addToast({
+        title: "Invalid advance tax invoice request",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!currentUserId) {
+      addToast({
+        title: "Rejecting user ID is not available",
+        color: "danger",
+      });
+      return;
+    }
+
+    const normalizedReason = rejectionReason.trim();
+
+    if (!normalizedReason) {
+      addToast({
+        title: "Rejection reason is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    const action = await dispatch(
+      rejectAdvanceTaxInvoiceRequest({
+        requestId: selectedRejectRequest.requestId,
+        data: {
+          rejectedByUserId: currentUserId,
+          rejectionReason: normalizedReason,
+        },
+      }),
+    );
+
+    if (rejectAdvanceTaxInvoiceRequest.fulfilled.match(action)) {
+      addToast({
+        title: "Advance tax invoice request rejected",
+        description:
+          action?.payload?.message || "Request rejected successfully.",
+        color: "success",
+      });
+
+      setSelectedRejectRequest(null);
+      setRejectionReason("");
+      setIsRejectModalOpen(false);
+      refreshRequests();
+      return;
+    }
+
+    addToast({
+      title: "Rejection failed",
       description: getApiErrorMessage(action?.payload),
       color: "danger",
     });
@@ -764,6 +851,12 @@ const AdvanceInvoices = () => {
             label: "Approve",
             color: "success",
           });
+
+          actionItems.push({
+            key: "reject",
+            label: "Reject",
+            color: "danger",
+          });
         }
 
         if (canViewTaxInvoice) {
@@ -805,6 +898,10 @@ const AdvanceInvoices = () => {
               onAction={(key) => {
                 if (key === "approve") {
                   openApproveModal(item);
+                }
+
+                if (key === "reject") {
+                  openRejectModal(item);
                 }
 
                 if (key === "viewTaxInvoice") {
@@ -1077,6 +1174,80 @@ const AdvanceInvoices = () => {
                   isLoading={advanceTaxInvoiceRequestApproving}
                 >
                   Approve & Generate Invoice
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={isRejectModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeRejectModal();
+          }
+        }}
+        isDismissable={!advanceTaxInvoiceRequestRejecting}
+        isKeyboardDismissDisabled={advanceTaxInvoiceRequestRejecting}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Reject Advance Tax Invoice</ModalHeader>
+
+              <ModalBody>
+                <Card
+                  shadow="none"
+                  className="border border-slate-200 bg-slate-50"
+                >
+                  <CardBody className="p-3">
+                    <p className="text-xs text-slate-500">Estimate Number</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {selectedRejectRequest?.estimateNumber || "-"}
+                    </p>
+
+                    <p className="mt-3 text-xs text-slate-500">
+                      Requested Amount
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {formatAmount(selectedRejectRequest?.requestedAmount)}
+                    </p>
+                  </CardBody>
+                </Card>
+
+                <Textarea
+                  isRequired
+                  label="Rejection Reason"
+                  placeholder="Enter the reason for rejecting this request..."
+                  value={rejectionReason}
+                  onValueChange={setRejectionReason}
+                  minRows={4}
+                  maxLength={1000}
+                  description={`${rejectionReason.length}/1000 characters`}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    closeRejectModal();
+                    onClose();
+                  }}
+                  isDisabled={advanceTaxInvoiceRequestRejecting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="danger"
+                  onPress={handleRejectRequest}
+                  isLoading={advanceTaxInvoiceRequestRejecting}
+                  isDisabled={!rejectionReason.trim()}
+                >
+                  Reject Request
                 </Button>
               </ModalFooter>
             </>
