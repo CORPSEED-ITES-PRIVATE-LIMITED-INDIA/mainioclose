@@ -427,6 +427,12 @@ export const navItems = [
         key: "comments",
       },
       {
+        title: "Country Data",
+        icon: "",
+        url: "settings/country",
+        key: "country",
+      },
+      {
         title: "IP",
         icon: "",
         url: "settings/ipAddress",

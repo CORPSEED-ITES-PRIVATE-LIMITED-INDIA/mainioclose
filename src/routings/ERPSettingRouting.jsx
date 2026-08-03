@@ -26,6 +26,9 @@ import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/Pro
 import ProposalService from "../setting/proposalAndBrouchers/service/ProposalService";
 import ProductServiceDetails from "../setting/products/ProductServiceDetails";
 import PaymentTems from "../setting/paymentTerm/PaymentTems";
+import CountryData from "../setting/country/CountryData";
+import StateData from "../setting/country/StateData";
+import CityData from "../setting/country/CityData";
 
 const ERPSettingRouting = () => {
   return (
@@ -61,6 +64,15 @@ const ERPSettingRouting = () => {
       <Route path="settings/comments" element={<LeadComments />} />
       <Route path="settings/ipAddress" element={<IpAddress />} />
       <Route path="settings/slug" element={<Slug />} />
+      <Route path="settings/country" element={<CountryData />} />
+      <Route
+        path="settings/country/state/:countryName"
+        element={<StateData />}
+      />
+      <Route
+        path="settings/country/state/:stateName/city/:stateName"
+        element={<CityData />}
+      />
       <Route path="settings/applicantType" element={<ApplicantTypes />} />
       <Route path="settings/urls" element={<Urls />} />
       <Route path="settings/department" element={<Department />} />
