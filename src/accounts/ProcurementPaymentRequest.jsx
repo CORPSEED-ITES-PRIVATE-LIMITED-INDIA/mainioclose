@@ -497,7 +497,7 @@ const ProcurementPaymentRequest = () => {
       paymentProof: releasePaymentProof,
       proofAttachmentUrls: releasePaymentProof ? [releasePaymentProof] : [],
 
-      tdsActive: releaseTdsActive ? "YES" : "NO",
+      tdsActive: releaseTdsActive ? true : false,
       tdsPercentage: releaseTdsActive ? Number(releaseTdsPercentage) : null,
       tdsAmount: releaseTdsActive ? releaseTdsAmount : 0,
 
