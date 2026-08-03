@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
 import {
   createUserByHr,
   getAllRoles,
@@ -51,16 +50,60 @@ import {
   createNewUserInAuth,
   updateUserData,
 } from "../toolkit/slices/authSlice";
-import { createUsersInOperations } from "../toolkit/slices/operationSlice";
 import { getAllDepartment } from "../toolkit/slices/settingSlice";
-import { padZero } from "../common";
 import {
-  parseAbsoluteToLocal,
+  CalendarDate,
+  getLocalTimeZone,
   parseDate,
-  toCalendarDateTime,
+  today,
 } from "@internationalized/date";
 import dayjs from "dayjs";
 
+/* -------------------------------------------------------------------------- */
+/*  Date helpers                                                              */
+/* -------------------------------------------------------------------------- */
+/*
+  The crash came from here. `parseDate()` THROWS on anything that is not a
+  strict "YYYY-MM-DD" string, and it was being called during render. While you
+  type in a DatePicker, HeroUI fires onChange with `null` (incomplete date), the
+  old handler built the string `"undefined-NaN-NaN"`, stored it in the form, and
+  the next render called parseDate on it -> uncaught throw -> blank page.
+  These two helpers never throw, so a half typed date can no longer kill the UI.
+*/
+const toCalendarDate = (value) => {
+  if (!value) return null;
+  try {
+    if (typeof value === "object" && "year" in value) return value;
+    const iso = dayjs(value).isValid()
+      ? dayjs(value).format("YYYY-MM-DD")
+      : String(value);
+    return parseDate(iso);
+  } catch {
+    return null;
+  }
+};
+
+const fromCalendarDate = (value) => {
+  if (!value || !value.year || !value.month || !value.day) return "";
+  try {
+    return `${value.year}-${String(value.month).padStart(2, "0")}-${String(
+      value.day,
+    ).padStart(2, "0")}`;
+  } catch {
+    return "";
+  }
+};
+
+const TODAY = today(getLocalTimeZone());
+const MIN_DOB = new CalendarDate(1940, 1, 1);
+const MIN_JOINING = new CalendarDate(1980, 1, 1);
+
+// Never let `String(undefined)` -> "undefined" leak into an input.
+const str = (v) => (v === null || v === undefined ? "" : String(v));
+
+/* -------------------------------------------------------------------------- */
+/*  Table config                                                              */
+/* -------------------------------------------------------------------------- */
 const columns = [
   { name: "ID", uid: "id" },
   { name: "USER NAME", uid: "fullName", sortable: true },
@@ -79,10 +122,6 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
-
 const INITIAL_VISIBLE_COLUMNS = [
   "fullName",
   "email",
@@ -93,55 +132,121 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
-const formSchema = (flags) =>
-  z.object({
-    employeeId: z.string().min(1, "Please enter employee id"),
-    userName: z.string().min(1, "Please enter username"),
-    email: z.string().min(1, "Please enter a valid email"),
-    personalEmail: z.string().optional().or(z.literal("")),
-    contactNo: z.string().min(10, "Please enter a valid contact number"),
-    companyMobile: z.string().optional().or(z.literal("")),
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Validation schema                                                         */
+/* -------------------------------------------------------------------------- */
+/*
+  One static schema instead of `formSchema(flags)`. The conditional spouse rule
+  lives in superRefine, so the resolver identity is stable and you no longer
+  need the `setFormFlags` + `reset(getValues())` dance (that effect was wiping
+  values and re-rendering the whole form on every marital status change).
+*/
+const optionalText = z.string().trim().optional().or(z.literal(""));
+
+const optionalPhone = z
+  .string()
+  .trim()
+  .regex(/^\d{10}$/, "Enter a valid 10 digit number")
+  .optional()
+  .or(z.literal(""));
+
+const formSchema = z
+  .object({
+    employeeId: z.string().trim().min(1, "Please enter employee id"),
+    userName: z.string().trim().min(2, "Please enter username"),
+    email: z.string().trim().email("Please enter a valid email"),
+    personalEmail: z
+      .string()
+      .trim()
+      .email("Please enter a valid personal email")
+      .optional()
+      .or(z.literal("")),
+    contactNo: z
+      .string()
+      .trim()
+      .regex(/^\d{10}$/, "Please enter a valid 10 digit contact number"),
+    companyMobile: optionalPhone,
     role: z.array(z.string()).min(1, "Please select at least one role"),
     departmentId: z.string().min(1, "Please select a department"),
     designationId: z.string().min(1, "Please select a designation"),
-    epfNo: z.string().optional().or(z.literal("")),
-    aadharCard: z.string().min(1, "Please enter aadhar card number"),
-    panNumber: z.string().min(1, "Please enter pan number"),
-    managerId: z.string().optional().or(z.literal(null)),
-    lockerSize: z.string().optional().or(z.literal("")),
-    expInYear: z.string().min(1, "Please enter experience in years"),
-    expInMonth: z.string().min(1, "Please enter experience in months"),
-    dateOfJoining: z.string().min(1, "please select date of joining."),
-    type: z.string().min(1, "please select the gender."),
-    maritalStatus: z.string().min(1, "please select the status."),
-    ...(flags?.maritalStatus
-      ? {
-          spouseName: z.string().min(1, "Please enter spouse name"),
-          spouseContactNo: z.string().optional().or(z.literal("")),
-        }
-      : {}),
-    fatherName: z.string().min(1, "Please enter father's name"),
-    fatherOccupation: z.string().optional().or(z.literal("")),
-    fatherContactNo: z.string().optional().or(z.literal("")),
-    motherName: z.string().min(1, "Please enter mother's name"),
-    motherContactNo: z.string().optional().or(z.literal("")),
-    nationality: z.string().optional().or(z.literal("")),
-    language: z.string().optional().or(z.literal("")),
-    ...(flags?.master
-      ? {
-          master: z.boolean().optional().or(z.literal("")),
-          backupTeam: z.boolean().optional().or(z.literal("")),
-        }
-      : {}),
-    emergencyNumber: z.string().optional().or(z.literal("")),
-    permanentAddress: z.string().min(1, "Please enter permanent address"),
-    residentialAddress: z.string().optional().or(z.literal("")),
+    epfNo: optionalText,
+    aadharCard: z
+      .string()
+      .trim()
+      .regex(/^\d{12}$/, "Aadhar number must be 12 digits"),
+    panNumber: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+    managerId: optionalText,
+    lockerSize: optionalText,
+    expInYear: z
+      .string()
+      .trim()
+      .regex(/^\d{1,2}$/, "Enter experience in years (0-99)"),
+    expInMonth: z
+      .string()
+      .trim()
+      .regex(/^(0?[0-9]|1[01])$/, "Enter months between 0 and 11"),
+    dateOfBirth: z.string().min(1, "Please select date of birth"),
+    dateOfJoining: z.string().min(1, "Please select date of joining"),
+    type: z.string().min(1, "Please select the gender"),
+    maritalStatus: z.string().min(1, "Please select the marital status"),
+    spouseName: optionalText,
+    spouseContactNo: optionalPhone,
+    fatherName: z.string().trim().min(1, "Please enter father's name"),
+    fatherOccupation: optionalText,
+    fatherContactNo: optionalPhone,
+    motherName: z.string().trim().min(1, "Please enter mother's name"),
+    motherOccupation: optionalText,
+    motherContactNo: optionalPhone,
+    nationality: optionalText,
+    language: optionalText,
+    master: z.boolean().optional(),
+    backupTeam: z.boolean().optional(),
+    emergencyNumber: optionalPhone,
+    permanentAddress: z
+      .string()
+      .trim()
+      .min(1, "Please enter permanent address"),
+    residentialAddress: optionalText,
+  })
+  .superRefine((values, ctx) => {
+    if (values.maritalStatus === "Married" && !values.spouseName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["spouseName"],
+        message: "Please enter spouse name",
+      });
+    }
+    if (
+      values.dateOfBirth &&
+      values.dateOfJoining &&
+      dayjs(values.dateOfJoining).isBefore(dayjs(values.dateOfBirth))
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dateOfJoining"],
+        message: "Joining date cannot be before date of birth",
+      });
+    }
   });
 
+/*
+  Every key the form touches must exist here, otherwise the input starts
+  uncontrolled and React logs "changing an uncontrolled input to be controlled"
+  (employeeId, panNumber and motherOccupation were missing before). No `null`
+  defaults either - zod string rules reject null.
+*/
 const defaultValues = {
+  employeeId: "",
   userName: "",
   email: "",
-  personalEmail: null,
+  personalEmail: "",
   contactNo: "",
   companyMobile: "",
   role: [],
@@ -149,11 +254,13 @@ const defaultValues = {
   designationId: "",
   epfNo: "",
   aadharCard: "",
+  panNumber: "",
   managerId: "",
   lockerSize: "",
   expInYear: "",
   expInMonth: "",
-  dateOfJoining: null,
+  dateOfBirth: "",
+  dateOfJoining: "",
   type: "",
   maritalStatus: "",
   spouseName: "",
@@ -162,6 +269,7 @@ const defaultValues = {
   fatherOccupation: "",
   fatherContactNo: "",
   motherName: "",
+  motherOccupation: "",
   motherContactNo: "",
   nationality: "",
   language: "",
@@ -172,40 +280,174 @@ const defaultValues = {
   residentialAddress: "",
 };
 
+/* -------------------------------------------------------------------------- */
+/*  Small field wrappers - guarantee every field renders its own error         */
+/* -------------------------------------------------------------------------- */
+const TextField = ({
+  control,
+  name,
+  label,
+  isRequired,
+  multiline,
+  transform,
+  ...rest
+}) => {
+  const Component = multiline ? Textarea : Input;
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Component
+          {...rest}
+          label={label}
+          isRequired={isRequired}
+          value={field.value ?? ""}
+          onValueChange={(v) => field.onChange(transform ? transform(v) : v)}
+          onBlur={field.onBlur}
+          isInvalid={!!fieldState.error}
+          errorMessage={fieldState.error?.message}
+        />
+      )}
+    />
+  );
+};
+
+const SelectField = ({
+  control,
+  name,
+  label,
+  isRequired,
+  items = [],
+  emptyLabel = "No options available",
+  multiple = false,
+  onAfterChange,
+}) => (
+  <Controller
+    name={name}
+    control={control}
+    render={({ field, fieldState }) => (
+      <Select
+        label={label}
+        isRequired={isRequired}
+        selectionMode={multiple ? "multiple" : "single"}
+        selectedKeys={
+          multiple
+            ? new Set((field.value ?? []).map(String))
+            : field.value
+              ? new Set([String(field.value)])
+              : new Set()
+        }
+        onSelectionChange={(keys) => {
+          const arr = Array.from(keys);
+          const next = multiple ? arr : (arr[0] ?? "");
+          field.onChange(next);
+          onAfterChange?.(next);
+        }}
+        onBlur={field.onBlur}
+        isInvalid={!!fieldState.error}
+        errorMessage={fieldState.error?.message}
+      >
+        {items.length > 0 ? (
+          items.map((item) => (
+            <SelectItem key={String(item.value)}>{item.label}</SelectItem>
+          ))
+        ) : (
+          <SelectItem key="__empty" isDisabled>
+            {emptyLabel}
+          </SelectItem>
+        )}
+      </Select>
+    )}
+  />
+);
+
+const DateField = ({
+  control,
+  name,
+  label,
+  isRequired,
+  minValue,
+  maxValue,
+}) => (
+  <Controller
+    name={name}
+    control={control}
+    render={({ field, fieldState }) => (
+      <DatePicker
+        label={label}
+        isRequired={isRequired}
+        // this is the prop you were asking about - gives dropdowns for
+        // month + year so a 1990 birth date is 2 clicks, not 400 arrow presses
+        showMonthAndYearPickers
+        granularity="day"
+        minValue={minValue}
+        maxValue={maxValue}
+        value={toCalendarDate(field.value)}
+        onChange={(value) => field.onChange(fromCalendarDate(value))}
+        onBlur={field.onBlur}
+        isInvalid={!!fieldState.error}
+        errorMessage={fieldState.error?.message}
+      />
+    )}
+  />
+);
+
+const BooleanSelect = ({ control, name, label }) => (
+  <Controller
+    name={name}
+    control={control}
+    render={({ field, fieldState }) => (
+      <Select
+        label={label}
+        selectedKeys={new Set([String(!!field.value)])}
+        onSelectionChange={(keys) => {
+          const value = Array.from(keys)[0];
+          if (value !== undefined) field.onChange(value === "true");
+        }}
+        isInvalid={!!fieldState.error}
+        errorMessage={fieldState.error?.message}
+      >
+        <SelectItem key="true">Yes</SelectItem>
+        <SelectItem key="false">No</SelectItem>
+      </Select>
+    )}
+  />
+);
+
+/* -------------------------------------------------------------------------- */
+/*  Component                                                                 */
+/* -------------------------------------------------------------------------- */
 const UsersList = () => {
-  const { userId } = useParams();
   const dispatch = useDispatch();
-  const count = useSelector((state) => state.common.usersList?.length || 0);
   const data = useSelector((state) => state.common.usersList || []);
+  // NOTE: this is the length of the current page, not the server total.
+  // If your API returns a total, read it here so pagination is accurate.
+  const count = useSelector((state) => state.common.usersList?.length || 0);
   const departmentList = useSelector(
-    (state) => state?.setting?.departmentList || []
+    (state) => state?.setting?.departmentList || [],
   );
   const allRoles = useSelector((state) => state.common.allRoles || []);
   const allDesiginationListById = useSelector(
-    (state) => state.common.desiginationListById || []
+    (state) => state.common.desiginationListById || [],
   );
   const managerListById = useSelector(
-    (state) => state.common.managerListById || []
+    (state) => state.common.managerListById || [],
   );
+
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "fullName",
     direction: "ascending",
   });
-  const [filteration, setFilteration] = useState({
-    page: 1,
-    size: 50,
-  });
+  const [filteration, setFilteration] = useState({ page: 1, size: 50 });
   const [rowItem, setRowItem] = useState(null);
-  const [formFlags, setFormFlags] = useState({
-    maritalStatus: false,
-    master: false,
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -213,438 +455,381 @@ const UsersList = () => {
     dispatch(getAllUsers(filteration));
   }, [dispatch, filteration]);
 
+  const { control, handleSubmit, reset, watch, setValue } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+    mode: "onTouched", // validate on blur, then live - errors show under the field
+  });
+
+  const maritalStatus = watch("maritalStatus");
+  const isMarried = maritalStatus === "Married";
+
+  /* ----------------------------- derived data ---------------------------- */
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
   const filteredItems = useMemo(() => {
-    let filteredUsers = [...data];
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((item) =>
-        Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
-      );
-    }
-    return filteredUsers;
-  }, [data, filterValue]);
+    if (!hasSearchFilter) return [...data];
+    const needle = filterValue.toLowerCase();
+    return data.filter((item) =>
+      Object.values(item || {}).some((val) =>
+        String(val ?? "")
+          .toLowerCase()
+          .includes(needle),
+      ),
+    );
+  }, [data, filterValue, hasSearchFilter]);
 
-  const pages = Math.ceil(count / filteration?.size) || 1;
+  const pages = Math.max(1, Math.ceil(count / filteration.size));
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
+      const first = a?.[sortDescriptor.column] ?? "";
+      const second = b?.[sortDescriptor.column] ?? "";
       const cmp = first < second ? -1 : first > second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    reset,
-    getValues,
-  } = useForm({
-    resolver: zodResolver(formSchema(formFlags)),
-    defaultValues,
-  });
-
-  useEffect(() => {
-    console.log("Current form values:", watch());
-    console.log("Form errors:", errors);
-  }, [watch, errors]);
-
-  useEffect(() => {
-    reset(getValues());
-  }, [formFlags]);
-
-  const handleEdit = useCallback(
-    (data) => {
-      dispatch(getAllRoles());
-      dispatch(getAllDepartment());
-      dispatch(getDesiginationById(data?.userDepartment?.id));
-      dispatch(getManagerById(data?.userDepartment?.id));
-      reset({
-        employeeId: data?.employeeId,
-        userName: data?.fullName,
-        email: data.email,
-        designationId: String(data?.userDesignation?.id),
-        departmentId: String(data?.userDepartment?.id),
-        role: data?.role,
-        epfNo: data?.epfNo,
-        aadharCard: data?.aadharCard,
-        managerId: String(data?.managers?.id),
-        expInMonth: String(data?.expInMonth),
-        expInYear: String(data?.expInYear),
-        dateOfJoining: data.dateOfJoining
-          ? dayjs(data?.dateOfJoining).format("YYYY-MM-DD")
-          : null,
-        type: data?.type,
-        fatherName: data?.fatherName,
-        fatherOccupation: data?.fatherOccupation,
-        fatherContactNo: data?.fatherContactNo,
-        motherName: data?.motherName,
-        motherOccupation: data?.motherOccupation,
-        motherContactNo: data?.motherContactNo,
-        spouseName: data?.spouseName,
-        spouseContactNo: data?.spouseContactNo,
-        nationality: data?.nationality,
-        language: data?.language,
-        emergencyNumber: data?.emergencyNumber,
-        panNumber: data?.panNumber,
-        permanentAddress: data?.permanentAddress,
-        residentialAddress: data?.residentialAddress,
-        backupTeam: data?.backupTeam,
-        master: data?.master,
-        maritalStatus: data?.maritalStatus,
-        personalEmail: data?.personalEmail,
-        companyMobile: data?.companyMobile,
-        lockerSize: String(data?.lockerSize),
-        contactNo: data?.contactNo,
-      });
-      setRowItem(data);
-      onOpen();
-    },
-    [data, reset, dispatch, onOpen]
+  const roleItems = useMemo(
+    () => allRoles.map((r) => ({ label: r.name, value: r.name })),
+    [allRoles],
+  );
+  const departmentItems = useMemo(
+    () => departmentList.map((d) => ({ label: d.name, value: String(d.id) })),
+    [departmentList],
+  );
+  const designationItems = useMemo(
+    () =>
+      allDesiginationListById.map((d) => ({
+        label: d.name,
+        value: String(d.id),
+      })),
+    [allDesiginationListById],
+  );
+  const managerItems = useMemo(
+    () =>
+      managerListById.map((m) => ({ label: m.fullName, value: String(m.id) })),
+    [managerListById],
   );
 
-  console.log("jkdfgkjdgkjdgkjdhg", getValues());
-  console.log("jkdfgkjdgkjdgkjdhg 111", formSchema(formFlags));
+  /* ------------------------------- handlers ------------------------------ */
+  const handleAdd = useCallback(() => {
+    dispatch(getAllRoles());
+    dispatch(getAllDepartment());
+    setRowItem(null);
+    reset(defaultValues);
+    onOpen();
+  }, [dispatch, reset, onOpen]);
 
-  const onSubmit = (values) => {
-    if (rowItem) {
-      values.id = rowItem?.id;
-      let tempObj = {
-        id: rowItem?.id,
-        userName: values?.userName,
-        email: values?.email,
-        designationId: values?.designationId,
-        departmentId: values?.departmentId,
-        role: values?.role,
-      };
-      dispatch(updateUserData(tempObj))
-        .then((response) => {
-          if (response.meta.requestStatus === "fulfilled") {
-            dispatch(updateLeadByHr(values))
-              .then((res) => {
-                if (res.meta.requestStatus === "fulfilled") {
-                  addToast({
-                    title: "User updated successfully !.",
-                    color: "success",
-                  });
-                  setRowItem(null);
-                  onClose();
-                  reset(defaultValues);
-                  dispatch(getAllUsers());
-                } else {
-                  addToast({
-                    title: "Something went wrong !.",
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "Something went wrong !.",
-                  color: "danger",
-                });
-              });
-          } else {
-            addToast({
-              title: "Something went wrong !.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() => {
-          addToast({
-            title: "Something went wrong !.",
-            color: "danger",
-          });
-        });
-    } else {
-      const authData = {
-        email: values?.email,
-        role: values?.role,
-        designation: values?.designationId,
-        userName: values?.userName,
-        department: values?.departmentId,
-        designationId: values?.designationId,
-        departmentId: values?.departmentId,
-      };
-      dispatch(createNewUserInAuth(authData))
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            const temp = resp?.payload?.data?.data;
-            const obj = {
-              id: temp.userId,
-              ...values,
-            };
-            dispatch(createUserByHr(obj))
-              .then((info) => {
-                if (info.meta.requestStatus === "fulfilled") {
-                  const userInfo = info?.payload;
-                  addToast({
-                    title: "User created successfully !.",
-                    color: "success",
-                  });
-                  // dispatch(
-                  //   createUsersInOperations({
-                  //     id: userInfo?.id,
-                  //     fullName: userInfo?.fullName,
-                  //     email: userInfo?.email,
-                  //     contactNo: userInfo?.contactNo,
-                  //     designationId: userInfo?.userDesignation?.id,
-                  //     departmentIds: [userInfo?.userDepartment?.id],
-                  //     roleIds: userInfo?.role,
-                  //     managerId: managers?.id,
-                  //     managerFlag: true,
-                  //   })
-                  // );
-                  onClose();
-                  reset(defaultValues);
-                  dispatch(getAllUsers());
-                } else {
-                  addToast({
-                    title: "Something went wrong !.",
-                    color: "danger",
-                  });
-                }
-              })
-              .catch(() => {
-                addToast({
-                  title: "Something went wrong !.",
-                  color: "danger",
-                });
-              });
-          } else {
-            addToast({
-              title: "Something went wrong !.",
-              color: "danger",
-            });
-          }
-        })
-        .catch(() => {
-          addToast({
-            title: "Something went wrong !.",
-            color: "danger",
-          });
-        });
+  const handleEdit = useCallback(
+    (row) => {
+      dispatch(getAllRoles());
+      dispatch(getAllDepartment());
+      if (row?.userDepartment?.id) {
+        dispatch(getDesiginationById(row.userDepartment.id));
+        dispatch(getManagerById(row.userDepartment.id));
+      }
+
+      reset({
+        ...defaultValues,
+        employeeId: str(row?.employeeId),
+        userName: str(row?.fullName),
+        email: str(row?.email),
+        personalEmail: str(row?.personalEmail),
+        contactNo: str(row?.contactNo),
+        companyMobile: str(row?.companyMobile),
+        role: Array.isArray(row?.role) ? row.role : [],
+        departmentId: str(row?.userDepartment?.id),
+        designationId: str(row?.userDesignation?.id),
+        epfNo: str(row?.epfNo),
+        aadharCard: str(row?.aadharCard),
+        panNumber: str(row?.panNumber).toUpperCase(),
+        managerId: str(row?.managers?.id),
+        lockerSize: str(row?.lockerSize),
+        expInYear: str(row?.expInYear),
+        expInMonth: str(row?.expInMonth),
+        dateOfBirth: row?.dateOfBirth
+          ? dayjs(row.dateOfBirth).format("YYYY-MM-DD")
+          : "",
+        dateOfJoining: row?.dateOfJoining
+          ? dayjs(row.dateOfJoining).format("YYYY-MM-DD")
+          : "",
+        type: str(row?.type),
+        maritalStatus: str(row?.maritalStatus),
+        spouseName: str(row?.spouseName),
+        spouseContactNo: str(row?.spouseContactNo),
+        fatherName: str(row?.fatherName),
+        fatherOccupation: str(row?.fatherOccupation),
+        fatherContactNo: str(row?.fatherContactNo),
+        motherName: str(row?.motherName),
+        motherOccupation: str(row?.motherOccupation),
+        motherContactNo: str(row?.motherContactNo),
+        nationality: str(row?.nationality),
+        language: str(row?.language),
+        master: !!row?.master,
+        backupTeam: !!row?.backupTeam,
+        emergencyNumber: str(row?.emergencyNumber),
+        permanentAddress: str(row?.permanentAddress),
+        residentialAddress: str(row?.residentialAddress),
+      });
+
+      setRowItem(row);
+      onOpen();
+    },
+    [dispatch, reset, onOpen],
+  );
+
+  const closeForm = useCallback(() => {
+    setRowItem(null);
+    reset(defaultValues);
+    onClose();
+  }, [reset, onClose]);
+
+  const refetch = useCallback(
+    () => dispatch(getAllUsers(filteration)),
+    [dispatch, filteration],
+  );
+
+  const fail = (title = "Something went wrong.") =>
+    addToast({ title, color: "danger" });
+
+  const onSubmit = async (values) => {
+    setIsSubmitting(true);
+    try {
+      if (rowItem) {
+        const payload = { ...values, id: rowItem.id };
+        const authRes = await dispatch(
+          updateUserData({
+            id: rowItem.id,
+            userName: values.userName,
+            email: values.email,
+            designationId: values.designationId,
+            departmentId: values.departmentId,
+            role: values.role,
+          }),
+        );
+        if (authRes.meta.requestStatus !== "fulfilled") return fail();
+
+        const hrRes = await dispatch(updateLeadByHr(payload));
+        if (hrRes.meta.requestStatus !== "fulfilled") return fail();
+
+        addToast({ title: "User updated.", color: "success" });
+        closeForm();
+        refetch();
+      } else {
+        const authRes = await dispatch(
+          createNewUserInAuth({
+            email: values.email,
+            role: values.role,
+            userName: values.userName,
+            designation: values.designationId,
+            designationId: values.designationId,
+            department: values.departmentId,
+            departmentId: values.departmentId,
+          }),
+        );
+        if (authRes.meta.requestStatus !== "fulfilled") return fail();
+
+        const createdId = authRes?.payload?.data?.data?.userId;
+        const hrRes = await dispatch(
+          createUserByHr({ id: createdId, ...values }),
+        );
+        if (hrRes.meta.requestStatus !== "fulfilled") return fail();
+
+        addToast({ title: "User created.", color: "success" });
+        closeForm();
+        refetch();
+      }
+    } catch {
+      fail();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "fullName":
-        return (
-          <div className="flex items-start gap-2">
-            <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
+  // Fires when zod rejects. RHF focuses the first invalid field for you, this
+  // just tells the user why nothing happened when they hit Submit.
+  const onInvalid = (formErrors) => {
+    const first = Object.values(formErrors)[0];
+    addToast({
+      title: first?.message || "Please fill all the required fields.",
+      color: "danger",
+    });
+  };
+
+  /* ------------------------------ table cells ---------------------------- */
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "fullName":
+          return (
+            <div className="flex items-start gap-2">
+              <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
+              <div className="flex flex-col">
+                <p className="font-normal capitalize">
+                  {rowData?.fullName || "-"}
+                </p>
+                <p className="font-normal text-xs text-default-500">
+                  Aadhar : {rowData?.aadharCard || "-"}
+                </p>
+                <p className="font-normal text-xs text-default-500">
+                  EMP.ID : {rowData?.employeeId || "-"}
+                </p>
+              </div>
+            </div>
+          );
+        case "email":
+          return (
+            <div className="flex flex-col gap-1 items-start">
+              <span className="font-normal">{rowData?.email || "Unknown"}</span>
+              {rowData?.contactNo && (
+                <Chip
+                  size="sm"
+                  className="text-tiny"
+                  variant="flat"
+                  startContent={<Phone className="h-3 w-3" />}
+                >
+                  {rowData.contactNo}
+                </Chip>
+              )}
+              {rowData?.panNumber && (
+                <Chip size="sm" className="text-tiny" variant="flat">
+                  PAN : {rowData.panNumber}
+                </Chip>
+              )}
+            </div>
+          );
+        case "department":
+          return (
             <div className="flex flex-col">
-              <p className="font-normal capitalize">
-                {rowData?.fullName || "-"}
-              </p>
+              <span className="font-normal">{rowData?.department || "-"}</span>
               <p className="font-normal text-xs text-default-500">
-                Aadhar : {rowData?.aadharCard || "-"}
-              </p>
-              <p className="font-normal text-xs text-default-500">
-                EMP.ID : {rowData?.employeeId || "-"}
+                {rowData?.designation || "-"}
               </p>
             </div>
-          </div>
-        );
-      case "email":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.email || "Unknown"}</span>
-            {rowData?.contactNo && (
-              <Chip
-                size="sm"
-                className="text-tiny"
-                variant="flat"
-                startContent={<Phone className="h-3 w-3" />}
-              >
-                {rowData?.contactNo}
-              </Chip>
-            )}
-            {rowData?.panNumber && (
-              <Chip size="sm" className="text-tiny" variant="flat">
-                Pan : {rowData?.panNumber}
-              </Chip>
-            )}
-          </div>
-        );
-      case "department":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.department || "-"}</span>
-            <p className="font-normal text-xs text-default-500">
-              {rowData?.designation || "-"}
-            </p>
-          </div>
-        );
-      case "role":
-        return (
-          <div className="flex flex-col">
+          );
+        case "role":
+          return (
             <span className="font-normal">
-              {rowData?.role?.join(",") || "-"}
+              {Array.isArray(rowData?.role) ? rowData.role.join(", ") : "-"}
             </span>
-          </div>
-        );
-      case "experience":
-        return (
-          <div className="flex flex-col">
-            {rowData?.expInYear && (
-              <span className="font-normal">
-                {rowData?.expInYear || "-"} yrs ,{" "}
-              </span>
-            )}
-            {rowData?.expInMonth && (
-              <span className="font-normal">
-                {rowData?.expInMonth || "-"} mos
-              </span>
-            )}
-          </div>
-        );
-      case "managers":
-        return (
-          <div className="flex items-center">
+          );
+        case "experience": {
+          const y = rowData?.expInYear;
+          const m = rowData?.expInMonth;
+          if (!y && !m) return "-";
+          return (
+            <span className="font-normal">
+              {y ? `${y} yrs` : ""}
+              {y && m ? ", " : ""}
+              {m ? `${m} mos` : ""}
+            </span>
+          );
+        }
+        case "managers":
+          return (
             <span className="font-normal">
               {rowData?.managers?.fullName || "-"}
             </span>
-          </div>
-        );
-      case "permanentAddress":
-        return rowData?.permanentAddress ? (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.permanentAddress || "-"}
-            </span>
-          </div>
-        ) : (
-          "-"
-        );
-      case "residentialAddress":
-        return rowData?.residentialAddress ? (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.residentialAddress || "-"}
-            </span>
-          </div>
-        ) : (
-          "-"
-        );
-      case "fatherInfo":
-        return rowData?.fatherName ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.fatherName || "-"}</span>
-            <div className="flex flex-col gap-1">
-              <span className="text-default-500">
+          );
+        case "permanentAddress":
+          return rowData?.permanentAddress || "-";
+        case "residentialAddress":
+          return rowData?.residentialAddress || "-";
+        case "fatherInfo":
+          return rowData?.fatherName ? (
+            <div className="flex flex-col">
+              <span className="font-normal">{rowData.fatherName}</span>
+              <span className="text-default-500 text-xs">
                 Occupation : {rowData?.fatherOccupation || "-"}
               </span>
-              <span className="text-default-500">
+              <span className="text-default-500 text-xs">
                 Contact : {rowData?.fatherContactNo || "-"}
               </span>
             </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "motherInfo":
-        return rowData?.motherName ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.motherName || "-"}</span>
-            <div className="flex flex-col gap-1">
-              <span className="text-default-500">
+          ) : (
+            "-"
+          );
+        case "motherInfo":
+          return rowData?.motherName ? (
+            <div className="flex flex-col">
+              <span className="font-normal">{rowData.motherName}</span>
+              <span className="text-default-500 text-xs">
                 Occupation : {rowData?.motherOccupation || "-"}
               </span>
-              <span className="text-default-500">
+              <span className="text-default-500 text-xs">
                 Contact : {rowData?.motherContactNo || "-"}
               </span>
             </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "spouseInfo":
-        return rowData?.spouseName ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.spouseName || "-"}</span>
-            <div className="flex flex-col gap-1">
-              <span className="text-default-500">
-                Occupation : {rowData?.spouseOccupation || "-"}
-              </span>
-              <span className="text-default-500">
+          ) : (
+            "-"
+          );
+        case "spouseInfo":
+          return rowData?.spouseName ? (
+            <div className="flex flex-col">
+              <span className="font-normal">{rowData.spouseName}</span>
+              <span className="text-default-500 text-xs">
                 Contact : {rowData?.spouseContactNo || "-"}
               </span>
             </div>
-          </div>
-        ) : (
-          "-"
-        );
-      case "actions":
-        return (
-          <Dropdown>
-            <DropdownTrigger>
-              <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu>
-              <DropdownItem key={"edit"} onPress={() => handleEdit(rowData)}>
-                Edit
-              </DropdownItem>
-              <DropdownItem key={"approved"}>Approved</DropdownItem>
-              <DropdownItem key={"disapproved"}>Disapproved</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        );
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
+          ) : (
+            "-"
+          );
+        case "backupTeam":
+          return rowData?.backupTeam ? "Yes" : "No";
+        case "actions":
+          return (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button size="sm" isIconOnly variant="light">
+                  <EllipsisVertical />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu aria-label="User actions">
+                <DropdownItem key="edit" onPress={() => handleEdit(rowData)}>
+                  Edit
+                </DropdownItem>
+                <DropdownItem key="approved">Approved</DropdownItem>
+                <DropdownItem key="disapproved">Disapproved</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          );
+        default:
+          return rowData?.[columnKey] ?? "-";
+      }
+    },
+    [handleEdit], // was missing -> Edit used a stale handler
+  );
 
+  /* ------------------------------ pagination ----------------------------- */
   const onNextPage = useCallback(() => {
-    if (filteration?.page < pages) {
-      setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
-    }
-  }, [filteration, pages]);
+    setFilteration((prev) =>
+      prev.page < pages ? { ...prev, page: prev.page + 1 } : prev,
+    );
+  }, [pages]);
 
   const onPreviousPage = useCallback(() => {
-    if (filteration?.page > 1) {
-      setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
-    }
-  }, [filteration]);
+    setFilteration((prev) =>
+      prev.page > 1 ? { ...prev, page: prev.page - 1 } : prev,
+    );
+  }, []);
 
   const onRowsPerPageChange = useCallback((e) => {
-    setFilteration((prev) => ({
-      ...prev,
-      size: Number(e.target.value),
-      page: 1,
-    }));
+    setFilteration({ size: Number(e.target.value), page: 1 });
   }, []);
 
   const onSearchChange = useCallback((value) => {
-    if (value) {
-      setFilterValue(value);
-      setFilteration((prev) => ({ ...prev, page: 1 }));
-    } else {
-      setFilterValue("");
-    }
-  }, []);
-
-  const onClear = useCallback(() => {
-    setFilterValue("");
+    setFilterValue(value || "");
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const topContent = useMemo(() => {
-    return (
+  const topContent = useMemo(
+    () => (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
@@ -653,7 +838,7 @@ const UsersList = () => {
             placeholder="Search ..."
             startContent={<Search />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={() => onSearchChange("")}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -678,17 +863,7 @@ const UsersList = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button
-              color="primary"
-              onPress={() => {
-                dispatch(getAllRoles());
-                dispatch(getAllDepartment());
-                onOpen();
-                setRowItem(null);
-                reset(defaultValues);
-              }}
-              endContent={<Plus />}
-            >
+            <Button color="primary" onPress={handleAdd} endContent={<Plus />}>
               Add users
             </Button>
           </div>
@@ -702,7 +877,7 @@ const UsersList = () => {
             <select
               className="bg-transparent outline-none text-default-400 text-small"
               onChange={onRowsPerPageChange}
-              value={filteration?.size}
+              value={filteration.size}
             >
               <option value="5">5</option>
               <option value="15">15</option>
@@ -712,18 +887,20 @@ const UsersList = () => {
           </label>
         </div>
       </div>
-    );
-  }, [
-    filterValue,
-    visibleColumns,
-    onRowsPerPageChange,
-    count,
-    onSearchChange,
-    onOpen,
-  ]);
+    ),
+    [
+      filterValue,
+      visibleColumns,
+      onRowsPerPageChange,
+      onSearchChange,
+      handleAdd,
+      count,
+      filteration.size,
+    ],
+  );
 
-  const bottomContent = useMemo(() => {
-    return (
+  const bottomContent = useMemo(
+    () => (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
           {selectedKeys === "all"
@@ -735,16 +912,15 @@ const UsersList = () => {
           showControls
           showShadow
           color="primary"
-          page={filteration?.page}
+          page={filteration.page}
           total={pages}
-          onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-            dispatch(getAllUsers({ ...filteration, page: e }));
-          }}
+          // the useEffect above refetches on filteration change,
+          // dispatching here too caused a duplicate request
+          onChange={(page) => setFilteration((prev) => ({ ...prev, page }))}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration.page <= 1}
             size="sm"
             variant="flat"
             onPress={onPreviousPage}
@@ -752,7 +928,7 @@ const UsersList = () => {
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration.page >= pages}
             size="sm"
             variant="flat"
             onPress={onNextPage}
@@ -761,17 +937,11 @@ const UsersList = () => {
           </Button>
         </div>
       </div>
-    );
-  }, [
-    selectedKeys,
-    count,
-    filteration,
-    pages,
-    onPreviousPage,
-    onNextPage,
-    dispatch,
-  ]);
+    ),
+    [selectedKeys, count, filteration.page, pages, onPreviousPage, onNextPage],
+  );
 
+  /* -------------------------------- render ------------------------------- */
   return (
     <>
       <h1 className="font-sans text-2xl font-medium mb-1">Users list</h1>
@@ -784,12 +954,9 @@ const UsersList = () => {
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
           table: "w-full",
         }}
-        // selectedKeys={selectedKeys}
-        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        // onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -803,7 +970,7 @@ const UsersList = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No data found"} items={sortedItems}>
+        <TableBody emptyContent="No data found" items={sortedItems}>
           {(item) => (
             <TableRow key={item.id || item.companyId}>
               {(columnKey) => (
@@ -816,612 +983,304 @@ const UsersList = () => {
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl">
         <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>{rowItem ? "Edit user" : "Add users"}</ModalHeader>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <ModalBody>
-                  <div className="max-h-[60vh] overflow-auto p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <Controller
-                        name="employeeId"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Employee Id"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.userName?.message}
-                            isInvalid={!!errors.userName}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="userName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Username"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.userName?.message}
-                            isInvalid={!!errors.userName}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="email"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Email"
-                            isRequired
-                            type="email"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.email?.message}
-                            isInvalid={!!errors.email}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="personalEmail"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Personal email"
-                            type="email"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="contactNo"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Contact number"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            maxLength={10}
-                            errorMessage={errors.contactNo?.message}
-                            isInvalid={!!errors.contactNo}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="companyMobile"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Company mobile number"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            maxLength={10}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="role"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Role"
-                            isRequired
-                            selectionMode="multiple"
-                            selectedKeys={field.value}
-                            onSelectionChange={(keys) =>
-                              field.onChange(Array.from(keys))
-                            }
-                            errorMessage={errors.role?.message}
-                            isInvalid={!!errors.role}
-                          >
-                            {allRoles?.length > 0 ? (
-                              allRoles.map((ele) => (
-                                <SelectItem key={ele.name} value={ele.name}>
-                                  {ele.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem key="no-roles" value="" isDisabled>
-                                No roles available
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
-                      />
-                      <Controller
-                        name="departmentId"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Department"
-                            isRequired
-                            selectionMode="single"
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) {
-                                field.onChange(value);
-                                dispatch(getDesiginationById(value));
-                                dispatch(getManagerById(value));
-                              }
-                            }}
-                            errorMessage={errors.departmentId?.message}
-                            isInvalid={!!errors.departmentId}
-                          >
-                            {departmentList?.length > 0 ? (
-                              departmentList.map((ele) => (
-                                <SelectItem key={ele.id} value={ele.id}>
-                                  {ele.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem
-                                key="no-departments"
-                                value=""
-                                isDisabled
-                              >
-                                No departments available
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
-                      />
-                      <Controller
-                        name="designationId"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Designation"
-                            isRequired
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) field.onChange(value);
-                            }}
-                            errorMessage={errors.designationId?.message}
-                            isInvalid={!!errors.designationId}
-                          >
-                            {allDesiginationListById?.length > 0 ? (
-                              allDesiginationListById.map((ele) => (
-                                <SelectItem key={ele.id} value={ele.id}>
-                                  {ele.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem
-                                key="no-designations"
-                                value=""
-                                isDisabled
-                              >
-                                No designations available
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
-                      />
-                      <Controller
-                        name="epfNo"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="EPFO number"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="aadharCard"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Aadhar card no."
-                            isRequired
-                            maxLength={12}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.aadharCard?.message}
-                            isInvalid={!!errors.aadharCard}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="panNumber"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="PAN Number"
-                            isRequired
-                            maxLength={10}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.panNumber?.message}
-                            isInvalid={!!errors.panNumber}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="managerId"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Manager name"
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) field.onChange(value);
-                            }}
-                          >
-                            {managerListById?.length > 0 ? (
-                              managerListById.map((item) => (
-                                <SelectItem key={item.id} value={item.id}>
-                                  {item.fullName}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem key="no-managers" value="" isDisabled>
-                                No managers available
-                              </SelectItem>
-                            )}
-                          </Select>
-                        )}
-                      />
-                      <Controller
-                        name="lockerSize"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Locker size"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="expInYear"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Experience (in years)"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.expInYear?.message}
-                            isInvalid={!!errors.expInYear}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="expInMonth"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Experience (in months)"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.expInMonth?.message}
-                            isInvalid={!!errors.expInMonth}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="dateOfJoining"
-                        control={control}
-                        render={({ field }) => {
-                          return (
-                            <DatePicker
-                              label="Date of joining"
-                              isRequired
-                              value={
-                                field.value ? parseDate(field.value) : null
-                              }
-                              onChange={(value) => {
-                                const date = `${value?.year}-${padZero(value?.month)}-${padZero(value?.day)}`;
-                                field.onChange(date);
-                              }}
-                              errorMessage={errors.dateOfJoining?.message}
-                              isInvalid={!!errors.dateOfJoining}
-                            />
-                          );
-                        }}
-                      />
-                      <Controller
-                        name="type"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Gender"
-                            isRequired
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) field.onChange(value);
-                            }}
-                            errorMessage={errors.type?.message}
-                            isInvalid={!!errors.type}
-                          >
-                            {[
-                              { label: "Male", value: "male" },
-                              { label: "Female", value: "female" },
-                              { label: "Others", value: "others" },
-                            ].map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                        )}
-                      />
-                      <Controller
-                        name="maritalStatus"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Marital status"
-                            isRequired
-                            selectedKeys={field.value ? [field.value] : []}
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value) {
-                                field.onChange(value);
-                                setFormFlags((prev) => ({
-                                  ...prev,
-                                  maritalStatus: value === "Married",
-                                }));
-                              }
-                            }}
-                            errorMessage={errors.maritalStatus?.message}
-                            isInvalid={!!errors.maritalStatus}
-                          >
-                            {[
-                              { label: "Married", value: "Married" },
-                              { label: "Unmarried", value: "Unmarried" },
-                            ].map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                        )}
-                      />
-                      {formFlags?.maritalStatus && (
-                        <>
-                          <Controller
-                            name="spouseName"
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                label="Spouse name"
-                                isRequired
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                errorMessage={errors.spouseName?.message}
-                                isInvalid={!!errors.spouseName}
-                              />
-                            )}
-                          />
-                          <Controller
-                            name="spouseContactNo"
-                            control={control}
-                            render={({ field }) => (
-                              <Input
-                                label="Spouse contact number"
-                                maxLength={10}
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            )}
-                          />
-                        </>
-                      )}
-                      <Controller
-                        name="fatherName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Father's name"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.fatherName?.message}
-                            isInvalid={!!errors.fatherName}
-                          />
-                        )}
-                      />
+          <>
+            <ModalHeader>{rowItem ? "Edit user" : "Add users"}</ModalHeader>
+            <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
+              <ModalBody>
+                <div className="max-h-[60vh] overflow-auto p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <TextField
+                      control={control}
+                      name="employeeId"
+                      label="Employee id"
+                      isRequired
+                    />
+                    <TextField
+                      control={control}
+                      name="userName"
+                      label="Username"
+                      isRequired
+                    />
+                    <TextField
+                      control={control}
+                      name="email"
+                      label="Email"
+                      type="email"
+                      isRequired
+                    />
+                    <TextField
+                      control={control}
+                      name="personalEmail"
+                      label="Personal email"
+                      type="email"
+                    />
+                    <TextField
+                      control={control}
+                      name="contactNo"
+                      label="Contact number"
+                      isRequired
+                      maxLength={10}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+                    <TextField
+                      control={control}
+                      name="companyMobile"
+                      label="Company mobile number"
+                      maxLength={10}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
 
-                      <Controller
-                        name="fatherOccupation"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Father's occupation"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="fatherContactNo"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Father's contact no."
-                            maxLength={10}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="motherName"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Mother's name"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.motherName?.message}
-                            isInvalid={!!errors.motherName}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="motherContactNo"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Mother's contact no."
-                            maxLength={10}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="nationality"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Nationality"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="language"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Language"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      {formFlags?.master && (
-                        <>
-                          <Controller
-                            name="master"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                label="Master"
-                                selectedKeys={
-                                  field.value !== undefined
-                                    ? [field.value.toString()]
-                                    : []
-                                }
-                                onSelectionChange={(keys) => {
-                                  const value = Array.from(keys)[0];
-                                  if (value !== undefined)
-                                    field.onChange(value === "true");
-                                }}
-                              >
-                                {[
-                                  { label: "True", value: true },
-                                  { label: "False", value: false },
-                                ].map((item) => (
-                                  <SelectItem
-                                    key={item.value.toString()}
-                                    value={item.value}
-                                  >
-                                    {item.label}
-                                  </SelectItem>
-                                ))}
-                              </Select>
-                            )}
-                          />
-                          <Controller
-                            name="backupTeam"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                label="Backup team"
-                                selectedKeys={
-                                  field.value !== undefined
-                                    ? [field.value.toString()]
-                                    : []
-                                }
-                                onSelectionChange={(keys) => {
-                                  const value = Array.from(keys)[0];
-                                  if (value !== undefined)
-                                    field.onChange(value === "true");
-                                }}
-                              >
-                                {[
-                                  { label: "True", value: true },
-                                  { label: "False", value: false },
-                                ].map((item) => (
-                                  <SelectItem
-                                    key={item.value.toString()}
-                                    value={item.value}
-                                  >
-                                    {item.label}
-                                  </SelectItem>
-                                ))}
-                              </Select>
-                            )}
-                          />
-                        </>
-                      )}
-                      <Controller
-                        name="emergencyNumber"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Emergency contact no."
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="permanentAddress"
-                        control={control}
-                        render={({ field }) => (
-                          <Textarea
-                            label="Permanent address"
-                            isRequired
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            errorMessage={errors.permanentAddress?.message}
-                            isInvalid={!!errors.permanentAddress}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="residentialAddress"
-                        control={control}
-                        render={({ field }) => (
-                          <Textarea
-                            label="Residential address"
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          />
-                        )}
-                      />
-                      <div />
-                    </div>
+                    <SelectField
+                      control={control}
+                      name="role"
+                      label="Role"
+                      isRequired
+                      multiple
+                      items={roleItems}
+                      emptyLabel="No roles available"
+                    />
+                    <SelectField
+                      control={control}
+                      name="departmentId"
+                      label="Department"
+                      isRequired
+                      items={departmentItems}
+                      emptyLabel="No departments available"
+                      onAfterChange={(value) => {
+                        // department drives these two lists, so reset them
+                        setValue("designationId", "", {
+                          shouldValidate: false,
+                        });
+                        setValue("managerId", "", { shouldValidate: false });
+                        if (value) {
+                          dispatch(getDesiginationById(value));
+                          dispatch(getManagerById(value));
+                        }
+                      }}
+                    />
+                    <SelectField
+                      control={control}
+                      name="designationId"
+                      label="Designation"
+                      isRequired
+                      items={designationItems}
+                      emptyLabel="Select a department first"
+                    />
+                    <SelectField
+                      control={control}
+                      name="managerId"
+                      label="Manager name"
+                      items={managerItems}
+                      emptyLabel="No managers available"
+                    />
+
+                    <TextField
+                      control={control}
+                      name="epfNo"
+                      label="EPFO number"
+                    />
+                    <TextField
+                      control={control}
+                      name="aadharCard"
+                      label="Aadhar card no."
+                      isRequired
+                      maxLength={12}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+                    <TextField
+                      control={control}
+                      name="panNumber"
+                      label="PAN number"
+                      isRequired
+                      maxLength={10}
+                      transform={(v) => v.toUpperCase().replace(/\s/g, "")}
+                    />
+                    <TextField
+                      control={control}
+                      name="lockerSize"
+                      label="Locker size"
+                    />
+
+                    <TextField
+                      control={control}
+                      name="expInYear"
+                      label="Experience (in years)"
+                      isRequired
+                      maxLength={2}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+                    <TextField
+                      control={control}
+                      name="expInMonth"
+                      label="Experience (in months)"
+                      isRequired
+                      maxLength={2}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+
+                    <DateField
+                      control={control}
+                      name="dateOfBirth"
+                      label="Date of birth"
+                      isRequired
+                      minValue={MIN_DOB}
+                      maxValue={TODAY}
+                    />
+                    <DateField
+                      control={control}
+                      name="dateOfJoining"
+                      label="Date of joining"
+                      isRequired
+                      minValue={MIN_JOINING}
+                    />
+
+                    <SelectField
+                      control={control}
+                      name="type"
+                      label="Gender"
+                      isRequired
+                      items={[
+                        { label: "Male", value: "male" },
+                        { label: "Female", value: "female" },
+                        { label: "Others", value: "others" },
+                      ]}
+                    />
+                    <SelectField
+                      control={control}
+                      name="maritalStatus"
+                      label="Marital status"
+                      isRequired
+                      items={[
+                        { label: "Married", value: "Married" },
+                        { label: "Unmarried", value: "Unmarried" },
+                      ]}
+                      onAfterChange={(value) => {
+                        if (value !== "Married") {
+                          setValue("spouseName", "");
+                          setValue("spouseContactNo", "");
+                        }
+                      }}
+                    />
+
+                    {isMarried && (
+                      <>
+                        <TextField
+                          control={control}
+                          name="spouseName"
+                          label="Spouse name"
+                          isRequired
+                        />
+                        <TextField
+                          control={control}
+                          name="spouseContactNo"
+                          label="Spouse contact number"
+                          maxLength={10}
+                          inputMode="numeric"
+                          transform={(v) => v.replace(/\D/g, "")}
+                        />
+                      </>
+                    )}
+
+                    <TextField
+                      control={control}
+                      name="fatherName"
+                      label="Father's name"
+                      isRequired
+                    />
+                    <TextField
+                      control={control}
+                      name="fatherOccupation"
+                      label="Father's occupation"
+                    />
+                    <TextField
+                      control={control}
+                      name="fatherContactNo"
+                      label="Father's contact no."
+                      maxLength={10}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+                    <TextField
+                      control={control}
+                      name="motherName"
+                      label="Mother's name"
+                      isRequired
+                    />
+                    <TextField
+                      control={control}
+                      name="motherOccupation"
+                      label="Mother's occupation"
+                    />
+                    <TextField
+                      control={control}
+                      name="motherContactNo"
+                      label="Mother's contact no."
+                      maxLength={10}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+
+                    <TextField
+                      control={control}
+                      name="nationality"
+                      label="Nationality"
+                    />
+                    <TextField
+                      control={control}
+                      name="language"
+                      label="Language"
+                    />
+                    <TextField
+                      control={control}
+                      name="emergencyNumber"
+                      label="Emergency contact no."
+                      maxLength={10}
+                      inputMode="numeric"
+                      transform={(v) => v.replace(/\D/g, "")}
+                    />
+
+                    <BooleanSelect
+                      control={control}
+                      name="master"
+                      label="Master"
+                    />
+                    <BooleanSelect
+                      control={control}
+                      name="backupTeam"
+                      label="Backup team"
+                    />
+
+                    <TextField
+                      control={control}
+                      name="permanentAddress"
+                      label="Permanent address"
+                      isRequired
+                      multiline
+                    />
+                    <TextField
+                      control={control}
+                      name="residentialAddress"
+                      label="Residential address"
+                      multiline
+                    />
                   </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button onPress={onClose}>Cancel</Button>
-                  <Button color="primary" type="submit">
-                    Submit
-                  </Button>
-                </ModalFooter>
-              </form>
-            </>
-          )}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={closeForm}>
+                  Cancel
+                </Button>
+                <Button color="primary" type="submit" isLoading={isSubmitting}>
+                  {rowItem ? "Save changes" : "Create user"}
+                </Button>
+              </ModalFooter>
+            </form>
+          </>
         </ModalContent>
       </Modal>
     </>
