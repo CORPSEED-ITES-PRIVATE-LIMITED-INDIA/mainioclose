@@ -27,6 +27,38 @@ const formatRate = (value) => {
   return Number.isInteger(rate) ? `${rate}%` : `${rate.toFixed(2)}%`;
 };
 
+const formatRateNumber = (value) => {
+  const rate = toNumber(value);
+  return Number.isInteger(rate) ? String(rate) : rate.toFixed(2);
+};
+
+const getTaxLineRateLabel = (items = [], taxType) => {
+  const rates = items
+    .map((item) => {
+      const gstRate = toNumber(item?.gstRate);
+
+      if (taxType === "IGST") {
+        return toNumber(item?.igstRate) || gstRate;
+      }
+
+      if (taxType === "CGST") {
+        return toNumber(item?.cgstRate) || gstRate / 2;
+      }
+
+      if (taxType === "SGST") {
+        return toNumber(item?.sgstRate) || gstRate / 2;
+      }
+
+      return 0;
+    })
+    .filter((rate) => rate > 0);
+
+  return Array.from(new Set(rates))
+    .sort((first, second) => first - second)
+    .map(formatRateNumber)
+    .join(" / ");
+};
+
 const getTaxableValue = (item) => {
   if (hasValue(item?.lineTotalExGst)) {
     return toNumber(item.lineTotalExGst);
@@ -36,21 +68,18 @@ const getTaxableValue = (item) => {
 };
 
 /**
- * Calculates the tax breakup from each line item's igstFlag.
- *
- * igstFlag = true  -> complete GST amount goes to IGST.
- * igstFlag = false -> GST amount is divided between CGST and SGST.
+ * Calculates each line's tax according to the estimate-level tax mode.
+ * The estimate header is the source of truth because a line-item tax flag
+ * can be stale or inconsistent with the final estimate totals.
  */
-const calculateLineTax = (item, gstEnabled = true) => {
+const calculateLineTax = (item, taxMode = "NONE") => {
   const taxableValue = getTaxableValue(item);
   const gstRate = toNumber(item?.gstRate);
 
-  const suppliedCgst = toNumber(item?.cgstAmount);
-  const suppliedSgst = toNumber(item?.sgstAmount);
-  const suppliedIgst = toNumber(item?.igstAmount);
   const suppliedGst = toNumber(item?.gstAmount);
 
-  const isIgst = item?.igstFlag === true || suppliedIgst > 0;
+  const isIgst = taxMode === "IGST";
+  const gstEnabled = taxMode !== "NONE";
 
   if (!gstEnabled || gstRate <= 0) {
     return {
@@ -68,15 +97,9 @@ const calculateLineTax = (item, gstEnabled = true) => {
   }
 
   const calculatedGst = (taxableValue * gstRate) / 100;
+  const totalLineTax = suppliedGst > 0 ? suppliedGst : calculatedGst;
 
   if (isIgst) {
-    const igstAmount =
-      suppliedIgst > 0
-        ? suppliedIgst
-        : suppliedGst > 0
-          ? suppliedGst
-          : calculatedGst;
-
     return {
       isIgst: true,
       taxableValue,
@@ -86,21 +109,13 @@ const calculateLineTax = (item, gstEnabled = true) => {
       igstRate: gstRate,
       cgstAmount: 0,
       sgstAmount: 0,
-      igstAmount,
-      totalTaxAmount: igstAmount,
+      igstAmount: totalLineTax,
+      totalTaxAmount: totalLineTax,
     };
   }
 
-  const suppliedComponentTotal = suppliedCgst + suppliedSgst;
-  const totalIntraStateTax =
-    suppliedComponentTotal > 0
-      ? suppliedComponentTotal
-      : suppliedGst > 0
-        ? suppliedGst
-        : calculatedGst;
-
-  const cgstAmount = suppliedCgst > 0 ? suppliedCgst : totalIntraStateTax / 2;
-  const sgstAmount = suppliedSgst > 0 ? suppliedSgst : totalIntraStateTax / 2;
+  const cgstAmount = totalLineTax / 2;
+  const sgstAmount = totalLineTax - cgstAmount;
 
   return {
     isIgst: false,
@@ -116,11 +131,11 @@ const calculateLineTax = (item, gstEnabled = true) => {
   };
 };
 
-const buildTaxSummaryRows = (items, gstEnabled) => {
+const buildTaxSummaryRows = (items, taxMode) => {
   const summaryMap = new Map();
 
   items.forEach((item) => {
-    const tax = calculateLineTax(item, gstEnabled);
+    const tax = calculateLineTax(item, taxMode);
     const hsnSacCode = item?.hsnSacCode || "-";
     const taxType = tax.isIgst ? "IGST" : "INTRA";
     const key = `${hsnSacCode}_${taxType}_${tax.gstRate}`;
@@ -164,8 +179,40 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
     );
   }, [details?.lineItems]);
 
-  const gstEnabled =
-    details?.gstApplicable !== false && details?.zeroRatedSupply !== true;
+  const apiCgstAmount = toNumber(details?.cgstAmount);
+  const apiSgstAmount = toNumber(details?.sgstAmount);
+  const apiIgstAmount = toNumber(details?.igstAmount);
+
+  const taxMode = useMemo(() => {
+    if (apiIgstAmount > 0) {
+      return "IGST";
+    }
+
+    if (apiCgstAmount > 0 && apiSgstAmount > 0) {
+      return "CGST_SGST";
+    }
+
+    return "NONE";
+  }, [apiCgstAmount, apiIgstAmount, apiSgstAmount]);
+
+  const hasIgst = taxMode === "IGST";
+  const hasCgstSgst = taxMode === "CGST_SGST";
+  const hasTaxDetails = taxMode !== "NONE";
+
+  const cgstRateLabel = useMemo(
+    () => getTaxLineRateLabel(lineItems, "CGST"),
+    [lineItems],
+  );
+
+  const sgstRateLabel = useMemo(
+    () => getTaxLineRateLabel(lineItems, "SGST"),
+    [lineItems],
+  );
+
+  const igstRateLabel = useMemo(
+    () => getTaxLineRateLabel(lineItems, "IGST"),
+    [lineItems],
+  );
 
   const seller = useMemo(
     () => ({
@@ -257,7 +304,7 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
     () =>
       lineItems.reduce(
         (totals, item) => {
-          const tax = calculateLineTax(item, gstEnabled);
+          const tax = calculateLineTax(item, taxMode);
 
           totals.taxableValue += tax.taxableValue;
           totals.cgstAmount += tax.cgstAmount;
@@ -275,7 +322,7 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
           totalGstAmount: 0,
         },
       ),
-    [lineItems, gstEnabled],
+    [lineItems, taxMode],
   );
 
   const apiGrandTotal = toNumber(details?.grandTotal);
@@ -288,35 +335,26 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
         ? toNumber(details.subTotalExGst)
         : Math.max(apiGrandTotal - apiTotalGstAmount, 0);
 
-  const cgstAmount =
-    lineItems.length > 0
-      ? calculatedTaxTotals.cgstAmount
-      : toNumber(details?.cgstAmount);
+  const cgstAmount = hasCgstSgst ? apiCgstAmount : 0;
 
-  const sgstAmount =
-    lineItems.length > 0
-      ? calculatedTaxTotals.sgstAmount
-      : toNumber(details?.sgstAmount);
+  const sgstAmount = hasCgstSgst ? apiSgstAmount : 0;
 
-  const igstAmount =
-    lineItems.length > 0
-      ? calculatedTaxTotals.igstAmount
-      : toNumber(details?.igstAmount);
+  const igstAmount = hasIgst ? apiIgstAmount : 0;
 
-  const totalGstAmount =
-    lineItems.length > 0
-      ? calculatedTaxTotals.totalGstAmount
-      : apiTotalGstAmount;
+  const totalGstAmount = hasTaxDetails
+    ? apiTotalGstAmount > 0
+      ? apiTotalGstAmount
+      : cgstAmount + sgstAmount + igstAmount
+    : 0;
 
   const grandTotal = hasValue(details?.grandTotal)
     ? apiGrandTotal
     : subTotalExGst + totalGstAmount;
 
-  const hasCgstSgst = cgstAmount > 0 || sgstAmount > 0;
-  const hasIgst = igstAmount > 0;
-
   const taxSummaryRows = useMemo(() => {
-    const itemRows = buildTaxSummaryRows(lineItems, gstEnabled);
+    if (!hasTaxDetails) return [];
+
+    const itemRows = buildTaxSummaryRows(lineItems, taxMode);
 
     if (itemRows.length > 0) return itemRows;
     if (totalGstAmount <= 0) return [];
@@ -340,7 +378,8 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
     ];
   }, [
     lineItems,
-    gstEnabled,
+    taxMode,
+    hasTaxDetails,
     totalGstAmount,
     subTotalExGst,
     hasIgst,
@@ -602,8 +641,7 @@ Corpseed Team`,
                     <th className="border p-1">HSN/SAC</th>
                     <th className="border p-1">Qty</th>
                     <th className="border p-1">Rate</th>
-                    <th className="border p-1">GST Breakup</th>
-                    <th className="border p-1">GST Amt</th>
+                    <th className="border p-1">Per</th>
                     <th className="border p-1 font-semibold">Amount (₹)</th>
                   </tr>
                 </thead>
@@ -612,7 +650,7 @@ Corpseed Team`,
                   {details?.solutionName && (
                     <tr className="bg-gray-50">
                       <td className="border p-1 text-center font-medium" />
-                      <td colSpan={7} className="border p-2">
+                      <td colSpan={6} className="border p-2">
                         <span className="text-sm font-semibold text-gray-800">
                           {details.solutionName}
                         </span>
@@ -623,7 +661,7 @@ Corpseed Team`,
                   {lineItems.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={7}
                         className="border p-3 text-center text-gray-500"
                       >
                         No line-item details available
@@ -631,16 +669,7 @@ Corpseed Team`,
                     </tr>
                   ) : (
                     lineItems.map((item, index) => {
-                      const tax = calculateLineTax(item, gstEnabled);
-                      const lineTotal = tax.taxableValue + tax.totalTaxAmount;
-
-                      const taxLabel = !gstEnabled
-                        ? "GST not applicable"
-                        : tax.isIgst
-                          ? `IGST ${formatRate(tax.igstRate)}`
-                          : `CGST ${formatRate(tax.cgstRate)} + SGST ${formatRate(
-                              tax.sgstRate,
-                            )}`;
+                      const tax = calculateLineTax(item, taxMode);
 
                       return (
                         <tr key={item?.id ?? index}>
@@ -666,54 +695,46 @@ Corpseed Team`,
                           <td className="border p-1 text-center">
                             {inrCurrency(item?.unitPriceExGst)}
                           </td>
-                          <td className="border p-1 text-center">{taxLabel}</td>
                           <td className="border p-1 text-center">
-                            {inrCurrency(tax.totalTaxAmount)}
+                            {item?.unit || "NOS"}
                           </td>
                           <td className="border p-1 text-center font-semibold">
-                            {inrCurrency(
-                              hasValue(item?.lineTotalWithGst)
-                                ? item.lineTotalWithGst
-                                : lineTotal,
-                            )}
+                            {inrCurrency(tax.taxableValue)}
                           </td>
                         </tr>
                       );
                     })
                   )}
 
-                  <tr className="bg-gray-50">
-                    <td
-                      colSpan={7}
-                      className="border p-1 text-right font-semibold"
-                    >
-                      Sub Total
-                    </td>
-                    <td className="border p-1 text-center font-semibold">
-                      {inrCurrency(subTotalExGst)}
-                    </td>
-                  </tr>
-
                   {hasCgstSgst && (
                     <>
-                      <tr className="bg-gray-50">
-                        <td
-                          colSpan={7}
-                          className="border p-1 text-right font-semibold"
-                        >
-                          CGST
+                      <tr>
+                        <td className="border p-1 text-center font-medium">
+                          {lineItems.length + 1}
                         </td>
+                        <td className="border p-1 font-medium">CGST</td>
+                        <td className="border p-1" />
+                        <td className="border p-1" />
+                        <td className="border p-1 text-center">
+                          {cgstRateLabel}
+                        </td>
+                        <td className="border p-1 text-center">%</td>
                         <td className="border p-1 text-center font-semibold">
                           {inrCurrency(cgstAmount)}
                         </td>
                       </tr>
-                      <tr className="bg-gray-50">
-                        <td
-                          colSpan={7}
-                          className="border p-1 text-right font-semibold"
-                        >
-                          SGST
+
+                      <tr>
+                        <td className="border p-1 text-center font-medium">
+                          {lineItems.length + 2}
                         </td>
+                        <td className="border p-1 font-medium">SGST</td>
+                        <td className="border p-1" />
+                        <td className="border p-1" />
+                        <td className="border p-1 text-center">
+                          {sgstRateLabel}
+                        </td>
+                        <td className="border p-1 text-center">%</td>
                         <td className="border p-1 text-center font-semibold">
                           {inrCurrency(sgstAmount)}
                         </td>
@@ -722,36 +743,26 @@ Corpseed Team`,
                   )}
 
                   {hasIgst && (
-                    <tr className="bg-gray-50">
-                      <td
-                        colSpan={7}
-                        className="border p-1 text-right font-semibold"
-                      >
-                        IGST
+                    <tr>
+                      <td className="border p-1 text-center font-medium">
+                        {lineItems.length + 1}
                       </td>
+                      <td className="border p-1 font-medium">IGST</td>
+                      <td className="border p-1" />
+                      <td className="border p-1" />
+                      <td className="border p-1 text-center">
+                        {igstRateLabel}
+                      </td>
+                      <td className="border p-1 text-center">%</td>
                       <td className="border p-1 text-center font-semibold">
                         {inrCurrency(igstAmount)}
                       </td>
                     </tr>
                   )}
 
-                  {!hasCgstSgst && !hasIgst && (
-                    <tr className="bg-gray-50">
-                      <td
-                        colSpan={7}
-                        className="border p-1 text-right font-semibold"
-                      >
-                        Total GST
-                      </td>
-                      <td className="border p-1 text-center font-semibold">
-                        {inrCurrency(totalGstAmount)}
-                      </td>
-                    </tr>
-                  )}
-
                   <tr className="bg-gray-100">
                     <td
-                      colSpan={7}
+                      colSpan={6}
                       className="border p-1 text-right font-semibold"
                     >
                       Grand Total
@@ -772,123 +783,123 @@ Corpseed Team`,
             </p>
 
             <div className="mt-6">
-              <p className="font-semibold text-sm mb-2 text-gray-800">
-                Tax Details
-              </p>
+              {hasTaxDetails && taxSummaryRows.length > 0 && (
+                <>
+                  <p className="font-semibold text-sm mb-2 text-gray-800">
+                    Tax Details
+                  </p>
 
-              {taxSummaryRows.length === 0 ? (
-                <div className="border p-3 text-center text-xs text-gray-500">
-                  GST is not applicable for this document.
-                </div>
-              ) : (
-                <table className="w-full border text-xs shadow-sm rounded-lg overflow-hidden">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="border p-1 text-left">HSN/SAC</th>
-                      <th className="border p-1 text-center">Taxable Value</th>
-                      {hasCgstSgst && (
-                        <>
-                          <th className="border p-1 text-center">CGST %</th>
-                          <th className="border p-1 text-center">
-                            CGST Amount
-                          </th>
-                          <th className="border p-1 text-center">SGST %</th>
-                          <th className="border p-1 text-center">
-                            SGST Amount
-                          </th>
-                        </>
-                      )}
-                      {hasIgst && (
-                        <>
-                          <th className="border p-1 text-center">IGST %</th>
-                          <th className="border p-1 text-center">
-                            IGST Amount
-                          </th>
-                        </>
-                      )}
-                      <th className="border p-1 text-center">Total Tax</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {taxSummaryRows.map((row, index) => (
-                      <tr key={`${row.hsnSacCode}-${index}`}>
-                        <td className="border p-1">{row.hsnSacCode}</td>
-                        <td className="border p-1 text-center">
-                          {inrCurrency(row.taxableValue)}
-                        </td>
-
+                  <table className="w-full border text-xs shadow-sm rounded-lg overflow-hidden">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border p-1 text-left">HSN/SAC</th>
+                        <th className="border p-1 text-center">
+                          Taxable Value
+                        </th>
                         {hasCgstSgst && (
                           <>
-                            <td className="border p-1 text-center">
-                              {row.cgstAmount > 0
-                                ? formatRate(row.cgstRate)
-                                : "-"}
-                            </td>
-                            <td className="border p-1 text-center">
-                              {inrCurrency(row.cgstAmount)}
-                            </td>
-                            <td className="border p-1 text-center">
-                              {row.sgstAmount > 0
-                                ? formatRate(row.sgstRate)
-                                : "-"}
-                            </td>
-                            <td className="border p-1 text-center">
-                              {inrCurrency(row.sgstAmount)}
-                            </td>
+                            <th className="border p-1 text-center">CGST %</th>
+                            <th className="border p-1 text-center">
+                              CGST Amount
+                            </th>
+                            <th className="border p-1 text-center">SGST %</th>
+                            <th className="border p-1 text-center">
+                              SGST Amount
+                            </th>
                           </>
                         )}
-
                         {hasIgst && (
                           <>
+                            <th className="border p-1 text-center">IGST %</th>
+                            <th className="border p-1 text-center">
+                              IGST Amount
+                            </th>
+                          </>
+                        )}
+                        <th className="border p-1 text-center">Total Tax</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {taxSummaryRows.map((row, index) => (
+                        <tr key={`${row.hsnSacCode}-${index}`}>
+                          <td className="border p-1">{row.hsnSacCode}</td>
+                          <td className="border p-1 text-center">
+                            {inrCurrency(row.taxableValue)}
+                          </td>
+
+                          {hasCgstSgst && (
+                            <>
+                              <td className="border p-1 text-center">
+                                {row.cgstAmount > 0
+                                  ? formatRate(row.cgstRate)
+                                  : "-"}
+                              </td>
+                              <td className="border p-1 text-center">
+                                {inrCurrency(row.cgstAmount)}
+                              </td>
+                              <td className="border p-1 text-center">
+                                {row.sgstAmount > 0
+                                  ? formatRate(row.sgstRate)
+                                  : "-"}
+                              </td>
+                              <td className="border p-1 text-center">
+                                {inrCurrency(row.sgstAmount)}
+                              </td>
+                            </>
+                          )}
+
+                          {hasIgst && (
+                            <>
+                              <td className="border p-1 text-center">
+                                {row.igstAmount > 0
+                                  ? formatRate(row.igstRate)
+                                  : "-"}
+                              </td>
+                              <td className="border p-1 text-center">
+                                {inrCurrency(row.igstAmount)}
+                              </td>
+                            </>
+                          )}
+
+                          <td className="border p-1 text-center font-semibold">
+                            {inrCurrency(row.totalTaxAmount)}
+                          </td>
+                        </tr>
+                      ))}
+
+                      <tr className="bg-gray-50 font-semibold">
+                        <td className="border p-1">Total</td>
+                        <td className="border p-1 text-center">
+                          {inrCurrency(subTotalExGst)}
+                        </td>
+                        {hasCgstSgst && (
+                          <>
+                            <td className="border p-1 text-center">-</td>
                             <td className="border p-1 text-center">
-                              {row.igstAmount > 0
-                                ? formatRate(row.igstRate)
-                                : "-"}
+                              {inrCurrency(cgstAmount)}
                             </td>
+                            <td className="border p-1 text-center">-</td>
                             <td className="border p-1 text-center">
-                              {inrCurrency(row.igstAmount)}
+                              {inrCurrency(sgstAmount)}
                             </td>
                           </>
                         )}
-
-                        <td className="border p-1 text-center font-semibold">
-                          {inrCurrency(row.totalTaxAmount)}
+                        {hasIgst && (
+                          <>
+                            <td className="border p-1 text-center">-</td>
+                            <td className="border p-1 text-center">
+                              {inrCurrency(igstAmount)}
+                            </td>
+                          </>
+                        )}
+                        <td className="border p-1 text-center">
+                          {inrCurrency(totalGstAmount)}
                         </td>
                       </tr>
-                    ))}
-
-                    <tr className="bg-gray-50 font-semibold">
-                      <td className="border p-1">Total</td>
-                      <td className="border p-1 text-center">
-                        {inrCurrency(subTotalExGst)}
-                      </td>
-                      {hasCgstSgst && (
-                        <>
-                          <td className="border p-1 text-center">-</td>
-                          <td className="border p-1 text-center">
-                            {inrCurrency(cgstAmount)}
-                          </td>
-                          <td className="border p-1 text-center">-</td>
-                          <td className="border p-1 text-center">
-                            {inrCurrency(sgstAmount)}
-                          </td>
-                        </>
-                      )}
-                      {hasIgst && (
-                        <>
-                          <td className="border p-1 text-center">-</td>
-                          <td className="border p-1 text-center">
-                            {inrCurrency(igstAmount)}
-                          </td>
-                        </>
-                      )}
-                      <td className="border p-1 text-center">
-                        {inrCurrency(totalGstAmount)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </>
               )}
 
               {showBankDetails && (
