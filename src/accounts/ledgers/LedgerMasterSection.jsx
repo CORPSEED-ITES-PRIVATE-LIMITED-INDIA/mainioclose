@@ -608,9 +608,9 @@ const LedgerMasterSection = () => {
         ledgerName: values.name?.trim(),
         ledgerType,
         ledgerGroupId: toNumber(values.groupName),
-        companyId: toNumber(editData?.raw?.companyId),
-        unitId: toNumber(editData?.raw?.unitId),
-        contactId: toNumber(editData?.raw?.contactId),
+        // companyId: toNumber(editData?.raw?.companyId),
+        // unitId: toNumber(editData?.raw?.unitId),
+        // contactId: toNumber(editData?.raw?.contactId),
         gstNo: values.gstin?.trim() || "",
         panNo: values.panNumber?.trim() || "",
         bankName: ledgerType === "BANK" ? values.bankName?.trim() || "" : "",
@@ -661,7 +661,8 @@ const LedgerMasterSection = () => {
       }
 
       addToast({
-        title: editData
+        title: "SUCCESS",
+        description: editData
           ? "Ledger updated successfully"
           : "Ledger created successfully",
         color: "success",
@@ -672,7 +673,8 @@ const LedgerMasterSection = () => {
       onClose();
     } catch (error) {
       addToast({
-        title: getApiErrorMessage(error),
+        title: "ERROR",
+        description: getApiErrorMessage(error),
         color: "danger",
       });
     }
@@ -680,7 +682,8 @@ const LedgerMasterSection = () => {
 
   const onInvalid = () => {
     addToast({
-      title: "Please fill all required fields correctly",
+      title: "ERROR",
+      description: "Please fill all required fields correctly",
       color: "danger",
     });
   };

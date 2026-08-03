@@ -718,14 +718,14 @@ const Expense = () => {
             expense?.accountsApprovalStatus || "",
           ).toUpperCase();
 
-          const canTakeDecision =
-            approvalStage === "ACCOUNTS_REVIEW" &&
-            crtStatus === "APPROVED" &&
-            !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
+          // const canTakeDecision =
+          //   approvalStage === "ACCOUNTS_REVIEW" &&
+          //   crtStatus === "APPROVED" &&
+          //   !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
 
-          if (!canTakeDecision) {
-            return <span className="text-default-400">-</span>;
-          }
+          // if (!canTakeDecision) {
+          //   return <span className="text-default-400">-</span>;
+          // }
 
           return (
             <Dropdown placement="bottom-end">

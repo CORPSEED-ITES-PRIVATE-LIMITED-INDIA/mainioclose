@@ -1790,6 +1790,7 @@ const Unbill = () => {
           )}
         </TableBody>
       </Table>
+
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
@@ -1825,6 +1826,7 @@ const Unbill = () => {
           )}
         </ModalContent>
       </Modal>
+
       <Modal
         isOpen={statusModal.isOpen}
         onOpenChange={statusModal.onOpenChange}

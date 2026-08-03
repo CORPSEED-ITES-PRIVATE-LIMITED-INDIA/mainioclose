@@ -653,13 +653,13 @@ const CreditNote = () => {
         return;
       }
 
-      if (!creditLedgerData.referenceNumber?.trim()) {
-        addToast({
-          title: "Reference number is required",
-          color: "danger",
-        });
-        return;
-      }
+      // if (!creditLedgerData.referenceNumber?.trim()) {
+      //   addToast({
+      //     title: "Reference number is required",
+      //     color: "danger",
+      //   });
+      //   return;
+      // }
 
       if (!creditLedgerData.partyLedger?.trim()) {
         addToast({

@@ -75,7 +75,6 @@ const getFullGstRatesLabel = (items = []) => {
   const unique = Array.from(
     new Set(
       (items || [])
-        .filter((x) => toNumber(x?.igstAmount) > 0)
         .map((x) => toNumber(x?.gstRate))
         .filter((r) => Number.isFinite(r) && r > 0),
     ),
@@ -85,7 +84,7 @@ const getFullGstRatesLabel = (items = []) => {
   return unique.map((r) => percentStr(r)).join(" / ");
 };
 
-const buildTaxSummaryRows = (lineItems = []) => {
+const buildTaxSummaryRows = (lineItems = [], taxMode = "NONE") => {
   const map = new Map();
 
   for (const it of lineItems) {
@@ -94,9 +93,18 @@ const buildTaxSummaryRows = (lineItems = []) => {
     const key = `${hsn}__${rate}`;
 
     const taxable = toNumber(it?.lineTotalExGst);
-    const cgstAmt = toNumber(it?.cgstAmount);
-    const sgstAmt = toNumber(it?.sgstAmount);
-    const igstAmt = toNumber(it?.igstAmount);
+    const itemGstAmount = toNumber(it?.gstAmount);
+    const calculatedTax = (taxable * rate) / 100;
+    const totalItemTax = itemGstAmount > 0 ? itemGstAmount : calculatedTax;
+
+    /*
+     * Invoice-level CGST/SGST/IGST amounts are the source of truth for
+     * deciding the tax mode. Some APIs may still return a stale or
+     * inconsistent line-level tax split.
+     */
+    const cgstAmt = taxMode === "CGST_SGST" ? totalItemTax / 2 : 0;
+    const sgstAmt = taxMode === "CGST_SGST" ? totalItemTax - cgstAmt : 0;
+    const igstAmt = taxMode === "IGST" ? totalItemTax : 0;
 
     if (!map.has(key)) {
       map.set(key, {
@@ -209,8 +217,6 @@ const UnbilledView = ({ invoiceData, heading }) => {
     );
   }, [inv]);
 
-  const taxSummaryRows = useMemo(() => buildTaxSummaryRows(items), [items]);
-
   const subTotalExGst = toNumber(inv?.subTotalExGst);
   const cgstAmount = toNumber(inv?.cgstAmount);
   const sgstAmount = toNumber(inv?.sgstAmount);
@@ -220,22 +226,26 @@ const UnbilledView = ({ invoiceData, heading }) => {
 
   const halfRatesLabel = useMemo(() => getHalfGstRatesLabel(items), [items]);
   const fullRatesLabel = useMemo(() => getFullGstRatesLabel(items), [items]);
-  const isIgstInvoice = useMemo(
-    () =>
-      igstAmount > 0 || items.some((item) => toNumber(item?.igstAmount) > 0),
-    [igstAmount, items],
+  const taxMode = useMemo(() => {
+    if (igstAmount > 0) {
+      return "IGST";
+    }
+
+    if (cgstAmount > 0 && sgstAmount > 0) {
+      return "CGST_SGST";
+    }
+
+    return "NONE";
+  }, [cgstAmount, igstAmount, sgstAmount]);
+
+  const isIgstInvoice = taxMode === "IGST";
+  const hasGst = taxMode !== "NONE";
+
+  const taxSummaryRows = useMemo(
+    () => buildTaxSummaryRows(items, taxMode),
+    [items, taxMode],
   );
-  const hasCgstOrSgst = useMemo(
-    () =>
-      cgstAmount > 0 ||
-      sgstAmount > 0 ||
-      items.some(
-        (item) =>
-          toNumber(item?.cgstAmount) > 0 || toNumber(item?.sgstAmount) > 0,
-      ),
-    [cgstAmount, items, sgstAmount],
-  );
-  const hasGst = isIgstInvoice || hasCgstOrSgst;
+
   const buyerAddress = useMemo(() => getBuyerAddressDetails(inv), [inv]);
 
   /** ✅ Single-page PDF + Real margins + smoother text */
