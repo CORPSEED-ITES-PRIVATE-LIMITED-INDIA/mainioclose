@@ -532,8 +532,21 @@ const ProjectActivities = () => {
                       <SelectItem key="GOVERNMENT_FEE">
                         Government Fee
                       </SelectItem>
-                      <SelectItem key="TRAVEL_FEE">Travel Fee</SelectItem>
-                      <SelectItem key="FILING_FEE">Filing Fee</SelectItem>
+                      <SelectItem key="PORTAL_FEE">Portal Fee</SelectItem>
+                      <SelectItem key="PROFESSIONAL_FEE">
+                        Profesional Fee
+                      </SelectItem>
+                      <SelectItem key="CONSULTANT_FEE">
+                        Consultant Fee
+                      </SelectItem>
+                      <SelectItem key="TRAVEL">Travel Fee</SelectItem>
+                      <SelectItem key="COURIER">Courier Fee</SelectItem>
+                      <SelectItem key="PRINTING">Printing Fee</SelectItem>
+                      <SelectItem key="INSPECTION_FEE">
+                        Inspection Fee
+                      </SelectItem>
+                      <SelectItem key="TESTING_FEE">Testing Fee</SelectItem>
+                      <SelectItem key="OTHER">Other Fee</SelectItem>
                     </Select>
                   )}
                 />
