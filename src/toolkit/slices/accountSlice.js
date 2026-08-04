@@ -798,6 +798,25 @@ export const getEstimatePaymentHistory =
     }
   },
 );
+  export const expenseFundTransfer = createAsyncThunk(
+  "expenseFundTransfer",
+  async ({ expenseId,projectId, userId,data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/expenses/${expenseId}/fund-transfer?projectId=${projectId}&userId=${userId}`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: error?.message || "Failed to reject advance tax invoice request",
+        },
+      );
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",

@@ -814,7 +814,7 @@ const Unbill = () => {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
-                {!rowData?.advanceInvoiceFlag && (
+                {/* {!rowData?.advanceInvoiceFlag && (
                   <DropdownItem
                     key="view"
                     onPress={() => {
@@ -859,7 +859,7 @@ const Unbill = () => {
                   >
                     Convert To AdvanceInvoice
                   </DropdownItem>
-                )}
+                )} */}
 
                 <DropdownItem
                   key="unbilledview"
