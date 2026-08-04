@@ -334,7 +334,8 @@ const Leads = () => {
       .then((response) => {
         if (response.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Lead deleted successfully !.",
+            title: "SUCCESS",
+            description: "Lead deleted successfully !.",
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -342,11 +343,19 @@ const Leads = () => {
           dispatch(getAllLeadsForExport(allMultiFilterData));
           deleteModal.onClose();
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   }, [userId, dispatch, allMultiFilterData, itemId]);
 
@@ -362,18 +371,27 @@ const Leads = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Lead status updated successfully !.",
+              title: "SUCCESS",
+              description: "Lead status updated successfully !.",
               color: "success",
             });
             dispatch(getAllLeadsByFilter(allMultiFilterData));
             dispatch(getAllLeadCount(allMultiFilterData));
             dispatch(getAllLeadsForExport(allMultiFilterData));
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: "Something went wrong !.",
+              color: "danger",
+            });
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          }),
         );
     },
     [dispatch, userId, allMultiFilterData],
@@ -384,7 +402,8 @@ const Leads = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Leads uploaded successfully !.",
+            title: "SUCCESS",
+            description: "Leads uploaded successfully !.",
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -392,11 +411,19 @@ const Leads = () => {
           dispatch(getAllLeadsForExport(allMultiFilterData));
           setLeadsFileUploadingUrl(null);
         } else {
-          addToast({ title: resp?.payload?.data?.message, color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: resp?.payload?.data?.message,
+            color: "danger",
+          });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -758,7 +785,8 @@ const Leads = () => {
       .then((response) => {
         if (response?.meta?.requestStatus === "fulfilled") {
           addToast({
-            title: "Leads deleted successfully !.",
+            title: "SUCCESS",
+            description: "Leads deleted successfully !.",
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -767,11 +795,19 @@ const Leads = () => {
           setSelectedKeys(new Set([]));
           multiDeleteModal.onClose();
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   }, [selectedKeys, userId, dispatch, allMultiFilterData]);
 
@@ -785,7 +821,8 @@ const Leads = () => {
       .then((response) => {
         if (response?.meta?.requestStatus === "fulfilled") {
           addToast({
-            title: "Leads assigned successfully !.",
+            title: "SUCCESS",
+            description: "Leads assigned successfully !.",
             color: "success",
           });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -798,11 +835,19 @@ const Leads = () => {
           });
           actionPopOver.onClose();
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   }, [
     dispatch,
@@ -822,7 +867,8 @@ const Leads = () => {
     dispatch(transferLeadToAnotherUser(obj)).then((response) => {
       if (response?.meta?.requestStatus === "fulfilled") {
         addToast({
-          title: "Leads transferred successfully !.",
+          title: "SUCCESS",
+          description: "Leads transferred successfully !.",
           color: "success",
         });
         dispatch(getAllLeadsByFilter(allMultiFilterData));
@@ -835,7 +881,11 @@ const Leads = () => {
         });
         actionPopOver.onClose();
       } else {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       }
     });
   };
@@ -1433,7 +1483,8 @@ const Leads = () => {
   const handleFinish = (values) => {
     if (!values.email && !values.mobileNo) {
       addToast({
-        title: "Please enter email or phone number",
+        title: "RESTRICTED",
+        description: "Either email or phone number is required.",
         color: "danger",
       });
       return;
@@ -1447,19 +1498,31 @@ const Leads = () => {
     dispatch(createLeads(values))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Lead created successfully !.", color: "success" });
+          addToast({
+            title: "SUCCESS",
+            description: "Lead created successfully !.",
+            color: "success",
+          });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
           dispatch(getAllLeadCount(allMultiFilterData));
           onOpenChange(false);
           setLoading("success");
           setLeadFormData(leadFormValues);
         } else {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
           setLoading("rejected");
         }
       })
       .catch(() => {
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
         setLoading("rejected");
       });
   };

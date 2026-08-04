@@ -415,7 +415,8 @@ const LeadEstimates = () => {
   const handleUpdateCompanyUnit = () => {
     if (!unitDetail) {
       addToast({
-        title: "Please select unit first to update",
+        title: "RESTRICTED !.",
+        description: "Please select a unit first to update.",
         color: "warning",
       });
     } else {
@@ -439,14 +440,17 @@ const LeadEstimates = () => {
     dispatch(cancelEstimate({ estimateId, data: statusData })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
-          title: "Estimate cancelled successfully",
+          title: "SUCCESS",
+          description: "Estimate cancelled successfully.",
           color: "success",
         });
         dispatch(getNewEstimateByLeadId({ leadId, userId }));
         closeCancelEstimateModal();
       } else {
         addToast({
-          title: resp?.payload?.data?.message || "Failed to cancel estimate",
+          title: "ERROR",
+          description:
+            resp?.payload?.data?.message || "Failed to cancel estimate",
           color: "danger",
         });
       }
@@ -540,29 +544,44 @@ const LeadEstimates = () => {
             .then((res) => {
               if (res.meta.requestStatus === "fulfilled") {
                 addToast({
-                  title: "Estimate created successfully !.",
+                  title: "SUCCESS",
+                  description: "Estimate created successfully.",
                   color: "success",
                 });
                 dispatch(getNewEstimateByLeadId({ leadId, userId }));
                 setShowForm(false);
               } else {
                 addToast({
-                  title: res?.payload?.data?.message,
+                  title: "ERROR",
+                  description:
+                    res?.payload?.data?.message || "Failed to create estimate",
                   color: "danger",
                 });
               }
             })
             .catch(() =>
-              addToast({ title: "Something went wrong !.", color: "danger" }),
+              addToast({
+                title: "ERROR",
+                description: "Something went wrong !.",
+                color: "danger",
+              }),
             );
         } else {
           setStatusLoading("rejected");
-          addToast({ title: compRes?.payload?.data?.message, color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: compRes?.payload?.data?.message,
+            color: "danger",
+          });
         }
       })
       .catch(() => {
         setStatusLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -616,17 +635,29 @@ const LeadEstimates = () => {
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            addToast({ title: "Unit details saved.", color: "success" });
+            addToast({
+              title: "SUCCESS",
+              description: "Unit details saved.",
+              color: "success",
+            });
             dispatch(getAllUnitListByCompanyId(company?.id));
             resetUnitForm();
             onClose();
             dispatch(getBasicCompanyDetails({ leadId, userId }));
           } else {
-            addToast({ title: resp.payload?.data?.message, color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: resp.payload?.data?.message,
+              color: "danger",
+            });
           }
         })
         .catch(() => {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
         });
     } else {
       dispatch(
@@ -638,17 +669,29 @@ const LeadEstimates = () => {
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            addToast({ title: "Unit details saved.", color: "success" });
+            addToast({
+              title: "SUCCESS",
+              description: "Unit details saved.",
+              color: "success",
+            });
             dispatch(getAllUnitListByCompanyId(company?.id));
             resetUnitForm();
             onClose();
             dispatch(getBasicCompanyDetails({ leadId, userId }));
           } else {
-            addToast({ title: resp.payload?.message, color: "danger" });
+            addToast({
+              title: "ERROR",
+              description: resp.payload?.data?.message,
+              color: "danger",
+            });
           }
         })
         .catch(() => {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "ERROR",
+            description: "Something went wrong !.",
+            color: "danger",
+          });
         });
     }
   };
@@ -660,7 +703,11 @@ const LeadEstimates = () => {
     dispatch(createContactViaEstimateInCompany(data))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Contact details saved.", color: "success" });
+          addToast({
+            title: "SUCCESS",
+            description: "Contact details saved.",
+            color: "success",
+          });
           contactModal.onClose();
           resetContactValue();
           dispatch(
@@ -672,13 +719,18 @@ const LeadEstimates = () => {
           dispatch(getBasicCompanyDetails({ leadId, userId }));
         } else {
           addToast({
-            title: resp.payload?.message || resp?.payload,
+            title: "ERROR",
+            description: resp.payload?.data?.message || resp?.payload,
             color: "danger",
           });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -692,7 +744,8 @@ const LeadEstimates = () => {
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Converted to PI successfully",
+            title: "SUCCESS",
+            description: "Converted to PI successfully",
             color: "success",
           });
 
@@ -700,13 +753,18 @@ const LeadEstimates = () => {
           dispatch(getNewEstimateByLeadId({ leadId, userId }));
         } else {
           addToast({
-            title: res?.payload?.data?.message || "Failed to convert",
+            title: "ERROR",
+            description: res?.payload?.data?.message || "Failed to convert",
             color: "danger",
           });
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong",
+          color: "danger",
+        }),
       );
   };
 

@@ -154,7 +154,8 @@ const AllInvoice = () => {
 
     if (!selectedInvoice?.id) {
       addToast({
-        title: "Invoice not selected",
+        title: "ERROR",
+        description: "Invoice not selected",
         color: "danger",
       });
       return;
@@ -162,7 +163,8 @@ const AllInvoice = () => {
 
     if (isAttachmentUploading) {
       addToast({
-        title: "Please wait, attachment is uploading",
+        title: "Wait ...",
+        description: "Please wait while the attachment is being uploaded",
         color: "warning",
       });
       return;
@@ -175,7 +177,8 @@ const AllInvoice = () => {
       !confirmEInvoiceForm.einvoiceAckNo
     ) {
       addToast({
-        title: "Please fill all required E-Invoice fields",
+        title: "ERROR",
+        description: "Please fill all required E-Invoice fields",
         color: "danger",
       });
       return;
@@ -203,7 +206,8 @@ const AllInvoice = () => {
       ).unwrap();
 
       addToast({
-        title: "E-Invoice confirmed successfully",
+        title: "SUCCESS",
+        description: "E-Invoice confirmed successfully",
         color: "success",
       });
 
@@ -215,7 +219,8 @@ const AllInvoice = () => {
       dispatch(getAllInvoiceCount({ userId, status }));
     } catch (error) {
       addToast({
-        title: "Failed to confirm E-Invoice",
+        title: "ERROR",
+        description: "Failed to confirm E-Invoice",
         color: "danger",
       });
     } finally {
@@ -266,14 +271,19 @@ const AllInvoice = () => {
           onOpen();
         } else {
           addToast({
-            title: "There is Some Issue in Invoice",
+            title: "ERROR",
+            description: "There is Some Issue in Invoice",
             color: "danger",
           });
           onOpen();
         }
       })
       .catch(() =>
-        addToast({ title: "There is Some Issue in Invoice", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "There is Some Issue in Invoice",
+          color: "danger",
+        }),
       );
   };
 
