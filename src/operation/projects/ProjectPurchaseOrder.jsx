@@ -194,6 +194,7 @@ const RaiseProcurementPaymentRequestModal = ({
     setValue,
     formState: { isSubmitting },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       amount: "",
       paymentProof: "",
@@ -301,11 +302,23 @@ const RaiseProcurementPaymentRequestModal = ({
     }
 
     const paymentAmount = toTwoDecimalAmount(values.amount);
+    const grandTotal = toTwoDecimalAmount(procurementOrder?.grandTotal);
 
     if (paymentAmount <= 0) {
       addToast({
         title: "Invalid amount",
         description: "Payment amount must be greater than zero.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (paymentAmount > grandTotal) {
+      addToast({
+        title: "Invalid amount",
+        description: `Payment amount cannot be greater than the PO Grand Total of ${formatAmount(
+          grandTotal,
+        )}.`,
         color: "danger",
       });
       return;
@@ -517,14 +530,31 @@ const RaiseProcurementPaymentRequestModal = ({
                 control={control}
                 rules={{
                   required: "Amount is required",
-                  validate: (value) =>
-                    Number(value) > 0 || "Amount must be greater than zero",
+                  validate: (value) => {
+                    const paymentAmount = Number(value);
+                    const grandTotal = Number(
+                      procurementOrder?.grandTotal || 0,
+                    );
+
+                    if (paymentAmount <= 0) {
+                      return "Amount must be greater than zero";
+                    }
+
+                    if (paymentAmount > grandTotal) {
+                      return `Amount cannot be greater than Grand Total (${formatAmount(
+                        grandTotal,
+                      )})`;
+                    }
+
+                    return true;
+                  },
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <Input
                     {...field}
                     type="number"
                     min={0}
+                    max={poGrandTotal}
                     step="0.01"
                     inputMode="decimal"
                     label="Payment Amount"
@@ -533,6 +563,7 @@ const RaiseProcurementPaymentRequestModal = ({
                     onKeyDown={preventNegativeNumberInput}
                     isInvalid={Boolean(error)}
                     errorMessage={error?.message}
+                    description={`Maximum allowed: ${formatAmount(poGrandTotal)}`}
                     onChange={(event) => {
                       const value = event.target.value;
 

@@ -1198,7 +1198,9 @@ const RequestForQuotation = () => {
         }
         case "actions": {
           const rfqStatus = String(rowData?.status || "").toUpperCase();
-          const canOpenVendors = rfqStatus != "DRAFT";
+
+          const isDraft = rfqStatus === "DRAFT";
+          const canOpenVendors = !isDraft;
 
           return (
             <div className="flex justify-center">
@@ -1209,9 +1211,7 @@ const RequestForQuotation = () => {
                   </Button>
                 </DropdownTrigger>
 
-                <DropdownMenu
-                  disabledKeys={!canOpenVendors ? ["addQuote"] : []}
-                >
+                <DropdownMenu aria-label="RFQ Actions">
                   <DropdownItem
                     key="view"
                     startContent={<Eye size={15} />}
@@ -1219,6 +1219,7 @@ const RequestForQuotation = () => {
                   >
                     View Details
                   </DropdownItem>
+
                   <DropdownItem
                     key="edit"
                     startContent={<Pencil size={15} />}
@@ -1227,29 +1228,27 @@ const RequestForQuotation = () => {
                     Edit RFQ
                   </DropdownItem>
 
-                  <DropdownItem
-                    key="sendToVendor"
-                    startContent={<Send size={15} />}
-                    onPress={() => handleOpenSendToVendor(rowData)}
-                  >
-                    Send To Vendor
-                  </DropdownItem>
+                  {/* Show Send To Vendor ONLY for DRAFT */}
+                  {isDraft && (
+                    <DropdownItem
+                      key="sendToVendor"
+                      startContent={<Send size={15} />}
+                      onPress={() => handleOpenSendToVendor(rowData)}
+                    >
+                      Send To Vendor
+                    </DropdownItem>
+                  )}
 
-                  <DropdownItem
-                    key="addQuote"
-                    startContent={
-                      canOpenVendors ? <File size={15} /> : <Lock size={15} />
-                    }
-                    description={
-                      !canOpenVendors ? "Send RFQ to vendor first" : undefined
-                    }
-                    onPress={() => {
-                      if (!canOpenVendors) return;
-                      handleAddQuote(rowData);
-                    }}
-                  >
-                    Vendors
-                  </DropdownItem>
+                  {/* Show Vendors ONLY after RFQ is sent */}
+                  {canOpenVendors && (
+                    <DropdownItem
+                      key="addQuote"
+                      startContent={<File size={15} />}
+                      onPress={() => handleAddQuote(rowData)}
+                    >
+                      Vendors
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>
