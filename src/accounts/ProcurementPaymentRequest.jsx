@@ -207,18 +207,27 @@ const ProcurementPaymentRequest = () => {
       0,
   );
 
-  // Custom amount entered by Accounts for the current payment release.
   const releaseCustomPayableAmount = toTwoDecimalAmount(releasePayableAmount);
 
   const isReleasePayableExceeded =
     releaseCustomPayableAmount > releaseGrossPayableAmount;
 
+  // GST percentage coming from backend
+  const releaseGstPercentage = toTwoDecimalAmount(rowItem?.gstPercentage ?? 0);
+
+  // Calculate principal amount by removing GST from the GST-inclusive payable amount
+  const releasePrincipalAmount = toTwoDecimalAmount(
+    releaseCustomPayableAmount / (1 + releaseGstPercentage / 100),
+  );
+
+  // Calculate TDS on principal amount
   const releaseTdsAmount = releaseTdsActive
     ? toTwoDecimalAmount(
-        (releaseCustomPayableAmount * Number(releaseTdsPercentage || 0)) / 100,
+        (releasePrincipalAmount * Number(releaseTdsPercentage || 0)) / 100,
       )
     : 0;
 
+  // Deduct TDS from payable amount
   const releaseBankPaymentAmount = toTwoDecimalAmount(
     releaseCustomPayableAmount - releaseTdsAmount,
   );
