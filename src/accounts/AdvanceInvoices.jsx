@@ -16,8 +16,6 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
-  Select,
-  SelectItem,
   Spinner,
   Table,
   TableBody,
@@ -30,7 +28,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 
-import { EllipsisVertical, Eye, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Eye, Search } from "lucide-react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -537,19 +535,19 @@ const AdvanceInvoices = () => {
   };
 
   const openTaxInvoiceModal = (item) => {
-    const canViewTaxInvoice =
-      Boolean(item?.invoiceGenerated) &&
-      Boolean(item?.invoiceId) &&
-      Boolean(item?.invoiceNumber);
+    // const canViewTaxInvoice =
+    //   Boolean(item?.invoiceGenerated) &&
+    //   Boolean(item?.invoiceId) &&
+    //   Boolean(item?.invoiceNumber);
 
-    if (!canViewTaxInvoice) {
-      addToast({
-        title: "Tax invoice is not available",
-        description: "The invoice has not been generated for this request.",
-        color: "warning",
-      });
-      return;
-    }
+    // if (!canViewTaxInvoice) {
+    //   addToast({
+    //     title: "Tax invoice is not available",
+    //     description: "The invoice has not been generated for this request.",
+    //     color: "warning",
+    //   });
+    //   return;
+    // }
 
     setSelectedTaxInvoice(buildTaxInvoiceData(item));
     taxInvoiceModal.onOpen();
@@ -702,34 +700,24 @@ const AdvanceInvoices = () => {
       case "createdAt":
         return (
           <div className="whitespace-nowrap">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900">
               {formatDate(item?.createdAt)}
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-500">
+            <p className="mt-0.5 text-[11.5px] text-slate-500">
               {formatDateTime(item?.createdAt)}
             </p>
           </div>
         );
 
-      case "estimateNumber":
-        return (
-          <span
-            className="whitespace-nowrap text-xs font-semibold text-blue-600 cursor-pointer hover:underline"
-            onClick={() => handleViewEstimate(item, "ESTIMATE")}
-          >
-            {item?.estimateNumber || "-"}
-          </span>
-        );
-
       case "companyName":
         return (
           <div className="min-w-[180px]">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900 truncate">
               {item?.companyName || "-"}
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-500">
+            <p className="mt-0.5 text-[11.5px] text-slate-500 truncate">
               Unit: {item?.unitName || "-"}
             </p>
           </div>
@@ -738,7 +726,7 @@ const AdvanceInvoices = () => {
       case "contactName":
         return (
           <div className="whitespace-nowrap">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900">
               {item?.contactName || "-"}
             </p>
           </div>
@@ -747,7 +735,7 @@ const AdvanceInvoices = () => {
       case "solutionName":
         return (
           <div className="whitespace-nowrap">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900">
               {item?.solutionName || "-"}
             </p>
           </div>
@@ -756,7 +744,7 @@ const AdvanceInvoices = () => {
       case "requestedByName":
         return (
           <div className="whitespace-nowrap">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900">
               {item?.requestedByName || "-"}
             </p>
           </div>
@@ -767,14 +755,14 @@ const AdvanceInvoices = () => {
       case "invoiceGrandTotal":
       case "availableOutstandingAmount":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold">
+          <span className="whitespace-nowrap text-[12.5px] font-semibold">
             {formatAmount(item?.[columnKey])}
           </span>
         );
 
       case "approvedAmount":
         return (
-          <span className="whitespace-nowrap text-xs font-semibold text-emerald-700">
+          <span className="whitespace-nowrap text-[12.5px] font-semibold text-emerald-700">
             {formatAmount(item?.[columnKey])}
           </span>
         );
@@ -783,7 +771,7 @@ const AdvanceInvoices = () => {
         return (
           <p
             title={item?.requestRemarks}
-            className="max-w-[220px] line-clamp-2 text-xs text-slate-700"
+            className="max-w-[220px] line-clamp-2 text-[12.5px] text-slate-700"
           >
             {item?.requestRemarks || "-"}
           </p>
@@ -792,7 +780,12 @@ const AdvanceInvoices = () => {
       case "gstRegistrationType":
         return (
           <div className="flex min-w-[100px] flex-col gap-1">
-            <Chip size="sm" variant="flat" color="secondary">
+            <Chip
+              size="sm"
+              variant="flat"
+              color="secondary"
+              className="text-[11.5px]"
+            >
               {formatStatus(item?.gstRegistrationType)}
             </Chip>
           </div>
@@ -804,6 +797,7 @@ const AdvanceInvoices = () => {
             size="sm"
             color={getStatusColor(item?.requestStatus)}
             variant="flat"
+            className="text-[11.5px]"
           >
             {item?.requestStatus || "-"}
           </Chip>
@@ -812,18 +806,18 @@ const AdvanceInvoices = () => {
       case "reviewDetails":
         return (
           <div className="min-w-[145px]">
-            <p className="text-xs font-medium text-slate-900">
+            <p className="text-[12.5px] font-medium text-slate-900">
               {item?.reviewedByName || "Not reviewed"}
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-500">
+            <p className="mt-0.5 text-[11.5px] text-slate-500">
               {formatDateTime(item?.reviewedAt)}
             </p>
 
             {item?.reviewRemarks ? (
               <p
                 title={item?.reviewRemarks}
-                className="mt-1 max-w-[180px] truncate text-[10px] text-slate-500"
+                className="mt-0.5 max-w-[180px] truncate text-[11.5px] text-slate-500"
               >
                 {item.reviewRemarks}
               </p>
@@ -841,8 +835,13 @@ const AdvanceInvoices = () => {
           Boolean(item?.invoiceGenerated) &&
           Boolean(item?.invoiceId) &&
           Boolean(item?.invoiceNumber);
+        // A company/unit without a GST number cannot be e-invoiced, so the
+        // action is hidden entirely rather than allowed to fail server-side.
+        const hasGstNumber = Boolean(item?.unitGstNo || item?.buyerGstin);
         const canConfirmEInvoice =
-          normalizedStatus === "APPROVED" && Boolean(item?.invoiceNumber);
+          normalizedStatus === "APPROVED" &&
+          Boolean(item?.invoiceNumber) &&
+          hasGstNumber;
         const actionItems = [];
 
         if (isPending) {
@@ -858,15 +857,12 @@ const AdvanceInvoices = () => {
             color: "danger",
           });
         }
-
-        if (canViewTaxInvoice) {
-          actionItems.push({
-            key: "viewTaxInvoice",
-            label: "View Tax Invoice",
-            color: "secondary",
-            icon: <Eye size={16} />,
-          });
-        }
+        actionItems.push({
+          key: "viewTaxInvoice",
+          label: "View Tax Invoice",
+          color: "secondary",
+          icon: <Eye size={14} />,
+        });
 
         if (canConfirmEInvoice) {
           actionItems.push({
@@ -888,13 +884,17 @@ const AdvanceInvoices = () => {
           <Dropdown>
             <DropdownTrigger>
               <Button isIconOnly size="sm" variant="light">
-                <EllipsisVertical size={18} />
+                <EllipsisVertical className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
 
             <DropdownMenu
               items={actionItems}
               aria-label="Advance tax invoice actions"
+              itemClasses={{
+                base: "px-2.5 py-1.5",
+                title: "text-[12.5px]",
+              }}
               onAction={(key) => {
                 if (key === "approve") {
                   openApproveModal(item);
@@ -934,116 +934,157 @@ const AdvanceInvoices = () => {
     }
   };
 
+  const topContent = (
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
+        <Input
+          isClearable
+          size="sm"
+          className="w-full sm:max-w-[320px]"
+          classNames={{ inputWrapper: "h-8 min-h-8" }}
+          placeholder="Search estimate, invoice, requester..."
+          startContent={<Search className="w-4 h-4 text-default-400" />}
+          value={search}
+          onClear={() => setSearch("")}
+          onValueChange={setSearch}
+        />
+
+        <Dropdown>
+          <DropdownTrigger>
+            <Button
+              size="sm"
+              variant="flat"
+              endContent={<ChevronDown className="w-3.5 h-3.5" />}
+            >
+              Status: {formatStatus(status)}
+            </Button>
+          </DropdownTrigger>
+
+          <DropdownMenu
+            disallowEmptySelection
+            aria-label="Filter by status"
+            selectionMode="single"
+            selectedKeys={new Set([status])}
+            itemClasses={{
+              base: "px-2.5 py-1.5",
+              title: "text-[12.5px]",
+            }}
+            onSelectionChange={(keys) => {
+              const selectedStatus = Array.from(keys)[0] || "PENDING";
+
+              setStatus(String(selectedStatus));
+              setPage(1);
+            }}
+          >
+            {STATUS_OPTIONS.map((item) => (
+              <DropdownItem key={item}>{item}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-default-400 text-[12.5px]">
+          Total {totalElements} requests
+        </span>
+
+        <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+          Rows per page:
+          <select
+            className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+            value={size}
+            onChange={(e) => {
+              setSize(Number(e.target.value));
+              setPage(1);
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+
+  const bottomContent = totalElements > 0 && (
+    <div className="py-1.5 px-1 flex justify-between items-center">
+      <span className="text-[12.5px] text-default-400">
+        Showing {Math.min((page - 1) * size + 1, totalElements)} to{" "}
+        {Math.min(page * size, totalElements)} of {totalElements}
+      </span>
+
+      <Pagination
+        isCompact
+        showControls
+        color="primary"
+        size="sm"
+        page={page}
+        total={totalPages}
+        isDisabled={advanceTaxInvoiceRequestsLoading}
+        onChange={setPage}
+      />
+    </div>
+  );
+
   return (
-    <div className="h-full min-h-[calc(100vh-76px)] bg-slate-50 p-3">
-      <h1 className="mb-3 text-xl font-semibold text-slate-900">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Advance Tax Invoice Approvals
       </h1>
 
-      <Card shadow="none" className="border border-slate-200">
-        <CardBody className="gap-4 p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <Input
-              isClearable
-              size="sm"
-              className="w-full lg:max-w-xl"
-              placeholder="Search estimate, invoice, requester..."
-              value={search}
-              onValueChange={setSearch}
-              onClear={() => setSearch("")}
-              startContent={<Search size={16} className="text-slate-400" />}
-            />
-
-            <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-              <Select
-                size="sm"
-                className="w-full sm:w-48"
-                selectedKeys={new Set([status])}
-                onSelectionChange={(keys) => {
-                  const selectedStatus = Array.from(keys)[0] || "PENDING";
-
-                  setStatus(String(selectedStatus));
-                  setPage(1);
-                }}
-              >
-                {STATUS_OPTIONS.map((item) => (
-                  <SelectItem key={item}>{item}</SelectItem>
-                ))}
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Total {totalElements} requests
-            </p>
-
-            <p className="text-xs text-slate-500">Rows per page: {size}</p>
-          </div>
-
-          <Table
-            isHeaderSticky
-            aria-label="Advance tax invoice approval requests"
-            classNames={{
-              wrapper:
-                "max-h-[calc(100vh-280px)] border border-slate-200 shadow-none",
-              table: "min-w-[1820px]",
-              th: "bg-slate-50 text-[11px] font-semibold text-slate-500",
-              td: "text-xs text-slate-700",
-            }}
-          >
-            <TableHeader columns={COLUMNS}>
-              {(column) => (
-                <TableColumn key={column.uid} align={column.align || "start"}>
-                  {column.name}
-                </TableColumn>
-              )}
-            </TableHeader>
-
-            <TableBody
-              items={filteredRequests}
-              isLoading={advanceTaxInvoiceRequestsLoading}
-              loadingContent={
-                <Spinner
-                  size="sm"
-                  label="Loading advance tax invoice requests..."
-                />
-              }
-              emptyContent={
-                advanceTaxInvoiceRequestsError
-                  ? getApiErrorMessage(advanceTaxInvoiceRequestsError)
-                  : "No advance tax invoice requests found."
-              }
-            >
-              {(item) => (
-                <TableRow key={item?.requestId || item?.publicUuid}>
-                  {(columnKey) => (
-                    <TableCell>{renderCell(item, columnKey)}</TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-
-          {totalElements > 0 && (
-            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-              <p className="text-xs text-slate-500">
-                Showing {Math.min((page - 1) * size + 1, totalElements)} to{" "}
-                {Math.min(page * size, totalElements)} of {totalElements}
-              </p>
-
-              <Pagination
-                showControls
-                size="sm"
-                page={page}
-                total={totalPages}
-                isDisabled={advanceTaxInvoiceRequestsLoading}
-                onChange={setPage}
-              />
-            </div>
+      <Table
+        isHeaderSticky
+        removeWrapper={false}
+        aria-label="Advance tax invoice approval requests"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        topContent={topContent}
+        topContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "min-w-[1820px]",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+      >
+        <TableHeader columns={COLUMNS}>
+          {(column) => (
+            <TableColumn key={column.uid} align={column.align || "start"}>
+              {column.name}
+            </TableColumn>
           )}
-        </CardBody>
-      </Card>
+        </TableHeader>
+
+        <TableBody
+          items={filteredRequests}
+          isLoading={advanceTaxInvoiceRequestsLoading}
+          loadingContent={
+            <Spinner
+              size="sm"
+              label="Loading advance tax invoice requests..."
+            />
+          }
+          emptyContent={
+            advanceTaxInvoiceRequestsError
+              ? getApiErrorMessage(advanceTaxInvoiceRequestsError)
+              : "No advance tax invoice requests found."
+          }
+        >
+          {(item) => (
+            <TableRow key={item?.requestId || item?.publicUuid}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Modal
         size="full"
@@ -1063,7 +1104,7 @@ const AdvanceInvoices = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="border-b border-slate-200 bg-white">
+              <ModalHeader className="text-base border-b border-slate-200 bg-white">
                 Tax Invoice
                 {selectedTaxInvoice?.invoiceNumber
                   ? ` - ${selectedTaxInvoice.invoiceNumber}`
@@ -1087,6 +1128,7 @@ const AdvanceInvoices = () => {
 
               <ModalFooter className="border-t border-slate-200 bg-white">
                 <Button
+                  size="sm"
                   variant="flat"
                   onPress={() => {
                     closeTaxInvoiceModal();
@@ -1115,23 +1157,28 @@ const AdvanceInvoices = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Approve Advance Tax Invoice</ModalHeader>
+              <ModalHeader className="text-base border-b border-slate-100 dark:border-white/10">
+                Approve Advance Tax Invoice
+              </ModalHeader>
 
-              <ModalBody>
+              <ModalBody className="py-4">
                 <Card
                   shadow="none"
                   className="border border-slate-200 bg-slate-50"
                 >
-                  <CardBody className="p-3">
-                    <p className="text-xs text-slate-500">Estimate Number</p>
+                  <CardBody className="p-2.5">
+                    <p className="text-[11.5px] text-slate-500">
+                      Estimate Number
+                    </p>
 
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                    <p className="mt-0.5 text-[12.5px] font-semibold text-slate-900">
                       {selectedRequest?.estimateNumber || "-"}
                     </p>
                   </CardBody>
                 </Card>
 
                 <Input
+                  size="sm"
                   label="Approved Amount"
                   value={
                     selectedRequest?.requestedAmount !== null &&
@@ -1140,13 +1187,14 @@ const AdvanceInvoices = () => {
                       : ""
                   }
                   startContent={
-                    <span className="text-sm text-slate-500">₹</span>
+                    <span className="text-[12.5px] text-slate-500">₹</span>
                   }
                   isReadOnly
                   description="Approved amount is taken from the requested amount."
                 />
 
                 <Textarea
+                  size="sm"
                   label="Review Remarks"
                   placeholder="Enter approval remarks..."
                   value={reviewRemarks}
@@ -1155,8 +1203,9 @@ const AdvanceInvoices = () => {
                 />
               </ModalBody>
 
-              <ModalFooter>
+              <ModalFooter className="border-t border-slate-100 dark:border-white/10">
                 <Button
+                  size="sm"
                   variant="flat"
                   onPress={() => {
                     closeApproveModal();
@@ -1168,6 +1217,7 @@ const AdvanceInvoices = () => {
                 </Button>
 
                 <Button
+                  size="sm"
                   color="success"
                   className="text-white"
                   onPress={handleApproveRequest}
@@ -1195,29 +1245,34 @@ const AdvanceInvoices = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Reject Advance Tax Invoice</ModalHeader>
+              <ModalHeader className="text-base border-b border-slate-100 dark:border-white/10">
+                Reject Advance Tax Invoice
+              </ModalHeader>
 
-              <ModalBody>
+              <ModalBody className="py-4">
                 <Card
                   shadow="none"
                   className="border border-slate-200 bg-slate-50"
                 >
-                  <CardBody className="p-3">
-                    <p className="text-xs text-slate-500">Estimate Number</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                  <CardBody className="p-2.5">
+                    <p className="text-[11.5px] text-slate-500">
+                      Estimate Number
+                    </p>
+                    <p className="mt-0.5 text-[12.5px] font-semibold text-slate-900">
                       {selectedRejectRequest?.estimateNumber || "-"}
                     </p>
 
-                    <p className="mt-3 text-xs text-slate-500">
+                    <p className="mt-2 text-[11.5px] text-slate-500">
                       Requested Amount
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                    <p className="mt-0.5 text-[12.5px] font-semibold text-slate-900">
                       {formatAmount(selectedRejectRequest?.requestedAmount)}
                     </p>
                   </CardBody>
                 </Card>
 
                 <Textarea
+                  size="sm"
                   isRequired
                   label="Rejection Reason"
                   placeholder="Enter the reason for rejecting this request..."
@@ -1229,8 +1284,9 @@ const AdvanceInvoices = () => {
                 />
               </ModalBody>
 
-              <ModalFooter>
+              <ModalFooter className="border-t border-slate-100 dark:border-white/10">
                 <Button
+                  size="sm"
                   variant="flat"
                   onPress={() => {
                     closeRejectModal();
@@ -1242,6 +1298,7 @@ const AdvanceInvoices = () => {
                 </Button>
 
                 <Button
+                  size="sm"
                   color="danger"
                   onPress={handleRejectRequest}
                   isLoading={advanceTaxInvoiceRequestRejecting}
@@ -1266,11 +1323,14 @@ const AdvanceInvoices = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Confirm E Invoice</ModalHeader>
+              <ModalHeader className="text-base border-b border-slate-100 dark:border-white/10">
+                Confirm E-Invoice
+              </ModalHeader>
 
-              <ModalBody className="max-h-[70vh] overflow-auto">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <ModalBody className="max-h-[70vh] overflow-auto py-4">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <Input
+                    size="sm"
                     label="Invoice Number"
                     value={selectedEInvoiceRequest?.invoiceNumber || ""}
                     isReadOnly
@@ -1278,6 +1338,7 @@ const AdvanceInvoices = () => {
                   />
 
                   <Input
+                    size="sm"
                     label="E-Invoice ACK Date"
                     type="datetime-local"
                     isRequired
@@ -1288,6 +1349,7 @@ const AdvanceInvoices = () => {
                   />
 
                   <Input
+                    size="sm"
                     label="E-Invoice ACK No"
                     isRequired
                     value={eInvoiceForm.eInvoiceAckNo}
@@ -1297,6 +1359,7 @@ const AdvanceInvoices = () => {
                   />
 
                   <Input
+                    size="sm"
                     label="E-Invoice IRN"
                     isRequired
                     className="md:col-span-2"
@@ -1324,6 +1387,7 @@ const AdvanceInvoices = () => {
                   </div>
 
                   <Input
+                    size="sm"
                     label="Remarks"
                     className="md:col-span-2"
                     value={eInvoiceForm.remarks}
@@ -1334,8 +1398,9 @@ const AdvanceInvoices = () => {
                 </div>
               </ModalBody>
 
-              <ModalFooter>
+              <ModalFooter className="border-t border-slate-100 dark:border-white/10">
                 <Button
+                  size="sm"
                   variant="flat"
                   isDisabled={
                     isAttachmentUploading || advanceTaxInvoiceEInvoiceConfirming
@@ -1349,6 +1414,7 @@ const AdvanceInvoices = () => {
                 </Button>
 
                 <Button
+                  size="sm"
                   color="primary"
                   isLoading={advanceTaxInvoiceEInvoiceConfirming}
                   isDisabled={
@@ -1356,7 +1422,7 @@ const AdvanceInvoices = () => {
                   }
                   onPress={handleSubmitConfirmEInvoice}
                 >
-                  {isAttachmentUploading ? "Uploading..." : "Confirm E Invoice"}
+                  {isAttachmentUploading ? "Uploading..." : "Confirm E-Invoice"}
                 </Button>
               </ModalFooter>
             </>
@@ -1382,7 +1448,9 @@ const AdvanceInvoices = () => {
                 />
               </ModalBody>
               <ModalFooter className="flex justify-end">
-                <Button onPress={onClose}>Cancel</Button>
+                <Button size="sm" variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
               </ModalFooter>
             </>
           )}

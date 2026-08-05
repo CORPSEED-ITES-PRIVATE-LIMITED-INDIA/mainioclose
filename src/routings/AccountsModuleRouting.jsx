@@ -1,43 +1,78 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import CompanyApprovals from "../accounts/CompanyApprovals";
-import PaymentApprovals from "../accounts/PaymentApprovals";
-import CompanyForm from "../accounts/CompanyForm";
-import Organizations from "../accounts/organization/Organizations";
-import OrganizationDetail from "../accounts/organization/OrganizationDetail";
-import Group from "../accounts/organization/Group";
-import GroupLedger from "../accounts/organization/GroupLedger";
-import LedgerDetail from "../accounts/organization/LedgerDetail";
-import Voucher from "../accounts/organization/Voucher";
-import DailyBook from "../accounts/organization/DailyBook";
-import BankStatement from "../accounts/organization/BankStatement";
-import PaymentRegister from "../accounts/organization/PaymentRegister";
-import AllInvoice from "../accounts/organization/AllInvoice";
-import Unbill from "../accounts/organization/Unbill";
-import ProfitLoss from "../accounts/organization/ProfitLoss";
-import CashFlow from "../accounts/organization/CashFlow";
-import BalanceSheet from "../accounts/organization/BalanceSheet";
-import TDS from "../accounts/organization/TDS";
-import LedgerType from "../accounts/organization/settings/LedgerType";
-import VoucherType from "../accounts/organization/settings/VoucherType";
-import Statutory from "../accounts/organization/settings/Statutory";
-import OrganizationEstimate from "../accounts/organization/OrganizationEstimate";
-import VendorPayments from "../accounts/VendorPayments";
-import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
-import GST from "../accounts/organization/GST";
-import TrailBalance from "../accounts/organization/TrailBalance";
-import SalesReport from "../accounts/organization/SalesReport";
-import CompanyUnitsInAccount from "../accounts/CompanyUnitsInAccount";
-import Expense from "../accounts/Expense";
-import Taxation from "../accounts/organization/Taxation";
-import CreditNote from "../accounts/CreditNote";
-import ProcurementPaymentRequest from "../accounts/ProcurementPaymentRequest";
-import PurchaseOrder from "../accounts/PurchaseOrder";
-import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
-import Ledger from "../accounts/ledgers/Ledger";
-import LedgerEntriesPage from "../accounts/ledgers/LedgerEntriesPage";
-import VendorDetails from "../accounts/vendorDetails/VendorDetails";
-import AdvanceInvoices from "../accounts/AdvanceInvoices";
-import VendorRestrictions from "../accounts/VendorRestrictions";
+const CompanyApprovals = lazy(() => import("../accounts/CompanyApprovals"));
+const PaymentApprovals = lazy(() => import("../accounts/PaymentApprovals"));
+const CompanyForm = lazy(() => import("../accounts/CompanyForm"));
+const Organizations = lazy(
+  () => import("../accounts/organization/Organizations"),
+);
+const OrganizationDetail = lazy(
+  () => import("../accounts/organization/OrganizationDetail"),
+);
+const Group = lazy(() => import("../accounts/organization/Group"));
+const GroupLedger = lazy(() => import("../accounts/organization/GroupLedger"));
+const LedgerDetail = lazy(
+  () => import("../accounts/organization/LedgerDetail"),
+);
+const Voucher = lazy(() => import("../accounts/organization/Voucher"));
+const DailyBook = lazy(() => import("../accounts/organization/DailyBook"));
+const BankStatement = lazy(
+  () => import("../accounts/organization/BankStatement"),
+);
+const PaymentRegister = lazy(
+  () => import("../accounts/organization/PaymentRegister"),
+);
+const AllInvoice = lazy(() => import("../accounts/organization/AllInvoice"));
+const Unbill = lazy(() => import("../accounts/organization/Unbill"));
+const ProfitLoss = lazy(() => import("../accounts/organization/ProfitLoss"));
+const CashFlow = lazy(() => import("../accounts/organization/CashFlow"));
+const BalanceSheet = lazy(
+  () => import("../accounts/organization/BalanceSheet"),
+);
+const TDS = lazy(() => import("../accounts/organization/TDS"));
+const LedgerType = lazy(
+  () => import("../accounts/organization/settings/LedgerType"),
+);
+const VoucherType = lazy(
+  () => import("../accounts/organization/settings/VoucherType"),
+);
+const Statutory = lazy(
+  () => import("../accounts/organization/settings/Statutory"),
+);
+const OrganizationEstimate = lazy(
+  () => import("../accounts/organization/OrganizationEstimate"),
+);
+const VendorPayments = lazy(() => import("../accounts/VendorPayments"));
+const VendorPaymentHistory = lazy(
+  () => import("../vendor-request/VendorPaymentHistory"),
+);
+const GST = lazy(() => import("../accounts/organization/GST"));
+const TrailBalance = lazy(
+  () => import("../accounts/organization/TrailBalance"),
+);
+const SalesReport = lazy(() => import("../accounts/organization/SalesReport"));
+const CompanyUnitsInAccount = lazy(
+  () => import("../accounts/CompanyUnitsInAccount"),
+);
+const Expense = lazy(() => import("../accounts/Expense"));
+const Taxation = lazy(() => import("../accounts/organization/Taxation"));
+const CreditNote = lazy(() => import("../accounts/CreditNote"));
+const ProcurementPaymentRequest = lazy(
+  () => import("../accounts/ProcurementPaymentRequest"),
+);
+const PurchaseOrder = lazy(() => import("../accounts/PurchaseOrder"));
+const InvoicesByUnbilled = lazy(
+  () => import("../accounts/organization/InvoicesByUnbilled"),
+);
+const Ledger = lazy(() => import("../accounts/ledgers/Ledger"));
+const LedgerEntriesPage = lazy(
+  () => import("../accounts/ledgers/LedgerEntriesPage"),
+);
+const VendorDetails = lazy(
+  () => import("../accounts/vendorDetails/VendorDetails"),
+);
+const AdvanceInvoices = lazy(() => import("../accounts/AdvanceInvoices"));
+const VendorRestrictions = lazy(() => import("../accounts/VendorRestrictions"));
 
 export const AccountsModuleRouting = () => {
   return (

@@ -216,46 +216,45 @@ const CompanyUnitsInAccount = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <p>{company?.unitName || "-"}</p>
+              <p className="text-[12.5px]">{company?.unitName || "-"}</p>
             </div>
           </div>
         );
 
       case "state":
-        return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">{company?.state || "-"}</div>
-          </div>
-        );
+        return <span className="text-[12.5px]">{company?.state || "-"}</span>;
       case "status":
         return (
-          <div className="flex items-start gap-2">
-            <Chip
-              size="sm"
-              color={
-                company?.onboardingStatus === "APPROVED"
-                  ? "success"
-                  : company?.onboardingStatus === "REJECTED"
-                    ? "danger"
-                    : "warning"
-              }
-            >
-              {company?.onboardingStatus || "-"}
-            </Chip>
-          </div>
+          <Chip
+            size="sm"
+            variant="flat"
+            color={
+              company?.onboardingStatus === "APPROVED"
+                ? "success"
+                : company?.onboardingStatus === "REJECTED"
+                  ? "danger"
+                  : "warning"
+            }
+          >
+            {company?.onboardingStatus || "-"}
+          </Chip>
         );
 
       case "gstNo":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{company.gstNo || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {company.gstNo || "-"}
+            </span>
           </div>
         );
       case "address":
         return company?.addressLine1 ? (
           <div className="flex flex-col">
-            <span className="font-normal">{company?.addressLine1 || "-"}</span>
-            <span className="text-sm text-gray-400">
+            <span className="font-normal text-[12.5px]">
+              {company?.addressLine1 || "-"}
+            </span>
+            <span className="text-[11.5px] text-default-500">
               {[
                 company?.city,
                 company?.state,
@@ -272,7 +271,7 @@ const CompanyUnitsInAccount = () => {
           <Dropdown showArrow>
             <DropdownTrigger>
               <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
+                <EllipsisVertical className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
@@ -359,22 +358,24 @@ const CompanyUnitsInAccount = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                   className="capitalize"
                 >
@@ -403,7 +404,10 @@ const CompanyUnitsInAccount = () => {
             </Dropdown>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -426,13 +430,13 @@ const CompanyUnitsInAccount = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} GST units
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={companyFilteration?.size}
             >
@@ -457,8 +461,8 @@ const CompanyUnitsInAccount = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -466,7 +470,6 @@ const CompanyUnitsInAccount = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={companyFilteration?.page}
           total={pages}
@@ -500,16 +503,24 @@ const CompanyUnitsInAccount = () => {
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Unit List</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Unit List
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Company units table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -898,7 +909,7 @@ const CompanyUnitsInAccount = () => {
           </style>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

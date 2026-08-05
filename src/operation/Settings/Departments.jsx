@@ -150,54 +150,78 @@ const Departments = () => {
   const handleCut = () => setSelectedDept(null);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Department list</h1>
-      <div className="flex gap-6 p-6">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Department list
+      </h1>
+
+      <div className="flex flex-col gap-4 sm:flex-row">
         {/* Departments List */}
-        <Card className="p-4 rounded-2xl shadow-md w-[350px] h-[70%]">
-          <h1 className="text-xl font-semibold mb-3 grey-500">Departments</h1>
-          <CardBody className="gap-[1.5]">
-            {departmentsList?.map((dept) => (
-              <div
-                key={dept.id}
-                className={`cursor-pointer flex justify-between items-center 
-                ${selectedDept?.id === dept.id ? "bg-gray-100" : "hover:bg-gray-100"} 
-                transition-colors duration-150 py-2 px-3 rounded`}
-                onClick={() => handleDepartmentClick(dept)}
-              >
-                <p className="font-sm">{dept.name}</p>
-                <ChevronRight size={18} />
-              </div>
-            ))}
+        <Card
+          shadow="none"
+          className="w-full rounded-lg border border-gray-200 dark:border-white/10 sm:w-[300px] sm:shrink-0"
+        >
+          <CardBody className="gap-1 p-3">
+            <h2 className="text-[11.5px] font-semibold uppercase tracking-wide text-default-500 px-1 mb-1">
+              Departments
+            </h2>
+
+            <div className="flex max-h-[calc(100vh-260px)] flex-col gap-0.5 overflow-y-auto">
+              {departmentsList?.map((dept) => (
+                <div
+                  key={dept.id}
+                  className={`flex cursor-pointer items-center justify-between rounded-md px-3 py-2 transition-colors duration-150 ${
+                    selectedDept?.id === dept.id
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-default-100"
+                  }`}
+                  onClick={() => handleDepartmentClick(dept)}
+                >
+                  <p className="text-[12.5px] font-medium">{dept.name}</p>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              ))}
+            </div>
           </CardBody>
         </Card>
 
         {/* Selected Department Auto-Config */}
         {selectedDept && localConfig && (
-          <Card className="flex-1 p-4 rounded-2xl shadow-md relative h-[70%]">
-            <h2 className="text-xl font-semibold mb-3">{selectedDept.name}</h2>
+          <Card
+            shadow="none"
+            className="relative flex-1 rounded-lg border border-gray-200 dark:border-white/10"
+          >
             <Button
+              isIconOnly
               size="sm"
               variant="light"
               color="danger"
-              className="absolute top-2 right-2 z-20"
+              className="absolute top-3 right-3 z-20"
               onPress={handleCut}
             >
-              <X size={16} />
+              <X className="w-4 h-4" />
             </Button>
 
-            <CardBody>
-              {loading === "pending" && <p>Loading auto config...</p>}
+            <CardBody className="gap-3 p-4">
+              <h2 className="text-[12.5px] font-semibold text-foreground pr-8">
+                {selectedDept.name}
+              </h2>
 
-              <div className="mt-1   space-y-3">
+              {loading === "pending" && (
+                <p className="text-[12.5px] text-default-400">
+                  Loading auto config...
+                </p>
+              )}
+
+              <div className="flex flex-col gap-0.5">
                 {Object.entries(localConfig)
                   .filter(([key, val]) => typeof val === "boolean")
                   .map(([key, val]) => (
                     <div
                       key={key}
-                      className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-100 transition-colors duration-150"
+                      className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors duration-150 hover:bg-default-100"
                     >
-                      <span className="capitalize text-sm">
+                      <span className="text-[12.5px] capitalize text-default-600">
                         {key
                           .replace(/([A-Z])/g, " $1")
                           .replace(/^./, (str) => str.toUpperCase())}
@@ -212,8 +236,9 @@ const Departments = () => {
                   ))}
               </div>
 
-              <div className="flex gap-3 mt-6">
+              <div className="flex gap-2 mt-2">
                 <Button
+                  size="sm"
                   color="primary"
                   onPress={handleUpdate}
                   disabled={!isChanged || loading === "pending"}
@@ -221,7 +246,12 @@ const Departments = () => {
                   Update
                 </Button>
 
-                <Button color="danger" variant="light" onPress={handleCancel}>
+                <Button
+                  size="sm"
+                  color="danger"
+                  variant="light"
+                  onPress={handleCancel}
+                >
                   Cancel
                 </Button>
               </div>
@@ -229,7 +259,7 @@ const Departments = () => {
           </Card>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

@@ -61,7 +61,8 @@ import {
   clearLedgerError,
   createLedger,
   fetchLedgers,
-  getLedgerGroups,
+  getActiveLedgerGroups,
+  getLedgerGroupTypeById,
   setActiveFilter,
   setLedgerGroupIdFilter,
   setLedgerPage,
@@ -73,22 +74,13 @@ import {
 
 const defaultValues = {
   name: "",
-  ledgerType: "CUSTOMER",
-  // ledgerCategory: "CUSTOMER",
-  // partyType: "CUSTOMER",
+  ledgerType: "",
   groupName: "",
   bankName: "",
   accountHolderName: "",
   accountNumber: "",
   ifscCode: "",
   branchName: "",
-  // openingBalance: "0",
-  // openingBalanceType: "DR",
-  // currentBalance: "0",
-  // currentBalanceType: "DR",
-  // totalDebit: "0",
-  // totalCredit: "0",
-  // currency: "INR",
   effectiveFrom: new Date().toISOString().slice(0, 10),
   gstStatus: "",
   gstin: "",
@@ -127,30 +119,6 @@ const ledgerTypeOptions = [
   "INCOME",
 ];
 
-const ledgerCategoryOptions = [
-  "COMPANY",
-  "VENDOR",
-  "BANK",
-  "CASH",
-  "TAX",
-  "EXPENSE",
-  "INCOME",
-];
-
-const partyTypeOptions = ["CUSTOMER", "SUPPLIER", "BOTH", "NA"];
-
-const groupOptions = [
-  "Sundry Debtors",
-  "Sundry Creditors",
-  "Bank Accounts",
-  "Cash-in-Hand",
-  "Sales Accounts",
-  "Purchase Accounts",
-  "Duties & Taxes",
-  "Indirect Expenses",
-  "Direct Expenses",
-];
-
 const gstFieldAllowedGroups = [
   "Sundry Debtors",
   "Sundry Creditors",
@@ -165,7 +133,6 @@ const gstFieldAllowedGroups = [
   "Branch / Division",
 ];
 
-const balanceTypeOptions = ["DR", "CR"];
 const gstStatusOptions = ["Registered", "Unregistered", "Not Applicable"];
 
 const deriveLedgerCategory = (ledgerType = "") => {
@@ -190,22 +157,10 @@ const deriveLedgerCategory = (ledgerType = "") => {
   return "COMPANY";
 };
 
-const derivePartyType = (ledgerType = "") => {
-  if (ledgerType.includes("CUSTOMER")) return "CUSTOMER";
-  if (ledgerType.includes("VENDOR")) return "SUPPLIER";
-  return "NA";
-};
-
 const toUiBalanceType = (value) => {
   if (value === "DEBIT") return "DR";
   if (value === "CREDIT") return "CR";
   return value || "";
-};
-
-const toApiBalanceType = (value) => {
-  if (value === "DR") return "DEBIT";
-  if (value === "CR") return "CREDIT";
-  return value || "DEBIT";
 };
 
 const toNumber = (value) => {
@@ -443,7 +398,9 @@ const LedgerMasterSection = () => {
     loading = false,
     saving = false,
     error = "",
-    ledgerGroupList = [],
+    activeLedgerGroupList = [],
+    ledgerGroupTypeById = null,
+    ledgerGroupTypeByIdLoading = "",
   } = useSelector((state) => state.organization || {});
 
   const {
@@ -451,6 +408,7 @@ const LedgerMasterSection = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues,
@@ -464,30 +422,13 @@ const LedgerMasterSection = () => {
   }, [ledgers]);
 
   const ledgerGroupOptions = useMemo(() => {
-    const groupsFromApi = Array.isArray(ledgerGroupList)
-      ? ledgerGroupList.map((group) => ({
-          label:
-            group.groupName ||
-            group.ledgerGroupName ||
-            group.name ||
-            `Group ID ${group.id}`,
-          value: String(group.id),
-        }))
-      : [];
+    if (!Array.isArray(activeLedgerGroupList)) return [];
 
-    if (groupsFromApi.length > 0) return groupsFromApi;
-
-    const groupsFromLedgerList = normalizedLedgers
-      .filter((ledger) => ledger.ledgerGroupId)
-      .map((ledger) => ({
-        label: ledger.groupName || `Group ID ${ledger.ledgerGroupId}`,
-        value: String(ledger.ledgerGroupId),
-      }));
-
-    return Array.from(
-      new Map(groupsFromLedgerList.map((item) => [item.value, item])).values(),
-    );
-  }, [ledgerGroupList, normalizedLedgers]);
+    return activeLedgerGroupList.map((group) => ({
+      label: group.name || `Group ID ${group.id}`,
+      value: String(group.id),
+    }));
+  }, [activeLedgerGroupList]);
 
   const selectedGroupName =
     ledgerGroupOptions.find((item) => item.value === String(selectedGroupValue))
@@ -496,8 +437,27 @@ const LedgerMasterSection = () => {
   const shouldShowGstFields = gstFieldAllowedGroups.includes(selectedGroupName);
 
   useEffect(() => {
-    dispatch(getLedgerGroups({ active: true, page: 1, size: 100 }));
+    dispatch(getActiveLedgerGroups());
   }, [dispatch]);
+
+  // Ledger Type is derived from the selected group's canonical group-type,
+  // not chosen freely — re-fetch it whenever "Under Group" changes.
+  useEffect(() => {
+    if (!selectedGroupValue) {
+      setValue("ledgerType", "");
+      return;
+    }
+
+    dispatch(getLedgerGroupTypeById(selectedGroupValue));
+  }, [dispatch, selectedGroupValue, setValue]);
+
+  useEffect(() => {
+    if (String(ledgerGroupTypeById?.groupId) !== String(selectedGroupValue)) {
+      return;
+    }
+
+    setValue("ledgerType", ledgerGroupTypeById?.groupType || "");
+  }, [ledgerGroupTypeById, selectedGroupValue, setValue]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -564,24 +524,15 @@ const LedgerMasterSection = () => {
 
     reset({
       name: ledger.name || "",
-      ledgerType: String(ledger.ledgerType || "CUSTOMER")
-        .trim()
-        .toUpperCase(),
-      // ledgerCategory: ledger.ledgerCategory || "COMPANY",
-      // partyType: ledger.partyType || "CUSTOMER",
+      // Ledger Type is re-derived from the group's group-type API once
+      // "groupName" below triggers the fetch effect.
+      ledgerType: "",
       groupName: ledger.ledgerGroupId ? String(ledger.ledgerGroupId) : "",
       bankName: ledger.raw?.bankName || "",
       accountHolderName: ledger.raw?.accountHolderName || "",
       accountNumber: ledger.raw?.accountNumber || "",
       ifscCode: ledger.raw?.ifscCode || "",
       branchName: ledger.raw?.branchName || "",
-      // openingBalance: String(ledger.openingBalance ?? 0),
-      // openingBalanceType: ledger.openingBalanceType || "DR",
-      // currentBalance: String(ledger.currentBalance ?? 0),
-      // currentBalanceType: ledger.currentBalanceType || "DR",
-      // totalDebit: String(ledger.totalDebit ?? 0),
-      // totalCredit: String(ledger.totalCredit ?? 0),
-      // currency: ledger.currency || "INR",
       effectiveFrom: ledger.raw?.effectiveFrom?.slice?.(0, 10) || "",
       gstStatus: ledger.raw?.gstStatus || "",
       gstin: ledger.raw?.gstNo || "",
@@ -604,28 +555,25 @@ const LedgerMasterSection = () => {
         .trim()
         .toUpperCase();
 
+      const isBankLedgerType = ledgerType.includes("BANK");
+
       const payload = {
         ledgerName: values.name?.trim(),
         ledgerType,
         ledgerGroupId: toNumber(values.groupName),
-        // companyId: toNumber(editData?.raw?.companyId),
-        // unitId: toNumber(editData?.raw?.unitId),
-        // contactId: toNumber(editData?.raw?.contactId),
         gstNo: values.gstin?.trim() || "",
         panNo: values.panNumber?.trim() || "",
-        bankName: ledgerType === "BANK" ? values.bankName?.trim() || "" : "",
-        accountHolderName:
-          ledgerType === "BANK" ? values.accountHolderName?.trim() || "" : "",
-        accountNumber:
-          ledgerType === "BANK" ? values.accountNumber?.trim() || "" : "",
-        ifscCode:
-          ledgerType === "BANK"
-            ? values.ifscCode?.trim()?.toUpperCase() || ""
-            : "",
-        branchName:
-          ledgerType === "BANK" ? values.branchName?.trim() || "" : "",
-        // openingBalance: toNumber(values.openingBalance),
-        // openingBalanceType: toApiBalanceType(values.openingBalanceType),
+        bankName: isBankLedgerType ? values.bankName?.trim() || "" : "",
+        accountHolderName: isBankLedgerType
+          ? values.accountHolderName?.trim() || ""
+          : "",
+        accountNumber: isBankLedgerType
+          ? values.accountNumber?.trim() || ""
+          : "",
+        ifscCode: isBankLedgerType
+          ? values.ifscCode?.trim()?.toUpperCase() || ""
+          : "",
+        branchName: isBankLedgerType ? values.branchName?.trim() || "" : "",
         active: values.active === "true",
         ...values,
       };
@@ -689,33 +637,33 @@ const LedgerMasterSection = () => {
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden text-sm">
-      <div className="mb-2 flex items-center justify-between gap-4">
+    <div className="flex flex-col h-[calc(100vh-100px)] min-h-0 w-full max-w-full overflow-hidden text-[12.5px]">
+      <div className="mb-2 flex items-center justify-between gap-3 shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-slate-950">
+          <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
             Ledger Master
           </h1>
         </div>
 
         <Button
-          size="md"
-          className="bg-emerald-700 px-5 font-semibold text-white"
-          startContent={<Plus size={17} />}
+          size="sm"
+          className="bg-emerald-700 font-semibold text-white"
+          startContent={<Plus size={15} />}
           onPress={handleOpenCreate}
         >
           Create Ledger
         </Button>
       </div>
 
-      <div className="grid h-[calc(100vh-190px)] min-h-0 grid-cols-1 gap-4 overflow-hidden xl:grid-cols-[350px_minmax(0,1fr)]">
+      <div className="grid flex-1 min-h-0 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-full min-h-0 border border-slate-200" shadow="none">
-          <CardBody className="flex min-h-0 flex-col p-4">
-            <div className="mb-3 flex items-start justify-between">
+          <CardBody className="flex min-h-0 flex-col p-3">
+            <div className="mb-2 flex items-start justify-between">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">
+                <h2 className="text-[13px] font-semibold text-slate-950">
                   All Ledgers
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-[11.5px] text-slate-500">
                   Total {totalElements} ledgers
                 </p>
               </div>
@@ -728,11 +676,11 @@ const LedgerMasterSection = () => {
               value={search}
               onValueChange={(value) => dispatch(setLedgerSearch(value))}
               onClear={() => dispatch(setLedgerSearch(""))}
-              startContent={<Search size={15} className="text-slate-400" />}
-              className="mb-3"
+              startContent={<Search size={14} className="text-slate-400" />}
+              className="mb-2"
             />
 
-            <div className="mb-3 grid grid-cols-1 gap-2">
+            <div className="mb-2 grid grid-cols-1 gap-1.5">
               <Select
                 size="sm"
                 label="Ledger Type"
@@ -805,19 +753,19 @@ const LedgerMasterSection = () => {
                           : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
                       }`}
                     >
-                      <CardBody className="p-3">
-                        <div className="mb-3 flex items-start justify-between gap-2">
-                          <div className="flex min-w-0 gap-3">
+                      <CardBody className="p-2.5">
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 gap-2.5">
                             <LedgerIcon
                               category={ledger.ledgerCategory}
                               size="sm"
                             />
 
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-slate-950">
+                              <p className="truncate text-[12.5px] font-semibold text-slate-950">
                                 {ledger.name}
                               </p>
-                              <p className="mt-0.5 text-xs text-slate-500">
+                              <p className="mt-0.5 text-[11.5px] text-slate-500">
                                 {ledger.ledgerCode}
                               </p>
                             </div>
@@ -830,14 +778,19 @@ const LedgerMasterSection = () => {
                                   isIconOnly
                                   size="sm"
                                   variant="light"
+                                  className="min-w-7 w-7 h-7"
                                   onPress={(e) => e?.continuePropagation?.()}
                                 >
-                                  <EllipsisVertical size={16} />
+                                  <EllipsisVertical size={15} />
                                 </Button>
                               </DropdownTrigger>
 
                               <DropdownMenu
                                 aria-label="Ledger actions"
+                                itemClasses={{
+                                  base: "px-2.5 py-1.5",
+                                  title: "text-[12.5px]",
+                                }}
                                 onAction={(key) => {
                                   if (key === "edit") handleOpenEdit(ledger);
                                 }}
@@ -848,11 +801,11 @@ const LedgerMasterSection = () => {
                           )}
                         </div>
 
-                        <div className="mb-3 flex flex-wrap gap-2">
+                        <div className="mb-2 flex flex-wrap gap-1.5">
                           <Chip
                             size="sm"
                             variant="flat"
-                            className="bg-emerald-50 text-xs text-emerald-700"
+                            className="bg-emerald-50 text-[11.5px] text-emerald-700"
                           >
                             {ledger.ledgerType}
                           </Chip>
@@ -860,7 +813,7 @@ const LedgerMasterSection = () => {
                           <Chip
                             size="sm"
                             variant="flat"
-                            className="bg-slate-100 text-xs text-slate-600"
+                            className="bg-slate-100 text-[11.5px] text-slate-600"
                           >
                             {ledger.groupName}
                           </Chip>
@@ -868,11 +821,11 @@ const LedgerMasterSection = () => {
 
                         <Divider />
 
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs text-slate-500">
+                        <div className="mt-2 flex items-center justify-between gap-3">
+                          <span className="text-[11.5px] text-slate-500">
                             Current Balance
                           </span>
-                          <span className="text-sm font-semibold text-slate-950">
+                          <span className="text-[12.5px] font-semibold text-slate-950">
                             {formatCurrency(ledger.currentBalance)}{" "}
                             {ledger.currentBalanceType}
                           </span>
@@ -905,20 +858,20 @@ const LedgerMasterSection = () => {
 
         <Card className="h-full min-w-0 border border-slate-200" shadow="none">
           <CardBody className="min-h-0 overflow-hidden p-0">
-            <ScrollShadow className="h-full overflow-y-auto px-5 py-4">
-              <div className="mb-5 flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 md:flex-row md:items-start">
-                <div className="flex min-w-0 gap-4">
+            <ScrollShadow className="h-full overflow-y-auto px-4 py-3">
+              <div className="mb-4 flex flex-col justify-between gap-3 border-b border-slate-200 pb-3 md:flex-row md:items-start">
+                <div className="flex min-w-0 gap-3">
                   <LedgerIcon
                     category={selectedLedger.ledgerCategory}
                     size="lg"
                   />
 
                   <div className="min-w-0">
-                    <h2 className="truncate text-xl font-bold text-slate-950">
+                    <h2 className="truncate text-base font-bold text-slate-950">
                       {selectedLedger.name}
                     </h2>
 
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11.5px] text-slate-500">
                       <span>{selectedLedger.ledgerType}</span>
                       <span className="h-1 w-1 rounded-full bg-emerald-500" />
                       <span>{selectedLedger.groupName}</span>
@@ -933,7 +886,7 @@ const LedgerMasterSection = () => {
                     size="sm"
                     color={selectedLedger.active ? "success" : "danger"}
                     variant="flat"
-                    className="font-semibold"
+                    className="text-[11.5px] font-semibold"
                   >
                     {selectedLedger.active ? "ACTIVE" : "INACTIVE"}
                   </Chip>
@@ -942,7 +895,7 @@ const LedgerMasterSection = () => {
                     <Button
                       size="sm"
                       variant="bordered"
-                      startContent={<Pencil size={15} />}
+                      startContent={<Pencil size={14} />}
                       onPress={() => handleOpenEdit(selectedLedger)}
                     >
                       Edit
@@ -952,12 +905,12 @@ const LedgerMasterSection = () => {
               </div>
 
               <section>
-                <h3 className="mb-3 text-base font-semibold text-emerald-900">
+                <h3 className="mb-2 text-[13px] font-semibold text-emerald-900">
                   Basic Information
                 </h3>
 
                 {/* Basic Ledger Information */}
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
                   <InfoItem label="Ledger Name" value={selectedLedger.name} />
 
                   <InfoItem
@@ -993,12 +946,12 @@ const LedgerMasterSection = () => {
                 </div>
 
                 {/* Financial Summary */}
-                <div className="mt-5">
-                  <h4 className="mb-3 text-sm font-semibold text-slate-700">
+                <div className="mt-4">
+                  <h4 className="mb-2 text-[12.5px] font-semibold text-slate-700">
                     Financial Summary
                   </h4>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard
                       label="Current Balance"
                       value={`${formatCurrency(selectedLedger.currentBalance)} ${
@@ -1031,14 +984,14 @@ const LedgerMasterSection = () => {
                 </div>
               </section>
 
-              <Divider className="my-5" />
+              <Divider className="my-4" />
 
               <section>
-                <h3 className="mb-3 text-base font-semibold text-emerald-900">
+                <h3 className="mb-2 text-[13px] font-semibold text-emerald-900">
                   Tax / Contact / Address
                 </h3>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {selectedLedger.gstin && (
                     <ContactItem
                       icon={FileText}
@@ -1083,11 +1036,11 @@ const LedgerMasterSection = () => {
                 </div>
               </section>
 
-              <Divider className="my-5" />
+              <Divider className="my-4" />
 
               <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-emerald-900">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-[13px] font-semibold text-emerald-900">
                     Recent Ledger Entries
                   </h3>
 
@@ -1095,7 +1048,7 @@ const LedgerMasterSection = () => {
                     size="sm"
                     variant="light"
                     className="font-semibold text-emerald-700"
-                    endContent={<ChevronDown size={15} />}
+                    endContent={<ChevronDown size={14} />}
                     onPress={() =>
                       navigate(`${selectedLedger.id}/entries`, {
                         state: {
@@ -1112,8 +1065,8 @@ const LedgerMasterSection = () => {
                   removeWrapper
                   aria-label="Recent Ledger Entries"
                   classNames={{
-                    th: "bg-emerald-50 text-emerald-900 text-xs font-semibold",
-                    td: "text-xs text-slate-700",
+                    th: "h-8 py-0 bg-emerald-50 text-emerald-900 text-[11.5px] font-semibold",
+                    td: "py-1.5 text-[12.5px] text-slate-700",
                   }}
                 >
                   <TableHeader>
@@ -1138,7 +1091,7 @@ const LedgerMasterSection = () => {
                           <Button
                             size="sm"
                             variant="light"
-                            className="h-auto min-w-0 px-0 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                            className="h-auto min-w-0 px-0 text-[11.5px] font-semibold text-blue-600 hover:text-blue-700"
                             onPress={() => handleOpenVoucherDrawer(entry)}
                           >
                             {entry.voucherNo}
@@ -1149,7 +1102,7 @@ const LedgerMasterSection = () => {
                           <Chip
                             size="sm"
                             variant="flat"
-                            className="bg-slate-100 text-xs text-slate-700"
+                            className="bg-slate-100 text-[11.5px] text-slate-700"
                           >
                             {entry.voucherType || "-"}
                           </Chip>
@@ -1184,6 +1137,8 @@ const LedgerMasterSection = () => {
         selectedGroupName={selectedGroupName}
         shouldShowGstFields={shouldShowGstFields}
         ledgerGroupOptions={ledgerGroupOptions}
+        ledgerGroupTypeById={ledgerGroupTypeById}
+        ledgerGroupTypeByIdLoading={ledgerGroupTypeByIdLoading}
         saving={saving}
         onSubmit={handleSubmit(onSubmit, onInvalid)}
         onCancel={() => {
@@ -1213,6 +1168,8 @@ const LedgerModal = ({
   selectedGroupName,
   shouldShowGstFields,
   ledgerGroupOptions,
+  ledgerGroupTypeById,
+  ledgerGroupTypeByIdLoading,
   saving,
   onSubmit,
   onCancel,
@@ -1226,7 +1183,9 @@ const LedgerModal = ({
     .trim()
     .toUpperCase();
 
-  const isBankLedgerType = normalizedSelectedLedgerType === "BANK";
+  const isBankLedgerType = normalizedSelectedLedgerType.includes("BANK");
+
+  const ledgerTypeLabel = ledgerGroupTypeById?.groupTypeLabel || "";
 
   return (
     <Modal
@@ -1238,9 +1197,9 @@ const LedgerModal = ({
       isDismissable={false}
       classNames={{
         base: "max-h-[88vh]",
-        header: "border-b border-slate-200 px-5 py-4",
+        header: "border-b border-slate-200 px-4 py-3",
         body: "p-0 overflow-hidden",
-        footer: "border-t border-slate-200 px-5 py-3",
+        footer: "border-t border-slate-200 px-4 py-2.5",
       }}
     >
       <ModalContent>
@@ -1248,18 +1207,18 @@ const LedgerModal = ({
           <form onSubmit={onSubmit} className="flex max-h-[88vh] flex-col">
             <ModalHeader>
               <div>
-                <p className="text-lg font-semibold text-slate-950">
+                <p className="text-[15px] font-semibold text-slate-950">
                   {editData ? "Update Ledger" : "Create Ledger"}
                 </p>
-                <p className="text-xs font-normal text-slate-500">
+                <p className="text-[11.5px] font-normal text-slate-500">
                   Add Tally-style ledger master details
                 </p>
               </div>
             </ModalHeader>
 
             <ModalBody>
-              <ScrollShadow className="max-h-[calc(88vh-145px)] overflow-y-auto px-5 py-4">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <ScrollShadow className="max-h-[calc(88vh-130px)] overflow-y-auto px-4 py-3">
+                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                   <RHFInput
                     name="name"
                     label="Ledger Name"
@@ -1283,20 +1242,39 @@ const LedgerModal = ({
                     isRequired
                   />
 
-                  {/* <RHFSelect
+                  <RHFSelect
                     name="ledgerType"
                     label="Ledger Type"
                     control={control}
-                    options={ledgerTypeOptions}
-                    rules={{ required: "Ledger type is required" }}
+                    options={
+                      ledgerGroupTypeById?.groupType
+                        ? [
+                            {
+                              value: ledgerGroupTypeById.groupType,
+                              label: ledgerTypeLabel,
+                            },
+                          ]
+                        : []
+                    }
+                    placeholder={
+                      ledgerGroupTypeByIdLoading === "pending"
+                        ? "Fetching ledger type..."
+                        : "Select an under group first"
+                    }
+                    description="Derived automatically from the selected group."
+                    isDisabled
+                    rules={{
+                      required:
+                        "Select an under group to derive the ledger type",
+                    }}
                     isRequired
-                  /> */}
+                  />
 
                   {isBankLedgerType && (
                     <>
-                      <div className="md:col-span-2 mt-2">
-                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-                          <p className="text-xs font-semibold text-emerald-800">
+                      <div className="md:col-span-2 mt-1.5">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-1.5">
+                          <p className="text-[11.5px] font-semibold text-emerald-800">
                             Bank Details
                           </p>
                           <p className="mt-0.5 text-[11px] text-emerald-700">
@@ -1383,110 +1361,6 @@ const LedgerModal = ({
                     </>
                   )}
 
-                  {/* <RHFSelect
-                    name="ledgerCategory"
-                    label="Ledger Category"
-                    control={control}
-                    options={ledgerCategoryOptions}
-                    rules={{ required: "Ledger category is required" }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFSelect
-                    name="partyType"
-                    label="Party Type"
-                    control={control}
-                    options={partyTypeOptions}
-                    rules={{ required: "Party type is required" }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFInput
-                    name="openingBalance"
-                    label="Opening Balance"
-                    type="number"
-                    control={control}
-                    rules={{
-                      required: "Opening balance is required",
-                      min: {
-                        value: 0,
-                        message: "Opening balance cannot be negative",
-                      },
-                    }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFSelect
-                    name="openingBalanceType"
-                    label="Opening Balance Type"
-                    control={control}
-                    options={balanceTypeOptions}
-                    rules={{ required: "Opening balance type is required" }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFInput
-                    name="currentBalance"
-                    label="Current Balance"
-                    type="number"
-                    control={control}
-                    rules={{
-                      required: "Current balance is required",
-                      min: {
-                        value: 0,
-                        message: "Current balance cannot be negative",
-                      },
-                    }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFSelect
-                    name="currentBalanceType"
-                    label="Current Balance Type"
-                    control={control}
-                    options={balanceTypeOptions}
-                    rules={{ required: "Current balance type is required" }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFInput
-                    name="totalDebit"
-                    label="Total Debit"
-                    type="number"
-                    control={control}
-                    rules={{
-                      required: "Total debit is required",
-                      min: {
-                        value: 0,
-                        message: "Total debit cannot be negative",
-                      },
-                    }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFInput
-                    name="totalCredit"
-                    label="Total Credit"
-                    type="number"
-                    control={control}
-                    rules={{
-                      required: "Total credit is required",
-                      min: {
-                        value: 0,
-                        message: "Total credit cannot be negative",
-                      },
-                    }}
-                    isRequired
-                  /> */}
-
-                  {/* <RHFInput
-                    name="currency"
-                    label="Currency"
-                    control={control}
-                    rules={{ required: "Currency is required" }}
-                    isRequired
-                  /> */}
-
                   <RHFInput
                     name="effectiveFrom"
                     label="Effective From"
@@ -1520,9 +1394,9 @@ const LedgerModal = ({
 
                   {shouldShowGstFields && (
                     <>
-                      <div className="md:col-span-2 mt-2">
-                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-                          <p className="text-xs font-semibold text-emerald-800">
+                      <div className="md:col-span-2 mt-1.5">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-1.5">
+                          <p className="text-[11.5px] font-semibold text-emerald-800">
                             GST / Contact Details
                           </p>
                           <p className="mt-0.5 text-[11px] text-emerald-700">
@@ -1644,11 +1518,12 @@ const LedgerModal = ({
             </ModalBody>
 
             <ModalFooter>
-              <Button variant="flat" onPress={onCancel}>
+              <Button size="sm" variant="flat" onPress={onCancel}>
                 Cancel
               </Button>
 
               <Button
+                size="sm"
                 type="submit"
                 isLoading={saving}
                 isDisabled={saving}
@@ -1695,28 +1570,33 @@ const VoucherDetailsDrawer = ({
             <DrawerHeader>
               <div className="flex w-full items-start justify-between gap-3">
                 <div>
-                  <p className="text-lg font-semibold text-slate-950">
+                  <p className="text-[15px] font-semibold text-slate-950">
                     Voucher Details
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-[11.5px] text-slate-500">
                     Detailed information for voucher entry.
                   </p>
                 </div>
 
-                <Chip size="sm" color="primary" variant="flat">
+                <Chip
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  className="text-[11.5px]"
+                >
                   {details.voucherType}
                 </Chip>
               </div>
             </DrawerHeader>
 
             <DrawerBody>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <Card
                   shadow="none"
                   className="border border-emerald-100 bg-emerald-50"
                 >
-                  <CardBody className="p-4">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                  <CardBody className="p-3">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-4">
                       <VoucherInfoItem
                         label="Voucher No."
                         value={details.voucherNo}
@@ -1741,7 +1621,7 @@ const VoucherDetailsDrawer = ({
                 </Card>
 
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                  <h3 className="mb-2 text-[12.5px] font-semibold text-emerald-900">
                     Ledger / Party Details
                   </h3>
 
@@ -1775,7 +1655,7 @@ const VoucherDetailsDrawer = ({
                 <Divider />
 
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                  <h3 className="mb-2 text-[12.5px] font-semibold text-emerald-900">
                     Tax / Contact / Address
                   </h3>
 
@@ -1816,7 +1696,7 @@ const VoucherDetailsDrawer = ({
                     <Divider />
 
                     <section>
-                      <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                      <h3 className="mb-2 text-[12.5px] font-semibold text-emerald-900">
                         {details.showBankDetails
                           ? "Bank / Transaction Details"
                           : "Transaction Details"}
@@ -1899,7 +1779,7 @@ const VoucherDetailsDrawer = ({
                 <Divider />
 
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-emerald-900">
+                  <h3 className="mb-2 text-[12.5px] font-semibold text-emerald-900">
                     Entry Details
                   </h3>
 
@@ -1943,6 +1823,7 @@ const VoucherDetailsDrawer = ({
 
             <DrawerFooter>
               <Button
+                size="sm"
                 variant="flat"
                 onPress={() => {
                   onClose?.();
@@ -1996,6 +1877,9 @@ const RHFSelect = ({
   options = [],
   rules,
   isRequired = false,
+  isDisabled = false,
+  description,
+  placeholder,
 }) => {
   return (
     <Controller
@@ -2006,7 +1890,10 @@ const RHFSelect = ({
         <Select
           size="sm"
           label={label}
+          placeholder={placeholder}
+          description={description}
           isRequired={isRequired}
+          isDisabled={isDisabled}
           selectionMode="single"
           selectedKeys={
             field.value ? new Set([String(field.value)]) : new Set([])
@@ -2051,12 +1938,12 @@ const LedgerIcon = ({ category, size = "sm" }) => {
 
 const InfoItem = ({ label, value }) => {
   return (
-    <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
-      <p className="mt-1 truncate text-sm font-semibold text-slate-950">
+      <p className="mt-0.5 truncate text-[12.5px] font-semibold text-slate-950">
         {value || "-"}
       </p>
     </div>
@@ -2065,13 +1952,13 @@ const InfoItem = ({ label, value }) => {
 
 const VoucherInfoItem = ({ label, value, multiline = false }) => {
   return (
-    <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </p>
 
       <p
-        className={`mt-1 text-sm font-semibold text-slate-950 ${
+        className={`mt-0.5 text-[12.5px] font-semibold text-slate-950 ${
           multiline ? "whitespace-normal break-words" : "truncate"
         }`}
       >
@@ -2087,24 +1974,24 @@ const SummaryCard = ({ label, value, icon: Icon, textOnly = false }) => {
       shadow="none"
       className="border border-emerald-100 bg-gradient-to-br from-white to-emerald-50"
     >
-      <CardBody className="p-3">
-        <div className="flex items-center justify-between gap-3">
+      <CardBody className="p-2.5">
+        <div className="flex items-center justify-between gap-2.5">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-slate-500">{label}</p>
+            <p className="text-[11.5px] font-medium text-slate-500">{label}</p>
 
             <p
-              className={`mt-1 font-bold leading-tight text-slate-950 ${
+              className={`mt-0.5 font-bold leading-tight text-slate-950 ${
                 textOnly
-                  ? "text-sm whitespace-normal break-words"
-                  : "text-base whitespace-nowrap"
+                  ? "text-[12.5px] whitespace-normal break-words"
+                  : "text-[13px] whitespace-nowrap"
               }`}
             >
               {value}
             </p>
           </div>
 
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <Icon size={17} />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <Icon size={15} />
           </div>
         </div>
       </CardBody>
@@ -2114,14 +2001,14 @@ const SummaryCard = ({ label, value, icon: Icon, textOnly = false }) => {
 
 const ContactItem = ({ icon: Icon, label, value }) => {
   return (
-    <div className="flex min-w-0 gap-3 border-b border-slate-200 pb-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700">
-        <Icon size={17} />
+    <div className="flex min-w-0 gap-2.5 border-b border-slate-200 pb-2.5">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700">
+        <Icon size={15} />
       </div>
 
       <div className="min-w-0">
-        <p className="text-xs text-slate-500">{label}</p>
-        <p className="mt-1 break-words text-sm font-medium text-slate-950">
+        <p className="text-[11.5px] text-slate-500">{label}</p>
+        <p className="mt-0.5 break-words text-[12.5px] font-medium text-slate-950">
           {value}
         </p>
       </div>

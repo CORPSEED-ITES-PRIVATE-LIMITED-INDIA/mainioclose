@@ -1394,7 +1394,7 @@ const RequestForQuotation = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <h1 className="mb-1 font-sans text-2xl font-medium">
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           Request For Quotation
         </h1>
         <Table

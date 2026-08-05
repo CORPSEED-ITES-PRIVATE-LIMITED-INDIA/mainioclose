@@ -52,7 +52,7 @@ const AutomationStatus = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const initialValues = {
     userIds: [],
@@ -72,9 +72,9 @@ const AutomationStatus = () => {
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
-const isSmall = useMediaQuery({ maxWidth: 767 });
-const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
-const isLarge = useMediaQuery({ minWidth: 1536 });
+  const isSmall = useMediaQuery({ maxWidth: 767 });
+  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
+  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(getAutomationLeads(dateFilter));
@@ -88,7 +88,7 @@ const isLarge = useMediaQuery({ minWidth: 1536 });
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -98,8 +98,8 @@ const isLarge = useMediaQuery({ minWidth: 1536 });
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase().includes(filterValue.toLowerCase())
-        )
+          String(val)?.toLowerCase().includes(filterValue.toLowerCase()),
+        ),
       );
     }
 
@@ -287,7 +287,7 @@ const isLarge = useMediaQuery({ minWidth: 1536 });
                         visibleMonths={2}
                         label="Select date range"
                         popoverProps={{
-                          size: isMedium ? "sm" :isLarge? "md":"",
+                          size: isMedium ? "sm" : isLarge ? "md" : "",
                           placement: isMedium
                             ? "left"
                             : isLarge
@@ -297,12 +297,12 @@ const isLarge = useMediaQuery({ minWidth: 1536 });
                         value={{
                           start: dateFilter?.toDate
                             ? parseZonedDateTime(
-                                `${dateFilter?.toDate}[Asia/kolkata]`
+                                `${dateFilter?.toDate}[Asia/kolkata]`,
                               )
                             : null,
                           end: dateFilter?.fromDate
                             ? parseZonedDateTime(
-                                `${dateFilter?.fromDate}[Asia/kolkata]`
+                                `${dateFilter?.fromDate}[Asia/kolkata]`,
                               )
                             : null,
                         }}
@@ -443,7 +443,7 @@ const isLarge = useMediaQuery({ minWidth: 1536 });
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Automation report list
       </h1>
       <Table

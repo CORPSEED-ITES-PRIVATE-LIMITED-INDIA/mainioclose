@@ -322,7 +322,7 @@ const LedgerEntriesPage = () => {
                 <LedgerIcon category={ledger.ledgerCategory} />
 
                 <div className="min-w-0">
-                  <h1 className="truncate text-xl font-bold text-slate-950">
+                  <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
                     Ledger Entries
                   </h1>
 

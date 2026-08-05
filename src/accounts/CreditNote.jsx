@@ -828,7 +828,7 @@ const CreditNote = () => {
       switch (columnKey) {
         case "date":
           return (
-            <p className="text-sm">
+            <p className="text-[12.5px]">
               {rowData?.createdAt
                 ? dayjs(rowData.createdAt).format("DD-MM-YYYY")
                 : "-"}
@@ -838,18 +838,20 @@ const CreditNote = () => {
         case "creditNoteNumber":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium">
+              <p className="text-[12.5px] font-medium">
                 {rowData?.creditNoteNumber || "-"}
               </p>
-              <p className="text-tiny text-default-400">ID: {rowData?.id}</p>
+              <p className="text-[11.5px] text-default-500">
+                ID: {rowData?.id}
+              </p>
             </div>
           );
 
         case "unbilledNumber":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm">{rowData?.unbilledNumber || "-"}</p>
-              <p className="text-tiny text-default-400">
+              <p className="text-[12.5px]">{rowData?.unbilledNumber || "-"}</p>
+              <p className="text-[11.5px] text-default-500">
                 Unbilled ID: {rowData?.unbilledId || "-"}
               </p>
             </div>
@@ -858,8 +860,8 @@ const CreditNote = () => {
         case "estimateNumber":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm">{rowData?.estimateNumber || "-"}</p>
-              <p className="text-tiny text-default-400">
+              <p className="text-[12.5px]">{rowData?.estimateNumber || "-"}</p>
+              <p className="text-[11.5px] text-default-500">
                 Estimate ID: {rowData?.estimateId || "-"}
               </p>
             </div>
@@ -868,10 +870,10 @@ const CreditNote = () => {
         case "companyName":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium capitalize">
+              <p className="text-[12.5px] font-medium capitalize">
                 {rowData?.companyName || "-"}
               </p>
-              <p className="text-tiny text-default-400">
+              <p className="text-[11.5px] text-default-500">
                 Company ID: {rowData?.companyId || "-"}
               </p>
             </div>
@@ -880,10 +882,10 @@ const CreditNote = () => {
         case "contactName":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm capitalize">
+              <p className="text-[12.5px] capitalize">
                 {rowData?.contactName || "-"}
               </p>
-              <p className="text-tiny text-default-400">
+              <p className="text-[11.5px] text-default-500">
                 Contact ID: {rowData?.contactId || "-"}
               </p>
             </div>
@@ -893,7 +895,7 @@ const CreditNote = () => {
           const fileUrl = rowData?.gstPortalAttachment;
 
           if (!fileUrl) {
-            return <p className="text-sm text-default-400">-</p>;
+            return <p className="text-[12.5px] text-default-400">-</p>;
           }
 
           const file = {
@@ -921,16 +923,18 @@ const CreditNote = () => {
 
         case "totalAmount":
           return (
-            <p className="text-sm">{inrCurrency(rowData?.totalAmount || 0)}</p>
+            <p className="text-[12.5px]">
+              {inrCurrency(rowData?.totalAmount || 0)}
+            </p>
           );
 
         case "receivedAmount":
           return (
             <div className="flex flex-col gap-1">
-              <p className="text-sm">
+              <p className="text-[12.5px]">
                 {inrCurrency(rowData?.receivedAmount || 0)}
               </p>
-              <p className="text-tiny text-default-400">
+              <p className="text-[11.5px] text-default-500">
                 Current: {inrCurrency(rowData?.currentReceivedAmount || 0)}
               </p>
             </div>
@@ -938,21 +942,21 @@ const CreditNote = () => {
 
         case "outstandingAmount":
           return (
-            <p className="text-sm font-medium">
+            <p className="text-[12.5px] font-medium">
               {inrCurrency(rowData?.outstandingAmount || 0)}
             </p>
           );
 
         case "refundAmount":
           return (
-            <p className="text-sm font-medium">
+            <p className="text-[12.5px] font-medium">
               {inrCurrency(rowData?.refundAmount || 0)}
             </p>
           );
 
         case "creditAmount":
           return (
-            <p className="text-sm font-medium">
+            <p className="text-[12.5px] font-medium">
               {inrCurrency(rowData?.creditAmount || 0)}
             </p>
           );
@@ -960,7 +964,7 @@ const CreditNote = () => {
         case "status":
           return (
             <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+              className={`rounded-full px-3 py-1 text-[11.5px] font-medium ${getStatusClass(
                 rowData?.status,
               )}`}
             >
@@ -970,7 +974,7 @@ const CreditNote = () => {
 
         case "reason":
           return (
-            <p className="max-w-[220px] truncate text-sm">
+            <p className="max-w-[220px] truncate text-[12.5px]">
               {rowData?.rejectionReason || rowData?.reason || "-"}
             </p>
           );
@@ -986,7 +990,7 @@ const CreditNote = () => {
                     variant="light"
                     isDisabled={actionLoadingId === rowData?.id}
                   >
-                    <EllipsisVertical className="text-default-300" />
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
                   </Button>
                 </DropdownTrigger>
 
@@ -1107,11 +1111,12 @@ const CreditNote = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex w-full items-center pb-0.5">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
+          <div className="flex items-center gap-1.5 w-full sm:max-w-[360px]">
             <Select
-              className="max-w-[15%]"
+              size="sm"
+              className="max-w-[160px] shrink-0"
               selectionMode="single"
               selectedKeys={[searchFilters?.type]}
               onSelectionChange={(e) => {
@@ -1129,22 +1134,24 @@ const CreditNote = () => {
 
             <Input
               isClearable
-              className="w-full sm:max-w-[35%]"
+              size="sm"
+              className="w-full"
+              classNames={{ inputWrapper: "h-8 min-h-8" }}
               placeholder="Search ..."
-              startContent={<Search />}
+              startContent={<Search className="w-4 h-4 text-default-400" />}
               value={filterValue}
               onClear={onClear}
               onValueChange={onSearchChange}
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
                   variant="flat"
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   {status}
                 </Button>
@@ -1175,7 +1182,10 @@ const CreditNote = () => {
 
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -1199,14 +1209,14 @@ const CreditNote = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} Credit Notes
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-hidden"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -1231,8 +1241,8 @@ const CreditNote = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex items-center justify-between">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${filteredItems.length} selected`}
@@ -1241,7 +1251,6 @@ const CreditNote = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -1279,17 +1288,25 @@ const CreditNote = () => {
   ]);
 
   return (
-    <>
-      <h1 className="mb-1 font-sans text-2xl font-medium">Credit Note</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Credit Note
+      </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Credit note table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -1680,7 +1697,7 @@ const CreditNote = () => {
           })
         }
       />
-    </>
+    </div>
   );
 };
 

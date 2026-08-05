@@ -320,8 +320,10 @@ const PurchaseOrder = () => {
       case "poNumber":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">{rowData?.poNumber || "-"}</span>
-            <span className="text-xs text-default-400">
+            <span className="font-medium text-[12.5px]">
+              {rowData?.poNumber || "-"}
+            </span>
+            <span className="text-[11.5px] text-default-400">
               ID: {rowData?.id || "-"}
             </span>
           </div>
@@ -330,10 +332,10 @@ const PurchaseOrder = () => {
       case "poReferenceNumber":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {rowData?.poReferenceNumber || "-"}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               Assignment ID: {rowData?.procurementAssignmentId || "-"}
             </span>
           </div>
@@ -342,10 +344,10 @@ const PurchaseOrder = () => {
       case "projectName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal capitalize">
+            <span className="font-normal text-[12.5px] capitalize">
               {rowData?.projectName || "-"}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               Project ID: {rowData?.projectId || "-"}
             </span>
           </div>
@@ -354,15 +356,15 @@ const PurchaseOrder = () => {
       case "vendorName":
         return (
           <div className="flex flex-col">
-            <span className="font-normal capitalize">
+            <span className="font-normal text-[12.5px] capitalize">
               {rowData?.vendorName || "-"}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               Vendor ID: {rowData?.vendorId || "-"}
             </span>
 
             {rowData?.vendorContactName && (
-              <span className="text-xs text-default-400">
+              <span className="text-[11.5px] text-default-400">
                 Contact: {rowData.vendorContactName}
               </span>
             )}
@@ -372,10 +374,10 @@ const PurchaseOrder = () => {
       case "finalAmount":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {formatAmount(rowData?.finalAmount)}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               Estimated: {formatAmount(rowData?.estimatedAmount)}
             </span>
           </div>
@@ -384,10 +386,10 @@ const PurchaseOrder = () => {
       case "grandTotal":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold text-success">
+            <span className="font-semibold text-[12.5px] text-success">
               {formatAmount(rowData?.grandTotal)}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               Tax: {formatAmount(rowData?.totalTaxAmount)}
             </span>
           </div>
@@ -396,10 +398,10 @@ const PurchaseOrder = () => {
       case "payment":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {rowData?.paymentTypeName || "-"}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               {rowData?.paymentTerms || "-"}
             </span>
           </div>
@@ -408,14 +410,16 @@ const PurchaseOrder = () => {
       case "tax":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">GST: {rowData?.gstRate || 0}%</span>
+            <span className="font-normal text-[12.5px]">
+              GST: {rowData?.gstRate || 0}%
+            </span>
 
             {Number(rowData?.igstAmount || 0) > 0 ? (
-              <span className="text-xs text-default-400">
+              <span className="text-[11.5px] text-default-400">
                 IGST: {formatAmount(rowData?.igstAmount)}
               </span>
             ) : (
-              <span className="text-xs text-default-400">
+              <span className="text-[11.5px] text-default-400">
                 CGST: {formatAmount(rowData?.cgstAmount)} | SGST:{" "}
                 {formatAmount(rowData?.sgstAmount)}
               </span>
@@ -441,7 +445,7 @@ const PurchaseOrder = () => {
             <span className="font-normal">
               {formatDateTime(rowData?.createdDate)}
             </span>
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-400">
               PO Created: {formatDateTime(rowData?.poCreatedDate)}
             </span>
           </div>
@@ -480,7 +484,7 @@ const PurchaseOrder = () => {
           <Dropdown>
             <DropdownTrigger>
               <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
+                <EllipsisVertical className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
 
@@ -549,23 +553,25 @@ const PurchaseOrder = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                   className="capitalize"
                 >
@@ -601,7 +607,10 @@ const PurchaseOrder = () => {
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -625,14 +634,14 @@ const PurchaseOrder = () => {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} purchase orders
           </span>
 
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -657,8 +666,8 @@ const PurchaseOrder = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -667,7 +676,6 @@ const PurchaseOrder = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -707,19 +715,25 @@ const PurchaseOrder = () => {
   ]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Purchase Order Payments
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Procurement purchase order table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -900,7 +914,7 @@ const PurchaseOrder = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

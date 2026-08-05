@@ -132,12 +132,12 @@ const VendorRequestDetail = () => {
   const vendorsStatus = useSelector((state) => state.vendors.vendorsStatus);
   const data = useSelector((state) => state.vendors.singleVendorHistoryList);
   const count = useSelector(
-    (state) => state.vendors.singleVendorHistoryList?.length
+    (state) => state.vendors.singleVendorHistoryList?.length,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [statusIsFinished, setStatusIsFinished] = useState(false);
   const [statusIsCanceled, setStatusIsCanceled] = useState(false);
@@ -154,7 +154,7 @@ const VendorRequestDetail = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -163,8 +163,8 @@ const VendorRequestDetail = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -191,7 +191,7 @@ const VendorRequestDetail = () => {
 
   useEffect(() => {
     dispatch(
-      getvendorHistoryByLeadId({ userId, leadId, vendorRequestId: requestId })
+      getvendorHistoryByLeadId({ userId, leadId, vendorRequestId: requestId }),
     );
     dispatch(getVendorDetailByVendorId({ userId, vendorId: requestId }));
   }, [leadId, leadId, requestId]);
@@ -430,7 +430,7 @@ const VendorRequestDetail = () => {
             vendorRequestId: requestId,
             userId: userId,
             cancelReason: values?.cancelReason,
-          })
+          }),
         )
           .then((resp) => {
             if (resp.meta.requestStatus === "fulfilled") {
@@ -445,7 +445,7 @@ const VendorRequestDetail = () => {
                   userId: userId,
                   leadId: leadId,
                   vendorRequestId: requestId,
-                })
+                }),
               );
               localStorage.removeItem("vendorDetail");
             } else {
@@ -453,7 +453,7 @@ const VendorRequestDetail = () => {
             }
           })
           .catch(() =>
-            addToast({ title: "Something went wrong !.", color: "danger" })
+            addToast({ title: "Something went wrong !.", color: "danger" }),
           );
       } else {
         dispatch(updateVendorStatus(obj))
@@ -479,7 +479,7 @@ const VendorRequestDetail = () => {
                       budgetPrice: detail?.budgetPrice,
                       ...values,
                     },
-                  })
+                  }),
                 )
                   .then((resp) => {
                     if (resp.meta.requestStatus === "fulfilled") {
@@ -498,7 +498,7 @@ const VendorRequestDetail = () => {
                     addToast({
                       title: "Something went wrong !.",
                       color: "danger",
-                    })
+                    }),
                   );
               }
               dispatch(
@@ -506,7 +506,7 @@ const VendorRequestDetail = () => {
                   userId: userId,
                   leadId: leadId,
                   vendorRequestId: requestId,
-                })
+                }),
               );
             } else {
               addToast({ title: "Something went wrong !.", color: "danger" });
@@ -526,13 +526,15 @@ const VendorRequestDetail = () => {
       requestId,
       leadId,
       defaultValues,
-    ]
+    ],
   );
 
   return (
     <div>
       <div className="w-full flex justify-between px-2">
-        <h1 className="text-xl font-medium">Vendor's request status</h1>
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+          Vendor's request status
+        </h1>
       </div>
       <div className="grid grid-cols-1 gap-8">
         <Card>

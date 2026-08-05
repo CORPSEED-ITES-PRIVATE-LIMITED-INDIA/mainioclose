@@ -1,41 +1,62 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 import { KeepAlive } from "react-activation";
-import Leads from "../sales/leads/Leads";
-import LeadDetail from "../sales/leads/LeadDetail";
-import LeadHistory from "../sales/leads/LeadHistory";
-import Company from "../sales/company/Company";
-import CompanyGstList from "../sales/company/CompanyGstList";
-import CompanyUnits from "../sales/company/CompanyUnits";
-import CompanyUnitDetails from "../sales/company/CompanyUnitDetails";
-import Estimate from "../sales/estimate/Estimate";
-import AllProposal from "../sales/proposal/AllProposal";
-import DiscountedEstimate from "../sales/leads/DiscountedEstimate";
-import AutoHistory from "../sales/leads/AutoHistory";
-import ServingCompanies from "../sales/leads/ServingCompanies";
-import LeadTask from "../sales/leads/LeadTask";
-import LeadInfo from "../sales/leads/LeadInfo";
-import CreateCompanyForm from "../sales/company/CreateCompanyForm";
-import Vendors from "../sales/vendors/Vendors";
-import Proposal from "../sales/proposal/Proposal";
-import LeadEstimate from "../sales/leads/LeadEstimate";
-import AutomationStatus from "../sales/leads/AutomationStatus";
-import SalesReport from "../sales/leads/SalesReport";
-import AllTasks from "../sales/leads/AllTasks";
-import CreateLeadCompanyForm from "../sales/company/CreateLeadCompanyForm";
-import CompanyForm from "../accounts/CompanyForm";
+// eslint-disable-next-line no-unused-vars -- pre-existing unused import, left as-is
 import Projects from "../sales/leads/Projects";
-import UnitDetails from "../sales/company/UnitDetails";
-import CompanyProjects from "../sales/company/CompanyProjects";
-import CompanyLeads from "../sales/company/CompanyLeads";
-import ChildLead from "../sales/leads/ChildLead";
-import LeadEstimates from "../sales/leads/leadEstimate/LeadEstimates";
-import AllInvoice from "../accounts/organization/AllInvoice";
-import ServicePaymentTerm from "../sales/leads/ServicePaymentTerm";
-import SalesUnbill from "../sales/unbill/SalesUnbill";
-import InvoicesByUnbilled from "../accounts/organization/InvoicesByUnbilled";
-import SalesProject from "../sales/projects/SalesProject";
-import SalesPOPayment from "../sales/payment/SalesPOPayment";
-import SalesAdvanceInvoice from "../sales/invoice/SalesAdvanceInvoice";
+// Leads is the single most-visited page in the app (kept alive via
+// KeepAlive above) - kept eager, like Layoutpage/ProtectedRoute, so it
+// never pays a first-visit chunk-fetch/cold-transform delay.
+import Leads from "../sales/leads/Leads";
+const LeadDetail = lazy(() => import("../sales/leads/LeadDetail"));
+const LeadHistory = lazy(() => import("../sales/leads/LeadHistory"));
+const Company = lazy(() => import("../sales/company/Company"));
+const CompanyGstList = lazy(() => import("../sales/company/CompanyGstList"));
+const CompanyUnits = lazy(() => import("../sales/company/CompanyUnits"));
+const CompanyUnitDetails = lazy(
+  () => import("../sales/company/CompanyUnitDetails"),
+);
+const Estimate = lazy(() => import("../sales/estimate/Estimate"));
+const AllProposal = lazy(() => import("../sales/proposal/AllProposal"));
+const DiscountedEstimate = lazy(
+  () => import("../sales/leads/DiscountedEstimate"),
+);
+const AutoHistory = lazy(() => import("../sales/leads/AutoHistory"));
+const ServingCompanies = lazy(() => import("../sales/leads/ServingCompanies"));
+const LeadTask = lazy(() => import("../sales/leads/LeadTask"));
+const LeadInfo = lazy(() => import("../sales/leads/LeadInfo"));
+const CreateCompanyForm = lazy(
+  () => import("../sales/company/CreateCompanyForm"),
+);
+const Vendors = lazy(() => import("../sales/vendors/Vendors"));
+const Proposal = lazy(() => import("../sales/proposal/Proposal"));
+const LeadEstimate = lazy(() => import("../sales/leads/LeadEstimate"));
+const AutomationStatus = lazy(() => import("../sales/leads/AutomationStatus"));
+const SalesReport = lazy(() => import("../sales/leads/SalesReport"));
+const AllTasks = lazy(() => import("../sales/leads/AllTasks"));
+const CreateLeadCompanyForm = lazy(
+  () => import("../sales/company/CreateLeadCompanyForm"),
+);
+const CompanyForm = lazy(() => import("../accounts/CompanyForm"));
+const UnitDetails = lazy(() => import("../sales/company/UnitDetails"));
+const CompanyProjects = lazy(() => import("../sales/company/CompanyProjects"));
+const CompanyLeads = lazy(() => import("../sales/company/CompanyLeads"));
+const ChildLead = lazy(() => import("../sales/leads/ChildLead"));
+const LeadEstimates = lazy(
+  () => import("../sales/leads/leadEstimate/LeadEstimates"),
+);
+const AllInvoice = lazy(() => import("../accounts/organization/AllInvoice"));
+const ServicePaymentTerm = lazy(
+  () => import("../sales/leads/ServicePaymentTerm"),
+);
+const SalesUnbill = lazy(() => import("../sales/unbill/SalesUnbill"));
+const InvoicesByUnbilled = lazy(
+  () => import("../accounts/organization/InvoicesByUnbilled"),
+);
+const SalesProject = lazy(() => import("../sales/projects/SalesProject"));
+const SalesPOPayment = lazy(() => import("../sales/payment/SalesPOPayment"));
+const SalesAdvanceInvoice = lazy(
+  () => import("../sales/invoice/SalesAdvanceInvoice"),
+);
 
 const SalesModuleRouting = () => {
   return (

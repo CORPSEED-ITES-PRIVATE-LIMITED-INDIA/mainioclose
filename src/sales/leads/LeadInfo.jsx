@@ -696,8 +696,8 @@ const LeadInfo = () => {
           <div className="grid grid-cols-[minmax(0,60%)_minmax(0,40%)] gap-3 p-2 2xl:max-h-[78vh] md:max-h-[72vh] overflow-auto">
             <div>
               <div className="w-full">
-                <Card className="my-2">
-                  <CardBody>
+                <Card className="my-1.5">
+                  <CardBody className="px-3 py-2.5">
                     {toggleSlug ? (
                       <div className="flex justify-between items-center">
                         <h6 className="text-sm font-medium">
@@ -755,8 +755,8 @@ const LeadInfo = () => {
                 <div className="w-full">
                   <CompanyAndUnitsInLead />
 
-                  {/* <Card className="my-2">
-                    <CardHeader>
+                  {/* <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Factory className={iconClass} />{" "}
@@ -773,7 +773,7 @@ const LeadInfo = () => {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <p className="text-xs text-gray-500">Industry</p>
@@ -806,8 +806,8 @@ const LeadInfo = () => {
                       </div>
                     </CardBody>
                   </Card>
-                  <Card className=" my-2">
-                    <CardHeader>
+                  <Card className=" my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <MapPin className={iconClass} />{" "}
@@ -824,7 +824,7 @@ const LeadInfo = () => {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <p className="text-xs text-gray-500">Address</p>
@@ -851,8 +851,8 @@ const LeadInfo = () => {
                   </Card> */}
                 </div>
                 <div className="w-full">
-                  <Card className="my-2">
-                    <CardHeader>
+                  <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Phone className={iconClass} />{" "}
@@ -990,20 +990,20 @@ const LeadInfo = () => {
                   </Card>
                   {/* <BasicCompany /> */}
 
-                  {/* <Card className="my-2">
-                    <CardHeader>
+                  {/* <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <Link className={iconClass} />{" "}
                         <p className="text-sm font-medium">Link</p>
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       <p className="text-sm font-medium">{leadData?.urls}</p>
                     </CardBody>
                   </Card> */}
 
-                  {/* <Card className="my-2">
-                    <CardHeader>
+                  {/* <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <User2 className={iconClass} />{" "}
@@ -1033,7 +1033,7 @@ const LeadInfo = () => {
                         )}
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       {toggleAssignee ? (
                         <div className="flex flex-col">
                           <span className="font-semibold text-sm">
@@ -1055,8 +1055,8 @@ const LeadInfo = () => {
                       )}
                     </CardBody>
                   </Card>
-                  <Card className="my-2">
-                    <CardHeader>
+                  <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <ChartBarDecreasing className={iconClass} />{" "}
@@ -1091,7 +1091,7 @@ const LeadInfo = () => {
                         )}
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       {toggleStatus ? (
                         <div className="flex flex-col">
                           <span className="text-sm">
@@ -1110,8 +1110,8 @@ const LeadInfo = () => {
                       )}
                     </CardBody>
                   </Card>
-                  <Card className="my-2">
-                    <CardHeader>
+                  <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
                           <Podcast className={iconClass} />{" "}
@@ -1148,7 +1148,7 @@ const LeadInfo = () => {
                         )}
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       {toggleSource ? (
                         <div className="flex flex-col">
                           <span className="text-sm">{leadData?.source}</span>
@@ -1172,19 +1172,19 @@ const LeadInfo = () => {
                     </CardBody>
                   </Card>
 
-                  <Card className="my-2">
-                    <CardHeader>
+                  <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <FileText className={iconClass} />{" "}
                         <p className="text-sm font-medium">Lead description</p>
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       <p className="text-sm">{leadData?.description}</p>
                     </CardBody>
                   </Card> */}
 
-                  <Card className="my-2 overflow-hidden border border-default-200 shadow-sm">
+                  <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
                     <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                       <div className="flex items-center gap-2">
                         <FileText className={iconClass} />
@@ -1407,21 +1407,21 @@ const LeadInfo = () => {
                     </CardBody>
                   </Card>
 
-                  {/* <Card className="my-2">
-                    <CardHeader>
+                  {/* <Card className="my-1.5">
+                    <CardHeader className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <Link className={iconClass} />{" "}
                         <p className="text-sm font-medium">Link</p>
                       </div>
                     </CardHeader>
-                    <CardBody>
+                    <CardBody className="px-3 py-2.5">
                       <p className="text-sm font-medium">{leadData?.urls}</p>
                     </CardBody>
                   </Card> */}
 
                   {/* {(department === "Quality Team" || adminRole) && (
-                    <Card className="my-2">
-                      <CardHeader>
+                    <Card className="my-1.5">
+                      <CardHeader className="px-3 py-2">
                         <div className="flex justify-between items-center w-full">
                           <div className="flex items-center gap-2">
                             <User2 className={iconClass} />{" "}
@@ -1445,14 +1445,14 @@ const LeadInfo = () => {
               </div>
             </div>
             <div>
-              <Card className="my-2">
-                <CardHeader>
+              <Card className="my-1.5">
+                <CardHeader className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <MessageCircle className={iconClass} />
                     <p className="text-sm font-medium">Comments / Upload </p>
                   </div>
                 </CardHeader>
-                <CardBody>
+                <CardBody className="px-3 py-2.5">
                   <NewSelect
                     placeholder="Select comment..."
                     data={[{ name: "Other" }, ...allComments]}
@@ -1480,7 +1480,7 @@ const LeadInfo = () => {
                   />
                   {selectedComment === "Other" && (
                     <Textarea
-                      className="my-2"
+                      className="my-1.5"
                       value={customComment}
                       placeholder="Please write your remarks"
                       onChange={(e) => {
@@ -1519,8 +1519,8 @@ const LeadInfo = () => {
                   </div>
                 </CardFooter>
               </Card>
-              <Card className="my-2">
-                <CardHeader>
+              <Card className="my-1.5">
+                <CardHeader className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <MessageSquareMore className={iconClass} />
                     <p className="text-sm font-medium">Remarks </p>
@@ -2026,7 +2026,7 @@ const LeadInfo = () => {
                               render={({ field }) => (
                                 <Textarea
                                   isRequired
-                                  className="my-2"
+                                  className="my-1.5"
                                   value={field.value}
                                   placeholder="Please write your remarks"
                                   onChange={(e) =>

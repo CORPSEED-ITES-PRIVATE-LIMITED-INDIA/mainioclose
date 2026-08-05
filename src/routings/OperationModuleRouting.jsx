@@ -1,18 +1,33 @@
+import { lazy } from "react";
 import { Navigate, Route } from "react-router-dom";
-import OperationsSettings from "../operation/Settings/OperationsSettings";
-import UserMapWithProduct from "../operation/Settings/UserMapWithProduct";
-import ProjectDetails from "../operation/projects/ProjectDetails";
-import Milestone from "../operation/Settings/Milestone";
-import Projects from "../operation/projects/Projects";
-import Documents from "../operation/Settings/Documents";
-import Departments from "../operation/Settings/Departments";
-import ProjectActivities from "../operation/projects/ProjectActivities";
-import LegalRequests from "../operation/legal/LegalRequests";
-import ProjectPurchaseOrder from "../operation/projects/ProjectPurchaseOrder";
-import ProjectPR from "../operation/projects/ProjectPR";
-import ManagerApprovals from "../operation/approval/ManagerApprovals";
-import Expenses from "../operation/expenses/Expenses";
-import ForceCloserAndReopen from "../operation/projects/ForceCloserAndReopen";
+const OperationsSettings = lazy(
+  () => import("../operation/Settings/OperationsSettings"),
+);
+const UserMapWithProduct = lazy(
+  () => import("../operation/Settings/UserMapWithProduct"),
+);
+const ProjectDetails = lazy(
+  () => import("../operation/projects/ProjectDetails"),
+);
+const Milestone = lazy(() => import("../operation/Settings/Milestone"));
+const Projects = lazy(() => import("../operation/projects/Projects"));
+const Documents = lazy(() => import("../operation/Settings/Documents"));
+const Departments = lazy(() => import("../operation/Settings/Departments"));
+const ProjectActivities = lazy(
+  () => import("../operation/projects/ProjectActivities"),
+);
+const LegalRequests = lazy(() => import("../operation/legal/LegalRequests"));
+const ProjectPurchaseOrder = lazy(
+  () => import("../operation/projects/ProjectPurchaseOrder"),
+);
+const ProjectPR = lazy(() => import("../operation/projects/ProjectPR"));
+const ManagerApprovals = lazy(
+  () => import("../operation/approval/ManagerApprovals"),
+);
+const Expenses = lazy(() => import("../operation/expenses/Expenses"));
+const ForceCloserAndReopen = lazy(
+  () => import("../operation/projects/ForceCloserAndReopen"),
+);
 
 const OperationModuleRouting = () => {
   return (

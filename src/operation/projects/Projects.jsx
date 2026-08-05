@@ -364,46 +364,51 @@ const Projects = () => {
         case "projectNo":
           return (
             <div className="flex flex-col gap-0.5">
-              <Link className="font-medium" to={`${rowData?.id}/projectDetail`}>
+              <Link
+                className="text-[12.5px] font-medium"
+                to={`${rowData?.id}/projectDetail`}
+              >
                 {rowData?.projectNo}
               </Link>
             </div>
           );
         case "unbilledNumber":
-          return <p className="text-sm">{rowData?.unbilledNumber}</p>;
+          return <p className="text-[12.5px]">{rowData?.unbilledNumber}</p>;
         case "estimateNumber":
           return (
             <p
-              className="capitalize text-xs "
+              className="capitalize text-[11.5px]"
               // onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
             >
               {rowData?.estimateNumber}
             </p>
           );
         case "salesPersonName":
-          return <p className="text-sm">{rowData?.salesPersonName}</p>;
+          return <p className="text-[12.5px]">{rowData?.salesPersonName}</p>;
         case "contactName":
-          return <p className="text-sm">{rowData?.contactName || "-"}</p>;
+          return <p className="text-[12.5px]">{rowData?.contactName || "-"}</p>;
         case "date":
-          return <p>{rowData?.date}</p>;
+          return <p className="text-[12.5px]">{rowData?.date}</p>;
         case "amount":
           return (
             <div className="flex flex-col gap-0.5">
-              <p className="text-sm font-bold">
+              <p className="text-[12.5px] font-bold">
                 {inrCurrency(rowData?.totalAmount)}
               </p>
-              <p className="text-sm"> {inrCurrency(rowData?.dueAmount)}</p>
+              <p className="text-[11.5px] text-default-500">
+                {inrCurrency(rowData?.dueAmount)}
+              </p>
             </div>
           );
         case "totalAmount":
           return (
-            <p className="text-sm font-medium">
+            <p className="text-[12.5px] font-medium">
               {inrCurrency(rowData?.totalAmount)}
             </p>
           );
         case "dueAmount":
           return (
-            <p className="text-sm font-bold">
+            <p className="text-[12.5px] font-bold">
               {inrCurrency(rowData?.dueAmount)}
             </p>
           );
@@ -411,6 +416,7 @@ const Projects = () => {
           return (
             <Chip
               size="sm"
+              variant="flat"
               color={
                 rowData?.statusName === "COMPLETED"
                   ? "success"
@@ -447,8 +453,10 @@ const Projects = () => {
         case "address":
           return (
             <div className="flex flex-col">
-              <span className="font-normal">{rowData.address || "-"}</span>
-              <span className="text-sm text-gray-400">
+              <span className="text-[12.5px] font-normal">
+                {rowData.address || "-"}
+              </span>
+              <span className="text-[11.5px] text-default-400">
                 {[rowData?.city, rowData?.state, rowData?.country].join(",")}
               </span>
             </div>
@@ -465,7 +473,7 @@ const Projects = () => {
                     variant="light"
                     aria-label="Project actions"
                   >
-                    <EllipsisVertical className="h-5 w-5" />
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
                   </Button>
                 </DropdownTrigger>
 
@@ -595,124 +603,138 @@ const Projects = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex justify-between items-center gap-3">
-        {/* Search Bar Row */}
-        <div className="flex items-center w-full pb-0.5">
-          <Select
-            className="max-w-[15%]"
-            selectionMode="single"
-            selectedKeys={[searchBy]}
-            onSelectionChange={(e) => {
-              let key = Array.from(e)[0];
-              setSearchBy(key);
-            }}
-          >
-            <SelectItem key={"projectName"}>Project name</SelectItem>
-            <SelectItem key={"projectNumber"}>Project number</SelectItem>
-            <SelectItem key={"company"}>Company</SelectItem>
-            <SelectItem key={"contactName"}>Contact name</SelectItem>
-          </Select>
-          <Input
-            isClearable
-            className="max-w-[30%]"
-            placeholder="Search ..."
-            startContent={<Search />}
-            value={filterValue}
-            onClear={() => onClear()}
-            onValueChange={onSearchChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleEnterPress(); // your function
-              }
-            }}
-          />
-        </div>
-        <div className="flex gap-2 items-center">
-          {/* <Button
-            endContent={<Plus />}
-            onPress={formModal.onOpen}
-            color="primary"
-            radius="sm"
-          >
-            Add
-          </Button> */}
-          <Dropdown>
-            <DropdownTrigger className="hidden sm:flex">
-              <Button
-                endContent={<ChevronDown className="text-small" />}
-                variant="flat"
-                radius="sm"
-              >
-                {paginationData?.statuses}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              disallowEmptySelection
-              aria-label="Table Columns"
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Select
+              size="sm"
+              className="w-[140px]"
               selectionMode="single"
-              selectedKeys={[paginationData?.statuses]}
+              selectedKeys={[searchBy]}
               onSelectionChange={(e) => {
-                const key = Array.from(e)[0];
-                setPaginationData((prev) => ({
-                  ...prev,
-                  statuses: key,
-                }));
-                dispatch(
-                  getAllProjectsForOperations({
-                    ...paginationData,
-                    statuses: key,
-                  }),
-                );
+                let key = Array.from(e)[0];
+                setSearchBy(key);
               }}
             >
-              <DropdownItem key={"OPEN"} className="capitalize">
-                OPEN
-              </DropdownItem>
-              <DropdownItem key={"REOPEN"} className="capitalize">
-                REOPEN
-              </DropdownItem>
-              <DropdownItem key={"IN_PROGRESS"} className="capitalize">
-                IN_PROGRESS
-              </DropdownItem>
-              <DropdownItem key={"FORCE_CLOSED"} className="capitalize">
-                FORCE_CLOSED
-              </DropdownItem>
-              <DropdownItem key={"COMPLETED"} className="capitalize">
-                COMPLETED
-              </DropdownItem>
-              <DropdownItem key={"CANCELLED"} className="capitalize">
-                CANCELLED
-              </DropdownItem>
-              <DropdownItem key={"REFUNDED"} className="capitalize">
-                REFUNDED
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-          <Dropdown>
-            <DropdownTrigger className="hidden sm:flex">
-              <Button
-                endContent={<ChevronDown className="text-small" />}
-                variant="flat"
-                radius="sm"
+              <SelectItem key={"projectName"}>Project name</SelectItem>
+              <SelectItem key={"projectNumber"}>Project number</SelectItem>
+              <SelectItem key={"company"}>Company</SelectItem>
+              <SelectItem key={"contactName"}>Contact name</SelectItem>
+            </Select>
+            <Input
+              isClearable
+              size="sm"
+              className="w-full sm:max-w-[280px]"
+              classNames={{ inputWrapper: "h-8 min-h-8" }}
+              placeholder="Search ..."
+              startContent={<Search className="w-4 h-4 text-default-400" />}
+              value={filterValue}
+              onClear={() => onClear()}
+              onValueChange={onSearchChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleEnterPress(); // your function
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
+                  {paginationData?.statuses}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                selectionMode="single"
+                selectedKeys={[paginationData?.statuses]}
+                onSelectionChange={(e) => {
+                  const key = Array.from(e)[0];
+                  setPaginationData((prev) => ({
+                    ...prev,
+                    statuses: key,
+                  }));
+                  dispatch(
+                    getAllProjectsForOperations({
+                      ...paginationData,
+                      statuses: key,
+                    }),
+                  );
+                }}
               >
-                Columns
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              disallowEmptySelection
-              aria-label="Table Columns"
-              closeOnSelect={false}
-              selectedKeys={visibleColumns}
-              selectionMode="multiple"
-              onSelectionChange={setVisibleColumns}
-            >
-              {columns.map((column) => (
-                <DropdownItem key={column.uid} className="capitalize">
-                  {capitalize(column.name)}
+                <DropdownItem key={"OPEN"} className="capitalize">
+                  OPEN
                 </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown>
+                <DropdownItem key={"REOPEN"} className="capitalize">
+                  REOPEN
+                </DropdownItem>
+                <DropdownItem key={"IN_PROGRESS"} className="capitalize">
+                  IN_PROGRESS
+                </DropdownItem>
+                <DropdownItem key={"FORCE_CLOSED"} className="capitalize">
+                  FORCE_CLOSED
+                </DropdownItem>
+                <DropdownItem key={"COMPLETED"} className="capitalize">
+                  COMPLETED
+                </DropdownItem>
+                <DropdownItem key={"CANCELLED"} className="capitalize">
+                  CANCELLED
+                </DropdownItem>
+                <DropdownItem key={"REFUNDED"} className="capitalize">
+                  REFUNDED
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
+                selectionMode="multiple"
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
+            Total {count} projects
+          </span>
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              onChange={onRowsPerPageChange}
+              value={paginationData?.size}
+            >
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </label>
         </div>
       </div>
     );
@@ -731,8 +753,8 @@ const Projects = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -741,14 +763,13 @@ const Projects = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={paginationData?.page}
           total={pages}
           onChange={(e) => setPaginationData((prev) => ({ ...prev, page: e }))}
         />
 
-        <div className="space-x-1.5">
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -762,7 +783,6 @@ const Projects = () => {
             size="sm"
             variant="flat"
             onPress={onNextPage}
-            className=""
           >
             Next
           </Button>
@@ -772,16 +792,24 @@ const Projects = () => {
   }, [selectedKeys, count, paginationData?.page, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Projects</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Projects
+      </h1>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[62vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -1183,7 +1211,7 @@ const Projects = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

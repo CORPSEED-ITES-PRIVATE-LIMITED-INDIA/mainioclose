@@ -580,7 +580,7 @@ const Group = () => {
     <>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-sans text-2xl font-semibold">
+          <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
             Ledger Group List
           </h1>
           <p className="text-sm text-slate-500">

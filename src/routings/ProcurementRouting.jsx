@@ -1,21 +1,40 @@
+import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
-import VendorRequests from "../vendor-request/VendorRequests";
-import VendorRequestDetail from "../vendor-request/VendorRequestDetail";
-import VendorPaymentForProcurement from "../vendor-request/VendorsPaymentForProcurement";
-import VendorEstimate from "../vendor-request/VendorEstimate";
-import VendorPaymentHistory from "../vendor-request/VendorPaymentHistory";
-import ProjectDetails from "../operation/projects/ProjectDetails";
-import ProjectActivities from "../operation/projects/ProjectActivities";
-import Projects from "../operation/projects/Projects";
-import Vendors from "../vendor-request/Vendors";
-import ProcurementSolutions from "../procurement/solutions/ProcurementSolutions";
-import SolutionOverview from "../procurement/solutions/SolutionOverview";
-import ProcuremntSolutionDetailPage from "../procurement/solutions/ProcuremntSolutionDetailPage";
-import RequestForQuotation from "../procurement/solutions/RequestForQuotation";
-import VendorsData from "../procurement/solutions/VendorsData";
-import Quote from "../procurement/solutions/Quote";
-import RFQVendors from "../procurement/solutions/RFQVendors";
+const VendorRequests = lazy(() => import("../vendor-request/VendorRequests"));
+const VendorRequestDetail = lazy(
+  () => import("../vendor-request/VendorRequestDetail"),
+);
+const VendorPaymentForProcurement = lazy(
+  () => import("../vendor-request/VendorsPaymentForProcurement"),
+);
+const VendorEstimate = lazy(() => import("../vendor-request/VendorEstimate"));
+const VendorPaymentHistory = lazy(
+  () => import("../vendor-request/VendorPaymentHistory"),
+);
+const ProjectDetails = lazy(
+  () => import("../operation/projects/ProjectDetails"),
+);
+const ProjectActivities = lazy(
+  () => import("../operation/projects/ProjectActivities"),
+);
+const Projects = lazy(() => import("../operation/projects/Projects"));
+const Vendors = lazy(() => import("../vendor-request/Vendors"));
+const ProcurementSolutions = lazy(
+  () => import("../procurement/solutions/ProcurementSolutions"),
+);
+const SolutionOverview = lazy(
+  () => import("../procurement/solutions/SolutionOverview"),
+);
+const ProcuremntSolutionDetailPage = lazy(
+  () => import("../procurement/solutions/ProcuremntSolutionDetailPage"),
+);
+const RequestForQuotation = lazy(
+  () => import("../procurement/solutions/RequestForQuotation"),
+);
+const VendorsData = lazy(() => import("../procurement/solutions/VendorsData"));
+const Quote = lazy(() => import("../procurement/solutions/Quote"));
+const RFQVendors = lazy(() => import("../procurement/solutions/RFQVendors"));
 
 const ProcurementRouting = () => {
   return (

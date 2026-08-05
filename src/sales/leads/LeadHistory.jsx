@@ -254,7 +254,9 @@ const LeadHistory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium m-0">Lead history list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Lead history list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

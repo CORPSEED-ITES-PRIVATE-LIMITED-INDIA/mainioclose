@@ -1,6 +1,7 @@
 import {
   addToast,
   Button,
+  Chip,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -615,7 +616,9 @@ const AllProposal = () => {
           return (
             <div className="flex items-start gap-2">
               <div className="flex flex-col">
-                <p className="font-normal">{rowData?.solution?.name || "-"}</p>
+                <p className="font-normal text-[12.5px]">
+                  {rowData?.solution?.name || "-"}
+                </p>
               </div>
             </div>
           );
@@ -624,14 +627,16 @@ const AllProposal = () => {
           return (
             <div className="flex items-start gap-2">
               <div className="flex flex-col">
-                <p className="font-normal">{rowData?.createdByName || "-"}</p>
+                <p className="font-normal text-[12.5px]">
+                  {rowData?.createdByName || "-"}
+                </p>
               </div>
             </div>
           );
 
         case "date":
           return (
-            <p className="font-normal text-xs capitalize">
+            <p className="font-normal text-[12.5px] capitalize">
               {rowData?.createDate
                 ? dayjs(rowData.createDate).format("YYYY-MM-DD")
                 : "-"}
@@ -640,7 +645,7 @@ const AllProposal = () => {
 
         case "proposalNumber":
           return (
-            <p className="font-normal text-xs capitalize">
+            <p className="font-normal text-[12.5px] capitalize">
               {rowData?.proposalNumber || "-"}
             </p>
           );
@@ -648,7 +653,7 @@ const AllProposal = () => {
         case "mailTo":
           return (
             <div className="flex flex-col">
-              <span className="font-normal">
+              <span className="font-normal text-[12.5px]">
                 {rowData.mailTo?.join(" , ") || "-"}
               </span>
             </div>
@@ -657,7 +662,7 @@ const AllProposal = () => {
         case "createdByEmail":
           return (
             <div className="flex flex-col">
-              <span className="font-normal">
+              <span className="font-normal text-[12.5px]">
                 {rowData.createdByEmail || "-"}
               </span>
             </div>
@@ -665,14 +670,23 @@ const AllProposal = () => {
 
         case "status":
           return (
-            <div className="flex flex-col">
-              <span className="font-normal capitalize">
-                {rowData?.status === "CANCELLED" ||
+            <Chip
+              size="sm"
+              variant="flat"
+              className="capitalize"
+              color={
+                rowData?.status === "CANCELLED" ||
                 rowData?.status === "REJECTED"
-                  ? "REJECTED"
-                  : rowData?.status || "-"}
-              </span>
-            </div>
+                  ? "danger"
+                  : rowData?.status === "APPROVED"
+                    ? "success"
+                    : "default"
+              }
+            >
+              {rowData?.status === "CANCELLED" || rowData?.status === "REJECTED"
+                ? "REJECTED"
+                : rowData?.status || "-"}
+            </Chip>
           );
 
         case "brochures": {
@@ -699,7 +713,7 @@ const AllProposal = () => {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <EllipsisVertical className="text-default-300" />
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
                   </Button>
                 </DropdownTrigger>
 
@@ -784,23 +798,25 @@ const AllProposal = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                   className="capitalize"
                 >
@@ -842,7 +858,10 @@ const AllProposal = () => {
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -866,14 +885,14 @@ const AllProposal = () => {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} proposal
           </span>
 
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -898,8 +917,8 @@ const AllProposal = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -908,7 +927,6 @@ const AllProposal = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -949,19 +967,27 @@ const AllProposal = () => {
   const selectedProposalName = selectedProposalDetail?.pdfFileName || "";
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       {loading === "pending" && <LoadingSpinner />}
 
-      <h1 className="font-sans text-2xl font-medium mb-1">All proposal</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        All proposal
+      </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Proposal table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         sortDescriptor={sortDescriptor}
@@ -1332,7 +1358,7 @@ const AllProposal = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

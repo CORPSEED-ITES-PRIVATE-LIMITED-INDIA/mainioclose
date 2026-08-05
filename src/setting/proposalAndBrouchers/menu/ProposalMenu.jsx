@@ -827,7 +827,9 @@ const ProposalMenu = () => {
 
   return (
     <>
-      <h1 className="mb-1 font-sans text-2xl font-medium">Proposal Menu</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Proposal Menu
+      </h1>
 
       <Table
         isHeaderSticky

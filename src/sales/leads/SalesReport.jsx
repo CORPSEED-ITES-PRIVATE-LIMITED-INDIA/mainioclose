@@ -33,7 +33,6 @@ import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
 import { CSVLink } from "react-csv";
 import { parseZonedDateTime } from "@internationalized/date";
-import { useMediaQuery } from "react-responsive";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -67,15 +66,15 @@ const SalesReport = () => {
   const count = useSelector((state) => state.leads.salesReportCount);
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
   const salesReportExportLoading = useSelector(
-    (state) => state.leads.salesReportExportLoading
+    (state) => state.leads.salesReportExportLoading,
   );
   const salesReportExport = useSelector(
-    (state) => state.leads.salesReportListForExport
+    (state) => state.leads.salesReportListForExport,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -91,13 +90,10 @@ const SalesReport = () => {
     departmentId: null,
     assigneeIds: [],
   });
-  const isSmall = useMediaQuery({ maxWidth: 767 });
-  const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
-  const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
     dispatch(
-      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter })
+      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter }),
     );
     dispatch(getSaleReportByFilterCount(dateFilter));
     dispatch(getSalesReportByFilterForExport(dateFilter));
@@ -107,7 +103,7 @@ const SalesReport = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -117,8 +113,8 @@ const SalesReport = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -142,11 +138,13 @@ const SalesReport = () => {
     switch (columnKey) {
       case "leadname":
         return (
-          <div className="flex flex-col">
-            <p>{rowData.leadOriginalName || "-"}</p>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[12.5px] truncate">
+              {rowData.leadOriginalName || "-"}
+            </p>
             <Chip
               size="sm"
-              className="text-sm"
+              className="text-[11.5px] w-fit"
               color={rowData.manual ? "success" : "default"}
             >
               {rowData.manual ? "Manual" : "Auto"}
@@ -156,19 +154,23 @@ const SalesReport = () => {
       case "status":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.status || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData.status || "-"}
+            </span>
           </div>
         );
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.currName || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData.currName || "-"}
+            </span>
           </div>
         );
       case "assignDate":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {dayjs(rowData.assignDate).format("DD-MM-YYYY HH:mm ")}
             </span>
           </div>
@@ -176,7 +178,9 @@ const SalesReport = () => {
       case "reopenBy":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.reopenBy?.fullName}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData.reopenBy?.fullName}
+            </span>
           </div>
         );
 
@@ -218,7 +222,7 @@ const SalesReport = () => {
 
   const handleApplyFilter = useCallback(() => {
     dispatch(
-      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter })
+      getSaleReportByFilter({ page, size: rowsPerPage, data: dateFilter }),
     );
     dispatch(getSaleReportByFilterCount(dateFilter));
     dispatch(getSalesReportByFilterForExport(dateFilter));
@@ -236,7 +240,7 @@ const SalesReport = () => {
           departmentId: "",
           assigneeIds: [],
         },
-      })
+      }),
     );
   };
 
@@ -268,24 +272,24 @@ const SalesReport = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
-            size={isMedium ? "sm" : isLarge ? "md" : ""}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
-                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                 >
                   {department}
@@ -305,13 +309,13 @@ const SalesReport = () => {
                       page,
                       size: rowsPerPage,
                       data: { ...dateFilter, departmentId: value },
-                    })
+                    }),
                   );
                   dispatch(
                     getSaleReportByFilterCount({
                       ...dateFilter,
                       departmentId: value,
-                    })
+                    }),
                   );
                 }}
               >
@@ -331,7 +335,7 @@ const SalesReport = () => {
               </DropdownMenu>
             </Dropdown>
             <Popover
-              size={isMedium ? "sm" : isLarge ? "md" : ""}
+              size="lg"
               showArrow
               isOpen={isOpen}
               onOpenChange={(e) => {
@@ -344,8 +348,7 @@ const SalesReport = () => {
               <PopoverTrigger>
                 <Button
                   variant="flat"
-                  size={isMedium ? "sm" : isLarge ? "md" : ""}
-                  endContent={<ListFilter />}
+                  endContent={<ListFilter className="w-3.5 h-3.5" />}
                 >
                   Filter
                 </Button>
@@ -353,12 +356,15 @@ const SalesReport = () => {
               <PopoverContent>
                 {(titleProps) => (
                   <div className="px-1 py-2">
-                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                    <h3
+                      className="mt-1 mb-2 font-semibold text-sm w-full"
+                      {...titleProps}
+                    >
                       Filter
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
                       <NewSelect
-                        size={isMedium ? "sm" : isLarge ? "md" : ""}
+                        size="sm"
                         data={allLeadUser || []}
                         selectionMode="multiple"
                         label={"Select users"}
@@ -378,26 +384,18 @@ const SalesReport = () => {
                           hideTimeZone
                           granularity="minute"
                           hourCycle={24}
-                          size={isMedium ? "sm" : isLarge ? "md" : ""}
+                          size="sm"
                           visibleMonths={2}
                           label="Created date"
-                          popoverProps={{
-                            size: isMedium ? "sm" : isLarge ? "md" : "",
-                            placement: isMedium
-                              ? "left"
-                              : isLarge
-                                ? "bottom"
-                                : "",
-                          }}
                           value={{
                             start: dateFilter?.toDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.toDate}[Asia/kolkata]`
+                                  `${dateFilter?.toDate}[Asia/kolkata]`,
                                 )
                               : null,
                             end: dateFilter?.fromDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.fromDate}[Asia/kolkata]`
+                                  `${dateFilter?.fromDate}[Asia/kolkata]`,
                                 )
                               : null,
                           }}
@@ -418,16 +416,13 @@ const SalesReport = () => {
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 my-2">
-                      <Button
-                        onPress={handleResetFilter}
-                        size={isMedium ? "sm" : isLarge ? "md" : ""}
-                      >
+                      <Button size="sm" onPress={handleResetFilter}>
                         Reset
                       </Button>
                       <Button
+                        size="sm"
                         color="primary"
                         onPress={handleApplyFilter}
-                        size={isMedium ? "sm" : isLarge ? "md" : ""}
                       >
                         Apply
                       </Button>
@@ -443,8 +438,7 @@ const SalesReport = () => {
             >
               <Button
                 isDisabled={salesReportExportLoading !== "success"}
-                endContent={<Upload />}
-                size={isMedium ? "sm" : isLarge ? "md" : ""}
+                endContent={<Upload className="w-3.5 h-3.5" />}
               >
                 Export
               </Button>
@@ -452,8 +446,7 @@ const SalesReport = () => {
             <Dropdown>
               <DropdownTrigger>
                 <Button
-                  endContent={<ChevronDown />}
-                  size={isMedium ? "sm" : isLarge ? "md" : ""}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                 >
                   Columns
@@ -477,13 +470,13 @@ const SalesReport = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} sales report
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -506,16 +499,14 @@ const SalesReport = () => {
     dateFilter,
     handleApplyFilter,
     handleResetFilter,
-    isMedium,
     exportData,
     headers,
-    isLarge,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -523,8 +514,6 @@ const SalesReport = () => {
         <Pagination
           isCompact
           showControls
-          size={isMedium ? "sm" : isLarge ? "md" : ""}
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -550,28 +539,27 @@ const SalesReport = () => {
         </div>
       </div>
     );
-  }, [
-    selectedKeys,
-    page,
-    pages,
-    hasSearchFilter,
-    data,
-    count,
-    isMedium,
-    isLarge,
-  ]);
+  }, [selectedKeys, page, pages, hasSearchFilter, data, count]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Sales report</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Sales report
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Sales report table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -600,7 +588,7 @@ const SalesReport = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

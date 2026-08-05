@@ -276,10 +276,10 @@ const SalesProject = () => {
       case "projectNo":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-xs font-semibold text-foreground">
+            <p className="text-[12.5px] font-semibold text-foreground">
               {rowData?.projectNo || "-"}
             </p>
-            <p className="text-[11px] text-default-500">
+            <p className="text-[11.5px] text-default-500">
               {rowData?.estimateNumber || "-"}
             </p>
           </div>
@@ -287,7 +287,7 @@ const SalesProject = () => {
 
       case "projectDate":
         return (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-[12.5px]">
             <CalendarDays className="h-4 w-4 text-default-400" />
             <span>
               {formatDate(rowData?.projectDate || rowData?.createdDate)}
@@ -298,10 +298,10 @@ const SalesProject = () => {
       case "projectName":
         return (
           <div className="flex flex-col gap-1">
-            <p className="max-w-[220px] truncate text-sm font-medium text-foreground">
+            <p className="max-w-[220px] truncate text-[12.5px] font-medium text-foreground">
               {rowData?.projectName || "-"}
             </p>
-            <p className="max-w-[220px] truncate text-xs text-default-500">
+            <p className="max-w-[220px] truncate text-[11.5px] text-default-500">
               {rowData?.productName || "-"}
             </p>
           </div>
@@ -312,10 +312,10 @@ const SalesProject = () => {
           <div className="flex items-start gap-2">
             <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-default-400" />
             <div className="min-w-0">
-              <p className="max-w-[220px] truncate text-sm font-medium">
+              <p className="max-w-[220px] truncate text-[12.5px] font-medium">
                 {rowData?.companyName || "-"}
               </p>
-              <p className="max-w-[220px] truncate text-xs text-default-500">
+              <p className="max-w-[220px] truncate text-[11.5px] text-default-500">
                 {rowData?.unitName || "-"}
               </p>
             </div>
@@ -326,18 +326,18 @@ const SalesProject = () => {
         return (
           <div className="flex items-center gap-2">
             <User2 className="h-4 w-4 text-default-400" />
-            <span className="text-sm">{rowData?.contactName || "-"}</span>
+            <span className="text-[12.5px]">{rowData?.contactName || "-"}</span>
           </div>
         );
 
       case "totalAmount":
         return (
           <div className="flex flex-col gap-1">
-            <p className="flex items-center gap-1 text-sm font-semibold">
+            <p className="flex items-center gap-1 text-[12.5px] font-semibold">
               <IndianRupee className="h-3.5 w-3.5" />
               {inrCurrency(rowData?.totalAmount)}
             </p>
-            <p className="text-xs text-default-500">
+            <p className="text-[11.5px] text-default-500">
               Due: {inrCurrency(rowData?.dueAmount)}
             </p>
           </div>
@@ -355,7 +355,7 @@ const SalesProject = () => {
 
         return (
           <div className="min-w-[160px]">
-            <div className="mb-1 flex justify-between text-xs">
+            <div className="mb-1 flex justify-between text-[11.5px]">
               <span>
                 {rowData?.completedMilestones || 0}/
                 {rowData?.totalMilestones || 0}
@@ -389,7 +389,7 @@ const SalesProject = () => {
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-400" />
+                  <EllipsisVertical className="w-4 h-4 text-default-400" />
                 </Button>
               </DropdownTrigger>
 
@@ -458,23 +458,25 @@ const SalesProject = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                   className="capitalize"
                 >
@@ -507,7 +509,10 @@ const SalesProject = () => {
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -531,14 +536,14 @@ const SalesProject = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} projects
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration.size}
             >
@@ -565,8 +570,8 @@ const SalesProject = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="flex items-center justify-between px-1 py-1.5">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -575,7 +580,6 @@ const SalesProject = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration.page}
           total={pages}
@@ -617,53 +621,57 @@ const SalesProject = () => {
   const selectedDepartments = selectedProject?.departments || [];
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       {loading && <LoadingSpinner />}
 
-      <div>
-        <div className="mb-4">
-          <h1 className="font-sans text-2xl font-medium">Sales Projects</h1>
-        </div>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Sales Projects
+      </h1>
 
-        <Table
-          isHeaderSticky
-          aria-label="Sales project dashboard table"
-          bottomContent={bottomContent}
-          bottomContentPlacement="outside"
-          classNames={{
-            wrapper: "max-h-[62vh] w-full",
-            table: "w-full",
-          }}
-          selectedKeys={selectedKeys}
-          sortDescriptor={sortDescriptor}
-          topContent={topContent}
-          topContentPlacement="outside"
-          onSelectionChange={setSelectedKeys}
-          onSortChange={setSortDescriptor}
-        >
-          <TableHeader columns={headerColumns}>
-            {(column) => (
-              <TableColumn
-                key={column.uid}
-                align={column.uid === "actions" ? "center" : "start"}
-                allowsSorting={column.sortable}
-              >
-                {column.name}
-              </TableColumn>
-            )}
-          </TableHeader>
+      <Table
+        isHeaderSticky
+        removeWrapper={false}
+        aria-label="Sales project dashboard table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+        selectedKeys={selectedKeys}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSelectionChange={setSelectedKeys}
+        onSortChange={setSortDescriptor}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
 
-          <TableBody emptyContent="No sales projects found" items={sortedItems}>
-            {(item) => (
-              <TableRow key={item.projectId}>
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+        <TableBody emptyContent="No sales projects found" items={sortedItems}>
+          {(item) => (
+            <TableRow key={item.projectId}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Drawer
         size="5xl"
@@ -984,7 +992,7 @@ const SalesProject = () => {
           )}
         </DrawerContent>
       </Drawer>
-    </>
+    </div>
   );
 };
 

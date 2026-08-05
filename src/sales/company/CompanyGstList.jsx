@@ -324,7 +324,7 @@ const CompanyGstList = () => {
             <div className="flex flex-col">
               <button
                 type="button"
-                className="font-semibold text-primary cursor-pointer hover:underline text-left"
+                className="font-semibold text-[12.5px] text-primary cursor-pointer hover:underline text-left"
                 onClick={() => {
                   setSelectedUnit(company);
                   onUnitModalOpen();
@@ -338,42 +338,36 @@ const CompanyGstList = () => {
 
       case "status":
         return (
-          <div className="flex items-start gap-2">
-            <div
-              className={`${company?.status == "Active" ? "text-green-700" : "text-red-600"}`}
-            >
-              {company?.status || "-"}
-            </div>
-          </div>
+          <span
+            className={`text-[12.5px] ${company?.status == "Active" ? "text-green-700" : "text-red-600"}`}
+          >
+            {company?.status || "-"}
+          </span>
         );
       case "address":
         return (
-          <div className="flex items-start gap-2">
-            <div
-              className="max-w-[260px] truncate"
-              title={company?.addressLine1 || "-"}
-            >
-              {company?.addressLine1 || "-"}
-            </div>
+          <div
+            className="max-w-[260px] truncate text-[12.5px]"
+            title={company?.addressLine1 || "-"}
+          >
+            {company?.addressLine1 || "-"}
           </div>
         );
       case "state":
-        return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">{company?.state || "-"}</div>
-          </div>
-        );
+        return <span className="text-[12.5px]">{company?.state || "-"}</span>;
 
       case "gstNo":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{company.gstNo || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {company.gstNo || "-"}
+            </span>
           </div>
         );
       case "gstType":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {company.gstRegistrationTypeName || "-"}
             </span>
           </div>
@@ -385,7 +379,7 @@ const CompanyGstList = () => {
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
+                  <EllipsisVertical className="w-4 h-4" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
@@ -755,21 +749,26 @@ const CompanyGstList = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -794,13 +793,13 @@ const CompanyGstList = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} units
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={companyFilteration?.size}
             >
@@ -825,8 +824,8 @@ const CompanyGstList = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -834,7 +833,6 @@ const CompanyGstList = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={companyFilteration?.page}
           total={pages}
@@ -888,16 +886,24 @@ const CompanyGstList = () => {
   );
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Unit list</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Unit list
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Company GST units table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -1844,7 +1850,7 @@ const CompanyGstList = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

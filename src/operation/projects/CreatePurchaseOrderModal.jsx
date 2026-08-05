@@ -145,6 +145,7 @@ const CreatePurchaseOrderModal = ({
     <Modal
       title="Create Purchase Order"
       open={open}
+      centered
       onCancel={handleCancel}
       width={1050}
       destroyOnClose
@@ -157,15 +158,16 @@ const CreatePurchaseOrderModal = ({
         onFinish={handleSubmit}
         autoComplete="off"
         size="large"
+        className="max-h-[80vh] overflow-y-auto pr-2"
       >
         <div className="grid grid-cols-1 gap-x-5 md:grid-cols-2">
           <Form.Item
-            label="Proposal Number"
+            label="Vendor Quotation Number"
             name="poReferenceNumber"
             rules={[
               {
                 required: true,
-                message: "Please enter proposal number",
+                message: "Please enter vendor quotation number",
               },
             ]}
           >

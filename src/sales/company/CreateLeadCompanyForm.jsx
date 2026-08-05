@@ -36,12 +36,10 @@ import {
   getSubIndustryByIndustryId,
   getSubSubIndustryBySubIndustryId,
 } from "../../toolkit/slices/commonSlice";
-import { Select, SelectItem } from "@heroui/select";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
-import { Button } from "@heroui/button";
 import { getClientDesiginationList } from "../../toolkit/slices/settingSlice";
-import { ModalFooter } from "@heroui/react";
+import { Button, ModalFooter, Select, SelectItem } from "@heroui/react";
 import { useMediaQuery } from "react-responsive";
 
 const formSchema = ({
@@ -246,38 +244,38 @@ const CreateLeadCompanyForm = ({
   const { userId, leadId } = useParams();
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const companyDetailById = useSelector(
-    (state) => state.company.companyDetailById
+    (state) => state.company.companyDetailById,
   );
   const adminRole = userRole.includes("ADMIN");
   const existingCompanyList = useSelector(
-    (state) => state.company.existingCompanyList
+    (state) => state.company.existingCompanyList,
   );
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const secondaryStateList = useSelector(
-    (state) => state.common.secondaryStateList
+    (state) => state.common.secondaryStateList,
   );
   const citiesList = useSelector((state) => state.common.citiesList);
   const secondaryCitiesList = useSelector(
-    (state) => state.common.secondaryCitiesList
+    (state) => state.common.secondaryCitiesList,
   );
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const userList = useSelector((state) => state.common.usersList);
   const allContactList = useSelector((state) => state.common.allContactList);
   const subIndustryListById = useSelector(
-    (state) => state.common.subIndustryListByIndustryId
+    (state) => state.common.subIndustryListByIndustryId,
   );
   const subSubIndustryListById = useSelector(
-    (state) => state.common.subSubIndustryListBySubIndustryId
+    (state) => state.common.subSubIndustryListBySubIndustryId,
   );
   const industryDataListById = useSelector(
-    (state) => state.common.industryDataListBySubSubIndustryId
+    (state) => state.common.industryDataListBySubSubIndustryId,
   );
   const desiginationList = useSelector(
-    (state) => state.setting.clientDesiginationList
+    (state) => state.setting.clientDesiginationList,
   );
   const singleLeadResponseData = useSelector(
-    (state) => state.leads.singleLeadData
+    (state) => state.leads.singleLeadData,
   );
   const [formValidation, setFormValidation] = useState({
     isExistingCompany: existingCompanyList?.length > 0 ? true : false,
@@ -398,25 +396,25 @@ const CreateLeadCompanyForm = ({
           dispatch(getSubIndustryByIndustryId(editData?.industry?.id));
           dispatch(getSubSubIndustryBySubIndustryId(editData?.subIndustry?.id));
           dispatch(
-            getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id)
+            getIndustryDataBySubSubIndustryId(editData?.subsubIndustry?.id),
           );
           dispatch(getCompanyExistData(editData?.lead?.id));
           dispatch(
             getCompanyUnitsByStateAndCompanyId({
               companyId: editData?.companyId,
               stateName: editData?.state,
-            })
+            }),
           );
           dispatch(getAllStatesByCountryName(editData?.country));
           dispatch(getAllCitiesByStateName(editData?.state));
           if (editData?.scountry) {
             dispatch(
-              getAllSecondaryStatesBySecondaryCountryName(editData?.scountry)
+              getAllSecondaryStatesBySecondaryCountryName(editData?.scountry),
             );
           }
           if (editData?.sstate) {
             dispatch(
-              getAllSecondaryCitiesBySecondaryStateName(editData?.sstate)
+              getAllSecondaryCitiesBySecondaryStateName(editData?.sstate),
             );
           }
           const fomvalues = getValues();
@@ -475,7 +473,7 @@ const CreateLeadCompanyForm = ({
             subIndustryId: String(editData?.subIndustry?.id),
             subsubIndustryId: String(editData?.subsubIndustry?.id),
             industrydataId: editData?.industryDataList?.map((item) =>
-              String(item?.id)
+              String(item?.id),
             ),
           };
           reset(updatedValues);
@@ -582,7 +580,7 @@ const CreateLeadCompanyForm = ({
     }
   };
 
-  console.log("dsjgkjgkjdgjkdgdjk",)
+  console.log("dsjgkjgkjdgjkdgdjk");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -1119,7 +1117,7 @@ const CreateLeadCompanyForm = ({
                       allContactList?.length > 0
                         ? allContactList?.map((item) => ({
                             label: `${maskEmail(
-                              item?.emails
+                              item?.emails,
                             )} || ${maskMobileNumber(item?.contactNo)} `,
                             id: item?.id,
                             email: item?.emails,
@@ -1283,7 +1281,7 @@ const CreateLeadCompanyForm = ({
                       allContactList?.length > 0
                         ? allContactList?.map((item) => ({
                             label: `${maskEmail(
-                              item?.emails
+                              item?.emails,
                             )} || ${maskMobileNumber(item?.contactNo)} `,
                             id: item?.id,
                             email: item?.emails,
@@ -1440,7 +1438,7 @@ const CreateLeadCompanyForm = ({
                   value={field.value}
                   onChange={(value) => {
                     dispatch(
-                      getAllSecondaryStatesBySecondaryCountryName(value)
+                      getAllSecondaryStatesBySecondaryCountryName(value),
                     );
                     field.onChange(value);
                   }}

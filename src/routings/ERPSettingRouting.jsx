@@ -1,34 +1,68 @@
+import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
-import LeadStatus from "../setting/status/LeadStatus";
-import LeadComments from "../setting/comments/LeadComments";
-import IpAddress from "../setting/ipaddress/IpAddress";
-import OperationsSettings from "../operation/Settings/OperationsSettings";
-import Slug from "../setting/slug/Slug";
-import Urls from "../setting/urls/Urls";
-import Department from "../setting/department/Department";
-import Designation from "../setting/designation/Designation";
-import ProcurementCategory from "../setting/procurement/ProcurementCategory";
-import ProcurementSubCategory from "../setting/procurement/ProcurementSubCategory";
-import BusinessArrangement from "../setting/products/BusinessArrangement";
-import ProductCategory from "../setting/products/ProductCategory";
-import ProductSubCategory from "../setting/products/ProductSubCategory";
-import TemplatesAndEmailBody from "../setting/proposalAndTemplates/TemplatesAndEmailBody";
-import ApplicantTypes from "../setting/applicantType/ApplicantTypes";
-import Solutions from "../setting/products/Solutions";
-import SolutionDetails from "../setting/products/SolutionDetails";
-import SolutionPrice from "../setting/products/SolutionPrice";
-import ProductDocument from "../setting/products/ProductDocument";
-import ProductMilestones from "../setting/products/ProductMilestones";
-import ProposalMenu from "../setting/proposalAndBrouchers/menu/ProposalMenu";
-import ProposalCategory from "../setting/proposalAndBrouchers/category/ProposalCategory";
-import ProposalSubCategory from "../setting/proposalAndBrouchers/subCategory/ProposalSubCategory";
-import ProposalService from "../setting/proposalAndBrouchers/service/ProposalService";
-import ProductServiceDetails from "../setting/products/ProductServiceDetails";
-import PaymentTems from "../setting/paymentTerm/PaymentTems";
-import CountryData from "../setting/country/CountryData";
-import StateData from "../setting/country/StateData";
-import CityData from "../setting/country/CityData";
+const LeadStatus = lazy(() => import("../setting/status/LeadStatus"));
+const LeadComments = lazy(() => import("../setting/comments/LeadComments"));
+const IpAddress = lazy(() => import("../setting/ipaddress/IpAddress"));
+const OperationsSettings = lazy(
+  () => import("../operation/Settings/OperationsSettings"),
+);
+const Slug = lazy(() => import("../setting/slug/Slug"));
+const Urls = lazy(() => import("../setting/urls/Urls"));
+const Department = lazy(() => import("../setting/department/Department"));
+const Designation = lazy(() => import("../setting/designation/Designation"));
+const ProcurementCategory = lazy(
+  () => import("../setting/procurement/ProcurementCategory"),
+);
+const ProcurementSubCategory = lazy(
+  () => import("../setting/procurement/ProcurementSubCategory"),
+);
+const BusinessArrangement = lazy(
+  () => import("../setting/products/BusinessArrangement"),
+);
+const ProductCategory = lazy(
+  () => import("../setting/products/ProductCategory"),
+);
+const ProductSubCategory = lazy(
+  () => import("../setting/products/ProductSubCategory"),
+);
+const TemplatesAndEmailBody = lazy(
+  () => import("../setting/proposalAndTemplates/TemplatesAndEmailBody"),
+);
+const ApplicantTypes = lazy(
+  () => import("../setting/applicantType/ApplicantTypes"),
+);
+const Solutions = lazy(() => import("../setting/products/Solutions"));
+const SolutionDetails = lazy(
+  () => import("../setting/products/SolutionDetails"),
+);
+const SolutionPrice = lazy(() => import("../setting/products/SolutionPrice"));
+const ProductDocument = lazy(
+  () => import("../setting/products/ProductDocument"),
+);
+const ProductMilestones = lazy(
+  () => import("../setting/products/ProductMilestones"),
+);
+const ProposalMenu = lazy(
+  () => import("../setting/proposalAndBrouchers/menu/ProposalMenu"),
+);
+const ProposalCategory = lazy(
+  () => import("../setting/proposalAndBrouchers/category/ProposalCategory"),
+);
+const ProposalSubCategory = lazy(
+  () =>
+    import("../setting/proposalAndBrouchers/subCategory/ProposalSubCategory"),
+);
+const ProposalService = lazy(
+  () => import("../setting/proposalAndBrouchers/service/ProposalService"),
+);
+const ProductServiceDetails = lazy(
+  () => import("../setting/products/ProductServiceDetails"),
+);
+const PaymentTems = lazy(() => import("../setting/paymentTerm/PaymentTems"));
+const CountryData = lazy(() => import("../setting/country/CountryData"));
+const StateData = lazy(() => import("../setting/country/StateData"));
+const CityData = lazy(() => import("../setting/country/CityData"));
 
 const ERPSettingRouting = () => {
   return (

@@ -65,13 +65,13 @@ const DeactiveUserList = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.common.deactiveUserList?.length || 0
+    (state) => state.common.deactiveUserList?.length || 0,
   );
   const data = useSelector((state) => state.common.deactiveUserList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -91,7 +91,7 @@ const DeactiveUserList = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -99,7 +99,7 @@ const DeactiveUserList = () => {
     let filteredUsers = [...data];
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
-        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase())
+        item?.fullName?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -137,7 +137,7 @@ const DeactiveUserList = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong!.", color: "danger" })
+        addToast({ title: "Something went wrong!.", color: "danger" }),
       );
   };
 
@@ -295,9 +295,7 @@ const DeactiveUserList = () => {
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
-              <DropdownItem
-                onPress={() => handleActionStatus(rowData?.id)}
-              >
+              <DropdownItem onPress={() => handleActionStatus(rowData?.id)}>
                 Activate
               </DropdownItem>
             </DropdownMenu>
@@ -452,7 +450,7 @@ const DeactiveUserList = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Deactive user list
       </h1>
       <Table

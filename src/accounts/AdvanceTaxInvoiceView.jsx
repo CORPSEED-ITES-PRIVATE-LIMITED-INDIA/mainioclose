@@ -194,6 +194,33 @@ const AdvanceTaxInvoiceView = ({ invoiceData, heading }) => {
     };
   }, [inv]);
 
+  // Buyer / consignee unit snapshot from the advance-tax invoice row.
+  const buyer = useMemo(() => {
+    const addressParts = [
+      inv?.unitAddressLine1,
+      inv?.unitAddressLine2,
+      inv?.unitCity,
+      inv?.unitState,
+      inv?.unitCountry,
+    ].filter(Boolean);
+
+    const pinCode = inv?.unitPinCode || "";
+
+    return {
+      name: inv?.unitName || inv?.companyName || "",
+      gstin: inv?.buyerGstin || inv?.unitGstNo || "",
+      address: addressParts.length
+        ? `${addressParts.join(", ")}${pinCode ? ` - ${pinCode}` : ""}`
+        : "",
+      stateName: inv?.unitState || "",
+      stateCode:
+        inv?.placeOfSupplyStateCode ||
+        (inv?.buyerGstin || inv?.unitGstNo)?.slice(0, 2) ||
+        "",
+      contactName: inv?.contactName || "",
+    };
+  }, [inv]);
+
   // lineItems safe + sort
   const items = useMemo(() => {
     const arr = Array.isArray(inv?.lineItems) ? inv.lineItems : [];
@@ -767,14 +794,17 @@ Corpseed Team`,
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">
-                  GSTIN/UIN : {inv?.buyerGstin || ""}
+                  GSTIN/UIN : {buyer.gstin || ""}
+                </div>
+                <div className="text-[11px] leading-snug">
+                  Address : {buyer.address || "-"}
                 </div>
                 <div className="text-[11px]">
-                  State name : {""} , code :{" "}
-                  {inv?.placeOfSupplyStateCode || "29"}
+                  State name : {buyer.stateName || "-"} , code :{" "}
+                  {buyer.stateCode || "-"}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {inv?.contactName || ""}
+                  E-mail : {buyer.contactName || ""}
                 </div>
               </div>
 
@@ -784,14 +814,17 @@ Corpseed Team`,
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">
-                  GSTIN/UIN : {inv?.buyerGstin || ""}
+                  GSTIN/UIN : {buyer.gstin || ""}
+                </div>
+                <div className="text-[11px] leading-snug">
+                  Address : {buyer.address || "-"}
                 </div>
                 <div className="text-[11px]">
-                  State name : {""} , code :{" "}
-                  {inv?.placeOfSupplyStateCode || "29"}
+                  State name : {buyer.stateName || "-"} , code :{" "}
+                  {buyer.stateCode || "-"}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {inv?.contactName || ""}
+                  E-mail : {buyer.contactName || ""}
                 </div>
               </div>
             </div>

@@ -9,8 +9,6 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
-  Select,
-  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -115,7 +113,7 @@ const getRatingBadgeClass = (rating) => {
 const DocumentButton = ({ url, label }) => {
   if (!url) {
     return (
-      <Chip size="sm" variant="flat" color="default" className="font-medium">
+      <Chip size="sm" variant="flat" color="default">
         {label}: NA
       </Chip>
     );
@@ -131,7 +129,6 @@ const DocumentButton = ({ url, label }) => {
         size="sm"
         variant="flat"
         color="primary"
-        className="h-7 min-w-0 px-2 text-xs font-semibold"
         startContent={<FileText size={13} />}
         endContent={<ExternalLink size={12} />}
       >
@@ -142,11 +139,11 @@ const DocumentButton = ({ url, label }) => {
 };
 
 const ReviewInfo = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-    <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+  <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-default-50 px-3 py-2">
+    <p className="text-[11.5px] font-semibold uppercase tracking-wide text-default-400">
       {label}
     </p>
-    <p className="m-0 mt-1 break-words text-sm font-semibold text-slate-800">
+    <p className="mt-1 break-words text-[12.5px] font-semibold text-foreground">
       {safeText(value)}
     </p>
   </div>
@@ -216,12 +213,6 @@ function CompanyDocuments() {
 
   const handleSearchChange = (value) => {
     setFilterValue(value);
-    setPage(1);
-  };
-
-  const handleRowsPerPageChange = (keys) => {
-    const selected = Array.from(keys)?.[0] || "10";
-    setRowsPerPage(String(selected));
     setPage(1);
   };
 
@@ -308,7 +299,7 @@ function CompanyDocuments() {
         return (
           <div className="max-w-[260px]">
             <div className="flex items-center gap-2">
-              <p className="m-0 truncate text-sm font-semibold text-slate-900">
+              <p className="truncate text-[12.5px] font-semibold text-foreground">
                 {safeText(item?.companyName)}
               </p>
 
@@ -323,7 +314,7 @@ function CompanyDocuments() {
               )}
             </div>
 
-            <p className="m-0 mt-1 text-xs font-medium text-slate-400">
+            <p className="text-[11.5px] text-default-500">
               ID: {safeText(item?.companyId)}
             </p>
           </div>
@@ -331,12 +322,7 @@ function CompanyDocuments() {
 
       case "pan":
         return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color="default"
-            className="font-semibold"
-          >
+          <Chip size="sm" variant="flat" color="default">
             {safeText(item?.panNo)}
           </Chip>
         );
@@ -347,7 +333,6 @@ function CompanyDocuments() {
             size="sm"
             variant="flat"
             color={getDocTypeColor(item?.documentType)}
-            className="font-semibold"
           >
             {safeText(item?.documentType)}
           </Chip>
@@ -364,10 +349,10 @@ function CompanyDocuments() {
       case "requestedBy":
         return (
           <div className="max-w-[170px]">
-            <p className="m-0 truncate text-sm font-medium text-slate-800">
+            <p className="truncate text-[12.5px] font-medium text-foreground">
               {safeText(item?.requestedByName)}
             </p>
-            <p className="m-0 mt-1 text-xs font-medium text-slate-400">
+            <p className="text-[11.5px] text-default-500">
               ID: {safeText(item?.requestedById)}
             </p>
           </div>
@@ -376,10 +361,10 @@ function CompanyDocuments() {
       case "legal":
         return (
           <div className="max-w-[170px]">
-            <p className="m-0 truncate text-sm font-medium text-slate-800">
+            <p className="truncate text-[12.5px] font-medium text-foreground">
               {safeText(item?.assignedToLegalName)}
             </p>
-            <p className="m-0 mt-1 text-xs font-medium text-slate-400">
+            <p className="text-[11.5px] text-default-500">
               ID: {safeText(item?.assignedToLegalId)}
             </p>
           </div>
@@ -387,35 +372,28 @@ function CompanyDocuments() {
 
       case "status":
         return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={getStatusColor(item?.status)}
-            className="font-semibold"
-          >
+          <Chip size="sm" variant="flat" color={getStatusColor(item?.status)}>
             {safeText(item?.status)}
           </Chip>
         );
 
       case "dates":
         return (
-          <div className="flex max-w-[190px] items-start gap-2 text-xs font-medium text-slate-600">
+          <div className="flex max-w-[190px] items-start gap-2 text-[11.5px] text-default-500">
             <CalendarDays
               size={14}
-              className="mt-0.5 shrink-0 text-slate-400"
+              className="mt-0.5 shrink-0 text-default-400"
             />
             <div>
-              <p className="m-0">Created: {formatDateTime(item?.createdAt)}</p>
-              <p className="m-0 mt-1 text-slate-400">
-                Updated: {formatDateTime(item?.updatedAt)}
-              </p>
+              <p>Created: {formatDateTime(item?.createdAt)}</p>
+              <p>Updated: {formatDateTime(item?.updatedAt)}</p>
             </div>
           </div>
         );
 
       case "remark":
         return (
-          <p className="m-0 max-w-[220px] truncate text-xs font-medium text-slate-500">
+          <p className="max-w-[220px] truncate text-[11.5px] text-default-500">
             {safeText(item?.reviewRemark)}
           </p>
         );
@@ -426,8 +404,7 @@ function CompanyDocuments() {
             size="sm"
             color="primary"
             variant="flat"
-            className="h-8 min-w-[86px] rounded-lg text-xs font-semibold"
-            startContent={<ClipboardCheck size={14} />}
+            startContent={<ClipboardCheck className="w-3.5 h-3.5" />}
             onPress={() => handleOpenReview(item)}
             isDisabled={String(item?.status || "").toUpperCase() !== "PENDING"}
           >
@@ -440,143 +417,131 @@ function CompanyDocuments() {
     }
   };
 
-  return (
-    <div className="h-full w-full overflow-hidden bg-[#f7f8fa] p-1">
-      <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h1 className="m-0 text-2xl font-semibold tracking-tight text-slate-950">
-              Company Legal Documents
-            </h1>
-            <p className="m-0 mt-1 text-sm font-medium text-slate-500">
-              Agreement and NDA verification requests sent from company profile.
-            </p>
-          </div>
+  const topContent = (
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
+        <Input
+          isClearable
+          size="sm"
+          className="w-full sm:max-w-[280px]"
+          classNames={{ inputWrapper: "h-8 min-h-8" }}
+          value={filterValue}
+          onValueChange={handleSearchChange}
+          placeholder="Search legal request..."
+          startContent={<Search className="w-4 h-4 text-default-400" />}
+        />
 
-          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:items-center">
-            <Input
-              isClearable
-              value={filterValue}
-              onValueChange={handleSearchChange}
-              placeholder="Search legal request..."
-              startContent={<Search size={18} className="text-slate-500" />}
-              classNames={{
-                base: "w-full sm:w-[320px]",
-                inputWrapper:
-                  "h-12 rounded-2xl border border-slate-100 bg-white shadow-none",
-                input: "text-sm",
-              }}
-            />
+        <Button
+          isIconOnly
+          size="sm"
+          variant="flat"
+          onPress={handleRefresh}
+          isLoading={loading === "pending"}
+        >
+          <RefreshCcw className="w-3.5 h-3.5" />
+        </Button>
+      </div>
 
-            <Button
-              isIconOnly
-              variant="flat"
-              className="h-12 w-12 rounded-2xl bg-white"
-              onPress={handleRefresh}
-              isLoading={loading === "pending"}
-            >
-              <RefreshCcw size={17} />
-            </Button>
-          </div>
-        </div>
+      <div className="flex justify-between items-center">
+        <span className="text-default-400 text-[12.5px]">
+          Total {filteredItems.length} legal requests
+        </span>
 
-        <div className="flex items-center justify-between gap-3">
-          <p className="m-0 text-sm font-medium text-slate-400">
-            Total{" "}
-            <span className="font-semibold text-slate-500">
-              {filteredItems.length}
-            </span>{" "}
-            legal requests
-          </p>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-500">
-              Rows per page:
-            </span>
-
-            <Select
-              size="sm"
-              variant="flat"
-              selectedKeys={new Set([rowsPerPage])}
-              onSelectionChange={handleRowsPerPageChange}
-              className="w-[80px]"
-              classNames={{
-                trigger: "bg-transparent shadow-none",
-              }}
-            >
-              <SelectItem key="5">5</SelectItem>
-              <SelectItem key="10">10</SelectItem>
-              <SelectItem key="20">20</SelectItem>
-              <SelectItem key="50">50</SelectItem>
-            </Select>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <Table
-            aria-label="Company legal verification table"
-            removeWrapper
-            isHeaderSticky
-            classNames={{
-              base: "h-full overflow-auto p-4",
-              table: "min-w-[1380px]",
-              thead: "[&>tr]:first:rounded-xl",
-              th: "bg-[#f7f8fa] text-[11px] font-semibold uppercase text-slate-500 first:rounded-l-xl last:rounded-r-xl",
-              td: "py-4 text-sm",
-              tr: "border-b border-slate-100 last:border-b-0",
+        <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+          Rows per page:
+          <select
+            className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(e.target.value);
+              setPage(1);
             }}
           >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key}>{column.label}</TableColumn>
-              )}
-            </TableHeader>
-
-            <TableBody
-              items={paginatedItems}
-              isLoading={loading === "pending"}
-              loadingContent={
-                <div className="py-16 text-sm font-medium text-slate-400">
-                  Loading legal requests...
-                </div>
-              }
-              emptyContent={
-                <div className="flex min-h-[150px] items-center justify-center text-sm font-medium text-slate-400">
-                  No legal requests found
-                </div>
-              }
-            >
-              {(item) => (
-                <TableRow key={item?.id}>
-                  {(columnKey) => (
-                    <TableCell>{renderCell(item, columnKey)}</TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="flex items-center justify-between px-2 pb-2">
-          <p className="m-0 text-sm font-medium text-slate-400">
-            Page {page} of {pages}
-          </p>
-
-          <Pagination
-            showControls
-            page={page}
-            total={pages}
-            onChange={setPage}
-            classNames={{
-              wrapper: "gap-1",
-              item: "bg-white text-slate-500 shadow-none",
-              cursor: "bg-blue-600 text-white font-semibold",
-              prev: "bg-white",
-              next: "bg-white",
-            }}
-          />
-        </div>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </label>
       </div>
+    </div>
+  );
+
+  const bottomContent = (
+    <div className="py-1.5 px-1 flex justify-between items-center">
+      <span className="w-[30%] text-[12.5px] text-default-400">
+        Page {page} of {pages}
+      </span>
+
+      <Pagination
+        isCompact
+        showControls
+        color="primary"
+        page={page}
+        total={pages}
+        onChange={setPage}
+      />
+
+      <div className="hidden sm:flex w-[30%]" />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Company Legal Documents
+      </h1>
+      <p className="text-default-500 text-[12.5px] -mt-2 mb-1">
+        Agreement and NDA verification requests sent from company profile.
+      </p>
+
+      <Table
+        isHeaderSticky
+        removeWrapper={false}
+        aria-label="Company legal verification table"
+        topContent={topContent}
+        topContentPlacement="outside"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full min-w-[1380px]",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+      >
+        <TableHeader columns={columns}>
+          {(column) => (
+            <TableColumn key={column.key}>{column.label}</TableColumn>
+          )}
+        </TableHeader>
+
+        <TableBody
+          items={paginatedItems}
+          isLoading={loading === "pending"}
+          loadingContent={
+            <div className="py-16 text-[12.5px] text-default-400">
+              Loading legal requests...
+            </div>
+          }
+          emptyContent={
+            <div className="flex min-h-[150px] items-center justify-center text-[12.5px] text-default-400">
+              No legal requests found
+            </div>
+          }
+        >
+          {(item) => (
+            <TableRow key={item?.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={isReviewOpen}
@@ -596,10 +561,10 @@ function CompanyDocuments() {
         <ModalContent>
           <ModalHeader>
             <div>
-              <h2 className="m-0 text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 Review Company Legal Verification
               </h2>
-              <p className="m-0 mt-1 text-xs font-medium text-slate-500">
+              <p className="text-[11.5px] font-normal text-default-500">
                 Verify Agreement/NDA documents and submit approval decision.
               </p>
             </div>
@@ -639,8 +604,8 @@ function CompanyDocuments() {
               />
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-3">
-              <p className="m-0 mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-default-50 p-3">
+              <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-default-500">
                 Documents
               </p>
               <div className="flex flex-wrap items-center gap-2">

@@ -648,16 +648,18 @@ const Expense = () => {
       switch (columnKey) {
         case "expenseId":
           return (
-            <span className="font-medium">#{expense?.expenseId ?? "-"}</span>
+            <span className="font-medium text-[12.5px]">
+              #{expense?.expenseId ?? "-"}
+            </span>
           );
 
         case "project":
           return (
             <div className="flex max-w-[240px] flex-col">
-              <span className="truncate text-sm font-semibold">
+              <span className="truncate text-[12.5px] font-semibold">
                 {expense?.projectName || "-"}
               </span>
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 {expense?.projectNo ||
                   `Project ID: ${expense?.projectId || "-"}`}
               </span>
@@ -666,13 +668,15 @@ const Expense = () => {
 
         case "unbilledNumber":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {expense?.unbilledNumber || "-"}
             </span>
           );
 
         case "productName":
-          return expense?.productName || "-";
+          return (
+            <span className="text-[12.5px]">{expense?.productName || "-"}</span>
+          );
 
         case "expenseCategory":
           return (
@@ -683,28 +687,28 @@ const Expense = () => {
 
         case "requestedAmount":
           return (
-            <span className="whitespace-nowrap font-semibold">
+            <span className="whitespace-nowrap text-[12.5px] font-semibold">
               {formatCurrency(expense?.requestedAmount, currencyCode)}
             </span>
           );
 
         case "approvedAmount":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatCurrency(expense?.approvedAmount, currencyCode)}
             </span>
           );
 
         case "paidAmount":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatCurrency(expense?.paidAmount, currencyCode)}
             </span>
           );
 
         case "outstandingAmount":
           return (
-            <span className="whitespace-nowrap font-semibold">
+            <span className="whitespace-nowrap text-[12.5px] font-semibold">
               {formatCurrency(expense?.outstandingAmount, currencyCode)}
             </span>
           );
@@ -712,9 +716,11 @@ const Expense = () => {
         case "department":
           return (
             <div className="flex flex-col">
-              <span>{expense?.raisedDepartmentName || "-"}</span>
+              <span className="text-[12.5px]">
+                {expense?.raisedDepartmentName || "-"}
+              </span>
               {expense?.raisedDepartmentId && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   ID: {expense.raisedDepartmentId}
                 </span>
               )}
@@ -724,9 +730,11 @@ const Expense = () => {
         case "createdBy":
           return (
             <div className="flex flex-col">
-              <span>{expense?.createdByUserName || "-"}</span>
+              <span className="text-[12.5px]">
+                {expense?.createdByUserName || "-"}
+              </span>
               {expense?.createdByUserId && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   User ID: {expense.createdByUserId}
                 </span>
               )}
@@ -735,21 +743,21 @@ const Expense = () => {
 
         case "expenseDate":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.expenseDate)}
             </span>
           );
 
         case "createdDate":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.createdDate)}
             </span>
           );
 
         case "updatedDate":
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.updatedDate)}
             </span>
           );
@@ -787,7 +795,7 @@ const Expense = () => {
                 {formatText(expense?.crtApprovalStatus)}
               </Chip>
               {expense?.crtActionByUserName && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   By: {expense.crtActionByUserName}
                 </span>
               )}
@@ -805,7 +813,7 @@ const Expense = () => {
                 {formatText(expense?.accountsApprovalStatus)}
               </Chip>
               {expense?.accountsActionByUserName && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   By: {expense.accountsActionByUserName}
                 </span>
               )}
@@ -827,13 +835,13 @@ const Expense = () => {
           return (
             <div className="flex max-w-[230px] flex-col">
               <span
-                className="truncate text-sm"
+                className="truncate text-[12.5px]"
                 title={expense?.externalReference || "-"}
               >
                 {expense?.externalReference || "-"}
               </span>
               <span
-                className="truncate text-xs text-default-500"
+                className="truncate text-[11.5px] text-default-500"
                 title={expense?.remark || "-"}
               >
                 {expense?.remark || "-"}
@@ -888,7 +896,7 @@ const Expense = () => {
                   variant="light"
                   aria-label={`Actions for expense ${expense?.expenseId}`}
                 >
-                  <EllipsisVertical className="h-5 w-5" />
+                  <EllipsisVertical className="h-4 w-4" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu aria-label="Expense accounts actions">
@@ -912,13 +920,15 @@ const Expense = () => {
 
   const topContent = useMemo(
     () => (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full max-w-[340px]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search payment queue..."
-            startContent={<Search className="h-4 w-4" />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={searchValue}
             onClear={() => {
               setSearchValue("");
@@ -930,30 +940,32 @@ const Expense = () => {
             }}
           />
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Select
-              className="w-full sm:w-[220px]"
-              selectedKeys={new Set([paymentStatus])}
-              onSelectionChange={(keys) => {
-                const selectedValue = Array.from(keys)[0];
-                if (!selectedValue) return;
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[180px]">
+              <Select
+                size="sm"
+                selectedKeys={new Set([paymentStatus])}
+                onSelectionChange={(keys) => {
+                  const selectedValue = Array.from(keys)[0];
+                  if (!selectedValue) return;
 
-                setPaymentStatus(String(selectedValue));
-                setPage(1);
-              }}
-            >
-              {PAYMENT_STATUS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} textValue={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
+                  setPaymentStatus(String(selectedValue));
+                  setPage(1);
+                }}
+              >
+                {PAYMENT_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} textValue={option.label}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
 
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   variant="flat"
-                  endContent={<ChevronDown className="h-4 w-4" />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   Columns
                 </Button>
@@ -974,15 +986,15 @@ const Expense = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-small text-default-500">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} expenses
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-500">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="rounded-md border border-default-200 bg-transparent px-2 py-1 text-small outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               value={rowsPerPage}
               onChange={(event) => {
                 setRowsPerPage(Number(event.target.value));
@@ -1011,8 +1023,8 @@ const Expense = () => {
 
   const bottomContent = useMemo(
     () => (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-500">
+      <div className="py-1.5 px-1 flex items-center justify-between">
+        <span className="text-[12.5px] text-default-400">
           Page {page} of {totalPages}
         </span>
         <Pagination
@@ -1031,18 +1043,19 @@ const Expense = () => {
   const isApprovedDecision = decisionForm.status === "APPROVED";
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-sans text-2xl font-medium">
+    <div className="flex flex-col gap-2">
+      <div className="shrink-0 mb-2">
+        <h1 className="font-sans text-lg font-semibold">
           Expense Payment Queue
         </h1>
-        <p className="mt-1 text-sm text-default-500">
+        <p className="text-default-500 text-[12.5px]">
           Review expenses by payment status and track requested, approved, paid,
           and outstanding amounts.
         </p>
       </div>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Expense payment queue table"
         sortDescriptor={sortDescriptor}
         onSortChange={setSortDescriptor}
@@ -1051,8 +1064,13 @@ const Expense = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "w-full md:max-h-[62vh] 2xl:max-h-[68vh]",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={headerColumns}>

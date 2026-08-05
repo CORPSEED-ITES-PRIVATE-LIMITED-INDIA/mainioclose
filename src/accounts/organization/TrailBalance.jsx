@@ -22,9 +22,7 @@ const TrailBalance = () => {
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
 
-  const apiData = useSelector(
-    (state) => state.organization.trailBalanceList
-  );
+  const apiData = useSelector((state) => state.organization.trailBalanceList);
 
   const [dateRange, setDateRange] = useState({
     startDate: twoMonthsAgo,
@@ -93,7 +91,9 @@ const TrailBalance = () => {
   return (
     <div className="flex flex-col gap-2 p-2">
       <div className="flex justify-between items-center">
-        <h1 className="font-medium text-2xl">Trail balance</h1>
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+          Trail balance
+        </h1>
 
         <div className="flex gap-2 items-center">
           <DateRangePicker
@@ -102,7 +102,7 @@ const TrailBalance = () => {
             size="md"
             value={{
               start: parseZonedDateTime(
-                `${dateRange?.startDate}[Asia/kolkata]`
+                `${dateRange?.startDate}[Asia/kolkata]`,
               ),
               end: parseZonedDateTime(`${dateRange?.endDate}[Asia/kolkata]`),
             }}
@@ -110,24 +110,24 @@ const TrailBalance = () => {
               const formattedStart = value.start
                 ? `${value.start.year}-${String(value.start.month).padStart(
                     2,
-                    "0"
+                    "0",
                   )}-${String(value.start.day).padStart(2, "0")}T${String(
-                    value.start.hour
+                    value.start.hour,
                   ).padStart(2, "0")}:${String(value.start.minute).padStart(
                     2,
-                    "0"
+                    "0",
                   )}`
                 : null;
 
               const formattedEnd = value.end
                 ? `${value.end.year}-${String(value.end.month).padStart(
                     2,
-                    "0"
+                    "0",
                   )}-${String(value.end.day).padStart(2, "0")}T${String(
-                    value.end.hour
+                    value.end.hour,
                   ).padStart(2, "0")}:${String(value.end.minute).padStart(
                     2,
-                    "0"
+                    "0",
                   )}`
                 : null;
 
@@ -157,7 +157,9 @@ const TrailBalance = () => {
         }}
       >
         <TableHeader columns={columns}>
-          {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
+          {(column) => (
+            <TableColumn key={column.key}>{column.label}</TableColumn>
+          )}
         </TableHeader>
 
         <TableBody items={trailBalanceList || []}>

@@ -420,7 +420,7 @@ function VendorRestrictions() {
     switch (columnKey) {
       case "id":
         return (
-          <span className="font-medium text-foreground">
+          <span className="font-medium text-[12.5px] text-foreground">
             {request?.id || "-"}
           </span>
         );
@@ -428,11 +428,11 @@ function VendorRestrictions() {
       case "vendor":
         return (
           <div className="flex min-w-[190px] flex-col">
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-[12.5px] text-foreground">
               {request?.vendorName || "-"}
             </span>
 
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-500">
               Vendor ID: {request?.vendorId || "-"}
             </span>
           </div>
@@ -452,7 +452,7 @@ function VendorRestrictions() {
       case "reason":
         return (
           <Tooltip content={request?.reason || "No reason provided"}>
-            <p className="max-w-[230px] truncate text-sm text-foreground">
+            <p className="max-w-[230px] truncate text-[12.5px] text-foreground">
               {request?.reason || "-"}
             </p>
           </Tooltip>
@@ -461,17 +461,19 @@ function VendorRestrictions() {
       case "restrictionPeriod":
         if (request?.restrictionType === "BLACKLIST") {
           return (
-            <span className="text-sm text-default-400">Not applicable</span>
+            <span className="text-[12.5px] text-default-400">
+              Not applicable
+            </span>
           );
         }
 
         return (
           <div className="flex min-w-[155px] flex-col">
-            <span className="text-sm text-foreground">
+            <span className="text-[12.5px] text-foreground">
               {formatDate(request?.restrictionStartDate)}
             </span>
 
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-500">
               to {formatDate(request?.restrictionEndDate)}
             </span>
           </div>
@@ -480,11 +482,11 @@ function VendorRestrictions() {
       case "requestedBy":
         return (
           <div className="flex min-w-[150px] flex-col">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-[12.5px] font-medium text-foreground">
               {request?.requestedByName || "-"}
             </span>
 
-            <span className="text-xs text-default-400">
+            <span className="text-[11.5px] text-default-500">
               User ID: {request?.requestedBy || "-"}
             </span>
           </div>
@@ -492,7 +494,7 @@ function VendorRestrictions() {
 
       case "requestedAt":
         return (
-          <span className="min-w-[170px] text-sm text-foreground">
+          <span className="min-w-[170px] text-[12.5px] text-foreground">
             {formatDateTime(request?.requestedAt)}
           </span>
         );
@@ -511,7 +513,9 @@ function VendorRestrictions() {
       case "attachment":
         if (!request?.attachmentUrl) {
           return (
-            <span className="text-sm text-default-400">No attachment</span>
+            <span className="text-[12.5px] text-default-400">
+              No attachment
+            </span>
           );
         }
 
@@ -532,7 +536,9 @@ function VendorRestrictions() {
 
       case "actions":
         if (request?.status !== "PENDING_ACCOUNTS") {
-          return <span className="text-sm text-default-400">Reviewed</span>;
+          return (
+            <span className="text-[12.5px] text-default-400">Reviewed</span>
+          );
         }
 
         return (
@@ -568,70 +574,87 @@ function VendorRestrictions() {
     }
   };
 
+  const topContent = (
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
+        <div className="w-[220px]">
+          <Select
+            size="sm"
+            label="Filter by status"
+            selectedKeys={new Set([status])}
+            onSelectionChange={handleStatusChange}
+          >
+            {statusOptions.map((option) => (
+              <SelectItem key={option.key}>{option.label}</SelectItem>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-default-400 text-[12.5px]">
+          Total {totalElements} request
+          {totalElements === 1 ? "" : "s"}
+        </span>
+
+        <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+          Rows per page:
+          <select
+            className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+            value={size}
+            onChange={handleSizeChange}
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+
   const bottomContent = (
-    <div className="flex flex-col items-center justify-between gap-3 px-2 py-2 sm:flex-row">
-      <span className="text-small text-default-400">
+    <div className="py-1.5 px-1 flex justify-between items-center">
+      <span className="w-[30%] text-[12.5px] text-default-400">
         Showing {numberOfElements} of {totalElements} requests
       </span>
 
       <Pagination
         isCompact
         showControls
-        showShadow
         color="primary"
         page={page}
         total={totalPages}
         onChange={setPage}
       />
 
-      <label className="flex items-center gap-2 text-small text-default-400">
-        Rows per page:
-        <select
-          className="bg-transparent text-small text-default-500 outline-none"
-          value={size}
-          onChange={handleSizeChange}
-        >
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-        </select>
-      </label>
+      <div className="hidden sm:flex w-[30%]" />
     </div>
   );
 
   return (
-    <>
-      <div className="mb-4 flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Vendor Restriction Requests
-        </h1>
-      </div>
-
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <span className="text-sm text-default-400">
-          Total {totalElements} request
-          {totalElements === 1 ? "" : "s"}
-        </span>
-        <Select
-          label="Filter by Status"
-          className="w-full sm:w-64"
-          selectedKeys={new Set([status])}
-          onSelectionChange={handleStatusChange}
-        >
-          {statusOptions.map((option) => (
-            <SelectItem key={option.key}>{option.label}</SelectItem>
-          ))}
-        </Select>
-      </div>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendor Restriction Requests
+      </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Accounts vendor restriction requests"
+        topContent={topContent}
+        topContentPlacement="outside"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full rounded-xl border border-default-200",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={columns}>
@@ -754,7 +777,7 @@ function VendorRestrictions() {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 }
 

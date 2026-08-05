@@ -1,9 +1,10 @@
+import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
-import UsersList from "../hr/UsersList";
-import UserApprovals from "../hr/UserApprovals";
-import Services from "../hr/Services";
-import Rating from "../hr/Rating";
+const UsersList = lazy(() => import("../hr/UsersList"));
+const UserApprovals = lazy(() => import("../hr/UserApprovals"));
+const Services = lazy(() => import("../hr/Services"));
+const Rating = lazy(() => import("../hr/Rating"));
 
 const HRModuleRouting = () => {
   return (

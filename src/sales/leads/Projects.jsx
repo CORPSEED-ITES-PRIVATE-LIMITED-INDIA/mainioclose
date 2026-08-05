@@ -50,14 +50,12 @@ const INITIAL_VISIBLE_COLUMNS = [
 const Projects = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
-  const count = useSelector(
-    (state) => state.leads.projectsList?.length
-  );
+  const count = useSelector((state) => state.leads.projectsList?.length);
   const data = useSelector((state) => state.leads.projectsList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -71,16 +69,15 @@ const Projects = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
-  useEffect(()=>{
-    dispatch(getProjectAction(filteration))
-  },[dispatch])
-
+  useEffect(() => {
+    dispatch(getProjectAction(filteration));
+  }, [dispatch]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -89,7 +86,7 @@ const Projects = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -120,7 +117,9 @@ const Projects = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <p className="font-normal">{rowData?.projectName || "-"}</p>
+              <p className="text-[12.5px] font-normal">
+                {rowData?.projectName || "-"}
+              </p>
             </div>
           </div>
         );
@@ -128,7 +127,7 @@ const Projects = () => {
       case "leadName":
         return (
           <div className="max-w-40">
-            <p className="font-normal capitalize">
+            <p className="text-[12.5px] font-normal capitalize">
               {rowData?.leadName || "Unknown"}
             </p>
           </div>
@@ -136,7 +135,7 @@ const Projects = () => {
       case "status":
         return (
           <div className="flex flex-col">
-            <Chip size="sm" className="text-tiny capitalize" variant="flat">
+            <Chip size="sm" variant="flat" className="capitalize">
               {rowData?.status}
             </Chip>
           </div>
@@ -144,42 +143,50 @@ const Projects = () => {
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.client?.name || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.client?.name || "-"}
+            </span>
           </div>
         );
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assigneeName || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.assigneeName || "-"}
+            </span>
           </div>
         );
 
       case "amount":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">₹ {rowData?.amount || "-"}</span>
+            <span className="text-[12.5px] font-semibold">
+              ₹ {rowData?.amount || "-"}
+            </span>
           </div>
         );
       case "address":
         return rowData?.pAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.pAddress || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.pAddress || "-"}
+            </span>
             <div className="flex items-center gap-1">
               {" "}
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.pCity || "-"},
               </span>
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.pState || "-"},
               </span>
             </div>
 
             <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.pCountry || "-"}
               </span>
               ,
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.pPinCode || "-"}
               </span>
             </div>
@@ -190,18 +197,26 @@ const Projects = () => {
       case "secondaryAddress":
         return rowData?.sAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.sAddress || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.sAddress || "-"}
+            </span>
             <div className="flex items-center gap-1">
               {" "}
-              <span className="text-gray-400">{rowData?.sCity || "-"}</span>,
-              <span className="text-gray-400">{rowData?.sState || "-"}</span>,
+              <span className="text-[11.5px] text-default-400">
+                {rowData?.sCity || "-"}
+              </span>
+              ,
+              <span className="text-[11.5px] text-default-400">
+                {rowData?.sState || "-"}
+              </span>
+              ,
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.sCountry || "-"}
               </span>
               ,
-              <span className="text-gray-400 text-tiny">
+              <span className="text-[11.5px] text-default-400">
                 {rowData?.sPinCode || "-"}
               </span>
             </div>
@@ -250,18 +265,20 @@ const Projects = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             {/* <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -298,7 +315,11 @@ const Projects = () => {
             </Dropdown> */}
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -320,13 +341,13 @@ const Projects = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} projects
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -350,8 +371,8 @@ const Projects = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -359,7 +380,6 @@ const Projects = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -393,16 +413,24 @@ const Projects = () => {
   }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Projects</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Projects
+      </h1>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -433,7 +461,7 @@ const Projects = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

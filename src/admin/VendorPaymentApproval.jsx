@@ -66,12 +66,12 @@ const VendorPaymentApproval = () => {
   const invoiceModal = useDisclosure();
   const data = useSelector((state) => state.vendors.vendorPaymentListForAdmin);
   const count = useSelector(
-    (state) => state.vendors.vendorPaymentCountForAdmin
+    (state) => state.vendors.vendorPaymentCountForAdmin,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -84,7 +84,7 @@ const VendorPaymentApproval = () => {
 
   useEffect(() => {
     dispatch(
-      getVendorPaymentRegisterInAdmin({ page, size: rowsPerPage, status })
+      getVendorPaymentRegisterInAdmin({ page, size: rowsPerPage, status }),
     );
     dispatch(getVendorPaymentCountInAdmin(status));
   }, [dispatch, page, rowsPerPage, status]);
@@ -93,7 +93,7 @@ const VendorPaymentApproval = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -103,8 +103,8 @@ const VendorPaymentApproval = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -137,7 +137,11 @@ const VendorPaymentApproval = () => {
             color: "success",
           });
           dispatch(
-            getVendorPaymentRegisterInAdmin({ page, size: rowsPerPage, status })
+            getVendorPaymentRegisterInAdmin({
+              page,
+              size: rowsPerPage,
+              status,
+            }),
           );
           dispatch(getVendorPaymentCountInAdmin(status));
         } else {
@@ -145,7 +149,7 @@ const VendorPaymentApproval = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -406,7 +410,7 @@ const VendorPaymentApproval = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Vendor's payment approval list
       </h1>
       <Table

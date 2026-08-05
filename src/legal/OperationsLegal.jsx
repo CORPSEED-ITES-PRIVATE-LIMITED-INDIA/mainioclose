@@ -215,7 +215,7 @@ const OperationsLegal = () => {
         case "createdAt":
           return (
             <div>
-              <p className="text-sm capitalize">
+              <p className="text-[12.5px] capitalize">
                 {dayjs(rowData?.createdAt).format("DD-MM-YYYY hh:mm A")}
               </p>
             </div>
@@ -223,21 +223,27 @@ const OperationsLegal = () => {
         case "legalRequestTitle":
           return (
             <div>
-              <p className="capitalize font-medium ">
+              <p className="capitalize text-[12.5px] font-medium">
                 {rowData?.legalRequestTitle || "NA"}
               </p>
             </div>
           );
         case "status":
           return (
-            <Chip size="sm" color={statusColorCode[rowData?.status]}>
+            <Chip
+              size="sm"
+              variant="flat"
+              color={statusColorCode[rowData?.status]}
+            >
               {rowData?.status}
             </Chip>
           );
         case "notes":
-          return <p className="text-xs capitalize">{rowData?.notes}</p>;
+          return <p className="text-[11.5px] capitalize">{rowData?.notes}</p>;
         case "raisedBy":
-          return <p className="text-sm capitalize">{rowData?.raisedBy}</p>;
+          return (
+            <p className="text-[12.5px] capitalize">{rowData?.raisedBy}</p>
+          );
         case "documents": {
           const documents = Array.isArray(rowData?.documents)
             ? rowData.documents
@@ -273,7 +279,7 @@ const OperationsLegal = () => {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <EllipsisVertical className="text-default-300" />
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu>
@@ -381,38 +387,26 @@ const OperationsLegal = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center gap-0.5 w-[70%]">
-            {/* <Select
-              className="max-w-[20%]"
-              selectionMode="single"
-              selectedKeys={[searchBy]}
-              onSelectionChange={(e) => {
-                let key = Array.from(e)[0];
-                setSearchBy(key);
-              }}
-            >
-              <SelectItem key={"companyName"}>Company name</SelectItem>
-              <SelectItem key={"unbilledNumber"}>Unbilled number</SelectItem>
-            </Select> */}
-            <Input
-              isClearable
-              className="w-full sm:max-w-[45%]"
-              placeholder="Search ..."
-              startContent={<Search />}
-              value={filterValue}
-              onClear={() => onClear()}
-              onValueChange={onSearchChange}
-            />
-          </div>
-          <div className="flex gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
+          <Input
+            isClearable
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search ..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
+            value={filterValue}
+            onClear={() => onClear()}
+            onValueChange={onSearchChange}
+          />
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
                   variant="flat"
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   {status}
                 </Button>
@@ -436,7 +430,10 @@ const OperationsLegal = () => {
             </Dropdown>
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -459,14 +456,14 @@ const OperationsLegal = () => {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} legal request
           </span>
           <div className="flex gap-4">
-            <label className="flex items-center text-default-400 text-small">
+            <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
               Rows per page:
               <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
+                className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
                 onChange={onRowsPerPageChange}
                 value={rowsPerPage}
               >
@@ -492,8 +489,8 @@ const OperationsLegal = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -501,7 +498,6 @@ const OperationsLegal = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -530,18 +526,24 @@ const OperationsLegal = () => {
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Legal request list
       </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Operations legal requests table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] overflow-scroll w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -755,7 +757,7 @@ const OperationsLegal = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

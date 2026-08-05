@@ -75,15 +75,15 @@ const DiscountedEstimateApproval = () => {
   const invoiceModal = useDisclosure();
   const data = useSelector((state) => state.leads.estimateApprovalList);
   const count = useSelector(
-    (state) => state.leads.estimateApprovalList?.length
+    (state) => state.leads.estimateApprovalList?.length,
   );
   const estimateHistoryList = useSelector(
-    (state) => state.leads.estimateHistoryList
+    (state) => state.leads.estimateHistoryList,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -107,7 +107,7 @@ const DiscountedEstimateApproval = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -117,8 +117,8 @@ const DiscountedEstimateApproval = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -144,7 +144,7 @@ const DiscountedEstimateApproval = () => {
           ...actionStatus,
           estimateFormId: rowItem?.id,
           userId: userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -163,7 +163,7 @@ const DiscountedEstimateApproval = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(
@@ -171,7 +171,7 @@ const DiscountedEstimateApproval = () => {
           ...actionStatus,
           estimateFormId: rowItem?.id,
           userId: userId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -190,7 +190,7 @@ const DiscountedEstimateApproval = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     }
   };
@@ -452,7 +452,7 @@ const DiscountedEstimateApproval = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Discounted estimates
       </h1>
       <Table

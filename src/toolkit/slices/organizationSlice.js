@@ -818,6 +818,34 @@ export const getLedgerGroups = createAsyncThunk(
   },
 );
 
+export const getActiveLedgerGroups = createAsyncThunk(
+  "ledgerGroup/getActiveLedgerGroups",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/ledger-groups/active`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
+export const getLedgerGroupTypeById = createAsyncThunk(
+  "ledgerGroup/getLedgerGroupTypeById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/ledger-groups/${id}/group-type`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
 export const createLedgerGroup = createAsyncThunk(
   "ledgerGroup/createLedgerGroup",
   async (data, { rejectWithValue }) => {
@@ -1146,6 +1174,14 @@ const OrganizationSlice = createSlice({
     updateLedgerGroupLoading: "",
     deleteLedgerGroupLoading: "",
     ledgerGroupError: "",
+
+    activeLedgerGroupList: [],
+    activeLedgerGroupLoading: "",
+    activeLedgerGroupError: "",
+
+    ledgerGroupTypeById: null,
+    ledgerGroupTypeByIdLoading: "",
+    ledgerGroupTypeByIdError: "",
 
     ledgers: [],
     selectedLedgerId: null,
@@ -1820,6 +1856,44 @@ const OrganizationSlice = createSlice({
       state.ledgerGroupEmpty = true;
       state.ledgerGroupError =
         action.payload || "Failed to fetch ledger groups";
+    });
+
+    // ACTIVE LEDGER GROUPS
+    builder.addCase(getActiveLedgerGroups.pending, (state) => {
+      state.activeLedgerGroupLoading = "pending";
+      state.activeLedgerGroupError = "";
+    });
+
+    builder.addCase(getActiveLedgerGroups.fulfilled, (state, action) => {
+      state.activeLedgerGroupLoading = "success";
+      state.activeLedgerGroupList = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+
+    builder.addCase(getActiveLedgerGroups.rejected, (state, action) => {
+      state.activeLedgerGroupLoading = "error";
+      state.activeLedgerGroupList = [];
+      state.activeLedgerGroupError =
+        action.payload || "Failed to fetch active ledger groups";
+    });
+
+    // LEDGER GROUP TYPE BY ID
+    builder.addCase(getLedgerGroupTypeById.pending, (state) => {
+      state.ledgerGroupTypeByIdLoading = "pending";
+      state.ledgerGroupTypeByIdError = "";
+    });
+
+    builder.addCase(getLedgerGroupTypeById.fulfilled, (state, action) => {
+      state.ledgerGroupTypeByIdLoading = "success";
+      state.ledgerGroupTypeById = action.payload || null;
+    });
+
+    builder.addCase(getLedgerGroupTypeById.rejected, (state, action) => {
+      state.ledgerGroupTypeByIdLoading = "error";
+      state.ledgerGroupTypeById = null;
+      state.ledgerGroupTypeByIdError =
+        action.payload || "Failed to fetch ledger group type";
     });
 
     // CREATE LEDGER GROUP

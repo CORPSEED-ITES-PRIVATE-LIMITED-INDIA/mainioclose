@@ -1,18 +1,24 @@
+import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
-import IVR from "../quality/IVR";
-import IVRReport from "../quality/IVRReport";
-import Leads from "../sales/leads/Leads";
-import LeadDetail from "../sales/leads/LeadDetail";
-import LeadInfo from "../sales/leads/LeadInfo";
-import CreateCompanyForm from "../sales/company/CreateCompanyForm";
-import Vendors from "../sales/vendors/Vendors";
-import Proposal from "../sales/proposal/Proposal";
-import LeadEstimate from "../sales/leads/LeadEstimate";
-import LeadSearch from "../quality/LeadSearch";
 import KeepAlive from "react-activation";
-import LeadHistory from "../sales/leads/LeadHistory";
-import LeadTask from "../sales/leads/LeadTask";
+// Leads is the single most-visited page in the app - kept eager, like
+// Layoutpage/ProtectedRoute, so it never pays a first-visit chunk-fetch/
+// cold-transform delay.
+import Leads from "../sales/leads/Leads";
+const IVR = lazy(() => import("../quality/IVR"));
+const IVRReport = lazy(() => import("../quality/IVRReport"));
+const LeadDetail = lazy(() => import("../sales/leads/LeadDetail"));
+const LeadInfo = lazy(() => import("../sales/leads/LeadInfo"));
+const CreateCompanyForm = lazy(
+  () => import("../sales/company/CreateCompanyForm"),
+);
+const Vendors = lazy(() => import("../sales/vendors/Vendors"));
+const Proposal = lazy(() => import("../sales/proposal/Proposal"));
+const LeadEstimate = lazy(() => import("../sales/leads/LeadEstimate"));
+const LeadSearch = lazy(() => import("../quality/LeadSearch"));
+const LeadHistory = lazy(() => import("../sales/leads/LeadHistory"));
+const LeadTask = lazy(() => import("../sales/leads/LeadTask"));
 
 const QualityRouting = () => {
   return (

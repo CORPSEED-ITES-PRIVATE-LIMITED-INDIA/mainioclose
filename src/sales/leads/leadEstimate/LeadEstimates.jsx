@@ -793,20 +793,20 @@ const LeadEstimates = () => {
     <>
       {statusLoading === "pending" && <LoadingSpinner />}
       {/* ===================== TOP ACTION BAR (ALWAYS VISIBLE) ===================== */}
-      <div className="w-full flex items-center justify-between mb-3 gap-2">
+      <div className="w-full flex items-center justify-between mb-2.5 gap-2">
         {!showForm && hasEstimates && (
           <div>
-            <h3 className="text-lg font-semibold text-slate-800">
+            <h3 className="text-[15px] font-semibold text-slate-800">
               Estimates / Proforma Invoice
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-[11.5px] text-slate-500">
               {sortedEstimates.length} total
             </p>
           </div>
         )}
 
         {showForm && (
-          <div className="text-2xl font-bold  flex items-center justify-between">
+          <div className="text-base font-bold flex items-center justify-between">
             <span className="">Create Estimate</span>
           </div>
         )}
@@ -868,26 +868,26 @@ const LeadEstimates = () => {
       {/* ===================== LIST MODE ===================== */}
       {!showForm && hasEstimates && (
         <div className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
             {sortedEstimates.map((est) => (
               <Card key={est?.id} className="hover:shadow-lg transition-shadow">
-                <CardBody className="space-y-1">
+                <CardBody className="p-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-[12.5px] font-semibold text-slate-900">
                       {est?.performanceInvoiceFlag
                         ? `${est?.performanceInvoiceNumber}/ ${est?.estimateNumber}`
                         : est?.estimateNumber}
                     </p>
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-1">
                       <span
-                        className={`text-xs px-2 py-1 rounded-full ${est?.status === "REJECTED" || est?.status === "CANCELLED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
+                        className={`text-[10.5px] px-1.5 py-0.5 rounded-full ${est?.status === "REJECTED" || est?.status === "CANCELLED" ? "bg-red-600 text-white" : est?.status === "APPROVED" ? "bg-green-600 text-white" : est?.status === "SENT_TO_CLIENT" ? "bg-blue-600 text-white" : "bg-slate-100"} text-slate-600`}
                       >
                         {est?.status === "REJECTED" ||
                         est?.status === "CANCELLED"
                           ? "CANCELLED"
                           : est?.status}
                       </span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                      <span className="text-[10.5px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
                         {est?.performanceInvoiceFlag
                           ? "Proforma Invoice / Estimate"
                           : "Estimate"}
@@ -899,8 +899,9 @@ const LeadEstimates = () => {
                             size="sm"
                             radius="full"
                             variant="flat"
+                            className="min-w-7 w-7 h-7"
                           >
-                            <EllipsisVertical />
+                            <EllipsisVertical size={15} />
                           </Button>
                         </DropdownTrigger>
                         <DropdownMenu
@@ -965,14 +966,14 @@ const LeadEstimates = () => {
                       Order: {est?.orderNumber || "NA"}
                     </p> */}
 
-                  <p className="text-xs text-slate-500">
+                  <p className="text-[11.5px] text-slate-500">
                     Date:{" "}
                     {est?.estimateDate
                       ? dayjs(est.estimateDate).format("DD MMM YYYY")
                       : "NA"}
                   </p>
 
-                  <p className="text-xs text-slate-500">
+                  <p className="text-[11.5px] text-slate-500">
                     Valid Till:{" "}
                     {est?.validUntil
                       ? dayjs(est.validUntil).format("DD MMM YYYY")

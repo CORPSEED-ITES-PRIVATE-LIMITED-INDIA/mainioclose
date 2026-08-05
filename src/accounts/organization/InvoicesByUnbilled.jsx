@@ -197,7 +197,7 @@ const InvoicesByUnbilled = () => {
     switch (columnKey) {
       case "date":
         return (
-          <p className="text-sm capitalize">
+          <p className="text-[12.5px] capitalize">
             {dayjs(rowData?.invoiceDate).format("DD-MM-YYYY")}
           </p>
         );
@@ -205,7 +205,7 @@ const InvoicesByUnbilled = () => {
         return (
           <div className="flex flex-col gap-1">
             <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              className="capitalize text-[12.5px] font-medium text-blue-600 cursor-pointer"
               onClick={() => handleViewTaxInvoice(rowData)}
             >
               {rowData?.invoiceNumber}
@@ -216,7 +216,7 @@ const InvoicesByUnbilled = () => {
         return (
           <div>
             <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              className="capitalize text-[12.5px] font-medium text-blue-600 cursor-pointer"
               onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
             >
               {rowData?.estimateNumber || "NA"}
@@ -224,35 +224,43 @@ const InvoicesByUnbilled = () => {
           </div>
         );
       case "service":
-        return <p className="text-sm capitalize">{rowData?.solutionName}</p>;
+        return (
+          <p className="text-[12.5px] capitalize">{rowData?.solutionName}</p>
+        );
       case "clientName":
-        return <p className="text-sm capitalize">{rowData?.contactName}</p>;
+        return (
+          <p className="text-[12.5px] capitalize">{rowData?.contactName}</p>
+        );
       case "companyName":
-        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
+        return (
+          <p className="text-[12.5px] capitalize">{rowData?.companyName}</p>
+        );
       case "txnAmount":
         return (
           <div className="flex flex-col gap-1">
-            <p className="text-sm capitalize">
+            <p className="text-[12.5px] capitalize">
               {inrCurrency(rowData?.grandTotal)}
             </p>
             <div className="flex gap-1.5">
-              <span className="text-gray-500 text-tiny">GST</span>
-              <span className="text-gray-500 text-tiny">:</span>
-              <span className="text-gray-500 text-tiny">
+              <span className="text-default-500 text-[11.5px]">GST</span>
+              <span className="text-default-500 text-[11.5px]">:</span>
+              <span className="text-default-500 text-[11.5px]">
                 {inrCurrency(rowData?.totalGstAmount)}
               </span>
             </div>
           </div>
         );
       case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+        return (
+          <p className="text-[12.5px] capitalize">{rowData?.createdByName}</p>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
+                  <EllipsisVertical className="w-4 h-4 text-default-300" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
@@ -328,11 +336,12 @@ const InvoicesByUnbilled = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <div className="flex items-center w-full pb-0.5">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
+          <div className="flex items-center gap-1.5 w-full sm:max-w-[360px]">
             <Select
-              className="max-w-[15%]"
+              size="sm"
+              className="max-w-[130px] shrink-0"
               selectionMode="single"
               selectedKeys={[searchFilters?.type]}
               onSelectionChange={(e) => {
@@ -345,21 +354,23 @@ const InvoicesByUnbilled = () => {
             </Select>
             <Input
               isClearable
-              className="w-full sm:max-w-[35%]"
+              size="sm"
+              className="w-full"
+              classNames={{ inputWrapper: "h-8 min-h-8" }}
               placeholder="Search ..."
-              startContent={<Search />}
+              startContent={<Search className="w-4 h-4 text-default-400" />}
               value={filterValue}
               onClear={() => onClear()}
               onValueChange={onSearchChange}
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
                   variant="flat"
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   {status}
                 </Button>
@@ -386,7 +397,10 @@ const InvoicesByUnbilled = () => {
             </Dropdown>
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -408,13 +422,13 @@ const InvoicesByUnbilled = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} invoice
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -439,8 +453,8 @@ const InvoicesByUnbilled = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -448,7 +462,6 @@ const InvoicesByUnbilled = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -477,18 +490,24 @@ const InvoicesByUnbilled = () => {
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Unbilled Invoice list
       </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Unbilled invoices table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[64vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -557,7 +576,7 @@ const InvoicesByUnbilled = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

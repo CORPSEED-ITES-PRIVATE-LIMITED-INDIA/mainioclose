@@ -432,25 +432,25 @@ const VendorDetails = () => {
         case "vendor":
           return (
             <div className="flex min-w-[220px] flex-col gap-1">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-[12.5px] font-semibold text-foreground">
                 {rowData?.vendorName || rowData?.name || "-"}
               </span>
 
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 Vendor ID: {rowData?.vendorId || "-"}
               </span>
 
-              <span className="line-clamp-1 text-xs text-default-500">
+              <span className="line-clamp-1 text-[11.5px] text-default-500">
                 {rowData?.vendorEmail || rowData?.email || "-"}
               </span>
 
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 {rowData?.vendorMobile || rowData?.number || "-"}
               </span>
 
               {(rowData?.authorizedSignatoryName ||
                 rowData?.authorizedSignatoryEmail) && (
-                <span className="line-clamp-1 text-xs text-default-500">
+                <span className="line-clamp-1 text-[11.5px] text-default-500">
                   Auth:{" "}
                   {rowData?.authorizedSignatoryName ||
                     rowData?.authorizedSignatoryEmail}
@@ -463,20 +463,20 @@ const VendorDetails = () => {
           return (
             <div className="flex min-w-[210px] flex-col gap-2">
               <div>
-                <p className="text-xs text-default-500">RFQ</p>
-                <p className="text-sm font-semibold">
+                <p className="text-[11.5px] text-default-500">RFQ</p>
+                <p className="text-[12.5px] font-semibold">
                   {rowData?.rfqNumber || `RFQ ID: ${rowData?.rfqId || "-"}`}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs text-default-500">Quotation</p>
-                <p className="text-sm font-medium">
+                <p className="text-[11.5px] text-default-500">Quotation</p>
+                <p className="text-[12.5px] font-medium">
                   {rowData?.quotationNumber || "-"}
                 </p>
               </div>
 
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 Finalization ID: {rowData?.vendorFinalizationId || "-"}
               </span>
             </div>
@@ -484,7 +484,7 @@ const VendorDetails = () => {
 
         case "bankDetails":
           return (
-            <div className="flex min-w-[230px] flex-col gap-1 text-xs">
+            <div className="flex min-w-[230px] flex-col gap-1 text-[11.5px]">
               <span>
                 Holder: <b>{rowData?.accountHolderName || "-"}</b>
               </span>
@@ -534,7 +534,7 @@ const VendorDetails = () => {
                 size="sm"
                 variant="light"
                 color="primary"
-                className="mt-1 w-fit px-0 text-xs"
+                className="mt-1 w-fit px-0 text-[11.5px]"
                 onPress={() => handleView(rowData)}
               >
                 View all documents
@@ -555,13 +555,13 @@ const VendorDetails = () => {
 
               {rowData?.accountsRemark && (
                 <Tooltip content={rowData.accountsRemark}>
-                  <span className="line-clamp-1 max-w-[160px] text-xs text-default-500">
+                  <span className="line-clamp-1 max-w-[160px] text-[11.5px] text-default-500">
                     {rowData.accountsRemark}
                   </span>
                 </Tooltip>
               )}
 
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 Verified By: {rowData?.accountsVerifiedBy || "-"}
               </span>
             </div>
@@ -569,7 +569,7 @@ const VendorDetails = () => {
 
         case "dates":
           return (
-            <div className="flex min-w-[180px] flex-col gap-1 text-xs">
+            <div className="flex min-w-[180px] flex-col gap-1 text-[11.5px]">
               <span>
                 Sent: <b>{formatDateTime(rowData?.sentToAccountsDate)}</b>
               </span>
@@ -588,7 +588,7 @@ const VendorDetails = () => {
               <Dropdown>
                 <DropdownTrigger>
                   <Button size="sm" isIconOnly variant="light">
-                    <EllipsisVertical size={18} />
+                    <EllipsisVertical className="w-4 h-4" />
                   </Button>
                 </DropdownTrigger>
 
@@ -645,22 +645,24 @@ const VendorDetails = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full md:max-w-[38%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search vendor, RFQ, bank, status..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex flex-wrap justify-end gap-3">
+          <div className="flex flex-wrap gap-1.5">
             <Button
               variant="flat"
-              startContent={<RefreshCw size={16} />}
+              startContent={<RefreshCw className="w-3.5 h-3.5" />}
               onPress={fetchVendorDetails}
             >
               Refresh
@@ -668,7 +670,10 @@ const VendorDetails = () => {
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={16} />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -692,14 +697,14 @@ const VendorDetails = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} vendor accounts submissions
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration.size}
             >
@@ -725,8 +730,8 @@ const VendorDetails = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-400">
+      <div className="py-1.5 px-1 flex items-center justify-between">
+        <span className="text-default-400 text-[12.5px]">
           Page {filteration.page} of {pages}
         </span>
 
@@ -748,61 +753,63 @@ const VendorDetails = () => {
   }, [filteration.page, pages]);
 
   return (
-    <>
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="font-sans text-2xl font-medium">
-            Vendor Accounts Submissions
-          </h1>
-          <p className="mt-1 text-sm text-default-500">
-            KYC, bank and document details sent to accounts, latest first.
-          </p>
-        </div>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendor Accounts Submissions
+      </h1>
+      <p className="text-default-500 text-[12.5px] -mt-2 mb-1">
+        KYC, bank and document details sent to accounts, latest first.
+      </p>
 
-        <Table
-          isHeaderSticky
-          aria-label="Vendor accounts submissions table"
-          bottomContent={bottomContent}
-          bottomContentPlacement="outside"
-          topContent={topContent}
-          topContentPlacement="outside"
-          classNames={{
-            wrapper: "2xl:max-h-[62vh] md:max-h-[60vh]",
-            // table: "w-full",
-          }}
+      <Table
+        isHeaderSticky
+        removeWrapper={false}
+        aria-label="Vendor accounts submissions table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        topContent={topContent}
+        topContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+
+        <TableBody
+          isLoading={loading === "pending"}
+          emptyContent={
+            loading === "pending"
+              ? "Loading..."
+              : "No vendor accounts submissions found"
+          }
+          items={paginatedItems}
         >
-          <TableHeader columns={headerColumns}>
-            {(column) => (
-              <TableColumn
-                key={column.uid}
-                align={column.uid === "actions" ? "center" : "start"}
-              >
-                {column.name}
-              </TableColumn>
-            )}
-          </TableHeader>
-
-          <TableBody
-            isLoading={loading === "pending"}
-            emptyContent={
-              loading === "pending"
-                ? "Loading..."
-                : "No vendor accounts submissions found"
-            }
-            items={paginatedItems}
-          >
-            {(item) => (
-              <TableRow
-                key={item?.id || `${item?.vendorId}-${item?.quotationId}`}
-              >
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+          {(item) => (
+            <TableRow
+              key={item?.id || `${item?.vendorId}-${item?.quotationId}`}
+            >
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={viewModal.isOpen}
@@ -1107,7 +1114,7 @@ const VendorDetails = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

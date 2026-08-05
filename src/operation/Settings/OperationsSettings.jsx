@@ -1,45 +1,45 @@
-import { Listbox, ListboxItem } from "@heroui/react";
-import { useEffect } from "react";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Tabs, Tab } from "@heroui/react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-export const ListboxWrapper = ({ children }) => (
-  <div className="w-full h-[90vh] border-small px-1 py-2 rounded-small border-default-200 dark:border-default-100">
-    {children}
-  </div>
-);
+const SETTINGS_TABS = [
+  { key: "userMap", label: "User map" },
+  { key: "milestones", label: "Milestones" },
+  { key: "allDocuments", label: "Documents" },
+  { key: "departments", label: "Departments" },
+];
 
 const OperationsSettings = () => {
   const navigate = useNavigate();
-  const path = useLocation();
-  const lastKey = path?.pathname?.split("/");
+  const location = useLocation();
 
-  const handleOnNavigate = (key) => {
-    navigate(key);
-  };
+  const activeKey =
+    SETTINGS_TABS.find((tab) => location.pathname.endsWith(`/${tab.key}`))
+      ?.key || "userMap";
 
   return (
-    <div className=" w-full flex gap-8">
-      <div className="w-[10%] ">
-        <ListboxWrapper>
-          <Listbox
-            aria-label="Actions"
-            selectedKeys={[lastKey[lastKey?.length - 1]]}
-            onAction={handleOnNavigate}
-          >
-            <ListboxItem key="userMap">User map</ListboxItem>
-            <ListboxItem key="milestones">Milestones</ListboxItem>
-            <ListboxItem key="allDocuments">Documents</ListboxItem>
-            <ListboxItem key="departments">Departments</ListboxItem>
+    <div className="w-full flex flex-col gap-3">
+      <Tabs
+        aria-label="Operation settings sections"
+        size="sm"
+        variant="underlined"
+        color="primary"
+        selectedKey={activeKey}
+        onSelectionChange={(key) => navigate(key)}
+        classNames={{
+          tabList:
+            "gap-5 w-full relative rounded-none p-0 border-b border-gray-200 dark:border-white/10",
+          cursor: "w-full",
+          tab: "px-1 h-9",
+          tabContent:
+            "text-[12.5px] text-default-500 group-data-[selected=true]:text-primary group-data-[selected=true]:font-semibold",
+        }}
+      >
+        {SETTINGS_TABS.map((tab) => (
+          <Tab key={tab.key} title={tab.label} />
+        ))}
+      </Tabs>
 
-            {/* <ListboxItem key="delete" className="text-danger" color="danger">
-              Delete file
-            </ListboxItem> */}
-          </Listbox>
-        </ListboxWrapper>
-      </div>
-      <div className="w-[90%]">
-       <Outlet />
-      </div>
+      <Outlet />
     </div>
   );
 };

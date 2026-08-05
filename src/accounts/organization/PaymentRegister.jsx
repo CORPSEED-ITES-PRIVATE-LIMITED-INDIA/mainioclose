@@ -96,13 +96,13 @@ const PaymentRegister = () => {
   const paymentModal = useDisclosure();
   const paymentAction = useDisclosure();
   const data = useSelector(
-    (state) => state.organization.allPaymentRegisterList
+    (state) => state.organization.allPaymentRegisterList,
   );
   const count = useSelector((state) => state.organization.paymentRegistercont);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -128,7 +128,7 @@ const PaymentRegister = () => {
         page: page,
         size: rowsPerPage,
         status: status,
-      })
+      }),
     );
     dispatch(getAllPaymentRegisterCount(status));
   }, [dispatch, status, page, rowsPerPage]);
@@ -137,7 +137,7 @@ const PaymentRegister = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -146,8 +146,8 @@ const PaymentRegister = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     return filteredUsers;
@@ -234,7 +234,7 @@ const PaymentRegister = () => {
                 userId: userId,
                 status: paymentActionData?.status,
                 estimateId: paymentActionData?.estimateId,
-              })
+              }),
             )
               .then((res) => {
                 if (res.meta.requestStatus === "fulfilled") {
@@ -250,7 +250,7 @@ const PaymentRegister = () => {
                 }
               })
               .catch(() =>
-                addToast({ title: "Something went wrong !.", color: "danger" })
+                addToast({ title: "Something went wrong !.", color: "danger" }),
               );
           }
           setPaymentActionData({
@@ -264,7 +264,7 @@ const PaymentRegister = () => {
               page: page,
               size: rowsPerPage,
               status: status,
-            })
+            }),
           );
           setRowItem(null);
           paymentAction.onClose();
@@ -274,7 +274,7 @@ const PaymentRegister = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -579,7 +579,7 @@ const PaymentRegister = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Payment register list
       </h1>
       <Table
@@ -805,7 +805,7 @@ const PaymentRegister = () => {
                           {inrCurrency(
                             (Number(estimateDetails?.professionalFees) *
                               Number(estimateDetails?.profesionalGst)) /
-                              100
+                              100,
                           )}{" "}
                         </p>
                       </div>

@@ -907,7 +907,7 @@ const Vendors = () => {
   return (
     <>
       <div className="mb-4 flex flex-col gap-1">
-        <h1 className="font-sans text-2xl font-semibold text-foreground">
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           Vendors List
         </h1>
       </div>

@@ -1,12 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getProfitLossDetail,
-} from "../../toolkit/slices/organizationSlice";
-import {
-  Button,
-  DateRangePicker,
-} from "@heroui/react";
+import { getProfitLossDetail } from "../../toolkit/slices/organizationSlice";
+import { Button, DateRangePicker } from "@heroui/react";
 import { inrCurrency } from "../../common";
 import dayjs from "dayjs";
 import { parseZonedDateTime } from "@internationalized/date";
@@ -19,7 +14,7 @@ const ProfitLoss = () => {
   const today = dayjs().format("YYYY-MM-DDTHH:mm");
   const twoMonthsAgo = dayjs().subtract(2, "month").format("YYYY-MM-DDTHH:mm");
   const profitLossDetail = useSelector(
-    (state) => state.organization.profitLossDetail
+    (state) => state.organization.profitLossDetail,
   );
   const lossList = useSelector((state) => state.organization.lossDetail?.data);
 
@@ -47,7 +42,9 @@ const ProfitLoss = () => {
   return (
     <>
       <div className="flex justify-between items-center px-2">
-        <h1 className="font-medium text-xl">Profit/Loss</h1>
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+          Profit/Loss
+        </h1>
         <div className="flex items-center gap-2">
           <DateRangePicker
             hideTimeZone
@@ -59,7 +56,7 @@ const ProfitLoss = () => {
             }}
             value={{
               start: parseZonedDateTime(
-                `${dateRange2?.startDate}[Asia/kolkata]`
+                `${dateRange2?.startDate}[Asia/kolkata]`,
               ),
               end: parseZonedDateTime(`${dateRange2?.endDate}[Asia/kolkata]`),
             }}

@@ -1132,7 +1132,7 @@ const VendorsData = () => {
   return (
     <div className="flex h-[calc(100dvh-9rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden">
       <div className="mb-4 flex shrink-0 flex-col gap-1">
-        <h1 className="font-sans text-2xl font-semibold text-foreground">
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           Vendors List
         </h1>
       </div>

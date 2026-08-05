@@ -437,7 +437,7 @@ const OrganizationDetail = () => {
   return (
     <div className="flex flex-col gap-2 ">
       <div className="flex justify-between py-2 px-1">
-        <h1 className="font-sans text-2xl font-medium mb-1">
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           Organization details
         </h1>
         <div className="flex gap-3">
@@ -564,7 +564,17 @@ const OrganizationDetail = () => {
               <span className="text-sm">{organizationDetail?.pinCode}</span>
             </div>
           </div>
-          <Table aria-label="Example static collection table" className="mt-3">
+          <Table
+            aria-label="Bank account details table"
+            className="mt-3"
+            removeWrapper={false}
+            classNames={{
+              wrapper:
+                "w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+              th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+              td: "py-1.5 text-[12.5px]",
+            }}
+          >
             <TableHeader>
               <TableColumn>ID</TableColumn>
               <TableColumn>BANK NAME</TableColumn>

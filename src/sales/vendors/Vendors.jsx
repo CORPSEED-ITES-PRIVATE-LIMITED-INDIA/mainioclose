@@ -102,17 +102,17 @@ const Vendors = () => {
   const { userId, leadId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const vendorsCategoryList = useSelector(
-    (state) => state.vendors.vendorsCategoryList
+    (state) => state.vendors.vendorsCategoryList,
   );
   const subCategoryList = useSelector(
-    (state) => state.vendors.singleCategoryDetail.subCategories
+    (state) => state.vendors.singleCategoryDetail.subCategories,
   );
   const count = useSelector((state) => state.vendors.vendorsList?.length);
   const data = useSelector((state) => state.vendors.vendorsList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -142,7 +142,7 @@ const Vendors = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -152,7 +152,7 @@ const Vendors = () => {
       filteredData = filteredData.filter((item) =>
         item?.contactPersonName
           ?.toLowerCase()
-          .includes(filterValue.toLowerCase())
+          .includes(filterValue.toLowerCase()),
       );
     }
     return filteredData;
@@ -240,7 +240,7 @@ const Vendors = () => {
               <span className="text-xs text-foreground-400">
                 Updated on :{" "}
                 {dayjs(rowData?.updateHistory[0]?.updateDate).format(
-                  "DD-MM-YYYY , hh:mm a"
+                  "DD-MM-YYYY , hh:mm a",
                 ) || "-"}
               </span>
               <span className="text-xs text-foreground-400">
@@ -261,23 +261,24 @@ const Vendors = () => {
                       Updated history
                     </h3>
                     <div className="text-tiny">
-                      {rowData?.updateHistory?.map((item,idx) => {
+                      {rowData?.updateHistory?.map((item, idx) => {
                         return (
-                          <div className="flex flex-col my-4" key={`history${idx}`}>
+                          <div
+                            className="flex flex-col my-4"
+                            key={`history${idx}`}
+                          >
                             <span className="">
-                              Status :{" "}
-                              {item?.requestStatus || "-"}
+                              Status : {item?.requestStatus || "-"}
                             </span>
                             <span className="text-xs text-foreground-400">
                               Updated on :{" "}
-                              {dayjs(
-                                item?.updateDate
-                              ).format("DD-MM-YYYY , hh:mm a") || "-"}
+                              {dayjs(item?.updateDate).format(
+                                "DD-MM-YYYY , hh:mm a",
+                              ) || "-"}
                             </span>
                             <span className="text-xs text-foreground-400">
                               Updated description :{" "}
-                              {item?.updateDescription ||
-                                "-"}
+                              {item?.updateDescription || "-"}
                             </span>
                           </div>
                         );
@@ -455,18 +456,13 @@ const Vendors = () => {
         </div>
       </div>
     );
-  }, [
-    selectedKeys,
-    count,
-    filteration,
-    pages,
-    onPreviousPage,
-    onNextPage,
-  ]);
+  }, [selectedKeys, count, filteration, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendors list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendors list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Users table with custom cells, pagination, and sorting"

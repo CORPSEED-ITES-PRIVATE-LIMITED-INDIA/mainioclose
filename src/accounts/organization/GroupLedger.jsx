@@ -260,7 +260,9 @@ const GroupLedger = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Group ledgers</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Group ledgers
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

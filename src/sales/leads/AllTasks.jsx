@@ -42,7 +42,7 @@ const AllTasks = () => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -62,7 +62,7 @@ const AllTasks = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -71,22 +71,22 @@ const AllTasks = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
     if (isTodayFilter) {
       const today = dayjs().startOf("day");
       filteredUsers = filteredUsers.filter((item) =>
-        dayjs(item.expectedDate).isSame(today, "day")
+        dayjs(item.expectedDate).isSame(today, "day"),
       );
     }
     if (selectedDate) {
       const formattedSelectedDate = dayjs(
-        `${selectedDate.year}-${selectedDate.month}-${selectedDate.day}`
+        `${selectedDate.year}-${selectedDate.month}-${selectedDate.day}`,
       ).startOf("day");
       filteredUsers = filteredUsers.filter((item) =>
-        dayjs(item.expectedDate).isSame(formattedSelectedDate, "day")
+        dayjs(item.expectedDate).isSame(formattedSelectedDate, "day"),
       );
     }
     return filteredUsers;
@@ -184,15 +184,15 @@ const AllTasks = () => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
-            <Input
-              isClearable
-              className="w-full sm:max-w-[35%]"
-              placeholder="Search ..."
-              startContent={<Search />}
-              value={filterValue}
-              onClear={() => onClear()}
-              onValueChange={onSearchChange}
-            />
+          <Input
+            isClearable
+            className="w-full sm:max-w-[35%]"
+            placeholder="Search ..."
+            startContent={<Search />}
+            value={filterValue}
+            onClear={() => onClear()}
+            onValueChange={onSearchChange}
+          />
           <div className="flex gap-3">
             <div>
               <DatePicker
@@ -301,11 +301,13 @@ const AllTasks = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages,]);
+  }, [selectedKeys, count, page, pages]);
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">All tasks</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        All tasks
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -313,7 +315,7 @@ const AllTasks = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[55vh] overflow-scroll w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}

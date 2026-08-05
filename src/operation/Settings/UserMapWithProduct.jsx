@@ -719,12 +719,12 @@ const UserMapWithProduct = () => {
         case "productName":
           return (
             <div>
-              <p className="text-sm font-medium text-default-900">
+              <p className="text-[12.5px] font-medium text-foreground">
                 {rowData?.productName || "NA"}
               </p>
 
               {rowData?.productId && (
-                <p className="text-xs text-default-500">
+                <p className="text-[11.5px] text-default-500">
                   ID: {rowData.productId}
                 </p>
               )}
@@ -757,7 +757,7 @@ const UserMapWithProduct = () => {
 
         case "rating":
           return (
-            <span className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+            <span className="rounded-lg bg-primary/10 px-3 py-1 text-[12.5px] font-semibold text-primary">
               {rowData?.rating || "NA"}
             </span>
           );
@@ -921,22 +921,25 @@ const UserMapWithProduct = () => {
       VIEW_OPTIONS.find((item) => item.key === viewMode)?.label || "List";
 
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Button
+              size="sm"
               color="primary"
-              startContent={<Plus size={18} />}
+              startContent={<Plus className="w-3.5 h-3.5" />}
               onPress={handleOpenCreateModal}
             >
               Add Mapping
@@ -944,7 +947,11 @@ const UserMapWithProduct = () => {
 
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown size={18} />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   View: {selectedViewLabel}
                 </Button>
               </DropdownTrigger>
@@ -964,7 +971,11 @@ const UserMapWithProduct = () => {
 
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown size={18} />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -987,15 +998,15 @@ const UserMapWithProduct = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-default-400 text-small">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} {viewMode === "list" ? "records" : "grouped records"}
           </span>
 
-          <label className="flex items-center gap-2 text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -1023,8 +1034,8 @@ const UserMapWithProduct = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -1033,7 +1044,6 @@ const UserMapWithProduct = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -1064,19 +1074,25 @@ const UserMapWithProduct = () => {
   }, [selectedKeys, count, page, pages, onPreviousPage, onNextPage]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-4">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         User's product mapped list
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="User product mapping table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[62vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -1257,7 +1273,7 @@ const UserMapWithProduct = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

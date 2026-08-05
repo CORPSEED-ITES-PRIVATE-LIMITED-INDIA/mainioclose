@@ -1,9 +1,10 @@
+import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
-import Industries from "../industry/Industries";
-import SubIndustries from "../industry/SubIndustries";
-import Categories from "../industry/Categories";
-import BusinessActivity from "../industry/BusinessActivity";
+const Industries = lazy(() => import("../industry/Industries"));
+const SubIndustries = lazy(() => import("../industry/SubIndustries"));
+const Categories = lazy(() => import("../industry/Categories"));
+const BusinessActivity = lazy(() => import("../industry/BusinessActivity"));
 
 const IndustryModuleRouting = () => {
   return (

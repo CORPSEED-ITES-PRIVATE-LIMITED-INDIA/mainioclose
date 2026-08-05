@@ -920,7 +920,7 @@ const ProcurementVendors = () => {
         case "vendor":
           return (
             <div className="flex max-w-[260px] flex-col">
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-[12.5px] text-foreground">
                 {rowData?.vendorName || rowData?.vendorId || "-"}
               </span>
             </div>
@@ -928,7 +928,7 @@ const ProcurementVendors = () => {
 
         case "quotationVendor":
           return (
-            <div className="flex flex-col gap-1 text-xs">
+            <div className="flex flex-col gap-1 text-[11.5px]">
               <span>
                 Quotation:{" "}
                 <span className="font-semibold">
@@ -943,7 +943,7 @@ const ProcurementVendors = () => {
 
         case "legal":
           return (
-            <div className="flex flex-col gap-1 text-xs">
+            <div className="flex flex-col gap-1 text-[11.5px]">
               <span>Assigned To: {rowData?.assignedToLegal || "-"}</span>
               <span>Created By: {rowData?.createdBy || "-"}</span>
               <span>Updated By: {rowData?.updatedBy || "-"}</span>
@@ -963,7 +963,7 @@ const ProcurementVendors = () => {
 
         case "dates":
           return (
-            <div className="flex flex-col gap-1 text-xs">
+            <div className="flex flex-col gap-1 text-[11.5px]">
               <span>
                 Created:{" "}
                 {rowData?.createdDate
@@ -981,7 +981,7 @@ const ProcurementVendors = () => {
 
         case "attachments":
           return (
-            <div className="flex flex-col gap-1.5 text-xs">
+            <div className="flex flex-col gap-1.5 text-[11.5px]">
               {quotationDocuments.length > 0 ? (
                 <Tooltip
                   content={quotationDocuments
@@ -1014,7 +1014,7 @@ const ProcurementVendors = () => {
                   href={agreementUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-success"
+                  className="inline-flex w-fit items-center gap-1 text-[11.5px] font-semibold text-success"
                 >
                   View Agreement <ExternalLink size={12} />
                 </a>
@@ -1036,7 +1036,7 @@ const ProcurementVendors = () => {
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical size={18} />
+                  <EllipsisVertical className="w-4 h-4" />
                 </Button>
               </DropdownTrigger>
 
@@ -1097,22 +1097,15 @@ const ProcurementVendors = () => {
   );
 
   const topContent = (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Vendor Legal Requests
-          </h1>
-          <p className="text-sm text-default-500">
-            Service agreement requests sent from procurement/onboarding.
-          </p>
-        </div>
-
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
         <Input
           isClearable
-          className="w-full sm:max-w-[320px]"
+          size="sm"
+          className="w-full sm:max-w-[280px]"
+          classNames={{ inputWrapper: "h-8 min-h-8" }}
           placeholder="Search legal request..."
-          startContent={<Search size={17} />}
+          startContent={<Search className="w-4 h-4 text-default-400" />}
           value={searchValue}
           onValueChange={(value) => {
             setSearchValue(value || "");
@@ -1126,14 +1119,14 @@ const ProcurementVendors = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-small text-default-400">
+        <span className="text-default-400 text-[12.5px]">
           Total {filteredItems.length} legal requests
         </span>
 
-        <label className="flex items-center gap-2 text-small text-default-400">
+        <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
           Rows per page:
           <select
-            className="bg-transparent text-small text-default-400 outline-none"
+            className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
             value={filteration.size}
             onChange={(e) =>
               setFilteration({
@@ -1152,8 +1145,8 @@ const ProcurementVendors = () => {
   );
 
   const bottomContent = (
-    <div className="flex items-center justify-between px-2 py-2">
-      <span className="text-small text-default-400">
+    <div className="py-1.5 px-1 flex items-center justify-between">
+      <span className="text-default-400 text-[12.5px]">
         Page {filteration.page} of {pages}
       </span>
 
@@ -1174,16 +1167,30 @@ const ProcurementVendors = () => {
   );
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendor Legal Requests
+      </h1>
+      <p className="text-default-500 text-[12.5px] -mt-2 mb-1">
+        Service agreement requests sent from procurement/onboarding.
+      </p>
+
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Vendor legal requests table"
         topContent={topContent}
         topContentPlacement="outside"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh]",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={columns}>
@@ -1856,7 +1863,7 @@ const ProcurementVendors = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

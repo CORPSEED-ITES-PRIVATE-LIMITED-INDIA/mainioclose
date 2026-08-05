@@ -1,13 +1,11 @@
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-} from "@heroui/dropdown";
 import { Input } from "@heroui/input";
 import {
   Button,
   Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
   Pagination,
   Table,
   TableBody,
@@ -61,7 +59,7 @@ const LeadSearch = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS(adminRole))
+    new Set(INITIAL_VISIBLE_COLUMNS(adminRole)),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "leadName",
@@ -74,7 +72,7 @@ const LeadSearch = () => {
     if (visibleColumns === "all") return cols;
 
     return cols.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns, adminRole]);
 
@@ -113,8 +111,10 @@ const LeadSearch = () => {
         case "leadName":
           return (
             <div className="flex flex-col">
-              <p className="font-semibold">{lead?.leadName || "-"}</p>
-              <span className="text-sm text-gray-400">
+              <p className="text-[12.5px] font-semibold">
+                {lead?.leadName || "-"}
+              </p>
+              <span className="text-[11.5px] text-default-400">
                 {dayjs(lead?.createDate).format("DD-MM-YYYY")}
               </span>
             </div>
@@ -122,8 +122,10 @@ const LeadSearch = () => {
         case "contact":
           return (
             <div className="flex flex-col">
-              <span className="font-normal">{lead?.email || "-"}</span>
-              <span className="text-sm text-gray-400">
+              <span className="text-[12.5px] font-normal">
+                {lead?.email || "-"}
+              </span>
+              <span className="text-[11.5px] text-default-400">
                 {lead?.mobileNo || "-"}
               </span>
             </div>
@@ -142,25 +144,31 @@ const LeadSearch = () => {
         case "assignee":
           return (
             <div className="flex flex-col">
-              <span className="font-semibold">
+              <span className="text-[12.5px] font-semibold">
                 {lead?.assignee?.fullName || "-"}
               </span>
-              <span className="text-sm text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 {lead?.assignee?.email || "-"}
               </span>
             </div>
           );
         case "industry":
-          return lead?.industries?.name || "-";
+          return (
+            <span className="text-[12.5px]">
+              {lead?.industries?.name || "-"}
+            </span>
+          );
         case "city":
-          return lead?.city || "-";
+          return <span className="text-[12.5px]">{lead?.city || "-"}</span>;
         case "source":
-          return lead?.source || "-";
+          return <span className="text-[12.5px]">{lead?.source || "-"}</span>;
         case "updatedBy":
           return (
             <div className="flex flex-col gap-0.5">
-              <span className="font-normal">{lead?.updatedBy?.fullName}</span>
-              <span className="font-normal text-muted-foreground">
+              <span className="text-[12.5px] font-normal">
+                {lead?.updatedBy?.fullName}
+              </span>
+              <span className="text-[11.5px] text-default-400">
                 {lead?.updatedDate
                   ? dayjs(lead?.updatedDate).format("DD-MM-YYYY")
                   : "-"}
@@ -170,8 +178,10 @@ const LeadSearch = () => {
         case "address":
           return (
             <div className="flex flex-col">
-              <span className="font-normal">{lead?.address || "-"}</span>
-              <span className="text-sm text-default-500">
+              <span className="text-[12.5px] font-normal">
+                {lead?.address || "-"}
+              </span>
+              <span className="text-[11.5px] text-default-500">
                 {[lead?.city, lead?.state, lead?.country].join(",")}
               </span>
             </div>
@@ -182,7 +192,7 @@ const LeadSearch = () => {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <EllipsisVertical />
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu
@@ -205,7 +215,7 @@ const LeadSearch = () => {
           return lead[columnKey] || "-";
       }
     },
-    [userId]
+    [userId],
   );
 
   const onNextPage = useCallback(() => {
@@ -228,19 +238,19 @@ const LeadSearch = () => {
     setPaginationData((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-const onSearchChange = useCallback(
-  (value) => {
-    setFilterValue(value || "");
-    if (value?.length >= 3) {
-      setPaginationData((prev) => ({ ...prev, page: 1 }));
-      dispatch(searchIvrLeads({ input: value, id: userId }));
-    } else {
-      setPaginationData((prev) => ({ ...prev, page: 1 }));
-      dispatch(getAllIvrLeads({ id: userId }));
-    }
-  },
-  [dispatch, userId]
-);
+  const onSearchChange = useCallback(
+    (value) => {
+      setFilterValue(value || "");
+      if (value?.length >= 3) {
+        setPaginationData((prev) => ({ ...prev, page: 1 }));
+        dispatch(searchIvrLeads({ input: value, id: userId }));
+      } else {
+        setPaginationData((prev) => ({ ...prev, page: 1 }));
+        dispatch(getAllIvrLeads({ id: userId }));
+      }
+    },
+    [dispatch, userId],
+  );
 
   const onClear = useCallback(() => {
     setFilterValue("");
@@ -251,22 +261,28 @@ const onSearchChange = useCallback(
   const topContent = useMemo(() => {
     const cols = columns(adminRole);
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -288,13 +304,13 @@ const onSearchChange = useCallback(
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} leads
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={paginationData?.size}
             >
@@ -321,8 +337,8 @@ const onSearchChange = useCallback(
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys?.length} of ${count} selected`}
@@ -330,7 +346,6 @@ const onSearchChange = useCallback(
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={paginationData?.page}
           total={pages}
@@ -361,17 +376,24 @@ const onSearchChange = useCallback(
   }, [selectedKeys, count, paginationData, pages]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Leads search</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Leads search
+      </h1>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
+          base: "gap-2.5",
           wrapper:
-            "max-h-[50vh] sm:max-h-[60vh] md:max-h-[65vh] lg:max-h-[68vh] xl:max-h-[75vh] 2xl:max-h-[65vh] overflow-y-auto w-full",
-            table:'w-full'
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -405,7 +427,7 @@ const onSearchChange = useCallback(
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

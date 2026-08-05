@@ -619,7 +619,9 @@ const Department = () => {
     <>
       <div className="flex h-[calc(100vh-90px)] w-full flex-col overflow-hidden p-4">
         <div className="mb-4 shrink-0">
-          <h1 className="text-2xl font-semibold">Department List</h1>
+          <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+            Department List
+          </h1>
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden">

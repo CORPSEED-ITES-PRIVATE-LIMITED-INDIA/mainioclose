@@ -295,7 +295,9 @@ const IpAddress = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Ip address</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Ip address
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

@@ -273,17 +273,23 @@ const ForceCloserAndReopen = () => {
   const renderCell = (request, columnKey) => {
     switch (columnKey) {
       case "id":
-        return <span className="font-medium">{request?.id || "-"}</span>;
+        return (
+          <span className="text-[12.5px] font-medium">
+            {request?.id || "-"}
+          </span>
+        );
 
       case "projectNumber":
         return (
-          <span className="whitespace-nowrap font-medium text-primary">
+          <span className="text-[12.5px] whitespace-nowrap font-medium text-primary">
             {request?.projectNumber || "-"}
           </span>
         );
 
       case "projectName":
-        return <span>{request?.projectName || "-"}</span>;
+        return (
+          <span className="text-[12.5px]">{request?.projectName || "-"}</span>
+        );
 
       case "actionType":
         return (
@@ -299,12 +305,12 @@ const ForceCloserAndReopen = () => {
       case "currentStatus":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="text-[12.5px] font-medium">
               {request?.currentProjectStatusName || "-"}
             </span>
 
             {request?.previousProjectStatusName && (
-              <span className="text-xs text-default-400">
+              <span className="text-[11.5px] text-default-400">
                 Previous: {request.previousProjectStatusName}
               </span>
             )}
@@ -314,8 +320,10 @@ const ForceCloserAndReopen = () => {
       case "requestedBy":
         return (
           <div className="flex flex-col">
-            <span>{request?.requestedByName || "-"}</span>
-            <span className="text-xs text-default-400">
+            <span className="text-[12.5px]">
+              {request?.requestedByName || "-"}
+            </span>
+            <span className="text-[11.5px] text-default-400">
               ID: {request?.requestedById || "-"}
             </span>
           </div>
@@ -323,14 +331,14 @@ const ForceCloserAndReopen = () => {
 
       case "requestReason":
         return (
-          <p className="max-w-[250px] whitespace-normal text-sm">
+          <p className="max-w-[250px] whitespace-normal text-[12.5px]">
             {request?.requestReason || "-"}
           </p>
         );
 
       case "requestedAt":
         return (
-          <span className="whitespace-nowrap">
+          <span className="text-[12.5px] whitespace-nowrap">
             {formatDateTime(request?.requestedAt)}
           </span>
         );
@@ -353,7 +361,7 @@ const ForceCloserAndReopen = () => {
                   variant="light"
                   aria-label="Request actions"
                 >
-                  <EllipsisVertical className="h-5 w-5" />
+                  <EllipsisVertical className="w-4 h-4 text-default-300" />
                 </Button>
               </DropdownTrigger>
 
@@ -361,7 +369,7 @@ const ForceCloserAndReopen = () => {
                 <DropdownItem
                   key="approve"
                   color="success"
-                  startContent={<Check className="h-4 w-4" />}
+                  startContent={<Check className="w-3.5 h-3.5" />}
                   onPress={() => openDecisionModal(request, "APPROVE")}
                 >
                   Approve
@@ -371,7 +379,7 @@ const ForceCloserAndReopen = () => {
                   key="reject"
                   color="danger"
                   className="text-danger"
-                  startContent={<X className="h-4 w-4" />}
+                  startContent={<X className="w-3.5 h-3.5" />}
                   onPress={() => openDecisionModal(request, "REJECT")}
                 >
                   Reject
@@ -387,72 +395,101 @@ const ForceCloserAndReopen = () => {
   };
 
   const topContent = (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex w-full items-center pb-0.5">
-        <Select
-          aria-label="Search by"
-          size="md"
-          className="max-w-[170px]"
-          selectedKeys={new Set([searchBy])}
-          onSelectionChange={(keys) => {
-            setSearchBy(Array.from(keys)[0] || "projectNumber");
-            setFilterValue("");
-          }}
-        >
-          <SelectItem key="projectNumber">Project number</SelectItem>
-          <SelectItem key="projectName">Project name</SelectItem>
-          <SelectItem key="requestedBy">Requested by</SelectItem>
-          <SelectItem key="actionType">Action type</SelectItem>
-        </Select>
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2 items-center flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <Select
+            aria-label="Search by"
+            size="sm"
+            className="w-[150px]"
+            selectedKeys={new Set([searchBy])}
+            onSelectionChange={(keys) => {
+              setSearchBy(Array.from(keys)[0] || "projectNumber");
+              setFilterValue("");
+            }}
+          >
+            <SelectItem key="projectNumber">Project number</SelectItem>
+            <SelectItem key="projectName">Project name</SelectItem>
+            <SelectItem key="requestedBy">Requested by</SelectItem>
+            <SelectItem key="actionType">Action type</SelectItem>
+          </Select>
 
-        <Input
-          isClearable
-          className="max-w-[30%]"
-          placeholder="Search ..."
-          startContent={<Search className="h-5 w-5" />}
-          value={filterValue}
-          onClear={() => setFilterValue("")}
-          onValueChange={setFilterValue}
-        />
+          <Input
+            isClearable
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search ..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
+            value={filterValue}
+            onClear={() => setFilterValue("")}
+            onValueChange={setFilterValue}
+          />
+        </div>
+
+        <Dropdown>
+          <DropdownTrigger className="hidden sm:flex">
+            <Button
+              size="sm"
+              variant="flat"
+              endContent={<ChevronDown className="w-3.5 h-3.5" />}
+            >
+              Columns
+            </Button>
+          </DropdownTrigger>
+
+          <DropdownMenu
+            aria-label="Table columns"
+            closeOnSelect={false}
+            disallowEmptySelection
+            selectionMode="multiple"
+            selectedKeys={visibleColumns}
+            onSelectionChange={setVisibleColumns}
+          >
+            {columns.map((column) => (
+              <DropdownItem key={column.uid}>{column.name}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
       </div>
 
-      <Dropdown>
-        <DropdownTrigger className="hidden sm:flex">
-          <Button
-            endContent={<ChevronDown className="text-small" />}
-            variant="flat"
-            radius="sm"
-          >
-            Columns
-          </Button>
-        </DropdownTrigger>
+      <div className="flex justify-between items-center">
+        <span className="text-default-400 text-[12.5px]">
+          Total {totalElements} pending requests
+        </span>
 
-        <DropdownMenu
-          aria-label="Table columns"
-          closeOnSelect={false}
-          disallowEmptySelection
-          selectionMode="multiple"
-          selectedKeys={visibleColumns}
-          onSelectionChange={setVisibleColumns}
-        >
-          {columns.map((column) => (
-            <DropdownItem key={column.uid}>{column.name}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
+        <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+          Rows per page:
+          <select
+            className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+            value={paginationData.size}
+            onChange={(e) => {
+              setPaginationData((previous) => ({
+                ...previous,
+                size: Number(e.target.value),
+                page: 1,
+              }));
+            }}
+          >
+            <option value="15">15</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </label>
+      </div>
     </div>
   );
 
   const bottomContent = (
-    <div className="flex items-center justify-between px-2 py-2">
-      <span className="text-small text-default-400">
+    <div className="py-1.5 px-1 flex justify-between items-center">
+      <span className="w-[30%] text-[12.5px] text-default-400">
         Showing {filteredRequests.length} of {totalElements} pending requests
       </span>
 
       <Pagination
         isCompact
         showControls
-        showShadow
         color="primary"
         page={paginationData.page}
         total={totalPages}
@@ -464,7 +501,7 @@ const ForceCloserAndReopen = () => {
         }
       />
 
-      <div className="space-x-1.5">
+      <div className="hidden sm:flex w-[30%] justify-end gap-2">
         <Button
           size="sm"
           variant="flat"
@@ -487,21 +524,27 @@ const ForceCloserAndReopen = () => {
   );
 
   return (
-    <>
-      <h1 className="mb-1 font-sans text-2xl font-medium">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Reopen & Close Approval
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Pending lifecycle request table"
         topContent={topContent}
         topContentPlacement="outside"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[62vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={headerColumns}>
@@ -645,7 +688,7 @@ const ForceCloserAndReopen = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

@@ -689,7 +689,9 @@ const VendorRequests = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Vendor's requests</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendor's requests
+      </h1>
       {(filteLoading === "pending" || loading === "pending") && (
         <LoadingSpinner />
       )}

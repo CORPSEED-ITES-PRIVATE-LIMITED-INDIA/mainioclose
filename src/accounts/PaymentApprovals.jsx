@@ -41,20 +41,20 @@ const INITIAL_VISIBLE_COLUMNS = [
   "assignee",
   "address",
   "secondaryAddress",
-  "actions"
+  "actions",
 ];
 
 const PaymentApprovals = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const count = useSelector(
-    (state) => state.account.paymentApprovalList[0]?.total
+    (state) => state.account.paymentApprovalList[0]?.total,
   );
   const data = useSelector((state) => state.account.paymentApprovalList);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -77,7 +77,7 @@ const PaymentApprovals = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -86,7 +86,7 @@ const PaymentApprovals = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -103,10 +103,6 @@ const PaymentApprovals = () => {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredItems]);
-
-
-
-  
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -169,26 +165,16 @@ const PaymentApprovals = () => {
       case "secondaryAddress":
         return rowData?.secAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData?.secAddress || "-"}
-            </span>
+            <span className="font-normal">{rowData?.secAddress || "-"}</span>
             <div className="flex items-center gap-1">
               {" "}
-              <span className="text-gray-400">
-                {rowData?.secCity || "-"}
-              </span>
-              ,
-              <span className="text-gray-400">
-                {rowData?.secState || "-"}
-              </span>
-              ,
+              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
+              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-400 text-tiny">
                 {rowData?.seCountry || "-"}
               </span>
-              
-             
             </div>
           </div>
         ) : (
@@ -393,7 +379,9 @@ const PaymentApprovals = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Payments for approvals</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Payments for approvals
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -401,7 +389,7 @@ const PaymentApprovals = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "max-h-[65vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"

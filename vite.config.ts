@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -5,6 +6,21 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), tailwindcss()],
+
+  resolve: {
+    alias: [
+      {
+        // Redirect every `import ... from "@heroui/react"` across the app to
+        // our shim, which applies a handful of app-wide default sizes/fonts.
+        // See src/heroui-shim.js for why this needs the exact-match form
+        // (not a prefix match) and how the shim itself avoids re-entering it.
+        find: "@heroui/react",
+        replacement: fileURLToPath(
+          new URL("./src/heroui-shim.js", import.meta.url),
+        ),
+      },
+    ],
+  },
 
   server: {
     port: 3000,

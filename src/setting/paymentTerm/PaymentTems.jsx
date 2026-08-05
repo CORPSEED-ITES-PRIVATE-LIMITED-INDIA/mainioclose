@@ -614,7 +614,9 @@ const PaymentTems = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Payment Terms</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Payment Terms
+      </h1>
 
       <Table
         isHeaderSticky

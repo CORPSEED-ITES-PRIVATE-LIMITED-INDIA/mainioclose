@@ -582,11 +582,11 @@ const Unbill = () => {
 
     return (
       <div
-        className={`text-sm capitalize leading-5 ${className}`}
+        className={`text-[12.5px] capitalize leading-5 ${className}`}
         style={{ maxWidth }}
       >
         {lines.map((line, index) => (
-          <p key={index} className="whitespace-nowrap text-sm">
+          <p key={index} className="whitespace-nowrap text-[12.5px]">
             {line}
           </p>
         ))}
@@ -599,12 +599,14 @@ const Unbill = () => {
     switch (columnKey) {
       case "date":
         return (
-          <div>
-            <p className="text-sm capitalize">
+          <div className="flex flex-col gap-1">
+            <p className="text-[12.5px] capitalize">
               {dayjs(rowData?.date).format("DD-MM-YYYY")}
             </p>
             <Chip
               size="sm"
+              variant="flat"
+              className="w-fit"
               color={
                 rowData?.status === "APPROVED"
                   ? "success"
@@ -621,7 +623,7 @@ const Unbill = () => {
         return (
           <Link
             to={`${rowData?.id}/invoices`}
-            className="text-sm capitalize font-medium"
+            className="text-[12.5px] capitalize font-medium"
           >
             {`${rowData?.unbilledNumber}`}
             {rowData?.advanceInvoiceFlag
@@ -633,7 +635,7 @@ const Unbill = () => {
         return (
           <div>
             <p
-              className="capitalize text-xs font-medium text-blue-600 cursor-pointer"
+              className="capitalize text-[12.5px] font-medium text-blue-600 cursor-pointer"
               onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
             >
               {rowData?.estimateNumber || "NA"}
@@ -645,7 +647,7 @@ const Unbill = () => {
           <div>
             <button
               disabled={!rowData?.governmentFeeActiveFlag}
-              className={`capitalize text-xs font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+              className={`capitalize text-[12.5px] font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
               onClick={() => {
                 handleGovtFeePreview(rowData.id);
               }}
@@ -658,7 +660,7 @@ const Unbill = () => {
         return (
           <div className="w-full max-w-[130px] rounded-md px-3 py-2">
             {rowData?.tdsActiveFlag === true && (
-              <div className="mt-2 space-y-1 text-xs">
+              <div className="mt-2 space-y-1 text-[11.5px]">
                 <div className="flex items-center gap-3">
                   <span className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">
                     ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
@@ -682,7 +684,7 @@ const Unbill = () => {
         return (
           <>
             <Link
-              className="font-medium text-sm"
+              className="font-medium text-[12.5px]"
               to={`/erp/${userId}/accounts/companyApprovals`}
             >
               {renderTwoLineText(
@@ -692,6 +694,7 @@ const Unbill = () => {
             </Link>
             <Chip
               size="sm"
+              variant="flat"
               color={
                 rowData?.companyStatus === "APPROVED"
                   ? "success"
@@ -711,7 +714,7 @@ const Unbill = () => {
         return (
           <div className="">
             <Link
-              className="font-medium text-sm"
+              className="font-medium text-[12.5px]"
               to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
             >
               {renderTwoLineText(rowData?.unitName, "220px")}
@@ -719,6 +722,7 @@ const Unbill = () => {
 
             <Chip
               size="sm"
+              variant="flat"
               color={
                 rowData?.unitStatus === "APPROVED"
                   ? "success"
@@ -733,30 +737,32 @@ const Unbill = () => {
         );
       case "totalAmount":
         return (
-          <p className="text-sm capitalize">
+          <p className="text-[12.5px] capitalize">
             {inrCurrency(rowData?.totalAmount)}
           </p>
         );
       case "receivedAmount":
         return (
-          <p className="text-sm capitalize">
+          <p className="text-[12.5px] capitalize">
             {inrCurrency(rowData?.receivedAmount)}
           </p>
         );
       case "currentReceivedAmount":
         return (
-          <p className="text-sm capitalize">
+          <p className="text-[12.5px] capitalize">
             {inrCurrency(rowData?.currentReceivedAmount)}
           </p>
         );
       case "outstandingAmount":
         return (
-          <p className="text-sm capitalize">
+          <p className="text-[12.5px] capitalize">
             {inrCurrency(rowData?.outstandingAmount)}
           </p>
         );
       case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.createdByName}</p>;
+        return (
+          <p className="text-[12.5px] capitalize">{rowData?.createdByName}</p>
+        );
       case "cancelAttachment":
         return (
           <div className="flex items-center gap-2">
@@ -810,7 +816,7 @@ const Unbill = () => {
                   variant="light"
                   onClick={handleActionMenuOpen}
                 >
-                  <EllipsisVertical className="text-default-300" />
+                  <EllipsisVertical className="w-4 h-4 text-default-300" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
@@ -1438,11 +1444,12 @@ const Unbill = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-[58%]">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex w-full gap-1.5 sm:flex-row lg:max-w-[420px]">
             <Select
-              className="w-full sm:max-w-[180px]"
+              size="sm"
+              className="w-full max-w-[160px] shrink-0"
               selectionMode="single"
               selectedKeys={[searchBy]}
               onSelectionChange={(e) => {
@@ -1457,22 +1464,24 @@ const Unbill = () => {
 
             <Input
               isClearable
-              className="w-[50%]"
+              size="sm"
+              className="w-full"
+              classNames={{ inputWrapper: "h-8 min-h-8" }}
               placeholder="Search ..."
-              startContent={<Search />}
+              startContent={<Search className="w-4 h-4 text-default-400" />}
               value={filterValue}
               onClear={() => onClear()}
               onValueChange={onSearchChange}
             />
           </div>
 
-          <div className="flex w-full flex-wrap items-end gap-2 lg:w-auto lg:justify-end">
+          <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto lg:justify-end">
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   className="capitalize"
                   variant="flat"
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   {status}
                 </Button>
@@ -1506,7 +1515,10 @@ const Unbill = () => {
 
             <Dropdown>
               <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -1661,14 +1673,14 @@ const Unbill = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} unbilled items
           </span>
           <div className="flex gap-4">
-            <label className="flex items-center text-default-400 text-small">
+            <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
               Rows per page:
               <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
+                className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
                 onChange={onRowsPerPageChange}
                 value={rowsPerPage}
               >
@@ -1699,8 +1711,8 @@ const Unbill = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -1708,7 +1720,6 @@ const Unbill = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -1737,7 +1748,7 @@ const Unbill = () => {
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       {updateStatusLoading && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="flex min-w-[220px] flex-col items-center rounded-2xl bg-white px-8 py-6 shadow-2xl">
@@ -1753,15 +1764,23 @@ const Unbill = () => {
           </div>
         </div>
       )}
-      <h1 className="font-sans text-2xl font-medium mb-1">Unbilled list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Unbilled list
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Unbilled table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] overflow-scroll w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -2699,7 +2718,7 @@ const Unbill = () => {
           }}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

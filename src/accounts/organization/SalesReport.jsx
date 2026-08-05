@@ -67,13 +67,13 @@ const SalesReport = () => {
   const data = useSelector((state) => state.organization.salesReportList);
   const count = useSelector((state) => state.organization.salesReportCount);
   const exportedData = useSelector(
-    (state) => state.organization.salesReportExportedData
+    (state) => state.organization.salesReportExportedData,
   );
   const loading = useSelector((state) => state.organization.loading);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -93,7 +93,7 @@ const SalesReport = () => {
 
   useEffect(() => {
     dispatch(
-      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter })
+      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter }),
     );
     dispatch(getSalesReportCount({ status, ...dateFilter }));
   }, [dispatch, page, rowsPerPage, status]);
@@ -102,7 +102,7 @@ const SalesReport = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -112,8 +112,8 @@ const SalesReport = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -254,7 +254,7 @@ const SalesReport = () => {
   const handleApply = () => {
     dispatch(getSalesReportExportedData({ ...dateFilter, status }));
     dispatch(
-      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter })
+      getAllSalesReport({ page, size: rowsPerPage, status, ...dateFilter }),
     );
     dispatch(getSalesReportCount({ status, ...dateFilter }));
   };
@@ -317,12 +317,12 @@ const SalesReport = () => {
                           value={{
                             start: dateFilter?.startDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.startDate}[Asia/kolkata]`
+                                  `${dateFilter?.startDate}[Asia/kolkata]`,
                                 )
                               : null,
                             end: dateFilter?.endDate
                               ? parseZonedDateTime(
-                                  `${dateFilter?.endDate}[Asia/kolkata]`
+                                  `${dateFilter?.endDate}[Asia/kolkata]`,
                                 )
                               : null,
                           }}
@@ -521,7 +521,9 @@ const SalesReport = () => {
   return (
     <>
       {loading === "pending" && <LoadingSpinner />}
-      <h1 className="font-sans text-2xl font-medium mb-1">Sales report list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Sales report list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

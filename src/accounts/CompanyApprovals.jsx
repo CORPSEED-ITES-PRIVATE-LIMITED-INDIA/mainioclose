@@ -213,14 +213,14 @@ const CompanyApprovals = () => {
             <div className="flex flex-col">
               <Link
                 to={`${rowData?.companyId}/units`}
-                className="font-medium capitalize"
+                className="font-medium text-[12.5px] capitalize"
               >
                 {rowData?.companyName || "-"}
               </Link>
-              <p className="font-normal text-xs text-gray-400">
+              <p className="font-normal text-[11.5px] text-default-500">
                 Age : {rowData?.companyAge || "-"} yrs
               </p>
-              <p className="font-normal text-xs text-gray-400">
+              <p className="font-normal text-[11.5px] text-default-500">
                 Pending units : {rowData?.pendingUnitsCount}
               </p>
             </div>
@@ -231,9 +231,11 @@ const CompanyApprovals = () => {
         return (
           <div className="flex items-start gap-2">
             <div className="flex flex-col">
-              <p className="font-normal">{rowData?.establishDate || "-"}</p>
+              <p className="font-normal text-[12.5px]">
+                {rowData?.establishDate || "-"}
+              </p>
               {rowData?.revenue && (
-                <p className="font-normal">
+                <p className="font-normal text-[11.5px] text-default-500">
                   Revenue : {inrCurrency(rowData?.revenue) || "-"}
                 </p>
               )}
@@ -244,7 +246,7 @@ const CompanyApprovals = () => {
       case "industryName":
         return (
           rowData?.industryName && (
-            <div className="flex justify-between">
+            <div className="flex justify-between text-[12.5px]">
               {rowData?.industryName}{" "}
               <Tooltip
                 content={
@@ -284,38 +286,42 @@ const CompanyApprovals = () => {
         );
 
       case "panNo":
-        return <div className="flex flex-col">{rowData?.panNo}</div>;
+        return (
+          <div className="flex flex-col text-[12.5px]">{rowData?.panNo}</div>
+        );
       case "status":
         return (
-          <div className="flex flex-col">
-            <Chip
-              size="sm"
-              className="text-tiny capitalize"
-              variant="flat"
-              color={
-                rowData?.onboardingStatus === "APPROVED"
-                  ? "success"
-                  : rowData?.onboardingStatus === "DISAPPROVED"
-                    ? "danger"
-                    : "secondary"
-              }
-            >
-              {rowData?.onboardingStatus}
-            </Chip>
-          </div>
+          <Chip
+            size="sm"
+            className="capitalize"
+            variant="flat"
+            color={
+              rowData?.onboardingStatus === "APPROVED"
+                ? "success"
+                : rowData?.onboardingStatus === "DISAPPROVED"
+                  ? "danger"
+                  : "secondary"
+            }
+          >
+            {rowData?.onboardingStatus}
+          </Chip>
         );
 
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.assigneeName || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData?.assigneeName || "-"}
+            </span>
           </div>
         );
       case "address":
         return rowData?.address ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.address || "-"}</span>
-            <span className="text-sm text-gray-400">
+            <span className="font-normal text-[12.5px]">
+              {rowData?.address || "-"}
+            </span>
+            <span className="text-[11.5px] text-default-500">
               {[rowData?.city, rowData?.state, rowData?.country].join(",")}
             </span>
           </div>
@@ -324,17 +330,17 @@ const CompanyApprovals = () => {
         );
       case "secondaryAddress":
         return rowData?.secAddress ? (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.secAddress || "-"}</span>
+          <div className="flex flex-col text-[11.5px] text-default-500">
+            <span className="font-normal text-[12.5px] text-foreground">
+              {rowData?.secAddress || "-"}
+            </span>
             <div className="flex items-center gap-1">
               {" "}
-              <span className="text-gray-400">{rowData?.secCity || "-"}</span>,
-              <span className="text-gray-400">{rowData?.secState || "-"}</span>,
+              <span>{rowData?.secCity || "-"}</span>,
+              <span>{rowData?.secState || "-"}</span>,
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-tiny">
-                {rowData?.seCountry || "-"}
-              </span>
+              <span>{rowData?.seCountry || "-"}</span>
             </div>
           </div>
         ) : (
@@ -345,7 +351,7 @@ const CompanyApprovals = () => {
           <Dropdown showArrow>
             <DropdownTrigger>
               <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
+                <EllipsisVertical className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
@@ -431,22 +437,24 @@ const CompanyApprovals = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown />}
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                   variant="flat"
                   className="capitalize"
                 >
@@ -475,7 +483,10 @@ const CompanyApprovals = () => {
             </Dropdown>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -497,13 +508,13 @@ const CompanyApprovals = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} companies for approvals
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -528,8 +539,8 @@ const CompanyApprovals = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -537,7 +548,6 @@ const CompanyApprovals = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -571,18 +581,24 @@ const CompanyApprovals = () => {
   }, [selectedKeys, count, filteration, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Companies for approvals
       </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Company approvals table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[62vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -1058,7 +1074,7 @@ const CompanyApprovals = () => {
           </style>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

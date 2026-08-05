@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   ChevronDown,
   EllipsisVertical,
+  Eye,
   FileText,
   Plus,
   Search,
@@ -44,6 +45,7 @@ import {
 } from "../../toolkit/slices/operationSlice";
 import { getVendorDetailInProject } from "../../toolkit/slices/vendorsSlice";
 import CreatePurchaseOrderModal from "./CreatePurchaseOrderModal";
+import PurchaseOrderView from "./PurchaseOrderView";
 import { Controller, useForm } from "react-hook-form";
 import SingleFileUploader from "../../components/SingleFileUploader";
 
@@ -709,10 +711,12 @@ const ProjectPurchaseOrder = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const poViewModal = useDisclosure();
   const [isCreatePoModalOpen, setIsCreatePoModalOpen] = useState(false);
   const [isRaisePrModalOpen, setIsRaisePrModalOpen] = useState(false);
   const [selectedProcurementOrder, setSelectedProcurementOrder] =
     useState(null);
+  const [selectedPoForView, setSelectedPoForView] = useState(null);
 
   const purchaseOrderResponse = useSelector(
     (state) => state.operation.procurementOrderByPurchaseIdList?.content,
@@ -951,6 +955,14 @@ const ProjectPurchaseOrder = () => {
     setIsRaisePrModalOpen(true);
   }, []);
 
+  const handleOpenPoView = useCallback(
+    (rowData) => {
+      setSelectedPoForView(rowData);
+      poViewModal.onOpen();
+    },
+    [poViewModal],
+  );
+
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
@@ -1119,6 +1131,9 @@ const ProjectPurchaseOrder = () => {
                   selectedKeys={[rowData?.status]}
                   onSelectionChange={(e) => {
                     let key = Array.from(e)[0];
+                    if (key === "viewPO") {
+                      handleOpenPoView(rowData);
+                    }
                     if (key === "raisePR") {
                       handleOpenRaisePrModal(rowData);
                     }
@@ -1128,6 +1143,9 @@ const ProjectPurchaseOrder = () => {
                     }
                   }}
                 >
+                  <DropdownItem key="viewPO" startContent={<Eye size={14} />}>
+                    View PO
+                  </DropdownItem>
                   <DropdownItem key="raisePR">Raise PR</DropdownItem>
                   <DropdownItem key="updateStatus">Update Status</DropdownItem>
                 </DropdownMenu>
@@ -1139,7 +1157,7 @@ const ProjectPurchaseOrder = () => {
           return rowData?.[columnKey] || "-";
       }
     },
-    [handleOpenRaisePrModal, onOpen],
+    [handleOpenRaisePrModal, handleOpenPoView, onOpen],
   );
 
   const topContent = useMemo(() => {
@@ -1328,7 +1346,7 @@ const ProjectPurchaseOrder = () => {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-sans text-2xl font-medium">
+          <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
             Project Purchase Orders
           </h1>
 
@@ -1418,6 +1436,64 @@ const ProjectPurchaseOrder = () => {
         createdBy={Number(userId)}
         onSuccess={fetchPurchaseOrders}
       />
+
+      <Modal
+        size="full"
+        isOpen={poViewModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPoForView(null);
+            poViewModal.onClose();
+          }
+        }}
+        scrollBehavior="inside"
+        placement="center"
+        classNames={{
+          base: "bg-slate-100",
+          body: "p-0",
+        }}
+      >
+        <ModalContent>
+          {(onClosePoView) => (
+            <>
+              <ModalHeader className="border-b border-slate-200 bg-white">
+                Purchase Order
+                {selectedPoForView?.poNumber
+                  ? ` - ${selectedPoForView.poNumber}`
+                  : ""}
+              </ModalHeader>
+
+              <ModalBody className="overflow-auto bg-slate-100 p-0 sm:p-3">
+                {selectedPoForView ? (
+                  <div className="min-w-fit">
+                    <PurchaseOrderView
+                      poData={selectedPoForView}
+                      heading="PURCHASE ORDER"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[300px] items-center justify-center text-sm text-default-500">
+                    No purchase order selected.
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter className="border-t border-slate-200 bg-white">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  onPress={() => {
+                    setSelectedPoForView(null);
+                    onClosePoView();
+                  }}
+                >
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
 
       <Modal
         isDismissable={false}

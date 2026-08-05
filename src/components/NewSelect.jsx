@@ -15,10 +15,11 @@ const NewSelect = ({
   labelKey,
   isClearable = false,
   isVirtualized = true,
+  isSearchable = true,
   value,
   errorMessage,
   isInvalid = false,
-  size,
+  size = "sm",
   placeholder,
   isDisabled,
   onItemSelect = () => {},
@@ -121,6 +122,7 @@ const NewSelect = ({
       <div className="sticky top-0 z-10 bg-white p-1">
         <Input
           ref={inputRef}
+          size="sm"
           value={searchQuery}
           onChange={(e) => handleSearchQuery(e.target.value)}
           placeholder="Search ..."
@@ -214,7 +216,7 @@ const NewSelect = ({
         isRequired={isRequired}
         placeholder={placeholder}
         isVirtualized={isVirtualized}
-        itemHeight={52}
+        itemHeight={36}
         maxListboxHeight={300}
         isClearable={isClearable}
         selectionMode={selectionMode}
@@ -228,25 +230,25 @@ const NewSelect = ({
         aria-label={typeof label === "string" ? label : "Searchable select"}
         className={className}
         classNames={{
-          trigger: "min-h-[56px] max-h-[150px] overflow-y-auto",
-          value: "text-sm truncate",
-          listbox: "p-2 gap-1",
+          trigger: "max-h-24 overflow-y-auto",
+          value: "text-[12.5px] truncate",
+          listbox: "p-1.5 gap-0.5",
           popoverContent: "p-0",
         }}
-        selectorIcon={<ChevronDownIcon className="w-5 h-5 text-default-500" />}
+        selectorIcon={<ChevronDownIcon className="w-4 h-4 text-default-500" />}
         ref={triggerRef}
         listboxProps={{
-          topContent,
+          topContent: isSearchable ? topContent : null,
           emptyContent: "No data found",
           itemClasses: {
-            base: "h-[52px] px-3 py-2 rounded-lg data-[hover=true]:bg-default-100 data-[selectable=true]:focus:bg-default-100",
-            title: "text-sm leading-5",
+            base: "min-h-9 px-2.5 py-1.5 rounded-lg data-[hover=true]:bg-default-100 data-[selectable=true]:focus:bg-default-100",
+            title: "text-[12.5px] leading-5",
           },
         }}
         renderValue={(items) => {
           if (!items.length) {
             return (
-              <span className="text-default-400">
+              <span className="text-[12.5px] text-default-400">
                 {placeholder || "Select data"}
               </span>
             );
@@ -254,14 +256,14 @@ const NewSelect = ({
 
           if (selectionMode === "multiple") {
             return (
-              <span className="text-sm truncate">
+              <span className="text-[12.5px] truncate">
                 {items.map((i) => i?.data?.[labelKey]).join(", ")}
               </span>
             );
           }
 
           return (
-            <span className="text-sm truncate">
+            <span className="text-[12.5px] truncate">
               {items[0]?.data?.[labelKey]}
             </span>
           );
@@ -274,7 +276,7 @@ const NewSelect = ({
           >
             <span
               title={String(item?.[labelKey] || "Unknown")}
-              className="block text-sm leading-5 line-clamp-2 break-words"
+              className="block text-[12.5px] leading-5 line-clamp-2 break-words"
             >
               {item?.[labelKey] || "Unknown"}
             </span>

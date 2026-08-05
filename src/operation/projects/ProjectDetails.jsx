@@ -2773,7 +2773,7 @@ const ProjectDetails = () => {
               </div>
 
               <div className="flex flex-col gap-1 lg:flex-row lg:items-end lg:gap-3">
-                <h1 className="min-w-0 break-words text-xl font-semibold leading-tight text-foreground lg:text-2xl">
+                <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
                   {detailedData?.projectDetails?.name || "Project"}
                 </h1>
 

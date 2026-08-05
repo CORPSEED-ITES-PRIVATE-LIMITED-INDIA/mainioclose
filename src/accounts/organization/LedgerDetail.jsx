@@ -48,15 +48,15 @@ const LedgerDetail = () => {
   const { ledgerId } = useParams();
   const detail = useSelector((state) => state.organization.groupVoucherList);
   const data = useSelector(
-    (state) => state.organization.groupVoucherList?.result
+    (state) => state.organization.groupVoucherList?.result,
   );
   const count = useSelector(
-    (state) => state.organization.groupVoucherList?.result
+    (state) => state.organization.groupVoucherList?.result,
   )?.length;
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -74,7 +74,7 @@ const LedgerDetail = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -84,8 +84,8 @@ const LedgerDetail = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers?.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -302,7 +302,7 @@ const LedgerDetail = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Ledger vouchers list
       </h1>
       <Table

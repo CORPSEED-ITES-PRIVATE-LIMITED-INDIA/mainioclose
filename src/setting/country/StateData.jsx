@@ -297,7 +297,9 @@ const StateData = () => {
   return (
     <div className="flex h-[calc(100vh-90px)] w-full flex-col overflow-hidden p-4">
       <div className="mb-4 shrink-0">
-        <h1 className="text-2xl font-semibold">State List</h1>
+        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+          State List
+        </h1>
 
         <p className="text-sm text-default-400">
           Country: {decodedCountryName}

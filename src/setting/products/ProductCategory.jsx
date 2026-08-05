@@ -470,7 +470,9 @@ const ProductCategory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Product category</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Product category
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"

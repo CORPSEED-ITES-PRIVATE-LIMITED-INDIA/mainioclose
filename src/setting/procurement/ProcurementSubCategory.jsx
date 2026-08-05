@@ -83,18 +83,18 @@ const ProcurementSubCategory = () => {
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const assigneeModal = useDisclosure();
   const count = useSelector(
-    (state) => state.vendors.singleCategoryDetail?.subCategories?.length
+    (state) => state.vendors.singleCategoryDetail?.subCategories?.length,
   );
   const data =
     useSelector((state) => state.vendors.singleCategoryDetail?.subCategories) ||
     [];
   const assigneeList = useSelector(
-    (state) => state.common.procurementAssigneeList
+    (state) => state.common.procurementAssigneeList,
   );
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -130,7 +130,7 @@ const ProcurementSubCategory = () => {
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -140,7 +140,7 @@ const ProcurementSubCategory = () => {
       filteredData = filteredData.filter((item) =>
         item?.contactPersonName
           ?.toLowerCase()
-          .includes(filterValue.toLowerCase())
+          .includes(filterValue.toLowerCase()),
       );
     }
     return filteredData;
@@ -276,7 +276,7 @@ const ProcurementSubCategory = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       dispatch(createVendorsSubCategory(values))
@@ -305,7 +305,7 @@ const ProcurementSubCategory = () => {
         updateProcurementUsers({
           data: values?.usersId,
           subCategoryId: rowItem?.subCategoryId,
-        })
+        }),
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
@@ -322,10 +322,10 @@ const ProcurementSubCategory = () => {
           }
         })
         .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" })
+          addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [dispatch, rowItem, assigneeForm]
+    [dispatch, rowItem, assigneeForm],
   );
 
   const topContent = useMemo(() => {
@@ -434,7 +434,7 @@ const ProcurementSubCategory = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Procurement sub categories
       </h1>
       <Table

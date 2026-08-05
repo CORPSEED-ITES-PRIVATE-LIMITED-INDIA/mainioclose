@@ -1,9 +1,16 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import AdminDashboards from "../dashboards/AdminDashboards";
-import LeadDashboardDetail from "../dashboards/LeadDashboardDetail";
-import AccountsDashboard from "../dashboards/accounts/AccountsDashboard";
-import SalesDashboard from "../dashboards/sales/SalesDashboard";
-import OperationsDashboard from "../dashboards/operations/OperationsDashboard";
+const AdminDashboards = lazy(() => import("../dashboards/AdminDashboards"));
+const LeadDashboardDetail = lazy(
+  () => import("../dashboards/LeadDashboardDetail"),
+);
+const AccountsDashboard = lazy(
+  () => import("../dashboards/accounts/AccountsDashboard"),
+);
+const SalesDashboard = lazy(() => import("../dashboards/sales/SalesDashboard"));
+const OperationsDashboard = lazy(
+  () => import("../dashboards/operations/OperationsDashboard"),
+);
 
 const DashboardRouting = () => {
   return (

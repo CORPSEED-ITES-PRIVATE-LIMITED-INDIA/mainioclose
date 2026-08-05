@@ -149,10 +149,10 @@ const UserApprovals = () => {
           <div className="flex items-start gap-2">
             <Avatar size="sm" classNames={{ icon: "text-gray-500" }} />
             <div className="flex flex-col">
-              <p className="font-normal capitalize">
+              <p className="text-[12.5px] font-normal capitalize">
                 {rowData?.fullName || "-"}
               </p>
-              <p className="font-normal text-xs text-gray-400">
+              <p className="text-[11.5px] font-normal text-default-400">
                 Aadhar : {rowData?.aadharCard || "-"}
               </p>
             </div>
@@ -160,20 +160,21 @@ const UserApprovals = () => {
         );
       case "email":
         return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.email || "Unknown"}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-[12.5px] font-normal">
+              {rowData?.email || "Unknown"}
+            </span>
             {rowData?.contactNo && (
               <Chip
                 size="sm"
-                className="text-tiny"
                 variant="flat"
-                startContent={<Phone className="h-3 w-3" />}
+                startContent={<Phone className="w-3 h-3" />}
               >
                 {rowData?.contactNo}
               </Chip>
             )}
             {rowData?.panNumber && (
-              <Chip size="sm" className="text-tiny" variant="flat">
+              <Chip size="sm" variant="flat">
                 Pan : {rowData?.panNumber}
               </Chip>
             )}
@@ -182,8 +183,10 @@ const UserApprovals = () => {
       case "department":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.department || "-"}</span>
-            <p className="font-normal text-xs text-gray-400">
+            <span className="text-[12.5px] font-normal">
+              {rowData?.department || "-"}
+            </span>
+            <p className="text-[11.5px] font-normal text-default-400">
               {rowData?.designation || "-"}
             </p>
           </div>
@@ -191,7 +194,7 @@ const UserApprovals = () => {
       case "role":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="text-[12.5px] font-normal">
               {rowData?.role?.join(",") || "-"}
             </span>
           </div>
@@ -200,12 +203,12 @@ const UserApprovals = () => {
         return (
           <div className="flex flex-col">
             {rowData?.expInYear && (
-              <span className="font-normal">
+              <span className="text-[12.5px] font-normal">
                 {rowData?.expInYear || "-"} yrs ,{" "}
               </span>
             )}
             {rowData?.expInMonth && (
-              <span className="font-normal">
+              <span className="text-[12.5px] font-normal">
                 {rowData?.expInMonth || "-"} mos
               </span>
             )}
@@ -214,7 +217,7 @@ const UserApprovals = () => {
       case "managers":
         return (
           <div className="flex items-center">
-            <span className="font-normal">
+            <span className="text-[12.5px] font-normal">
               {rowData?.managers?.fullName || "-"}
             </span>
           </div>
@@ -222,7 +225,7 @@ const UserApprovals = () => {
       case "permanentAddress":
         return rowData?.permanentAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="text-[12.5px] font-normal">
               {rowData?.permanentAddress || "-"}
             </span>
           </div>
@@ -232,7 +235,7 @@ const UserApprovals = () => {
       case "residentialAddress":
         return rowData?.residentialAddress ? (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="text-[12.5px] font-normal">
               {rowData?.residentialAddress || "-"}
             </span>
           </div>
@@ -242,12 +245,14 @@ const UserApprovals = () => {
       case "fatherInfo":
         return rowData?.fatherName ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.fatherName || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.fatherName || "-"}
+            </span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Occupation : {rowData?.fatherOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Contact : {rowData?.fatherContactNo || "-"}
               </span>
             </div>
@@ -258,12 +263,14 @@ const UserApprovals = () => {
       case "motherInfo":
         return rowData?.motherName ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.motherName || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.motherName || "-"}
+            </span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Occupation : {rowData?.motherOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Contact : {rowData?.motherContactNo || "-"}
               </span>
             </div>
@@ -274,12 +281,14 @@ const UserApprovals = () => {
       case "spouseInfo":
         return rowData?.spouseName ? (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData?.spouseName || "-"}</span>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.spouseName || "-"}
+            </span>
             <div className="flex flex-col gap-1">
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Occupation : {rowData?.spouseOccupation || "-"}
               </span>
-              <span className="text-gray-400">
+              <span className="text-[11.5px] text-default-400">
                 Contact : {rowData?.spouseContactNo || "-"}
               </span>
             </div>
@@ -292,7 +301,7 @@ const UserApprovals = () => {
           <Dropdown>
             <DropdownTrigger>
               <Button size="sm" isIconOnly variant="light">
-                <EllipsisVertical />
+                <EllipsisVertical className="w-4 h-4 text-default-300" />
               </Button>
             </DropdownTrigger>
             <DropdownMenu>
@@ -348,21 +357,27 @@ const UserApprovals = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -384,13 +399,13 @@ const UserApprovals = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} users for approval
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-none text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -407,8 +422,8 @@ const UserApprovals = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -416,7 +431,6 @@ const UserApprovals = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -455,18 +469,24 @@ const UserApprovals = () => {
   ]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Users approval list
       </h1>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Users table with custom cells, pagination, and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -497,7 +517,7 @@ const UserApprovals = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

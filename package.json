@@ -20,6 +20,7 @@
     "@heroui/link": "^2.2.21",
     "@heroui/navbar": "^2.2.22",
     "@heroui/react": "^2.8.2",
+    "@heroui/react-real": "npm:@heroui/react@2.8.7",
     "@heroui/select": "^2.4.25",
     "@heroui/snippet": "^2.2.25",
     "@heroui/switch": "^2.2.22",

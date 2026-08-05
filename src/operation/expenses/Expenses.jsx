@@ -24,14 +24,7 @@ import {
   Textarea,
 } from "@heroui/react";
 
-import {
-  ChevronDown,
-  ExternalLink,
-  MoreVertical,
-  PencilLine,
-  RefreshCcw,
-  Search,
-} from "lucide-react";
+import { ExternalLink, MoreVertical, PencilLine, Search } from "lucide-react";
 
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -699,20 +692,20 @@ const Expenses = () => {
           return (
             <div className="flex max-w-[260px] flex-col">
               <span
-                className="truncate text-sm font-semibold text-foreground"
+                className="truncate text-[12.5px] font-semibold text-foreground"
                 title={expense?.projectName || "-"}
               >
                 {expense?.projectName || "-"}
               </span>
 
-              <span className="text-xs text-default-500">
+              <span className="text-[11.5px] text-default-500">
                 {expense?.projectNo
                   ? `Project No: ${expense.projectNo}`
                   : `Project ID: ${expense?.projectId || "-"}`}
               </span>
 
               {expense?.unbilledNumber && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   Unbilled: {expense.unbilledNumber}
                 </span>
               )}
@@ -722,7 +715,7 @@ const Expenses = () => {
         case "productName":
           return (
             <span
-              className="block max-w-[200px] truncate text-sm"
+              className="block max-w-[200px] truncate text-[12.5px]"
               title={expense?.productName || "-"}
             >
               {expense?.productName || "-"}
@@ -770,12 +763,12 @@ const Expenses = () => {
         case "department":
           return (
             <div className="flex flex-col">
-              <span className="text-sm font-medium">
+              <span className="text-[12.5px] font-medium">
                 {expense?.raisedDepartmentName || "-"}
               </span>
 
               {expense?.raisedDepartmentId && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   ID: {expense.raisedDepartmentId}
                 </span>
               )}
@@ -785,12 +778,12 @@ const Expenses = () => {
         case "createdBy":
           return (
             <div className="flex flex-col">
-              <span className="text-sm font-medium">
+              <span className="text-[12.5px] font-medium">
                 {expense?.createdByUserName || "-"}
               </span>
 
               {expense?.createdByUserId && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   User ID: {expense.createdByUserId}
                 </span>
               )}
@@ -799,21 +792,21 @@ const Expenses = () => {
 
         case "expenseDate":
           return (
-            <span className="whitespace-nowrap text-sm">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.expenseDate)}
             </span>
           );
 
         case "createdDate":
           return (
-            <span className="whitespace-nowrap text-sm">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.createdDate)}
             </span>
           );
 
         case "updatedDate":
           return (
-            <span className="whitespace-nowrap text-sm">
+            <span className="whitespace-nowrap text-[12.5px]">
               {formatDateTime(expense?.updatedDate)}
             </span>
           );
@@ -852,7 +845,7 @@ const Expenses = () => {
               </Chip>
 
               {expense?.crtActionByUserName && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   By: {expense.crtActionByUserName}
                 </span>
               )}
@@ -871,7 +864,7 @@ const Expenses = () => {
               </Chip>
 
               {expense?.accountsActionByUserName && (
-                <span className="text-xs text-default-500">
+                <span className="text-[11.5px] text-default-500">
                   By: {expense.accountsActionByUserName}
                 </span>
               )}
@@ -893,7 +886,7 @@ const Expenses = () => {
           return (
             <div className="flex max-w-[220px] flex-col">
               <span
-                className="truncate text-sm"
+                className="truncate text-[12.5px]"
                 title={expense?.externalReference || "-"}
               >
                 {expense?.externalReference || "-"}
@@ -901,7 +894,7 @@ const Expenses = () => {
 
               {expense?.remark && (
                 <span
-                  className="truncate text-xs text-default-500"
+                  className="truncate text-[11.5px] text-default-500"
                   title={expense.remark}
                 >
                   {expense.remark}
@@ -938,40 +931,42 @@ const Expenses = () => {
             );
 
           return (
-            <Dropdown placement="bottom-end">
-              <DropdownTrigger>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="light"
-                  aria-label={`Actions for expense ${expense?.expenseId || ""}`}
-                >
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownTrigger>
+            <div className="flex justify-center">
+              <Dropdown placement="bottom-end">
+                <DropdownTrigger>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    aria-label={`Actions for expense ${expense?.expenseId || ""}`}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownTrigger>
 
-              <DropdownMenu
-                aria-label="Expense actions"
-                disabledKeys={canUpdateStatus ? [] : ["updateStatus"]}
-                onAction={(key) => {
-                  if (key === "updateStatus" && canUpdateStatus) {
-                    openStatusModal(expense);
-                  }
-                }}
-              >
-                <DropdownItem
-                  key="updateStatus"
-                  startContent={<PencilLine className="h-4 w-4" />}
-                  description={
-                    canUpdateStatus
-                      ? "Approve, reject or place on hold"
-                      : "Available only during CRT review"
-                  }
+                <DropdownMenu
+                  aria-label="Expense actions"
+                  disabledKeys={canUpdateStatus ? [] : ["updateStatus"]}
+                  onAction={(key) => {
+                    if (key === "updateStatus" && canUpdateStatus) {
+                      openStatusModal(expense);
+                    }
+                  }}
                 >
-                  Update Status
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+                  <DropdownItem
+                    key="updateStatus"
+                    startContent={<PencilLine className="h-4 w-4" />}
+                    description={
+                      canUpdateStatus
+                        ? "Approve, reject or place on hold"
+                        : "Available only during CRT review"
+                    }
+                  >
+                    Update Status
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
           );
         }
 
@@ -984,13 +979,15 @@ const Expenses = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full max-w-[320px]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search expenses..."
-            startContent={<Search className="h-4 w-4" />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={searchValue}
             onClear={() => {
               setSearchValue("");
@@ -1009,90 +1006,81 @@ const Expenses = () => {
             }}
           />
 
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[200px_200px_auto_auto]">
-            <Select
-              selectedKeys={
-                approvalStage ? new Set([approvalStage]) : new Set([])
-              }
-              onSelectionChange={(keys) => {
-                const selectedValue = Array.from(keys)[0];
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={approvalStageOptions}
+                labelKey="label"
+                valueKey="value"
+                label="Approval stage"
+                value={approvalStage}
+                onChange={(value) => {
+                  if (value) {
+                    setApprovalStage(value);
 
-                if (selectedValue) {
-                  setApprovalStage(String(selectedValue));
+                    setPagination((previous) => ({
+                      ...previous,
+                      page: 1,
+                    }));
+                  }
+                }}
+              />
+            </div>
 
-                  setPagination((previous) => ({
-                    ...previous,
-                    page: 1,
-                  }));
-                }
-              }}
-            >
-              {approvalStageOptions.map((option) => (
-                <SelectItem key={option.value} textValue={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={approvalStatusOptions}
+                labelKey="label"
+                valueKey="value"
+                label="Approval status"
+                value={approvalStatus}
+                onChange={(value) => {
+                  if (value) {
+                    setApprovalStatus(value);
 
-            <Select
-              selectedKeys={
-                approvalStatus ? new Set([approvalStatus]) : new Set([])
-              }
-              onSelectionChange={(keys) => {
-                const selectedValue = Array.from(keys)[0];
+                    setPagination((previous) => ({
+                      ...previous,
+                      page: 1,
+                    }));
+                  }
+                }}
+              />
+            </div>
 
-                if (selectedValue) {
-                  setApprovalStatus(String(selectedValue));
-
-                  setPagination((previous) => ({
-                    ...previous,
-                    page: 1,
-                  }));
-                }
-              }}
-            >
-              {approvalStatusOptions.map((option) => (
-                <SelectItem key={option.value} textValue={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
-
-            <Dropdown>
-              <DropdownTrigger>
-                <Button
-                  variant="flat"
-                  endContent={<ChevronDown className="h-4 w-4" />}
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Visible columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={columns}
                 selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid}>{column.name}</DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
+                labelKey="name"
+                valueKey="uid"
+                label="Columns"
+                placeholder="Columns"
+                value={Array.from(visibleColumns)}
+                onChange={(values) => {
+                  if (values.length > 0) {
+                    setVisibleColumns(new Set(values));
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-small text-default-500">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} expenses
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-500">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="rounded-md border border-default-200 bg-transparent px-2 py-1 text-small outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               value={pagination.size}
               onChange={(event) => {
                 setPagination({
@@ -1121,10 +1109,24 @@ const Expenses = () => {
     fetchExpenseApprovalQueue,
   ]);
 
+  const onPreviousPage = useCallback(() => {
+    setPagination((previous) => ({
+      ...previous,
+      page: Math.max(1, previous.page - 1),
+    }));
+  }, []);
+
+  const onNextPage = useCallback(() => {
+    setPagination((previous) => ({
+      ...previous,
+      page: Math.min(totalPages, previous.page + 1),
+    }));
+  }, [totalPages]);
+
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-500">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           Page {pagination.page} of {totalPages}
         </span>
 
@@ -1141,32 +1143,57 @@ const Expenses = () => {
             }));
           }}
         />
+
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={totalPages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onPreviousPage}
+          >
+            Previous
+          </Button>
+          <Button
+            isDisabled={totalPages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onNextPage}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     );
-  }, [pagination.page, totalPages]);
+  }, [pagination.page, totalPages, onPreviousPage, onNextPage]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-sans text-2xl font-medium">
+    <div className="flex flex-col gap-2">
+      <div className="shrink-0 mb-2">
+        <h1 className="font-sans text-lg font-semibold">
           Expense Approval Queue
         </h1>
 
-        <p className="mt-1 text-sm text-default-500">
+        <p className="text-default-500 text-[12.5px]">
           Review expenses based on approval stage and status.
         </p>
       </div>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Expense approval queue table"
         topContent={topContent}
         topContentPlacement="outside"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "w-full md:max-h-[60vh] 2xl:max-h-[65vh]",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={headerColumns}>

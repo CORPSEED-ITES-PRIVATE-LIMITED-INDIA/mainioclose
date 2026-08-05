@@ -161,7 +161,7 @@ const ServingCompanies = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const count = useSelector(
-    (state) => state.company.servingCompanyList[0]?.total
+    (state) => state.company.servingCompanyList[0]?.total,
   );
   const data = useSelector((state) => state.company.servingCompanyList);
   const companyTypeList = useSelector((state) => state.company.companyTypeList);
@@ -170,18 +170,18 @@ const ServingCompanies = () => {
   const citiesList = useSelector((state) => state.common.citiesList);
   const allIndustry = useSelector((state) => state.common.allMainIndustry);
   const subIndustryListById = useSelector(
-    (state) => state.common.subIndustryListByIndustryId
+    (state) => state.common.subIndustryListByIndustryId,
   );
   const subSubIndustryListById = useSelector(
-    (state) => state.common.subSubIndustryListBySubIndustryId
+    (state) => state.common.subSubIndustryListBySubIndustryId,
   );
   const industryDataListById = useSelector(
-    (state) => state.common.industryDataListBySubSubIndustryId
+    (state) => state.common.industryDataListBySubSubIndustryId,
   );
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "age",
@@ -259,7 +259,7 @@ const ServingCompanies = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -268,7 +268,7 @@ const ServingCompanies = () => {
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase())
+        user?.projectName?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     return filteredUsers;
@@ -506,7 +506,7 @@ const ServingCompanies = () => {
         assigneeId: userId,
         updatedBy: userId,
         ...values,
-      })
+      }),
     )
       .then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
@@ -523,7 +523,7 @@ const ServingCompanies = () => {
         }
       })
       .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
   };
 
@@ -673,7 +673,9 @@ const ServingCompanies = () => {
 
   return (
     <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Serving companies</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Serving companies
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Example table with custom cells, pagination and sorting"
@@ -681,7 +683,7 @@ const ServingCompanies = () => {
         bottomContentPlacement="outside"
         classNames={{
           wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          table: "w-full",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -848,7 +850,7 @@ const ServingCompanies = () => {
                               value={field.value}
                               onChange={(value) => {
                                 dispatch(
-                                  getSubSubIndustryBySubIndustryId(value)
+                                  getSubSubIndustryBySubIndustryId(value),
                                 );
                                 field.onChange(value);
                               }}
@@ -870,7 +872,7 @@ const ServingCompanies = () => {
                               value={field.value}
                               onChange={(value) => {
                                 dispatch(
-                                  getIndustryDataBySubSubIndustryId(value)
+                                  getIndustryDataBySubSubIndustryId(value),
                                 );
                                 field.onChange(value);
                               }}

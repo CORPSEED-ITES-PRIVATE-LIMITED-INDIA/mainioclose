@@ -72,15 +72,15 @@ const AutoHistory = () => {
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
   const statusList = useSelector((state) => state?.setting?.statusList);
   const autoHistoryExportList = useSelector(
-    (state) => state.leads.autoHistoryExportList
+    (state) => state.leads.autoHistoryExportList,
   );
   const autoExportLoading = useSelector(
-    (state) => state.leads.autoExportLoading
+    (state) => state.leads.autoExportLoading,
   );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
+    new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
@@ -94,7 +94,7 @@ const AutoHistory = () => {
     toDate: "",
     fromDate: "",
     departmentId: null,
-    assignType:null,
+    assignType: null,
     statusIds: [],
     assigneeIds: [],
     source: [],
@@ -102,7 +102,7 @@ const AutoHistory = () => {
 
   useEffect(() => {
     dispatch(
-      getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter })
+      getAllAutoHistoryList({ page, size: rowsPerPage, data: dateFilter }),
     );
     dispatch(getAllAutoHistroryCount(dateFilter));
   }, [dispatch, page, rowsPerPage, dateFilter]); // Added dateFilter to dependencies
@@ -111,7 +111,7 @@ const AutoHistory = () => {
     if (visibleColumns === "all") return columns;
 
     return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+      Array.from(visibleColumns).includes(column.uid),
     );
   }, [visibleColumns]);
 
@@ -121,8 +121,8 @@ const AutoHistory = () => {
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((item) =>
         Object.values(item)?.some((val) =>
-          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase())
-        )
+          String(val)?.toLowerCase()?.includes(filterValue?.toLowerCase()),
+        ),
       );
     }
 
@@ -150,16 +150,16 @@ const AutoHistory = () => {
     switch (columnKey) {
       case "leadname":
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-0.5">
             <Link
               to={`${rowData?.leadId}/leadDetail`}
-              className="font-semibold"
+              className="font-semibold text-[12.5px] truncate"
             >
               {rowData.leadOriginalName || "-"}
             </Link>
             <Chip
               size="sm"
-              className="text-sm"
+              className="text-[11.5px] w-fit"
               color={rowData.manual ? "success" : "default"}
             >
               {rowData.manual ? "Manual" : "Auto"}
@@ -169,14 +169,18 @@ const AutoHistory = () => {
       case "status":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.status || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData.status || "-"}
+            </span>
           </div>
         );
       case "client":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.clientEmail || "-"}</span>
-            <span className="text-sm text-muted-foreground">
+            <span className="font-normal text-[12.5px]">
+              {rowData.clientEmail || "-"}
+            </span>
+            <span className="text-[11.5px] text-muted-foreground">
               {rowData.mobileNo}
             </span>
           </div>
@@ -184,8 +188,10 @@ const AutoHistory = () => {
       case "assignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.currName || "-"}</span>
-            <span className="text-sm text-muted-foreground">
+            <span className="font-normal text-[12.5px]">
+              {rowData.currName || "-"}
+            </span>
+            <span className="text-[11.5px] text-muted-foreground">
               {rowData.currEmail}
             </span>
           </div>
@@ -193,8 +199,10 @@ const AutoHistory = () => {
       case "prevassignee":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.paName || "-"}</span>
-            <span className="text-sm text-muted-foreground">
+            <span className="font-normal text-[12.5px]">
+              {rowData.paName || "-"}
+            </span>
+            <span className="text-[11.5px] text-muted-foreground">
               {rowData.paEmail}
             </span>
           </div>
@@ -202,7 +210,7 @@ const AutoHistory = () => {
       case "assignDate":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {dayjs(rowData?.assignDate).format("DD-MM-YYYY HH:mm ")}
             </span>
           </div>
@@ -210,7 +218,9 @@ const AutoHistory = () => {
       case "description":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">{rowData.description}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData.description}
+            </span>
           </div>
         );
 
@@ -253,7 +263,7 @@ const AutoHistory = () => {
   const handleApplyFilter = () => {
     setPage(1); // Reset to page 1 on filter apply
     dispatch(
-      getAllAutoHistoryList({ page: 1, size: rowsPerPage, data: dateFilter })
+      getAllAutoHistoryList({ page: 1, size: rowsPerPage, data: dateFilter }),
     );
     dispatch(getAllAutoHistroryCount(dateFilter));
     dispatch(getAllAutoHistoryForExportByDate(dateFilter))
@@ -265,7 +275,7 @@ const AutoHistory = () => {
         }
       })
       .catch((err) =>
-        addToast({ title: "Something went wrong !.", color: "danger" })
+        addToast({ title: "Something went wrong !.", color: "danger" }),
       );
     onClose();
   };
@@ -284,7 +294,7 @@ const AutoHistory = () => {
           statusIds: [],
           assigneeIds: [],
         },
-      })
+      }),
     );
   };
 
@@ -322,18 +332,20 @@ const AutoHistory = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDown />} variant="flat">
@@ -355,13 +367,13 @@ const AutoHistory = () => {
                       page: 1,
                       size: rowsPerPage,
                       data: { ...dateFilter, departmentId: value },
-                    })
+                    }),
                   );
                   dispatch(
                     getAllAutoHistroryCount({
                       ...dateFilter,
                       departmentId: value,
-                    })
+                    }),
                   );
                 }}
               >
@@ -400,7 +412,10 @@ const AutoHistory = () => {
               <PopoverContent>
                 {(titleProps) => (
                   <div className="px-1 py-2">
-                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                    <h3
+                      className="mt-1 mb-2 font-semibold text-sm w-full"
+                      {...titleProps}
+                    >
                       Lead filter
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -542,13 +557,13 @@ const AutoHistory = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} auto history
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -575,8 +590,8 @@ const AutoHistory = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -584,7 +599,6 @@ const AutoHistory = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -613,16 +627,24 @@ const AutoHistory = () => {
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Auto history list</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Auto history list
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Auto history table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[68vh] md:max-h-[62vh] w-full",
-          table:'w-full'
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -651,7 +673,7 @@ const AutoHistory = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

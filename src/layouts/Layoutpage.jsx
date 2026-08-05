@@ -104,7 +104,7 @@ const Layoutpage = () => {
   };
 
   return (
-    <div className="min-h-screen min-w-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
+    <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-neutral-900 overflow-hidden">
       <div className="flex flex-1 overflow-hidden w-full">
         <Sidebar
           items={getNavItemsByDepartment(department, adminRole)}
@@ -112,28 +112,28 @@ const Layoutpage = () => {
           setCollapsed={setCollapsed}
           className="hidden lg:flex"
         />
-        <main className={collapsed ? "w-[96%]" : "lg:w-[85%] 2xl:w-[87%]"}>
-          <header className="dark:bg-black dark:text-white bg-white h-[40px] shadow px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <header className="sticky top-0 z-30 dark:bg-black dark:text-white bg-white h-11 shrink-0 border-b border-gray-200 dark:border-white/10 px-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
               <BackButton fallback={`/erp/${userId}/dashboard`} />
               <Button
                 variant="light"
                 size="sm"
                 isIconOnly
                 onPress={() => setCollapsed(!collapsed)}
-                className="w-1"
+                className="min-w-7 w-7 h-7"
               >
                 <PanelLeft color="gray" className="h-4 w-4" />
               </Button>
-              <Breadcrumbs isDisabled>
+              <Breadcrumbs isDisabled size="sm" className="min-w-0">
                 {afterUserId?.map((item) => (
-                  <BreadcrumbItem key={item} className="capitalize">
+                  <BreadcrumbItem key={item} className="capitalize text-[12.5px]">
                     {item}
                   </BreadcrumbItem>
                 ))}
               </Breadcrumbs>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 shrink-0">
               {/* <Badge color="danger" content={5} shape="circle">
                 <Button size="sm" variant="light" isIconOnly>
                   <BellRing className="text-gray-500 " />
@@ -151,10 +151,10 @@ const Layoutpage = () => {
               <ThemeSwitch />
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto px-2 py-0 h-full text-neutral-700 dark:text-white shadow">
+          <div className="flex-1 overflow-y-auto px-3 py-2.5 text-neutral-700 dark:text-white">
             <Outlet />
-          </main>
-        </main>
+          </div>
+        </div>
       </div>
     </div>
   );

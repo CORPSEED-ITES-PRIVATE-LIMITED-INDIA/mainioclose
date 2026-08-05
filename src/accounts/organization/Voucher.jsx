@@ -796,7 +796,9 @@ const Voucher = () => {
 
   return (
     <>
-      <h1 className="mb-1 font-sans text-2xl font-medium">Vouchers list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vouchers list
+      </h1>
       <Table
         isHeaderSticky
         aria-label="Accounting vouchers table"

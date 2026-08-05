@@ -607,78 +607,84 @@ const Estimate = () => {
       case "estimateNumber":
         return (
           <div className="flex flex-col items-start">
-            <span>{rowData?.estimateNumber}</span>
+            <span className="text-[12.5px]">{rowData?.estimateNumber}</span>
             {rowData?.performanceInvoiceFlag && (
-              <span>/ {rowData?.performanceInvoiceNumber}</span>
+              <span className="text-[11.5px] text-default-500">
+                / {rowData?.performanceInvoiceNumber}
+              </span>
             )}
           </div>
         );
       case "solutionName":
         return (
-          <div className="flex flex-col items-start">
-            <span className="font-normal">{rowData?.solutionName}</span>
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="font-normal text-[12.5px]">
+              {rowData?.solutionName}
+            </span>
             {rowData?.solutionType && (
-              <Badge
-                size="sm"
-                placement="center-left"
-                shape="circle"
-                content={rowData?.solutionType}
-              />
+              <Chip size="sm" variant="flat" className="text-[11.5px]">
+                {rowData?.solutionType}
+              </Chip>
             )}
           </div>
         );
       case "companyName":
         return (
-          <div className="flex flex-col">
-            <span className="font-normal">{rowData?.company?.name}</span>
-            <Badge
+          <div className="flex flex-col gap-0.5">
+            <span className="font-normal text-[12.5px]">
+              {rowData?.company?.name}
+            </span>
+            <Chip
               size="sm"
-              placement="center-left"
-              shape="circle"
-              content={rowData?.company?.onboardingStatus}
+              variant="flat"
+              className="text-[11.5px] w-fit"
               color={statusColorCode[rowData?.company?.onboardingStatus]}
-            />
+            >
+              {rowData?.company?.onboardingStatus}
+            </Chip>
           </div>
         );
       case "unitName":
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-normal">{rowData?.unit?.unitName}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData?.unit?.unitName}
+            </span>
 
             {rowData?.unit?.gstRegistrationType && (
-              <span className="text-xs text-foreground-500">
+              <span className="text-[11.5px] text-default-500">
                 GST Type: {rowData.unit.gstRegistrationType}
               </span>
             )}
 
-            <Badge
+            <Chip
               size="sm"
-              placement="center-left"
-              shape="circle"
-              content={rowData?.unit?.onboardingStatus}
+              variant="flat"
+              className="text-[11.5px] w-fit"
               color={statusColorCode[rowData?.unit?.onboardingStatus]}
-            />
+            >
+              {rowData?.unit?.onboardingStatus}
+            </Chip>
           </div>
         );
       case "status":
         return (
-          <div className="flex flex-col">
-            <Badge
-              size="sm"
-              placement="center-left"
-              shape="circle"
-              content={rowData?.status}
-              color={statusColorCode[rowData?.status]}
-            />
-          </div>
+          <Chip
+            size="sm"
+            variant="flat"
+            className="text-[11.5px]"
+            color={statusColorCode[rowData?.status]}
+          >
+            {rowData?.status}
+          </Chip>
         );
       case "createDate":
         return (
           <div className="flex flex-col">
-            <span className="font-normal">
+            <span className="font-normal text-[12.5px]">
               {dayjs(rowData?.estimateDate).format("DD-MM-YYYY")}
             </span>
-            <span className="font-normal text-sm text-gray-400">
+            <span className="font-normal text-[11.5px] text-default-500">
               Valid till : {dayjs(rowData?.validUntil).format("DD-MM-YYYY")}
             </span>
           </div>
@@ -686,9 +692,11 @@ const Estimate = () => {
       case "gstNo":
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-normal">{rowData?.unit?.gstNo || "-"}</span>
+            <span className="font-normal text-[12.5px]">
+              {rowData?.unit?.gstNo || "-"}
+            </span>
             {rowData?.panNo && (
-              <span className="text-xs text-foreground-400">
+              <span className="text-[11.5px] text-default-500">
                 Pan : {rowData?.panNo}
               </span>
             )}
@@ -697,16 +705,16 @@ const Estimate = () => {
       case "amount":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {inrCurrency(rowData?.subTotalExGst || 0) || "-"}
             </span>
             {rowData?.totalGstAmount && (
-              <span className="text-tiny text-gray-400">
+              <span className="text-[11.5px] text-default-500">
                 GST : {inrCurrency(rowData?.totalGstAmount) || "-"}
               </span>
             )}
             {rowData?.quantity && (
-              <span className="text-tiny text-gray-400">
+              <span className="text-[11.5px] text-default-500">
                 Quantity : {rowData?.quantity || "-"} kg
               </span>
             )}
@@ -716,10 +724,10 @@ const Estimate = () => {
       case "professionalFees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {inrCurrency(rowData?.professionalFees || 0) || "-"}
             </span>
-            <span className="text-tiny text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               GST : {inrCurrency(rowData?.profesionalGst) || "-"}
             </span>
           </div>
@@ -727,10 +735,10 @@ const Estimate = () => {
       case "govermentfees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {inrCurrency(rowData?.govermentfees || 0) || "-"}
             </span>
-            <span className="text-tiny text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               GST : {inrCurrency(rowData?.govermentGst) || "-"}
             </span>
           </div>
@@ -738,10 +746,10 @@ const Estimate = () => {
       case "serviceCharge":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {inrCurrency(rowData?.serviceCharge || 0) || "-"}
             </span>
-            <span className="text-tiny text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               GST : {inrCurrency(rowData?.serviceGst) || "-"}
             </span>
           </div>
@@ -749,10 +757,10 @@ const Estimate = () => {
       case "otherFees":
         return (
           <div className="flex flex-col">
-            <span className="font-medium">
+            <span className="font-medium text-[12.5px]">
               {inrCurrency(rowData?.otherFees || 0) || "-"}
             </span>
-            <span className="text-tiny text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               GST : {inrCurrency(rowData?.otherGst) || "-"}
             </span>
           </div>
@@ -760,19 +768,19 @@ const Estimate = () => {
       case "invoiceNote":
         return (
           <div className="flex items-start gap-2">
-            <span className="text-xs">{rowData?.invoiceNote}</span>
+            <span className="text-[11.5px]">{rowData?.invoiceNote}</span>
           </div>
         );
       case "primaryContact":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
+            <span className="font-semibold text-[12.5px]">
               {rowData.primaryContact?.name || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.primaryContact?.emails || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.primaryContact?.contactNo || "-"},
               {rowData?.primaryContact?.contactNo || "-"}
             </span>
@@ -781,13 +789,13 @@ const Estimate = () => {
       case "secondaryContact":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
+            <span className="font-semibold text-[12.5px]">
               {rowData.secondaryContact?.name || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.secondaryContact?.emails || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.secondaryContact?.contactNo || "-"},
               {rowData?.secondaryContact?.contactNo || "-"}
             </span>
@@ -796,10 +804,10 @@ const Estimate = () => {
       case "address":
         return (
           <div className="flex flex-col">
-            <span className="font-semibold">
+            <span className="font-semibold text-[12.5px]">
               {rowData?.unit?.addressLine1 || "-"}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.unit?.city || ""},{rowData?.unit?.state},
               {rowData?.unit?.country}
             </span>
@@ -811,7 +819,7 @@ const Estimate = () => {
             <Dropdown>
               <DropdownTrigger>
                 <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical />
+                  <EllipsisVertical className="w-4 h-4" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
@@ -986,12 +994,15 @@ const Estimate = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
-            className="w-full sm:max-w-[35%]"
+            isClearable
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search..."
-            startContent={<Search size={16} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -1001,10 +1012,13 @@ const Estimate = () => {
               }
             }}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Popover placement="bottom-end">
               <PopoverTrigger>
-                <Button variant="flat" endContent={<ChevronDown />}>
+                <Button
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Filters
                 </Button>
               </PopoverTrigger>
@@ -1109,7 +1123,10 @@ const Estimate = () => {
             </Button>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown />} variant="flat">
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -1131,13 +1148,13 @@ const Estimate = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} estimate
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-none text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -1161,8 +1178,8 @@ const Estimate = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -1170,7 +1187,6 @@ const Estimate = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration?.page}
           total={pages}
@@ -1216,16 +1232,24 @@ const Estimate = () => {
   ]);
 
   return (
-    <>
-      <h1 className="font-sans text-2xl font-medium mb-1">Estimate List</h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Estimate List
+      </h1>
       <Table
         isHeaderSticky
-        aria-label="Users table with custom cells, pagination, and sorting"
+        removeWrapper={false}
+        aria-label="Estimate table with custom cells, pagination, and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[62vh] md:max-h-[58vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"
@@ -1565,7 +1589,7 @@ const Estimate = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

@@ -154,7 +154,7 @@ const ApplicantTypes = () => {
   const handleDelete = () => {
     dispatch(deleteApplicantType(deleteId))
       .then((resp) => {
-        console.log("FrontEnd Check", resp)
+        console.log("FrontEnd Check", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Applicant deleted successfully !.",
@@ -164,7 +164,11 @@ const ApplicantTypes = () => {
           setDeleteId(null);
           dispatch(getApplicantTypeList({ page, size: rowsPerPage }));
         } else {
-          addToast({ title: resp.payload.data.errorCode, description: resp.payload.data.message, color: "danger" });
+          addToast({
+            title: resp.payload.data.errorCode,
+            description: resp.payload.data.message,
+            color: "danger",
+          });
         }
       })
       .catch(() =>
@@ -330,7 +334,9 @@ const ApplicantTypes = () => {
 
   return (
     <>
-      <h1 className="font-semibold text-2xl mb-2">Applicant list</h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Applicant list
+      </h1>
 
       <Table
         isHeaderSticky

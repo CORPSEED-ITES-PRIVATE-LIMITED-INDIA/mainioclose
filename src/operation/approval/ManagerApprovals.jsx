@@ -309,10 +309,10 @@ const ManagerApprovals = () => {
       case "project":
         return (
           <div className="flex max-w-[240px] flex-col">
-            <span className="truncate text-sm font-semibold text-foreground">
+            <span className="truncate text-[12.5px] font-semibold text-foreground">
               {rowData?.projectName || "-"}
             </span>
-            <span className="text-xs text-default-500">
+            <span className="text-[11.5px] text-default-500">
               {rowData?.projectNo || "-"}
             </span>
           </div>
@@ -321,10 +321,10 @@ const ManagerApprovals = () => {
       case "detectedAt":
         return (
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-[12.5px] font-medium text-foreground">
               {rowData?.detectedAtMilestoneName || "-"}
             </span>
-            <span className="text-xs text-default-500">
+            <span className="text-[11.5px] text-default-500">
               Assignment ID: {rowData?.detectedAtAssignmentId || "-"}
             </span>
           </div>
@@ -333,10 +333,10 @@ const ManagerApprovals = () => {
       case "responsible":
         return (
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-[12.5px] font-medium text-foreground">
               {rowData?.responsibleMilestoneName || "-"}
             </span>
-            <span className="text-xs text-default-500">
+            <span className="text-[11.5px] text-default-500">
               Assignment ID: {rowData?.responsibleAssignmentId || "-"}
             </span>
           </div>
@@ -345,10 +345,10 @@ const ManagerApprovals = () => {
       case "requestedBy":
         return (
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-[12.5px] font-medium text-foreground">
               {rowData?.requestedByName || "-"}
             </span>
-            <span className="text-xs text-default-500">
+            <span className="text-[11.5px] text-default-500">
               Manager: {rowData?.requesterManagerName || "-"}
             </span>
           </div>
@@ -357,7 +357,7 @@ const ManagerApprovals = () => {
       case "reason":
         return (
           <p
-            className="max-w-[260px] truncate text-sm text-default-700"
+            className="max-w-[260px] truncate text-[12.5px] text-default-700"
             title={rowData?.requestReason || "-"}
           >
             {rowData?.requestReason || "-"}
@@ -377,8 +377,8 @@ const ManagerApprovals = () => {
 
       case "requestedAt":
         return (
-          <div className="flex items-center gap-2 text-xs text-default-600">
-            <CalendarDays className="h-4 w-4 text-default-400" />
+          <div className="flex items-center gap-2 text-[11.5px] text-default-500">
+            <CalendarDays className="w-3.5 h-3.5 text-default-400" />
             <span>{formatDateTime(rowData?.requestedAt)}</span>
           </div>
         );
@@ -388,14 +388,14 @@ const ManagerApprovals = () => {
           <Dropdown>
             <DropdownTrigger>
               <Button isIconOnly size="sm" variant="light">
-                <EllipsisVertical size={18} />
+                <EllipsisVertical className="w-4 h-4 text-default-300" />
               </Button>
             </DropdownTrigger>
 
             <DropdownMenu aria-label="Manager approval actions">
               <DropdownItem
                 key="update"
-                startContent={<Eye size={15} />}
+                startContent={<Eye className="w-3.5 h-3.5" />}
                 onPress={() => handleOpenDecisionModal(rowData)}
               >
                 Update Status
@@ -411,13 +411,15 @@ const ManagerApprovals = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => {
               setFilterValue("");
@@ -429,8 +431,9 @@ const ManagerApprovals = () => {
             }}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Button
+              size="sm"
               color="primary"
               variant="flat"
               onPress={fetchPendingRequests}
@@ -440,7 +443,11 @@ const ManagerApprovals = () => {
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={16} />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -461,15 +468,15 @@ const ManagerApprovals = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} pending requests
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               value={filteration.size}
               onChange={(e) => {
                 setFilteration({
@@ -497,8 +504,8 @@ const ManagerApprovals = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           Page {filteration.page} of {pages}
         </span>
 
@@ -515,55 +522,61 @@ const ManagerApprovals = () => {
             }));
           }}
         />
+
+        <div className="hidden sm:flex w-[30%]" />
       </div>
     );
   }, [filteration.page, pages]);
 
   return (
-    <>
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="font-sans text-2xl font-medium">Manager Approvals</h1>
-        </div>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Manager Approvals
+      </h1>
 
-        <Table
-          isHeaderSticky
-          aria-label="Manager reopen approvals table"
-          bottomContent={bottomContent}
-          bottomContentPlacement="outside"
-          topContent={topContent}
-          topContentPlacement="outside"
-          classNames={{
-            wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
-            table: "w-full",
-          }}
+      <Table
+        isHeaderSticky
+        removeWrapper={false}
+        aria-label="Manager reopen approvals table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        topContent={topContent}
+        topContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+
+        <TableBody
+          isLoading={loading}
+          emptyContent={loading ? "Loading..." : "No pending requests found"}
+          items={paginatedItems}
         >
-          <TableHeader columns={headerColumns}>
-            {(column) => (
-              <TableColumn
-                key={column.uid}
-                align={column.uid === "actions" ? "center" : "start"}
-              >
-                {column.name}
-              </TableColumn>
-            )}
-          </TableHeader>
-
-          <TableBody
-            isLoading={loading}
-            emptyContent={loading ? "Loading..." : "No pending requests found"}
-            items={paginatedItems}
-          >
-            {(item) => (
-              <TableRow key={item?.id}>
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+          {(item) => (
+            <TableRow key={item?.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={decisionModalOpen}
@@ -719,7 +732,7 @@ const ManagerApprovals = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 
