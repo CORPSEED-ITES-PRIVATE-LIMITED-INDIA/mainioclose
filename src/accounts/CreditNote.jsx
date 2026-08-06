@@ -41,6 +41,7 @@ import FileUploader from "../components/FileUploader.jsx";
 export const columns = [
   { name: "DATE", uid: "date", sortable: true },
   { name: "CREDIT NOTE NO.", uid: "creditNoteNumber", sortable: true },
+  { name: "INVOICE NO.", uid: "invoiceNumber" }, // ADD
   { name: "UNBILLED NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "COMPANY", uid: "companyName" },
@@ -63,6 +64,7 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
   "creditNoteNumber",
+  "invoiceNumber", // ADD
   "unbilledNumber",
   "estimateNumber",
   "companyName",
@@ -75,7 +77,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "status",
   "actions",
 ];
-
 const CREDIT_NOTE_GST_RATE = 18;
 
 const parseAmount = (value) => {
@@ -978,6 +979,34 @@ const CreditNote = () => {
               {rowData?.rejectionReason || rowData?.reason || "-"}
             </p>
           );
+
+        case "invoiceNumber": {
+          const invoices = Array.isArray(rowData?.invoices)
+            ? rowData.invoices
+            : [];
+
+          if (!invoices.length) {
+            return <p className="text-[12.5px] text-default-400">-</p>;
+          }
+
+          return (
+            <div className="flex flex-col gap-1">
+              {invoices.map((invoice) => (
+                <div key={invoice.id || invoice.invoiceId}>
+                  <p className="text-[12.5px] font-medium">
+                    {invoice.invoiceNumber || "-"}
+                  </p>
+
+                  {invoice.invoiceDate && (
+                    <p className="text-[11.5px] text-default-500">
+                      {dayjs(invoice.invoiceDate).format("DD-MM-YYYY")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        }
 
         case "actions":
           return (

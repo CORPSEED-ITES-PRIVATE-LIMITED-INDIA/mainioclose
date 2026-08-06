@@ -406,18 +406,18 @@ const SalesUnbill = () => {
       return;
     }
 
-    if (
-      !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(
-        creditNoteData.ifscCode.trim().toUpperCase(),
-      )
-    ) {
-      addToast({
-        title: "Invalid IFSC code",
-        description: "Please enter valid IFSC code. Example: HDFC0001234",
-        color: "danger",
-      });
-      return;
-    }
+    // if (
+    //   !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(
+    //     creditNoteData.ifscCode.trim().toUpperCase(),
+    //   )
+    // ) {
+    //   addToast({
+    //     title: "Invalid IFSC code",
+    //     description: "Please enter valid IFSC code. Example: HDFC0001234",
+    //     color: "danger",
+    //   });
+    //   return;
+    // }
 
     if (
       creditNoteData.swiftCode?.trim() &&
@@ -1635,8 +1635,8 @@ const SalesUnbill = () => {
                   />
 
                   <Input
-                    label="Account Holder Name"
-                    placeholder="Enter account holder name"
+                    label="Company Name"
+                    placeholder="Enter company name"
                     isRequired
                     value={creditNoteData.accountHolderName}
                     onChange={(e) =>
