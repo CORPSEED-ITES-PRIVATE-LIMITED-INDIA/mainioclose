@@ -551,15 +551,16 @@ const LedgerMasterSection = () => {
     try {
       dispatch(clearLedgerError());
 
-      const ledgerType = String(values.ledgerType || "")
-        .trim()
-        .toUpperCase();
+      // const ledgerType = String(values.ledgerType || "")
+      //   .trim()
+      //   .toUpperCase();
+      const ledgerType = "BANK";
 
       const isBankLedgerType = ledgerType.includes("BANK");
 
       const payload = {
         ledgerName: values.name?.trim(),
-        ledgerType,
+        ledgerType: "BANK",
         ledgerGroupId: toNumber(values.groupName),
         gstNo: values.gstin?.trim() || "",
         panNo: values.panNumber?.trim() || "",
@@ -575,7 +576,7 @@ const LedgerMasterSection = () => {
           : "",
         branchName: isBankLedgerType ? values.branchName?.trim() || "" : "",
         active: values.active === "true",
-        ...values,
+        // ...values,
       };
 
       let savedLedger = null;

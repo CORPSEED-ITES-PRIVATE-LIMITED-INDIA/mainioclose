@@ -45,7 +45,6 @@ import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ChevronDown,
   Clock,
   EllipsisVertical,
   ExternalLink,
@@ -65,6 +64,7 @@ import {
   getRFQVendorsByRfqId,
 } from "../../toolkit/slices/vendorsSlice";
 import { parseDate } from "@internationalized/date";
+import NewSelect from "../../components/NewSelect";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -341,53 +341,51 @@ const RFQVendors = () => {
   );
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search RFQ..."
-            startContent={<Search size={18} />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search RFQ vendors..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={16} />} variant="flat">
-                  Columns
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={columns}
                 selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {column.name}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
+                labelKey="name"
+                valueKey="uid"
+                label="Columns"
+                placeholder="Columns"
+                value={Array.from(visibleColumns)}
+                onChange={(values) => {
+                  if (values.length > 0) {
+                    setVisibleColumns(new Set(values));
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} vendors mapped
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration.size}
             >
@@ -410,10 +408,24 @@ const RFQVendors = () => {
     onRowsPerPageChange,
   ]);
 
+  const onPreviousPage = useCallback(() => {
+    setFilteration((previous) => ({
+      ...previous,
+      page: Math.max(1, previous.page - 1),
+    }));
+  }, []);
+
+  const onNextPage = useCallback(() => {
+    setFilteration((previous) => ({
+      ...previous,
+      page: Math.min(pages, previous.page + 1),
+    }));
+  }, [pages]);
+
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           Page {filteration.page} of {pages}
         </span>
 
@@ -430,27 +442,52 @@ const RFQVendors = () => {
             }));
           }}
         />
+
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={pages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onPreviousPage}
+          >
+            Previous
+          </Button>
+          <Button
+            isDisabled={pages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onNextPage}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     );
-  }, [filteration.page, pages]);
+  }, [filteration.page, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           RFQ Vendors
         </h1>
 
         <Table
           isHeaderSticky
+          removeWrapper={false}
           aria-label="Request for quotation table"
           bottomContent={bottomContent}
           bottomContentPlacement="outside"
           topContent={topContent}
           topContentPlacement="outside"
           classNames={{
-            wrapper: "2xl:max-h-[62vh] md:max-h-[60vh] w-full",
+            base: "gap-2.5",
+            wrapper:
+              "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
             table: "w-full",
+            thead: "[&>tr]:first:rounded-none",
+            th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+            td: "py-1.5 text-[12.5px]",
           }}
         >
           <TableHeader columns={headerColumns}>
@@ -469,7 +506,7 @@ const RFQVendors = () => {
             emptyContent={
               rfqVendorsLoading ? "Loading..." : "No RFQ vendor found"
             }
-            items={filteredItems}
+            items={paginatedItems}
           >
             {(item) => (
               <TableRow key={item?.vendorId}>

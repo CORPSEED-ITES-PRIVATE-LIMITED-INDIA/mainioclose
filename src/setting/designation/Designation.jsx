@@ -8,10 +8,6 @@ import {
   TableCell,
   Input,
   Button,
-  DropdownTrigger,
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
   Pagination,
   useDisclosure,
   Modal,
@@ -28,7 +24,7 @@ import {
   createDesigination,
   getAllDesiginations,
 } from "../../toolkit/slices/settingSlice";
-import { ChevronDown, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,18 +52,12 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "weightValue", "actions"];
-
 const Designation = () => {
   const dispatch = useDispatch();
   const data = useSelector((state) => state.setting.designationList);
   const count = useSelector((state) => state.setting.designationList?.length);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
-  const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS),
-  );
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "name",
     direction: "ascending",
@@ -96,14 +86,6 @@ const Designation = () => {
   useEffect(() => {
     dispatch(getAllDesiginations());
   }, [dispatch]);
-
-  const headerColumns = React.useMemo(() => {
-    if (visibleColumns === "all") return columns;
-
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid),
-    );
-  }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...(data || [])];
@@ -240,59 +222,46 @@ const Designation = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search designations..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDown className="text-small" />}
-                  variant="flat"
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Button color="primary" onPress={onOpen} endContent={<Plus />}>
+
+          <div className="flex gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              color="primary"
+              onPress={onOpen}
+              startContent={<Plus className="w-4 h-4" />}
+            >
               Add New
             </Button>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} designation
+          <span className="text-default-400 text-[12.5px]">
+            Total {count} designations
           </span>
-          <label className="flex items-center text-default-400 text-small">
+
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={initialFilteration?.size}
             >
-              <option value="15">15</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -303,26 +272,22 @@ const Designation = () => {
   }, [
     filterValue,
     initialFilteration,
-    visibleColumns,
     onRowsPerPageChange,
     count,
     onSearchChange,
-    hasSearchFilter,
-    selectedKeys,
+    onOpen,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {initialFilteration?.page} of {pages}
         </span>
+
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={initialFilteration?.page}
           total={pages}
@@ -330,6 +295,7 @@ const Designation = () => {
             setInitialFilteration((prev) => ({ ...prev, page: e }))
           }
         />
+
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
@@ -350,33 +316,35 @@ const Designation = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, initialFilteration?.page, pages, hasSearchFilter, count]);
+  }, [initialFilteration?.page, pages, onPreviousPage, onNextPage]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Designation list
       </h1>
+
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Designation table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={(e) => {
-          let rowKeys = Array.from(e);
-          setSelectedKeys(rowKeys);
-        }}
         onSortChange={setSortDescriptor}
       >
-        <TableHeader columns={headerColumns}>
+        <TableHeader columns={columns}>
           {(column) => (
             <TableColumn
               key={column.uid}
@@ -503,7 +471,7 @@ const Designation = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

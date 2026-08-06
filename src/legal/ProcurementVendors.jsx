@@ -929,26 +929,20 @@ const ProcurementVendors = () => {
         case "quotationVendor":
           return (
             <div className="flex flex-col gap-1 text-[11.5px]">
-              <span>
-                Quotation:{" "}
-                <span className="font-semibold">
-                  {rowData?.quotationNumber ||
-                    rowData?.vendorQuotationId ||
-                    "-"}
-                </span>
+              <span className="font-semibold">
+                {rowData?.quotationNumber || rowData?.vendorQuotationId || "-"}
               </span>
-              <span></span>
             </div>
           );
 
-        case "legal":
-          return (
-            <div className="flex flex-col gap-1 text-[11.5px]">
-              <span>Assigned To: {rowData?.assignedToLegal || "-"}</span>
-              <span>Created By: {rowData?.createdBy || "-"}</span>
-              <span>Updated By: {rowData?.updatedBy || "-"}</span>
-            </div>
-          );
+        // case "legal":
+        //   return (
+        //     <div className="flex flex-col gap-1 text-[11.5px]">
+        //       <span>Assigned To: {rowData?.assignedToLegal || "-"}</span>
+        //       <span>Created By: {rowData?.createdBy || "-"}</span>
+        //       <span>Updated By: {rowData?.updatedBy || "-"}</span>
+        //     </div>
+        //   );
 
         case "status":
           return (

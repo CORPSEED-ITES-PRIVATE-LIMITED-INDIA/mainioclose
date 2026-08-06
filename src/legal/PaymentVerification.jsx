@@ -286,9 +286,6 @@ function PaymentVerification() {
             <p className="text-[12.5px] font-semibold text-foreground">
               Receipt ID: {safeText(item?.paymentReceiptId)}
             </p>
-            <p className="text-[11.5px] text-default-500">
-              Request ID: {safeText(item?.id)}
-            </p>
           </div>
         );
 
@@ -301,9 +298,6 @@ function PaymentVerification() {
             <p className="truncate text-[11.5px] text-default-500">
               Estimate: {safeText(item?.estimateNumber)}
             </p>
-            <p className="text-[11.5px] text-default-500">
-              Unbilled ID: {safeText(item?.unbilledInvoiceId)}
-            </p>
           </div>
         );
 
@@ -315,10 +309,6 @@ function PaymentVerification() {
             </p>
             <p className="truncate text-[11.5px] text-default-500">
               Unit: {safeText(item?.unitName)}
-            </p>
-            <p className="text-[11.5px] text-default-500">
-              Company ID: {safeText(item?.companyId)} / Unit ID:{" "}
-              {safeText(item?.unitId)}
             </p>
           </div>
         );
@@ -350,9 +340,6 @@ function PaymentVerification() {
           <div className="max-w-[170px]">
             <p className="truncate text-[12.5px] font-medium text-foreground">
               {safeText(item?.requestedByName)}
-            </p>
-            <p className="text-[11.5px] text-default-500">
-              ID: {safeText(item?.requestedById)}
             </p>
           </div>
         );

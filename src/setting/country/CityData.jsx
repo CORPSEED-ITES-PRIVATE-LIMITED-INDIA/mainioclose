@@ -117,40 +117,68 @@ const CityData = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex shrink-0 flex-col gap-4">
-        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full md:max-w-[400px]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search city..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <Dropdown>
-            <DropdownTrigger className="hidden sm:flex">
-              <Button variant="flat" endContent={<ChevronDown size={16} />}>
-                Columns
-              </Button>
-            </DropdownTrigger>
+          <div className="flex gap-1.5 flex-wrap">
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
 
-            <DropdownMenu
-              disallowEmptySelection
-              aria-label="Table Columns"
-              closeOnSelect={false}
-              selectedKeys={visibleColumns}
-              selectionMode="multiple"
-              onSelectionChange={setVisibleColumns}
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
+                selectionMode="multiple"
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
+            Total {filteredItems.length} cities
+          </span>
+
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              onChange={onRowsPerPageChange}
+              value={initialFilteration.size}
             >
-              {columns.map((column) => (
-                <DropdownItem key={column.uid} className="capitalize">
-                  {column.name}
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
         </div>
       </div>
     );
@@ -165,135 +193,117 @@ const CityData = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex shrink-0 flex-col items-center justify-between gap-3 py-2 md:flex-row">
-        <span className="text-small text-default-400">
-          Total {filteredItems.length} cities
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {initialFilteration.page} of {pages}
         </span>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-small text-default-400">
-            Rows per page:
-            <select
-              className="bg-transparent text-small text-default-500 outline-none"
-              onChange={onRowsPerPageChange}
-              value={initialFilteration.size}
-            >
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-          </label>
+        <Pagination
+          isCompact
+          showControls
+          color="primary"
+          page={initialFilteration.page}
+          total={pages}
+          onChange={(page) =>
+            setInitialFilteration((prev) => ({
+              ...prev,
+              page,
+            }))
+          }
+        />
 
-          <Pagination
-            isCompact
-            showControls
-            showShadow
-            color="primary"
-            page={initialFilteration.page}
-            total={pages}
-            onChange={(page) =>
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={initialFilteration.page <= 1}
+            size="sm"
+            variant="flat"
+            onPress={() =>
               setInitialFilteration((prev) => ({
                 ...prev,
-                page,
+                page: prev.page - 1,
               }))
             }
-          />
+          >
+            Previous
+          </Button>
 
-          <div className="hidden items-center gap-2 sm:flex">
-            <Button
-              isDisabled={initialFilteration.page <= 1}
-              size="sm"
-              variant="flat"
-              onPress={() =>
-                setInitialFilteration((prev) => ({
-                  ...prev,
-                  page: prev.page - 1,
-                }))
-              }
-            >
-              Previous
-            </Button>
-
-            <Button
-              isDisabled={initialFilteration.page >= pages}
-              size="sm"
-              variant="flat"
-              onPress={() =>
-                setInitialFilteration((prev) => ({
-                  ...prev,
-                  page: prev.page + 1,
-                }))
-              }
-            >
-              Next
-            </Button>
-          </div>
+          <Button
+            isDisabled={initialFilteration.page >= pages}
+            size="sm"
+            variant="flat"
+            onPress={() =>
+              setInitialFilteration((prev) => ({
+                ...prev,
+                page: prev.page + 1,
+              }))
+            }
+          >
+            Next
+          </Button>
         </div>
       </div>
     );
-  }, [
-    filteredItems.length,
-    initialFilteration.page,
-    initialFilteration.size,
-    pages,
-    onRowsPerPageChange,
-  ]);
+  }, [initialFilteration.page, pages]);
 
   return (
-    <div className="flex h-[calc(100vh-90px)] w-full flex-col overflow-hidden p-4">
-      <div className="mb-4 shrink-0">
+    <div className="flex flex-col gap-2">
+      <div>
         <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
           City List
         </h1>
 
-        <p className="text-sm text-default-400">
+        <p className="text-default-500 text-[12.5px]">
           Country: {decodedCountryName}
         </p>
 
-        <p className="text-sm text-default-400">State: {decodedStateName}</p>
+        <p className="text-default-500 text-[12.5px]">
+          State: {decodedStateName}
+        </p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <Table
-          aria-label="City table"
-          isHeaderSticky
-          bottomContent={bottomContent}
-          bottomContentPlacement="outside"
-          topContent={topContent}
-          topContentPlacement="outside"
-          classNames={{
-            base: "flex h-full min-h-0 flex-col overflow-hidden",
-            wrapper: "min-h-0 flex-1 overflow-auto",
-            table: "min-w-[700px]",
-          }}
+      <Table
+        aria-label="City table"
+        isHeaderSticky
+        removeWrapper={false}
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        topContent={topContent}
+        topContentPlacement="outside"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn key={column.uid} align="start">
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+
+        <TableBody
+          items={items}
+          emptyContent="No cities found"
+          isLoading={loading === "pending"}
+          loadingContent="Loading cities..."
         >
-          <TableHeader columns={headerColumns}>
-            {(column) => (
-              <TableColumn key={column.uid} align="start">
-                {column.name}
-              </TableColumn>
-            )}
-          </TableHeader>
-
-          <TableBody
-            items={items}
-            emptyContent="No cities found"
-            isLoading={loading === "pending"}
-            loadingContent="Loading cities..."
-          >
-            {(item) => (
-              <TableRow key={item?.id}>
-                {(columnKey) => (
-                  <TableCell>
-                    {columnKey === "id" ? item?.id : item?.name}
-                  </TableCell>
-                )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+          {(item) => (
+            <TableRow key={item?.id}>
+              {(columnKey) => (
+                <TableCell>
+                  {columnKey === "id" ? item?.id : item?.name}
+                </TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

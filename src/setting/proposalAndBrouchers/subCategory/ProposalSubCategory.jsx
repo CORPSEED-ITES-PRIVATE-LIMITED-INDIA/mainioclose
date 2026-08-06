@@ -489,13 +489,15 @@ const ProposalSubCategory = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search sub category, brochure..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => {
               setFilterValue("");
@@ -507,10 +509,14 @@ const ProposalSubCategory = () => {
             }}
           />
 
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={18} />} variant="flat">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -532,24 +538,25 @@ const ProposalSubCategory = () => {
             </Dropdown>
 
             <Button
+              size="sm"
               color="primary"
               onPress={openAddSubCategoryModal}
-              endContent={<Plus size={18} />}
+              endContent={<Plus className="w-3.5 h-3.5" />}
             >
               Add Sub Category
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} sub categories
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               value={filteration.size}
               onChange={(e) => {
                 setFilteration({
@@ -559,7 +566,7 @@ const ProposalSubCategory = () => {
               }}
             >
               <option value="5">5</option>
-              <option value="15">15</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -577,17 +584,14 @@ const ProposalSubCategory = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {filteration.page} of {pages}
         </span>
 
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration.page}
           total={pages}
@@ -596,7 +600,7 @@ const ProposalSubCategory = () => {
           }}
         />
 
-        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={filteration.page <= 1}
             size="sm"
@@ -631,21 +635,28 @@ const ProposalSubCategory = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, filteredItems.length, filteration.page, pages]);
+  }, [filteration.page, pages]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Proposal Menu Sub Categories
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Proposal sub category table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -745,7 +756,7 @@ const ProposalSubCategory = () => {
         modalSize="5xl"
         previewHeight="78vh"
       />
-    </>
+    </div>
   );
 };
 

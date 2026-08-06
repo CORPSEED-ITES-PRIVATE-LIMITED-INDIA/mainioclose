@@ -1,14 +1,13 @@
 import {
   Button,
   Chip,
+  Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
   Pagination,
-  Select,
-  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -21,9 +20,9 @@ import {
   useDisclosure,
 } from "@heroui/react";
 
-import { Check, ExternalLink, X } from "lucide-react";
+import { Check, ExternalLink, Search, X } from "lucide-react";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 
@@ -33,6 +32,7 @@ import {
   approveAdminRestrictionRequest,
   getAllAdminRestrictionRequests,
 } from "../toolkit/slices/vendorsSlice";
+import NewSelect from "../components/NewSelect";
 
 const columns = [
   {
@@ -221,6 +221,8 @@ function AdminVendorRestrictionApproval() {
 
   const [status, setStatus] = useState("PENDING_ADMIN");
 
+  const [searchValue, setSearchValue] = useState("");
+
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   const [reviewForm, setReviewForm] = useState(initialReviewForm);
@@ -247,6 +249,34 @@ function AdminVendorRestrictionApproval() {
   useEffect(() => {
     fetchRestrictionRequests();
   }, [fetchRestrictionRequests]);
+
+  const filteredRestrictionRequests = useMemo(() => {
+    if (!searchValue.trim()) {
+      return adminRestrictionRequests;
+    }
+
+    const search = searchValue.trim().toLowerCase();
+
+    return adminRestrictionRequests.filter((item) => {
+      const searchableValues = [
+        item?.id,
+        item?.vendorName,
+        item?.vendorId,
+        item?.restrictionType,
+        item?.reason,
+        item?.requestedByName,
+        item?.accountsReviewedByName,
+        item?.accountsRemarks,
+        item?.status,
+      ];
+
+      return searchableValues
+        .filter(
+          (value) => value !== null && value !== undefined && value !== "",
+        )
+        .some((value) => String(value).toLowerCase().includes(search));
+    });
+  }, [adminRestrictionRequests, searchValue]);
 
   const resetReviewForm = () => {
     setSelectedRequest(null);
@@ -565,17 +595,35 @@ function AdminVendorRestrictionApproval() {
   const topContent = (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between gap-2 items-center flex-wrap">
-        <div className="w-[220px]">
-          <Select
-            size="sm"
-            label="Filter by status"
-            selectedKeys={new Set([status])}
-            onSelectionChange={handleStatusChange}
-          >
-            {statusOptions.map((option) => (
-              <SelectItem key={option.key}>{option.label}</SelectItem>
-            ))}
-          </Select>
+        <Input
+          isClearable
+          size="sm"
+          className="w-full sm:max-w-[280px]"
+          classNames={{ inputWrapper: "h-8 min-h-8" }}
+          placeholder="Search requests..."
+          startContent={<Search className="w-4 h-4 text-default-400" />}
+          value={searchValue}
+          onClear={() => setSearchValue("")}
+          onValueChange={(value) => setSearchValue(value || "")}
+        />
+
+        <div className="flex gap-1.5 flex-wrap">
+          <div className="w-[190px]">
+            <NewSelect
+              size="sm"
+              isSearchable={false}
+              data={statusOptions}
+              labelKey="label"
+              valueKey="key"
+              label="Filter by status"
+              value={status}
+              onChange={(value) => {
+                if (value) {
+                  handleStatusChange(new Set([value]));
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -657,7 +705,7 @@ function AdminVendorRestrictionApproval() {
         </TableHeader>
 
         <TableBody
-          items={adminRestrictionRequests}
+          items={filteredRestrictionRequests}
           emptyContent="No Admin restriction requests found"
         >
           {(item) => (

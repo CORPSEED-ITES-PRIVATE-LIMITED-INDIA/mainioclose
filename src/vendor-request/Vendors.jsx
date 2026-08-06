@@ -803,41 +803,46 @@ const Vendors = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[430px]"
-            placeholder="Search ..."
-            startContent={<Search className="h-4 w-4 text-default-400" />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search vendors..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <Button
-            color="primary"
-            startContent={<Plus className="h-4 w-4" />}
-            onPress={openCreateModal}
-          >
-            Add Vendor
-          </Button>
+          <div className="flex gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              color="primary"
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={openCreateModal}
+            >
+              Add Vendor
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} vendors
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-none text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={pagination.size}
             >
               <option value="5">5</option>
-              <option value="15">15</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -856,8 +861,8 @@ const Vendors = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="w-[30%] text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           {selectedKeys === "all"
             ? "All items selected"
             : `${selectedKeys.size} of ${count} selected`}
@@ -866,7 +871,6 @@ const Vendors = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={pagination.page}
           total={pages}
@@ -878,7 +882,7 @@ const Vendors = () => {
           }}
         />
 
-        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pagination.page === 1}
             size="sm"
@@ -905,23 +909,27 @@ const Vendors = () => {
     createLoading === "pending" || updateLoading === "pending";
 
   return (
-    <>
-      <div className="mb-4 flex flex-col gap-1">
-        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-          Vendors List
-        </h1>
-      </div>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendors List
+      </h1>
+
       {loading === "pending" && <LoadingSpinner />}
+
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Vendors table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[65vh] w-full rounded-xl border border-default-200",
-          table: "min-w-full",
-          th: "bg-default-100 text-xs font-semibold uppercase text-default-600",
-          td: "py-3",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
@@ -1230,7 +1238,7 @@ const Vendors = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

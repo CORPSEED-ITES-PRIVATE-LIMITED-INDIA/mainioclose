@@ -222,23 +222,26 @@ const ApplicantTypes = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search applicant types..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => setFilterValue("")}
             onValueChange={setFilterValue}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
-                  endContent={<ChevronDown className="text-small" />}
+                  size="sm"
                   variant="flat"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
                 >
                   Columns
                 </Button>
@@ -258,13 +261,14 @@ const ApplicantTypes = () => {
               </DropdownMenu>
             </Dropdown>
             <Button
+              size="sm"
               color="primary"
               onPress={() => {
                 setIsEdit(null);
                 setFormData({ name: "", description: "" });
                 onOpen();
               }}
-              endContent={<Plus />}
+              endContent={<Plus className="w-3.5 h-3.5" />}
             >
               Add New
             </Button>
@@ -272,16 +276,18 @@ const ApplicantTypes = () => {
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} items
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
+              value={rowsPerPage}
             >
-              <option value="15">15</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -289,21 +295,18 @@ const ApplicantTypes = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, count]);
+  }, [filterValue, visibleColumns, count, rowsPerPage, onRowsPerPageChange]);
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {page} of {pages}
         </span>
 
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -330,17 +333,27 @@ const ApplicantTypes = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages]);
+  }, [page, pages]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Applicant list
       </h1>
 
       <Table
         isHeaderSticky
-        classNames={{ wrapper: "max-h-[60vh]" }}
+        removeWrapper={false}
+        aria-label="Applicant types table"
+        classNames={{
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
+        }}
         sortDescriptor={sortDescriptor}
         onSortChange={setSortDescriptor}
         topContent={topContent}
@@ -351,7 +364,12 @@ const ApplicantTypes = () => {
       >
         <TableHeader columns={headerColumns}>
           {(column) => (
-            <TableColumn key={column.uid}>{column.name}</TableColumn>
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
           )}
         </TableHeader>
 
@@ -428,7 +446,7 @@ const ApplicantTypes = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

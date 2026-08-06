@@ -147,6 +147,11 @@ const quotationStatusOptions = [
   "CANCELLED",
 ];
 
+const quotationStatusSelectOptions = quotationStatusOptions.map((status) => ({
+  label: status === "ALL" ? "All Status" : status,
+  value: status,
+}));
+
 const quotationDefaultValues = {
   validFrom: "",
   validTill: "",
@@ -1195,6 +1200,20 @@ const Quote = () => {
       size: Number(e.target.value),
     });
   }, []);
+
+  const onPreviousPage = useCallback(() => {
+    setFilteration((prev) => ({
+      ...prev,
+      page: Math.max(1, prev.page - 1),
+    }));
+  }, []);
+
+  const onNextPage = useCallback(() => {
+    setFilteration((prev) => ({
+      ...prev,
+      page: Math.min(pages, prev.page + 1),
+    }));
+  }, [pages]);
 
   const fetchChatMessages = useCallback(
     async (conversationId) => {
@@ -2465,19 +2484,61 @@ const Quote = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search quotation..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex flex-wrap justify-end gap-3">
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[170px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={quotationStatusSelectOptions}
+                labelKey="label"
+                valueKey="value"
+                label="Status"
+                value={statusFilter}
+                onChange={(value) => {
+                  if (value) {
+                    setStatusFilter(value);
+                    setFilteration((prev) => ({
+                      ...prev,
+                      page: 1,
+                    }));
+                  }
+                }}
+              />
+            </div>
+
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={columns}
+                selectionMode="multiple"
+                labelKey="name"
+                valueKey="uid"
+                label="Columns"
+                placeholder="Columns"
+                value={Array.from(visibleColumns)}
+                onChange={(values) => {
+                  if (values.length > 0) {
+                    setVisibleColumns(new Set(values));
+                  }
+                }}
+              />
+            </div>
+
             <Button
               color="primary"
               startContent={<Plus size={17} />}
@@ -2485,69 +2546,18 @@ const Quote = () => {
             >
               Add Quote
             </Button>
-
-            <Dropdown>
-              <DropdownTrigger>
-                <Button endContent={<ChevronDown size={16} />} variant="flat">
-                  {statusFilter === "ALL" ? "All" : statusFilter}
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                aria-label="Quotation Status Filter"
-                selectedKeys={new Set([statusFilter])}
-                selectionMode="single"
-                onSelectionChange={(keys) => {
-                  const selected = Array.from(keys)?.[0] || "ALL";
-                  setStatusFilter(selected);
-                  setFilteration((prev) => ({
-                    ...prev,
-                    page: 1,
-                  }));
-                }}
-              >
-                {quotationStatusOptions.map((status) => (
-                  <DropdownItem key={status}>
-                    {status === "ALL" ? "All Status" : status}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={16} />} variant="flat">
-                  Columns
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {column.name}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length || count} quotations
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration.size}
             >
@@ -2575,8 +2585,8 @@ const Quote = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-small text-default-400">
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
           Page {filteration.page} of {pages}
         </span>
 
@@ -2593,25 +2603,50 @@ const Quote = () => {
             }));
           }}
         />
+
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={filteration.page === 1}
+            size="sm"
+            variant="flat"
+            onPress={onPreviousPage}
+          >
+            Previous
+          </Button>
+          <Button
+            isDisabled={filteration.page === pages}
+            size="sm"
+            variant="flat"
+            onPress={onNextPage}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     );
-  }, [filteration.page, pages]);
+  }, [filteration.page, pages, onPreviousPage, onNextPage]);
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">Quote</h1>
 
         <Table
           isHeaderSticky
+          removeWrapper={false}
           aria-label="Quotation table"
           bottomContent={bottomContent}
           bottomContentPlacement="outside"
           topContent={topContent}
           topContentPlacement="outside"
           classNames={{
-            wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+            base: "gap-2.5",
+            wrapper:
+              "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
             table: "w-full",
+            thead: "[&>tr]:first:rounded-none",
+            th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+            td: "py-1.5 text-[12.5px]",
           }}
         >
           <TableHeader columns={headerColumns}>

@@ -2,6 +2,7 @@ import {
   addToast,
   Button,
   Chip,
+  DatePicker,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -39,6 +40,7 @@ import {
 import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 
 const columns = [
   {
@@ -357,6 +359,7 @@ const Expenses = () => {
     bankLedgerId: "",
     transactionReference: "",
     paymentProof: "",
+    clientPaymentDate: "",
     remark: "",
   });
   const [decisionErrors, setDecisionErrors] = useState({});
@@ -533,6 +536,7 @@ const Expenses = () => {
       transactionReference: "",
       paymentProof: "",
       remark: "",
+      clientPaymentDate: "",
     });
     setDecisionErrors({});
   }, [isUpdatingStatus]);
@@ -547,6 +551,7 @@ const Expenses = () => {
       transactionReference: "",
       paymentProof: "",
       remark: "",
+      clientPaymentDate: "",
     });
     setDecisionErrors({});
     setIsStatusModalOpen(true);
@@ -627,6 +632,9 @@ const Expenses = () => {
             remark: decisionForm.remark.trim(),
             expensePaidBy: decisionForm.expensePaidBy || null,
             paymentMode: isCompanyPaidExpense ? decisionForm.paymentMode : null,
+            clientPaymentDate: isCompanyPaidExpense
+              ? decisionForm.clientPaymentDate
+              : null,
             bankLedgerId: isCompanyPaidExpense
               ? Number(decisionForm.bankLedgerId)
               : null,
@@ -656,6 +664,7 @@ const Expenses = () => {
         transactionReference: "",
         paymentProof: "",
         remark: "",
+        clientPaymentDate: "",
       });
       setDecisionErrors({});
 
@@ -678,6 +687,7 @@ const Expenses = () => {
     dispatch,
     fetchExpenseApprovalQueue,
     isCompanyPaidExpense,
+    parseDate,
     resolvedUserId,
     selectedExpense,
     validateDecisionForm,
@@ -1345,6 +1355,28 @@ const Expenses = () => {
 
             {isCompanyPaidExpense && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <DatePicker
+                  isRequired
+                  label="Payment Date"
+                  showMonthAndYearPickers
+                  maxValue={today(getLocalTimeZone())}
+                  isInvalid={Boolean(decisionErrors.clientPaymentDate)}
+                  errorMessage={decisionErrors.clientPaymentDate}
+                  value={
+                    decisionForm.clientPaymentDate &&
+                    /^\d{4}-\d{2}-\d{2}$/.test(decisionForm.clientPaymentDate)
+                      ? parseDate(decisionForm.clientPaymentDate)
+                      : null
+                  }
+                  onChange={(value) => {
+                    const iso = value ? value.toString() : "";
+                    setDecisionForm((previous) => ({
+                      ...previous,
+                      clientPaymentDate: iso,
+                    }));
+                  }}
+                />
+
                 <Select
                   isRequired
                   label="Payment Mode"

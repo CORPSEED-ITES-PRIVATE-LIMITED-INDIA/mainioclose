@@ -26,14 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  ChevronDown,
-  EllipsisVertical,
-  Eye,
-  FileText,
-  Plus,
-  Search,
-} from "lucide-react";
+import { EllipsisVertical, FileText, Plus, Search } from "lucide-react";
 import {
   createMenu,
   getAllMenus,
@@ -42,6 +35,7 @@ import {
 import { Link } from "react-router-dom";
 import FileUploader from "../../../components/FileUploader.jsx";
 import PreviewComponent from "../../../components/PreviewComponent.jsx";
+import NewSelect from "../../../components/NewSelect.jsx";
 
 const columns = [
   { name: "NAME", uid: "name", sortable: true },
@@ -81,10 +75,6 @@ const defaultValues = {
     description: "",
   },
 };
-
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
 
 const formatDate = (value) => {
   if (!value) return "---";
@@ -323,7 +313,6 @@ const ProposalMenu = () => {
   const count = tableData.length;
 
   const [filterValue, setFilterValue] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
@@ -696,66 +685,65 @@ const ProposalMenu = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search menu, category, brochure..."
-            startContent={<Search size={18} />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown size={18} />} variant="flat">
-                  Columns
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={columns}
                 selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
+                labelKey="name"
+                valueKey="uid"
+                label="Columns"
+                placeholder="Columns"
+                value={Array.from(visibleColumns)}
+                onChange={(values) => {
+                  if (values.length > 0) {
+                    setVisibleColumns(new Set(values));
+                  }
+                }}
+              />
+            </div>
 
             <Button
+              size="sm"
               color="primary"
               onPress={openAddMenuModal}
-              endContent={<Plus size={18} />}
+              startContent={<Plus className="w-4 h-4" />}
             >
               Add Menu
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} records
           </span>
 
-          <label className="flex items-center text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent text-small text-default-400 outline-none"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={filteration.size}
             >
               <option value="5">5</option>
-              <option value="15">15</option>
+              <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
             </select>
@@ -776,17 +764,14 @@ const ProposalMenu = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex items-center justify-between px-2 py-2">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {filteration.page} of {pages}
         </span>
 
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={filteration.page}
           total={pages}
@@ -816,35 +801,32 @@ const ProposalMenu = () => {
         </div>
       </div>
     );
-  }, [
-    selectedKeys,
-    count,
-    filteration.page,
-    pages,
-    onPreviousPage,
-    onNextPage,
-  ]);
+  }, [filteration.page, pages, onPreviousPage, onNextPage]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Proposal Menu
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Proposal menu table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
-        selectedKeys={selectedKeys}
-        selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSelectionChange={setSelectedKeys}
         onSortChange={setSortDescriptor}
       >
         <TableHeader columns={headerColumns}>
@@ -994,7 +976,7 @@ const ProposalMenu = () => {
         modalSize="5xl"
         previewHeight="78vh"
       />
-    </>
+    </div>
   );
 };
 

@@ -15,7 +15,7 @@ import {
   Pagination,
   Chip,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import {
@@ -24,6 +24,7 @@ import {
 } from "../toolkit/slices/accountSlice";
 import { useParams } from "react-router-dom";
 import { inrCurrency } from "../common";
+import NewSelect from "../components/NewSelect";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -215,59 +216,60 @@ const VendorPaymentForProcurement = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search ..."
-            startContent={<Search />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search vendor's payments..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
+
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={columns}
                 selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
+                labelKey="name"
+                valueKey="uid"
+                label="Columns"
+                placeholder="Columns"
+                value={Array.from(visibleColumns)}
+                onChange={(values) => {
+                  if (values.length > 0) {
+                    setVisibleColumns(new Set(values));
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} vendor's payments
           </span>
-          <div className="flex gap-4">
-            <label className="flex items-center text-default-400 text-small">
-              Rows per page:
-              <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
-                onChange={onRowsPerPageChange}
-                value={rowsPerPage}
-              >
-                <option value="15">15</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </label>
-          </div>
+
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              onChange={onRowsPerPageChange}
+              value={rowsPerPage}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
         </div>
       </div>
     );
@@ -278,20 +280,18 @@ const VendorPaymentForProcurement = () => {
     count,
     onSearchChange,
     hasSearchFilter,
+    rowsPerPage,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {page} of {pages}
         </span>
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -320,17 +320,24 @@ const VendorPaymentForProcurement = () => {
   }, [selectedKeys, count, page, pages, hasSearchFilter]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Vendor's payment list
       </h1>
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Example table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] overflow-scroll",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -359,7 +366,7 @@ const VendorPaymentForProcurement = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

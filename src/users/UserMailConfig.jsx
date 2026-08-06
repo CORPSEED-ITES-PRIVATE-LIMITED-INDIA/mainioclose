@@ -155,6 +155,14 @@ const UserMailConfig = () => {
       });
   };
 
+  const onPreviousPage = useCallback(() => {
+    setPage((prev) => Math.max(1, prev - 1));
+  }, []);
+
+  const onNextPage = useCallback(() => {
+    setPage((prev) => Math.min(pages, prev + 1));
+  }, [pages]);
+
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
       case "userName":
@@ -210,72 +218,115 @@ const UserMailConfig = () => {
     }
   }, []);
 
+  const topContent = useMemo(() => {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
+          <Input
+            isClearable
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search mail config..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
+            value={filterValue}
+            onClear={() => {
+              setFilterValue("");
+              setPage(1);
+            }}
+            onValueChange={(value) => {
+              setFilterValue(value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
+            Total {filteredItems.length} configs
+          </span>
+
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    );
+  }, [filterValue, rowsPerPage, filteredItems.length]);
+
+  const bottomContent = useMemo(() => {
+    return (
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {page} of {pages}
+        </span>
+
+        <Pagination
+          isCompact
+          showControls
+          color="primary"
+          page={page}
+          total={pages}
+          onChange={setPage}
+        />
+
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+          <Button
+            isDisabled={pages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onPreviousPage}
+          >
+            Previous
+          </Button>
+          <Button
+            isDisabled={pages === 1}
+            size="sm"
+            variant="flat"
+            onPress={onNextPage}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    );
+  }, [page, pages, onPreviousPage, onNextPage]);
+
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         User Mail Configurations
       </h1>
 
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="User mail configuration table"
+        bottomContent={bottomContent}
         bottomContentPlacement="outside"
+        topContent={topContent}
         topContentPlacement="outside"
-        topContent={
-          <div className="flex justify-between items-center gap-3">
-            <Input
-              isClearable
-              className="w-full sm:max-w-[35%]"
-              placeholder="Search mail config..."
-              startContent={<Search />}
-              value={filterValue}
-              onClear={() => {
-                setFilterValue("");
-                setPage(1);
-              }}
-              onValueChange={(value) => {
-                setFilterValue(value);
-                setPage(1);
-              }}
-            />
-
-            <label className="flex items-center text-default-400 text-small">
-              Rows per page:
-              <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </label>
-          </div>
-        }
-        bottomContent={
-          <div className="py-2 px-2 flex justify-between items-center">
-            <span className="text-small text-default-400">
-              Total {filteredItems.length} configs
-            </span>
-
-            <Pagination
-              isCompact
-              showControls
-              showShadow
-              color="primary"
-              page={page}
-              total={pages}
-              onChange={setPage}
-            />
-          </div>
-        }
         classNames={{
-          wrapper: "2xl:max-h-[65vh] md:max-h-[60vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+          table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
       >
         <TableHeader columns={columns}>
@@ -424,7 +475,7 @@ const UserMailConfig = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </div>
   );
 };
 

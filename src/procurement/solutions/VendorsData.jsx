@@ -67,6 +67,15 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
+const vendorStatusFilterOptions = [
+  { label: "All Vendors", value: "ALL" },
+  { label: "Prospective", value: "PROSPECTIVE" },
+  { label: "Onboarding", value: "ONBOARDING" },
+  { label: "Active", value: "ACTIVE" },
+  { label: "Blacklisted", value: "BLACKLISTED" },
+  { label: "Suspended", value: "SUSPENDED" },
+];
+
 const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 const GST_STATE_CODES = {
@@ -1008,34 +1017,40 @@ const VendorsData = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex min-w-0 shrink-0 flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[430px]"
-            placeholder="Search ..."
-            startContent={<Search className="h-4 w-4 text-default-400" />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search vendors..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex w-full min-w-0 flex-wrap items-end gap-2 sm:w-auto sm:flex-nowrap">
-            <Select
-              aria-label="Filter vendors by status"
-              className="min-w-0 flex-1 sm:w-44 sm:flex-none"
-              selectedKeys={new Set([statusFilter])}
-              onSelectionChange={onStatusFilterChange}
-            >
-              <SelectItem key="ALL">All Vendors</SelectItem>
-              <SelectItem key="PROSPECTIVE">Prospective</SelectItem>
-              <SelectItem key="ONBOARDING">Onboarding</SelectItem>
-              <SelectItem key="ACTIVE">Active</SelectItem>
-              <SelectItem key="BLACKLISTED">Blacklisted</SelectItem>
-              <SelectItem key="SUSPENDED">Suspended</SelectItem>
-            </Select>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <div className="w-[160px]">
+              <NewSelect
+                size="sm"
+                isSearchable={false}
+                data={vendorStatusFilterOptions}
+                labelKey="label"
+                valueKey="value"
+                label="Status"
+                value={statusFilter}
+                onChange={(value) => {
+                  if (value) {
+                    onStatusFilterChange(new Set([value]));
+                  }
+                }}
+              />
+            </div>
 
             <Button
+              size="sm"
               className="shrink-0"
               color="primary"
               startContent={<Plus className="h-4 w-4" />}
@@ -1046,15 +1061,15 @@ const VendorsData = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-small text-default-400">
+        <div className="flex justify-between items-center">
+          <span className="text-default-400 text-[12.5px]">
             Total {count} vendors
           </span>
 
-          <label className="flex items-center gap-2 text-small text-default-400">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-none text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={pagination.size}
             >
@@ -1074,24 +1089,21 @@ const VendorsData = () => {
     onRowsPerPageChange,
     onSearchChange,
     onStatusFilterChange,
+    openCreateModal,
     pagination.size,
     statusFilter,
   ]);
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-2 px-2 py-2">
-        <span className="min-w-0 flex-1 text-small text-default-400 sm:w-[30%] sm:flex-none">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {pagination.page} of {pages}
         </span>
 
         <Pagination
-          className="shrink-0"
           isCompact
           showControls
-          showShadow
           color="primary"
           page={pagination.page}
           total={pages}
@@ -1103,7 +1115,7 @@ const VendorsData = () => {
           }}
         />
 
-        <div className="hidden w-[30%] justify-end gap-2 sm:flex">
+        <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
             isDisabled={pagination.page === 1}
             size="sm"
@@ -1124,27 +1136,32 @@ const VendorsData = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, pagination.page, pages, onPreviousPage, onNextPage]);
+  }, [pagination.page, pages, onPreviousPage, onNextPage]);
 
   const isSubmitLoading =
     createLoading === "pending" || updateLoading === "pending";
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden">
-      <div className="mb-4 flex shrink-0 flex-col gap-1">
-        <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-          Vendors List
-        </h1>
-      </div>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+        Vendors List
+      </h1>
+
       {loading === "pending" && <LoadingSpinner />}
       <Table
         isHeaderSticky
+        removeWrapper={false}
         aria-label="Vendors table"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[52vh] md:max-h-[48vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         // selectedKeys={selectedKeys}
         // selectionMode="multiple"

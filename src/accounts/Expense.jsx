@@ -1111,11 +1111,10 @@ const Expense = () => {
           )}
         </TableBody>
       </Table>
-      ```jsx
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        size="lg"
+        size="2xl"
         scrollBehavior="inside"
         isDismissable={!isDecisionSubmitting}
         isKeyboardDismissDisabled={isDecisionSubmitting}
@@ -1465,7 +1464,6 @@ const Expense = () => {
           )}
         </ModalContent>
       </Modal>
-      ```
     </div>
   );
 };
