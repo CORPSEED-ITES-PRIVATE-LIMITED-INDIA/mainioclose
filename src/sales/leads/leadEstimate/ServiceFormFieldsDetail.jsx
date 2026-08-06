@@ -51,23 +51,24 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
     }
   }, [form, serviceFeeList]);
 
-  const handleApplyDiscount = () => {
-    setIsEditing(true);
-
+  const handleApplyDiscount = async () => {
     form.setFieldsValue({
       discountApplied: true,
     });
 
-    form.setFields(
-      (form.getFieldValue("lineItems") || []).map((_, index) => ({
-        name: ["lineItems", index, "unitPriceExGst"],
-        errors: [],
-      })),
-    );
+    setIsEditing(true);
 
-    setTimeout(() => {
-      form.validateFields(["lineItems"]);
-    }, 0);
+    try {
+      await form.validateFields(
+        (form.getFieldValue("lineItems") || []).map((_, index) => [
+          "lineItems",
+          index,
+          "unitPriceExGst",
+        ]),
+      );
+    } catch (error) {
+      // Validation errors are already displayed by antd Form.Item
+    }
   };
 
   const handleRemoveDiscount = () => {
@@ -181,6 +182,8 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                         }
 
                         const enteredAmount = Number(value);
+                        const discountApplied =
+                          form.getFieldValue("discountApplied");
 
                         if (enteredAmount < 0) {
                           return Promise.reject(
@@ -188,17 +191,23 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                           );
                         }
 
-                        // Discount applied → amount MUST be less than original
-                        if (isEditing && enteredAmount >= originalAmount) {
+                        // Discount applied → MUST be less than original
+                        if (
+                          discountApplied &&
+                          enteredAmount >= originalAmount
+                        ) {
                           return Promise.reject(
                             new Error(
-                              `Discounted amount must be less than original amount ₹${originalAmount}`,
+                              `Discounted amount must be less than ₹${originalAmount}`,
                             ),
                           );
                         }
 
-                        // Discount not applied → amount cannot be reduced
-                        if (!isEditing && enteredAmount < originalAmount) {
+                        // Discount not applied → cannot reduce amount
+                        if (
+                          !discountApplied &&
+                          enteredAmount < originalAmount
+                        ) {
                           return Promise.reject(
                             new Error(
                               `Please click Apply Discount before decreasing below ₹${originalAmount}`,
