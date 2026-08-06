@@ -41,89 +41,30 @@ import {
 import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 import NewSelect from "../../components/NewSelect";
 import SingleFileUploader from "../../components/SingleFileUploader";
+import FileUploader from "../../components/FileUploader";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 
 const columns = [
-  {
-    name: "PROJECT",
-    uid: "project",
-  },
-  {
-    name: "PRODUCT",
-    uid: "productName",
-  },
-  {
-    name: "EXPENSE CATEGORY",
-    uid: "expenseCategory",
-  },
-  {
-    name: "REQUESTED AMOUNT",
-    uid: "requestedAmount",
-  },
-  {
-    name: "APPROVED AMOUNT",
-    uid: "approvedAmount",
-  },
-  {
-    name: "PAID AMOUNT",
-    uid: "paidAmount",
-  },
-  {
-    name: "OUTSTANDING AMOUNT",
-    uid: "outstandingAmount",
-  },
-  {
-    name: "DEPARTMENT",
-    uid: "department",
-  },
-  {
-    name: "CREATED BY",
-    uid: "createdBy",
-  },
-  {
-    name: "EXPENSE DATE",
-    uid: "expenseDate",
-  },
-  {
-    name: "EXPENSE GENERATED DATE",
-    uid: "createdDate",
-  },
-  {
-    name: "LAST UPDATED DATE",
-    uid: "updatedDate",
-  },
-  {
-    name: "APPROVAL STAGE",
-    uid: "approvalStage",
-  },
-  {
-    name: "APPROVAL STATUS",
-    uid: "approvalStatus",
-  },
-  {
-    name: "CRT STATUS",
-    uid: "crtApprovalStatus",
-  },
-  {
-    name: "ACCOUNTS STATUS",
-    uid: "accountsApprovalStatus",
-  },
-  {
-    name: "PAYMENT STATUS",
-    uid: "paymentStatus",
-  },
-  {
-    name: "REFERENCE",
-    uid: "externalReference",
-  },
-  {
-    name: "ATTACHMENT",
-    uid: "attachment",
-  },
-  {
-    name: "ACTION",
-    uid: "actions",
-  },
+  { name: "PROJECT", uid: "project" },
+  { name: "PRODUCT", uid: "productName" },
+  { name: "EXPENSE CATEGORY", uid: "expenseCategory" },
+  { name: "REQUESTED AMOUNT", uid: "requestedAmount" },
+  { name: "APPROVED AMOUNT", uid: "approvedAmount" },
+  { name: "PAID AMOUNT", uid: "paidAmount" },
+  { name: "OUTSTANDING AMOUNT", uid: "outstandingAmount" },
+  { name: "DEPARTMENT", uid: "department" },
+  { name: "CREATED BY", uid: "createdBy" },
+  { name: "EXPENSE DATE", uid: "expenseDate" },
+  { name: "EXPENSE GENERATED DATE", uid: "createdDate" },
+  { name: "LAST UPDATED DATE", uid: "updatedDate" },
+  { name: "APPROVAL STAGE", uid: "approvalStage" },
+  { name: "APPROVAL STATUS", uid: "approvalStatus" },
+  { name: "CRT STATUS", uid: "crtApprovalStatus" },
+  { name: "ACCOUNTS STATUS", uid: "accountsApprovalStatus" },
+  { name: "PAYMENT STATUS", uid: "paymentStatus" },
+  { name: "REFERENCE", uid: "externalReference" },
+  { name: "ATTACHMENT", uid: "attachment" },
+  { name: "ACTION", uid: "actions" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
@@ -150,66 +91,28 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const approvalStageOptions = [
-  {
-    label: "CRT Review",
-    value: "CRT_REVIEW",
-  },
-  {
-    label: "Accounts Review",
-    value: "ACCOUNTS_REVIEW",
-  },
-  {
-    label: "Completed",
-    value: "COMPLETED",
-  },
+  { label: "CRT Review", value: "CRT_REVIEW" },
+  { label: "Accounts Review", value: "ACCOUNTS_REVIEW" },
+  { label: "Completed", value: "COMPLETED" },
 ];
 
 const approvalStatusOptions = [
-  {
-    label: "All Statuses",
-    value: "ALL",
-  },
-  {
-    label: "Pending",
-    value: "PENDING",
-  },
-  {
-    label: "Approved",
-    value: "APPROVED",
-  },
-  {
-    label: "Rejected",
-    value: "REJECTED",
-  },
-  {
-    label: "On Hold",
-    value: "ON_HOLD",
-  },
-  {
-    label: "Cancelled",
-    value: "CANCELLED",
-  },
+  { label: "All Statuses", value: "ALL" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
+  { label: "On Hold", value: "ON_HOLD" },
+  { label: "Cancelled", value: "CANCELLED" },
 ];
 
 const crtDecisionOptions = [
-  {
-    label: "Approved",
-    value: "APPROVED",
-  },
-  {
-    label: "Rejected",
-    value: "REJECTED",
-  },
-  {
-    label: "On Hold",
-    value: "ON_HOLD",
-  },
+  { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
+  { label: "On Hold", value: "ON_HOLD" },
 ];
 
 const formatText = (value) => {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   return String(value)
     .replaceAll("_", " ")
@@ -218,15 +121,11 @@ const formatText = (value) => {
 };
 
 const formatDateTime = (value) => {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   const date = dayjs(value);
 
-  if (!date.isValid()) {
-    return "-";
-  }
+  if (!date.isValid()) return "-";
 
   return date.format("DD-MM-YYYY hh:mm A");
 };
@@ -234,9 +133,7 @@ const formatDateTime = (value) => {
 const formatCurrency = (amount, currencyCode = "INR") => {
   const numericAmount = Number(amount);
 
-  if (Number.isNaN(numericAmount)) {
-    return "-";
-  }
+  if (Number.isNaN(numericAmount)) return "-";
 
   try {
     return new Intl.NumberFormat("en-IN", {
@@ -336,9 +233,7 @@ const Expenses = () => {
   );
 
   const [searchValue, setSearchValue] = useState("");
-
   const [approvalStage, setApprovalStage] = useState("CRT_REVIEW");
-
   const [approvalStatus, setApprovalStatus] = useState("PENDING");
 
   const [visibleColumns, setVisibleColumns] = useState(
@@ -353,10 +248,13 @@ const Expenses = () => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
   const [isGovernmentFeeModalOpen, setIsGovernmentFeeModalOpen] =
     useState(false);
+
   const [governmentFeeExpense, setGovernmentFeeExpense] = useState(null);
   const [isPayingGovernmentFee, setIsPayingGovernmentFee] = useState(false);
+
   const [governmentFeeForm, setGovernmentFeeForm] = useState({
     amount: "",
     paymentDate: "",
@@ -364,7 +262,9 @@ const Expenses = () => {
     paymentReceiptUrl: "",
     remark: "",
   });
+
   const [governmentFeeErrors, setGovernmentFeeErrors] = useState({});
+
   const [decisionForm, setDecisionForm] = useState({
     status: "",
     expensePaidBy: "",
@@ -375,6 +275,7 @@ const Expenses = () => {
     clientPaymentDate: "",
     remark: "",
   });
+
   const [decisionErrors, setDecisionErrors] = useState({});
 
   useEffect(() => {
@@ -388,6 +289,7 @@ const Expenses = () => {
     const ledgerName = String(ledger?.ledgerName || "")
       .trim()
       .toLowerCase();
+
     const ledgerType = String(ledger?.ledgerType || "")
       .trim()
       .toLowerCase();
@@ -472,33 +374,27 @@ const Expenses = () => {
       const searchableValues = [
         item?.expenseId,
         item?.activityId,
-
         item?.projectId,
         item?.projectNo,
         item?.projectName,
         item?.unbilledNumber,
         item?.productName,
-
         item?.raisedDepartmentId,
         item?.raisedDepartmentName,
-
         item?.expenseCategory,
         item?.requestedAmount,
         item?.approvedAmount,
         item?.paidAmount,
         item?.outstandingAmount,
         item?.currencyCode,
-
         item?.createdByUserId,
         item?.createdByUserName,
         item?.expenseDate,
         item?.createdDate,
         item?.updatedDate,
         item?.paymentCompletedDate,
-
         item?.remark,
         item?.externalReference,
-
         item?.approvalStage,
         item?.approvalStatus,
         item?.crtApprovalStatus,
@@ -528,7 +424,6 @@ const Expenses = () => {
 
   const paginatedItems = useMemo(() => {
     const startIndex = (pagination.page - 1) * pagination.size;
-
     const endIndex = startIndex + pagination.size;
 
     return filteredItems.slice(startIndex, endIndex);
@@ -541,6 +436,7 @@ const Expenses = () => {
 
     setIsStatusModalOpen(false);
     setSelectedExpense(null);
+
     setDecisionForm({
       status: "",
       expensePaidBy: "",
@@ -551,11 +447,13 @@ const Expenses = () => {
       remark: "",
       clientPaymentDate: "",
     });
+
     setDecisionErrors({});
   }, [isUpdatingStatus]);
 
   const openStatusModal = useCallback((expense) => {
     setSelectedExpense(expense);
+
     setDecisionForm({
       status: "",
       expensePaidBy: "",
@@ -566,6 +464,7 @@ const Expenses = () => {
       remark: "",
       clientPaymentDate: "",
     });
+
     setDecisionErrors({});
     setIsStatusModalOpen(true);
   }, []);
@@ -620,6 +519,7 @@ const Expenses = () => {
         description: "User ID is required to update the expense status.",
         color: "danger",
       });
+
       return;
     }
 
@@ -629,6 +529,7 @@ const Expenses = () => {
         description: "Project ID and expense ID are required.",
         color: "danger",
       });
+
       return;
     }
 
@@ -669,6 +570,7 @@ const Expenses = () => {
 
       setIsStatusModalOpen(false);
       setSelectedExpense(null);
+
       setDecisionForm({
         status: "",
         expensePaidBy: "",
@@ -679,6 +581,7 @@ const Expenses = () => {
         remark: "",
         clientPaymentDate: "",
       });
+
       setDecisionErrors({});
 
       fetchExpenseApprovalQueue();
@@ -700,7 +603,6 @@ const Expenses = () => {
     dispatch,
     fetchExpenseApprovalQueue,
     isCompanyPaidExpense,
-    parseDate,
     resolvedUserId,
     selectedExpense,
     validateDecisionForm,
@@ -713,6 +615,7 @@ const Expenses = () => {
 
     setIsGovernmentFeeModalOpen(false);
     setGovernmentFeeExpense(null);
+
     setGovernmentFeeForm({
       amount: "",
       paymentDate: "",
@@ -720,11 +623,13 @@ const Expenses = () => {
       paymentReceiptUrl: "",
       remark: "",
     });
+
     setGovernmentFeeErrors({});
   }, [isPayingGovernmentFee]);
 
   const openGovernmentFeeModal = useCallback((expense) => {
     setGovernmentFeeExpense(expense);
+
     setGovernmentFeeForm({
       amount:
         expense?.governmentPaymentAmount !== null &&
@@ -734,13 +639,18 @@ const Expenses = () => {
               expense?.requestedAmount !== undefined
             ? String(expense.requestedAmount)
             : "",
+
       paymentDate: expense?.governmentPaymentDate
         ? dayjs(expense.governmentPaymentDate).format("YYYY-MM-DD")
         : dayjs().format("YYYY-MM-DD"),
+
       paymentReference: expense?.governmentPaymentReference || "",
+
       paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
+
       remark: expense?.governmentPaymentRemark || "",
     });
+
     setGovernmentFeeErrors({});
     setIsGovernmentFeeModalOpen(true);
   }, []);
@@ -752,20 +662,25 @@ const Expenses = () => {
     if (!governmentFeeForm.amount || Number.isNaN(amount) || amount <= 0) {
       errors.amount = "Valid amount is required";
     }
+
     if (!governmentFeeForm.paymentDate) {
       errors.paymentDate = "Payment date is required";
     }
+
     if (!governmentFeeForm.paymentReference.trim()) {
       errors.paymentReference = "Payment reference is required";
     }
+
     if (!governmentFeeForm.paymentReceiptUrl.trim()) {
-      errors.paymentReceiptUrl = "Payment receipt URL is required";
+      errors.paymentReceiptUrl = "Payment receipt is required";
     }
+
     if (!governmentFeeForm.remark.trim()) {
       errors.remark = "Remark is required";
     }
 
     setGovernmentFeeErrors(errors);
+
     return Object.keys(errors).length === 0;
   }, [governmentFeeForm]);
 
@@ -780,6 +695,7 @@ const Expenses = () => {
         description: "User ID is required to submit government fee payment.",
         color: "danger",
       });
+
       return;
     }
 
@@ -789,6 +705,7 @@ const Expenses = () => {
         description: "Project ID and expense ID are required.",
         color: "danger",
       });
+
       return;
     }
 
@@ -1088,7 +1005,11 @@ const Expenses = () => {
               expense?.approvalStatus,
             );
 
-          const canPayGovernmentFee = expense?.approvalStage === "CRT_REVIEW";
+          // Government Fee button ONLY for GOVERNMENT_FEE expenses
+          // during CRT review.
+          const canPayGovernmentFee =
+            expense?.expenseCategory === "GOVERNMENT_FEE" &&
+            expense?.accountsApprovalStatus === "APPROVED";
 
           return (
             <div className="flex justify-center">
@@ -1114,6 +1035,7 @@ const Expenses = () => {
                     if (key === "updateStatus" && canUpdateStatus) {
                       openStatusModal(expense);
                     }
+
                     if (key === "governmentFee" && canPayGovernmentFee) {
                       openGovernmentFeeModal(expense);
                     }
@@ -1136,7 +1058,7 @@ const Expenses = () => {
                     description={
                       canPayGovernmentFee
                         ? "Add government fee payment details"
-                        : "Available only during CRT review"
+                        : "Available only for Government Fee expenses after Accounts approval"
                     }
                   >
                     Government Fee
@@ -1282,8 +1204,6 @@ const Expenses = () => {
     visibleColumns,
     pagination.size,
     filteredItems.length,
-    expenseApprovalQueueLoading,
-    fetchExpenseApprovalQueue,
   ]);
 
   const onPreviousPage = useCallback(() => {
@@ -1330,6 +1250,7 @@ const Expenses = () => {
           >
             Previous
           </Button>
+
           <Button
             isDisabled={totalPages === 1}
             size="sm"
@@ -1409,6 +1330,7 @@ const Expenses = () => {
         </TableBody>
       </Table>
 
+      {/* CRT STATUS MODAL */}
       <Modal
         size="3xl"
         isOpen={isStatusModalOpen}
@@ -1434,6 +1356,7 @@ const Expenses = () => {
             <div className="rounded-lg bg-default-100 p-3 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-default-500">Requested amount</span>
+
                 <span className="font-semibold">
                   {formatCurrency(
                     selectedExpense?.requestedAmount,
@@ -1512,10 +1435,11 @@ const Expenses = () => {
                 }
               }}
             >
-              <SelectItem key={"CLIENT"} textValue={"Client"}>
+              <SelectItem key="CLIENT" textValue="Client">
                 Client
               </SelectItem>
-              <SelectItem key={"COMPANY"} textValue={"Company"}>
+
+              <SelectItem key="COMPANY" textValue="Company">
                 Company
               </SelectItem>
             </Select>
@@ -1537,6 +1461,7 @@ const Expenses = () => {
                   }
                   onChange={(value) => {
                     const iso = value ? value.toString() : "";
+
                     setDecisionForm((previous) => ({
                       ...previous,
                       clientPaymentDate: iso,
@@ -1600,6 +1525,7 @@ const Expenses = () => {
                       }
                     }}
                   />
+
                   {decisionErrors.bankLedgerId && (
                     <p className="mt-1 text-xs text-danger">
                       {decisionErrors.bankLedgerId}
@@ -1650,6 +1576,7 @@ const Expenses = () => {
                     isInvalid={Boolean(decisionErrors.paymentProof)}
                     errorMessage={decisionErrors.paymentProof}
                   />
+
                   {decisionErrors.paymentProof && (
                     <p className="mt-1 text-xs text-danger">
                       {decisionErrors.paymentProof}
@@ -1704,6 +1631,7 @@ const Expenses = () => {
         </ModalContent>
       </Modal>
 
+      {/* GOVERNMENT FEE MODAL */}
       <Modal
         size="2xl"
         isOpen={isGovernmentFeeModalOpen}
@@ -1719,6 +1647,7 @@ const Expenses = () => {
             Government Fee Payment
             <span className="text-sm font-normal text-default-500">
               {governmentFeeExpense?.projectName || "Project"}
+
               {governmentFeeExpense?.expenseId
                 ? ` • Expense ID: ${governmentFeeExpense.expenseId}`
                 : ""}
@@ -1729,6 +1658,7 @@ const Expenses = () => {
             <div className="rounded-lg bg-default-100 p-3 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-default-500">Requested amount</span>
+
                 <span className="font-semibold">
                   {formatCurrency(
                     governmentFeeExpense?.requestedAmount,
@@ -1752,6 +1682,7 @@ const Expenses = () => {
                     ...previous,
                     amount: value,
                   }));
+
                   if (value && Number(value) > 0) {
                     setGovernmentFeeErrors((previous) => ({
                       ...previous,
@@ -1776,10 +1707,12 @@ const Expenses = () => {
                 errorMessage={governmentFeeErrors.paymentDate}
                 onChange={(value) => {
                   const iso = value ? value.toString() : "";
+
                   setGovernmentFeeForm((previous) => ({
                     ...previous,
                     paymentDate: iso,
                   }));
+
                   if (iso) {
                     setGovernmentFeeErrors((previous) => ({
                       ...previous,
@@ -1801,6 +1734,7 @@ const Expenses = () => {
                     ...previous,
                     paymentReference: value,
                   }));
+
                   if (value.trim()) {
                     setGovernmentFeeErrors((previous) => ({
                       ...previous,
@@ -1810,26 +1744,31 @@ const Expenses = () => {
                 }}
               />
 
-              <Input
-                isRequired
-                label="Payment Receipt URL"
-                placeholder="Enter payment receipt URL"
-                value={governmentFeeForm.paymentReceiptUrl}
-                isInvalid={Boolean(governmentFeeErrors.paymentReceiptUrl)}
-                errorMessage={governmentFeeErrors.paymentReceiptUrl}
-                onValueChange={(value) => {
-                  setGovernmentFeeForm((previous) => ({
-                    ...previous,
-                    paymentReceiptUrl: value,
-                  }));
-                  if (value.trim()) {
-                    setGovernmentFeeErrors((previous) => ({
+              {/* CHANGED:
+                  Payment Receipt URL Input -> FileUploader */}
+              <div>
+                <FileUploader
+                  label="Payment Receipt"
+                  placeholder="Drag & drop receipt, paste, or choose file"
+                  value={governmentFeeForm.paymentReceiptUrl}
+                  onChange={(value) => {
+                    setGovernmentFeeForm((previous) => ({
                       ...previous,
-                      paymentReceiptUrl: undefined,
+                      paymentReceiptUrl: value || "",
                     }));
-                  }
-                }}
-              />
+
+                    if (value) {
+                      setGovernmentFeeErrors((previous) => ({
+                        ...previous,
+                        paymentReceiptUrl: undefined,
+                      }));
+                    }
+                  }}
+                  isRequired
+                  errorMessage={governmentFeeErrors.paymentReceiptUrl}
+                  uploadingType="single"
+                />
+              </div>
             </div>
 
             <Textarea
@@ -1846,6 +1785,7 @@ const Expenses = () => {
                   ...previous,
                   remark: value,
                 }));
+
                 if (value.trim()) {
                   setGovernmentFeeErrors((previous) => ({
                     ...previous,
@@ -1864,6 +1804,7 @@ const Expenses = () => {
             >
               Cancel
             </Button>
+
             <Button
               color="primary"
               isLoading={isPayingGovernmentFee}
