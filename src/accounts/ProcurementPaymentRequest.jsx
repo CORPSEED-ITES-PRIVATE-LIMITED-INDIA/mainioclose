@@ -46,8 +46,6 @@ const columns = [
   { name: "PROJECT NAME", uid: "projectName" },
   { name: "PROJECT NO.", uid: "projectNo" },
   { name: "VENDOR NAME", uid: "vendorName" },
-  { name: "INVOICE NO.", uid: "invoiceNumber" },
-  { name: "INVOICE DATE", uid: "invoiceDate" },
   { name: "AMOUNT", uid: "amount" },
   { name: "GST TYPE", uid: "gstType" },
   { name: "GST %", uid: "gstPercentage" },
@@ -114,7 +112,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "poNumber",
   "projectName",
   "vendorName",
-  "invoiceNumber",
   "amount",
   "gstType",
   "gstPercentage",
@@ -611,24 +608,6 @@ const ProcurementPaymentRequest = () => {
           <div className="flex flex-col">
             <span className="font-normal text-[12.5px] capitalize">
               {rowData?.vendorName || "Unknown"}
-            </span>
-          </div>
-        );
-      case "invoiceNumber":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-[12.5px]">
-              {rowData?.invoiceNumber || "-"}
-            </span>
-          </div>
-        );
-      case "invoiceDate":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal text-[12.5px]">
-              {rowData?.invoiceDate
-                ? dayjs(rowData?.invoiceDate).format("DD MMM YYYY")
-                : "-"}
             </span>
           </div>
         );

@@ -72,23 +72,6 @@ const getPlainTextLength = (html = "") =>
 
 const hasHtmlContent = (html) => getPlainTextLength(html) > 0;
 
-const getStatusColorClass = (status) => {
-  switch (String(status || "").toUpperCase()) {
-    case "APPROVED":
-    case "RELEASED":
-    case "PO_RELEASED":
-    case "COMPLETED":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "PENDING_APPROVAL":
-    case "PARTIALLY_COMPLETED":
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    case "REJECTED":
-      return "bg-red-50 text-red-700 border-red-200";
-    default:
-      return "bg-slate-100 text-slate-700 border-slate-200";
-  }
-};
-
 /** -------------------------
  * Component
  * ------------------------- */
@@ -117,6 +100,14 @@ const PurchaseOrderView = ({ poData, heading }) => {
       gstin,
       registrationType: po?.vendorGSTRegistrationType || "",
       stateCode: gstin?.slice(0, 2) || "",
+      stateName: po?.vendorStateName || po?.vendorState || "",
+      address:
+        po?.vendorAddress ||
+        po?.vendorFullAddress ||
+        po?.vendorAddressLine1 ||
+        "",
+      email: po?.vendorEmail || "",
+      phone: po?.vendorPhone || po?.vendorMobile || "",
     };
   }, [po]);
 
@@ -128,6 +119,10 @@ const PurchaseOrderView = ({ poData, heading }) => {
   const tdsPercentage = toNumber(po?.tdsPercentage);
   const tdsAmount = toNumber(po?.tdsAmount);
   const grandTotal = toNumber(po?.grandTotal);
+
+  const hasCgstSgst = cgstAmount > 0 || sgstAmount > 0;
+  const hasIgst = igstAmount > 0;
+  const tdsSerialNumber = 2 + (hasCgstSgst ? 2 : hasIgst ? 1 : 0);
 
   const attachments = Array.isArray(po?.attachmentUrls)
     ? po.attachmentUrls
@@ -194,6 +189,20 @@ const PurchaseOrderView = ({ poData, heading }) => {
           .text-gray-500 { color: #6b7280 !important; }
           .p-2\\.5 { padding: 10px !important; }
           .p-3 { padding: 12px !important; }
+          .terms-title {
+            font-size: 10px !important;
+          }
+          .terms-content, .terms-content * {
+            font-size: 8px !important;
+            font-style: italic !important;
+            line-height: 1.3 !important;
+          }
+          .terms-content p,
+          .terms-content ul,
+          .terms-content ol {
+            margin-top: 0 !important;
+            margin-bottom: 2px !important;
+          }
           @page { size: A4; margin: 10mm; }
           @media print {
             body { padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -219,7 +228,9 @@ const PurchaseOrderView = ({ poData, heading }) => {
   const handleShareViaEmail = () => {
     const poNo = po?.poNumber || "Purchase Order";
 
-    const subject = encodeURIComponent(`${heading || "Purchase Order"} - ${poNo}`);
+    const subject = encodeURIComponent(
+      `${heading || "Purchase Order"} - ${poNo}`,
+    );
 
     const body = encodeURIComponent(
       `Dear Sir/Ma'am,
@@ -302,17 +313,43 @@ Corpseed Team`,
     </td>
   );
 
-  const HtmlSection = ({ title, html, emptyText }) => (
-    <div className="px-2.5 py-2">
-      <p className="mb-1 text-[11px] font-bold text-gray-900">{title}</p>
+  const VendorDetails = () => (
+    <>
+      <div className="text-[11px] font-semibold">{vendor.name}</div>
+      <div className="text-[11px]">GSTIN/UIN : {vendor.gstin || "NA"}</div>
+      {vendor.address && (
+        <div className="text-[11px]">Address : {vendor.address}</div>
+      )}
+      <div className="text-[11px]">
+        State Name : {vendor.stateName || "-"}, Code : {vendor.stateCode || "-"}
+      </div>
+      {vendor.email && (
+        <div className="text-[11px]">E-mail : {vendor.email}</div>
+      )}
+      {vendor.phone && (
+        <div className="text-[11px]">Phone : {vendor.phone}</div>
+      )}
+      <div className="text-[11px]">
+        Registration : {vendor.registrationType || "NA"}
+      </div>
+    </>
+  );
+
+  const TermsSection = ({ html }) => (
+    <div className="border-t border-gray-300 px-2.5 py-2">
+      <p className="terms-title mb-1 text-[10px] font-bold text-gray-900">
+        Terms & Conditions
+      </p>
 
       {hasHtmlContent(html) ? (
         <div
-          className="tiptap-preview force-preview-text text-[11px] leading-snug text-gray-700"
+          className="terms-content tiptap-preview force-preview-text text-[8px] italic leading-[1.3] text-gray-600"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <p className="text-[11px] text-gray-400">{emptyText}</p>
+        <p className="terms-content text-[8px] italic leading-[1.3] text-gray-400">
+          No terms and conditions provided.
+        </p>
       )}
     </div>
   );
@@ -385,7 +422,9 @@ Corpseed Team`,
                 <div className="text-[11px] leading-snug">
                   {BUYER.addressLine1}
                 </div>
-                <div className="mt-1 text-[11px]">GSTIN/UIN : {BUYER.gstin}</div>
+                <div className="mt-1 text-[11px]">
+                  GSTIN/UIN : {BUYER.gstin}
+                </div>
                 <div className="text-[11px]">PAN : {BUYER.panNo}</div>
                 <div className="text-[11px]">E-mail : {BUYER.email}</div>
               </div>
@@ -416,63 +455,46 @@ Corpseed Team`,
                     </div>
                   </div>
                   <div className="p-2.5">
-                    <div className="text-[10px] text-gray-500">Status</div>
-                    <div
-                      className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getStatusColorClass(po?.status)}`}
-                    >
-                      {po?.status || "NA"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 border-b border-gray-300">
-                  <div className="border-r border-gray-300 p-2.5">
                     <div className="text-[10px] text-gray-500">Approved On</div>
                     <div className="text-[11px] font-bold">
                       {formatDate(po?.poApprovedDate)}
                     </div>
                   </div>
-                  <div className="p-2.5">
+                </div>
+
+                <div className="grid grid-cols-2">
+                  <div className="border-r border-gray-300 p-2.5">
                     <div className="text-[10px] text-gray-500">Released On</div>
                     <div className="text-[11px] font-bold">
                       {formatDate(po?.poReleasedDate)}
                     </div>
                   </div>
-                </div>
-
-                <div className="p-2.5">
-                  <div className="text-[10px] text-gray-500">Payment Terms</div>
-                  <div className="text-[11px] font-bold">
-                    {po?.paymentTypeName || "NA"}
+                  <div className="p-2.5">
+                    <div className="text-[10px] text-gray-500">
+                      Payment Terms
+                    </div>
+                    <div className="text-[11px] font-bold">
+                      {po?.paymentTypeName || "NA"}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Project + Vendor */}
+            {/* Invoice-style Ship To and Bill To blocks; both show vendor details */}
             <div className="grid grid-cols-2 border-b border-gray-300">
               <div className="border-r border-gray-300 p-2.5">
-                <div className="mb-1 text-[11px] font-bold">Project</div>
-                <div className="text-[11px]">{po?.projectName || "NA"}</div>
-                <div className="text-[11px] text-gray-500">
-                  Project No.: {po?.projectNo || "NA"}
+                <div className="mb-1 text-[11px] font-bold">
+                  Consignee (Ship to)
                 </div>
+                <VendorDetails />
               </div>
 
               <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Vendor (Supplier)
+                  Buyer (Bill to)
                 </div>
-                <div className="text-[11px]">{vendor.name}</div>
-                <div className="text-[11px]">
-                  GSTIN/UIN : {vendor.gstin || "NA"}
-                </div>
-                <div className="text-[11px]">
-                  State code : {vendor.stateCode || "-"}
-                </div>
-                <div className="text-[11px]">
-                  Registration : {vendor.registrationType || "NA"}
-                </div>
+                <VendorDetails />
               </div>
             </div>
 
@@ -480,6 +502,7 @@ Corpseed Team`,
             <table className="w-full border-collapse">
               <thead>
                 <tr>
+                  <TableTh className="w-[55px] text-center">S.No</TableTh>
                   <TableTh>Particulars</TableTh>
                   <TableTh className="w-[110px] text-right">Rate</TableTh>
                   <TableTh className="w-[110px] text-right">Amount (₹)</TableTh>
@@ -488,6 +511,7 @@ Corpseed Team`,
 
               <tbody>
                 <tr>
+                  <TableTd className="text-center">1</TableTd>
                   <TableTd>
                     <div className="font-semibold">
                       {po?.projectName || "Purchase order value"}
@@ -502,6 +526,7 @@ Corpseed Team`,
                 {(cgstAmount > 0 || sgstAmount > 0) && (
                   <>
                     <tr>
+                      <TableTd className="text-center">2</TableTd>
                       <TableTd>CGST</TableTd>
                       <TableTd className="text-right">
                         {percentStr(toNumber(po?.gstRate) / 2)}
@@ -511,6 +536,7 @@ Corpseed Team`,
                       </TableTd>
                     </tr>
                     <tr>
+                      <TableTd className="text-center">3</TableTd>
                       <TableTd>SGST</TableTd>
                       <TableTd className="text-right">
                         {percentStr(toNumber(po?.gstRate) / 2)}
@@ -524,6 +550,7 @@ Corpseed Team`,
 
                 {igstAmount > 0 && (
                   <tr>
+                    <TableTd className="text-center">2</TableTd>
                     <TableTd>IGST</TableTd>
                     <TableTd className="text-right">
                       {percentStr(po?.gstRate)}
@@ -536,6 +563,7 @@ Corpseed Team`,
 
                 {tdsAmount > 0 && (
                   <tr>
+                    <TableTd className="text-center">{tdsSerialNumber}</TableTd>
                     <TableTd>TDS (deducted at payment)</TableTd>
                     <TableTd className="text-right">
                       {percentStr(tdsPercentage)}
@@ -547,7 +575,7 @@ Corpseed Team`,
                 )}
 
                 <tr>
-                  <TableTd className="text-right font-bold" colSpan={2}>
+                  <TableTd className="text-right font-bold" colSpan={3}>
                     Total Tax
                   </TableTd>
                   <TableTd className="text-right font-bold">
@@ -556,7 +584,7 @@ Corpseed Team`,
                 </tr>
 
                 <tr className="bg-gray-50">
-                  <TableTd className="text-right font-extrabold" colSpan={2}>
+                  <TableTd className="text-right font-extrabold" colSpan={3}>
                     Grand Total
                   </TableTd>
                   <TableTd className="text-right font-extrabold">
@@ -574,29 +602,6 @@ Corpseed Team`,
                 {amountToWordsINR(grandTotal)}
               </div>
             </div>
-
-            <HtmlSection
-              title="Scope of Work"
-              html={po?.scopeOfWork}
-              emptyText="No scope of work provided."
-            />
-
-            <div className="border-t border-gray-300">
-              <HtmlSection
-                title="Terms & Conditions"
-                html={po?.termsAndConditions}
-                emptyText="No terms and conditions provided."
-              />
-            </div>
-
-            {po?.remarks && (
-              <div className="border-t border-gray-300 px-2.5 py-2">
-                <p className="mb-1 text-[11px] font-bold text-gray-900">
-                  Remarks
-                </p>
-                <p className="text-[11px] text-gray-700">{po.remarks}</p>
-              </div>
-            )}
 
             {attachments.length > 0 && (
               <div className="border-t border-gray-300 px-2.5 py-2">
@@ -619,17 +624,32 @@ Corpseed Team`,
               </div>
             )}
 
-            <div className="border-t border-gray-300 px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {BUYER.name.toLowerCase()}</div>
-              <div className="mt-1 flex justify-end">
-                <img
-                  src={signature}
-                  alt="signature"
-                  className="h-14 w-auto object-contain"
-                />
+            {/* Tax-invoice-style remark and authorised signatory block */}
+            <div
+              className="grid grid-cols-2 border-t border-gray-300"
+              style={{ minHeight: "115px" }}
+            >
+              <div className="border-r border-gray-300 px-2.5 py-2">
+                <p className="mb-1 text-[11px] font-bold text-gray-900">
+                  Remark :
+                </p>
+                <p className="text-[10px] text-gray-700">{po?.remarks || ""}</p>
               </div>
-              <div className="text-gray-500">(Authorised Signatory)</div>
+
+              <div className="flex flex-col justify-end px-2.5 pb-2 pt-3 text-right text-[11px]">
+                <div className="capitalize">for {BUYER.name.toLowerCase()}</div>
+                <div className="mt-1 flex justify-end">
+                  <img
+                    src={signature}
+                    alt="signature"
+                    className="h-14 w-auto object-contain"
+                  />
+                </div>
+                <div className="text-gray-500">(Authorised Signatory)</div>
+              </div>
             </div>
+
+            <TermsSection html={po?.termsAndConditions} />
           </div>
         </div>
       </div>
