@@ -188,6 +188,16 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                           );
                         }
 
+                        // Discount applied → amount MUST be less than original
+                        if (isEditing && enteredAmount >= originalAmount) {
+                          return Promise.reject(
+                            new Error(
+                              `Discounted amount must be less than original amount ₹${originalAmount}`,
+                            ),
+                          );
+                        }
+
+                        // Discount not applied → amount cannot be reduced
                         if (!isEditing && enteredAmount < originalAmount) {
                           return Promise.reject(
                             new Error(
@@ -204,7 +214,6 @@ const ServiceFormFieldsDetail = ({ form, serviceFeeList }) => {
                   <Input
                     type="number"
                     placeholder="Amount"
-                    readOnly={false}
                     prefix={<IndianRupee className="h-4 w-4" />}
                   />
                 </Form.Item>
