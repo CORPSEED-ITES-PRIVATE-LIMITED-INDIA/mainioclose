@@ -767,6 +767,17 @@ const CreditNote = () => {
 
       if (actionKey === "viewCreditNote") {
         console.log("View Credit Note:", rowData);
+
+        const previewData = buildCreditNotePreviewData(
+          rowData,
+          creditLedgerRow,
+        );
+
+        setCreditNotePreviewModal({
+          isOpen: true,
+          data: previewData,
+        });
+
         return;
       }
 
