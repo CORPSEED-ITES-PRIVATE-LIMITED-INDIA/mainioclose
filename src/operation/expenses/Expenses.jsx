@@ -36,6 +36,7 @@ import { useParams } from "react-router-dom";
 import {
   getExpenseApprovalQueueList,
   updateCrtExpenseDecision,
+  payGovernmentPortalFee,
 } from "../../toolkit/slices/operationSlice";
 import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 import NewSelect from "../../components/NewSelect";
@@ -352,6 +353,18 @@ const Expenses = () => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isGovernmentFeeModalOpen, setIsGovernmentFeeModalOpen] =
+    useState(false);
+  const [governmentFeeExpense, setGovernmentFeeExpense] = useState(null);
+  const [isPayingGovernmentFee, setIsPayingGovernmentFee] = useState(false);
+  const [governmentFeeForm, setGovernmentFeeForm] = useState({
+    amount: "",
+    paymentDate: "",
+    paymentReference: "",
+    paymentReceiptUrl: "",
+    remark: "",
+  });
+  const [governmentFeeErrors, setGovernmentFeeErrors] = useState({});
   const [decisionForm, setDecisionForm] = useState({
     status: "",
     expensePaidBy: "",
@@ -693,6 +706,141 @@ const Expenses = () => {
     validateDecisionForm,
   ]);
 
+  const closeGovernmentFeeModal = useCallback(() => {
+    if (isPayingGovernmentFee) {
+      return;
+    }
+
+    setIsGovernmentFeeModalOpen(false);
+    setGovernmentFeeExpense(null);
+    setGovernmentFeeForm({
+      amount: "",
+      paymentDate: "",
+      paymentReference: "",
+      paymentReceiptUrl: "",
+      remark: "",
+    });
+    setGovernmentFeeErrors({});
+  }, [isPayingGovernmentFee]);
+
+  const openGovernmentFeeModal = useCallback((expense) => {
+    setGovernmentFeeExpense(expense);
+    setGovernmentFeeForm({
+      amount:
+        expense?.governmentPaymentAmount !== null &&
+        expense?.governmentPaymentAmount !== undefined
+          ? String(expense.governmentPaymentAmount)
+          : expense?.requestedAmount !== null &&
+              expense?.requestedAmount !== undefined
+            ? String(expense.requestedAmount)
+            : "",
+      paymentDate: expense?.governmentPaymentDate
+        ? dayjs(expense.governmentPaymentDate).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD"),
+      paymentReference: expense?.governmentPaymentReference || "",
+      paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
+      remark: expense?.governmentPaymentRemark || "",
+    });
+    setGovernmentFeeErrors({});
+    setIsGovernmentFeeModalOpen(true);
+  }, []);
+
+  const validateGovernmentFeeForm = useCallback(() => {
+    const errors = {};
+    const amount = Number(governmentFeeForm.amount);
+
+    if (!governmentFeeForm.amount || Number.isNaN(amount) || amount <= 0) {
+      errors.amount = "Valid amount is required";
+    }
+    if (!governmentFeeForm.paymentDate) {
+      errors.paymentDate = "Payment date is required";
+    }
+    if (!governmentFeeForm.paymentReference.trim()) {
+      errors.paymentReference = "Payment reference is required";
+    }
+    if (!governmentFeeForm.paymentReceiptUrl.trim()) {
+      errors.paymentReceiptUrl = "Payment receipt URL is required";
+    }
+    if (!governmentFeeForm.remark.trim()) {
+      errors.remark = "Remark is required";
+    }
+
+    setGovernmentFeeErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [governmentFeeForm]);
+
+  const handleGovernmentFeePayment = useCallback(async () => {
+    if (!validateGovernmentFeeForm()) {
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "User not found",
+        description: "User ID is required to submit government fee payment.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!governmentFeeExpense?.projectId || !governmentFeeExpense?.expenseId) {
+      addToast({
+        title: "Expense details missing",
+        description: "Project ID and expense ID are required.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setIsPayingGovernmentFee(true);
+
+    try {
+      await dispatch(
+        payGovernmentPortalFee({
+          expenseId: governmentFeeExpense.expenseId,
+          projectId: governmentFeeExpense.projectId,
+          userId: resolvedUserId,
+          data: {
+            amount: Number(governmentFeeForm.amount),
+            paymentDate: governmentFeeForm.paymentDate,
+            paymentReference: governmentFeeForm.paymentReference.trim(),
+            paymentReceiptUrl: governmentFeeForm.paymentReceiptUrl.trim(),
+            remark: governmentFeeForm.remark.trim(),
+          },
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "Government fee updated",
+        description: "Government fee payment was submitted successfully.",
+        color: "success",
+      });
+
+      closeGovernmentFeeModal();
+      fetchExpenseApprovalQueue();
+    } catch (error) {
+      addToast({
+        title: "Failed to update government fee",
+        description:
+          error?.message ||
+          error?.errorMessage ||
+          error ||
+          "Unable to submit government fee payment.",
+        color: "danger",
+      });
+    } finally {
+      setIsPayingGovernmentFee(false);
+    }
+  }, [
+    closeGovernmentFeeModal,
+    dispatch,
+    fetchExpenseApprovalQueue,
+    governmentFeeExpense,
+    governmentFeeForm,
+    resolvedUserId,
+    validateGovernmentFeeForm,
+  ]);
+
   const renderCell = useCallback(
     (expense, columnKey) => {
       const currencyCode = expense?.currencyCode || "INR";
@@ -940,6 +1088,8 @@ const Expenses = () => {
               expense?.approvalStatus,
             );
 
+          const canPayGovernmentFee = expense?.approvalStage === "CRT_REVIEW";
+
           return (
             <div className="flex justify-center">
               <Dropdown placement="bottom-end">
@@ -956,10 +1106,16 @@ const Expenses = () => {
 
                 <DropdownMenu
                   aria-label="Expense actions"
-                  disabledKeys={canUpdateStatus ? [] : ["updateStatus"]}
+                  disabledKeys={[
+                    ...(canUpdateStatus ? [] : ["updateStatus"]),
+                    ...(canPayGovernmentFee ? [] : ["governmentFee"]),
+                  ]}
                   onAction={(key) => {
                     if (key === "updateStatus" && canUpdateStatus) {
                       openStatusModal(expense);
+                    }
+                    if (key === "governmentFee" && canPayGovernmentFee) {
+                      openGovernmentFeeModal(expense);
                     }
                   }}
                 >
@@ -974,6 +1130,17 @@ const Expenses = () => {
                   >
                     Update Status
                   </DropdownItem>
+
+                  <DropdownItem
+                    key="governmentFee"
+                    description={
+                      canPayGovernmentFee
+                        ? "Add government fee payment details"
+                        : "Available only during CRT review"
+                    }
+                  >
+                    Government Fee
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -984,7 +1151,7 @@ const Expenses = () => {
           return expense?.[columnKey] ?? "-";
       }
     },
-    [openStatusModal],
+    [openGovernmentFeeModal, openStatusModal],
   );
 
   const topContent = useMemo(() => {
@@ -1532,6 +1699,177 @@ const Expenses = () => {
               onPress={handleStatusUpdate}
             >
               Update Status
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="2xl"
+        isOpen={isGovernmentFeeModalOpen}
+        placement="center"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            closeGovernmentFeeModal();
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Government Fee Payment
+            <span className="text-sm font-normal text-default-500">
+              {governmentFeeExpense?.projectName || "Project"}
+              {governmentFeeExpense?.expenseId
+                ? ` • Expense ID: ${governmentFeeExpense.expenseId}`
+                : ""}
+            </span>
+          </ModalHeader>
+
+          <ModalBody>
+            <div className="rounded-lg bg-default-100 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-default-500">Requested amount</span>
+                <span className="font-semibold">
+                  {formatCurrency(
+                    governmentFeeExpense?.requestedAmount,
+                    governmentFeeExpense?.currencyCode,
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Input
+                isRequired
+                type="number"
+                label="Government Fee Amount"
+                placeholder="Enter government fee amount"
+                value={governmentFeeForm.amount}
+                isInvalid={Boolean(governmentFeeErrors.amount)}
+                errorMessage={governmentFeeErrors.amount}
+                onValueChange={(value) => {
+                  setGovernmentFeeForm((previous) => ({
+                    ...previous,
+                    amount: value,
+                  }));
+                  if (value && Number(value) > 0) {
+                    setGovernmentFeeErrors((previous) => ({
+                      ...previous,
+                      amount: undefined,
+                    }));
+                  }
+                }}
+              />
+
+              <DatePicker
+                isRequired
+                label="Payment Date"
+                showMonthAndYearPickers
+                maxValue={today(getLocalTimeZone())}
+                value={
+                  governmentFeeForm.paymentDate &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(governmentFeeForm.paymentDate)
+                    ? parseDate(governmentFeeForm.paymentDate)
+                    : null
+                }
+                isInvalid={Boolean(governmentFeeErrors.paymentDate)}
+                errorMessage={governmentFeeErrors.paymentDate}
+                onChange={(value) => {
+                  const iso = value ? value.toString() : "";
+                  setGovernmentFeeForm((previous) => ({
+                    ...previous,
+                    paymentDate: iso,
+                  }));
+                  if (iso) {
+                    setGovernmentFeeErrors((previous) => ({
+                      ...previous,
+                      paymentDate: undefined,
+                    }));
+                  }
+                }}
+              />
+
+              <Input
+                isRequired
+                label="Payment Reference"
+                placeholder="Enter payment reference"
+                value={governmentFeeForm.paymentReference}
+                isInvalid={Boolean(governmentFeeErrors.paymentReference)}
+                errorMessage={governmentFeeErrors.paymentReference}
+                onValueChange={(value) => {
+                  setGovernmentFeeForm((previous) => ({
+                    ...previous,
+                    paymentReference: value,
+                  }));
+                  if (value.trim()) {
+                    setGovernmentFeeErrors((previous) => ({
+                      ...previous,
+                      paymentReference: undefined,
+                    }));
+                  }
+                }}
+              />
+
+              <Input
+                isRequired
+                label="Payment Receipt URL"
+                placeholder="Enter payment receipt URL"
+                value={governmentFeeForm.paymentReceiptUrl}
+                isInvalid={Boolean(governmentFeeErrors.paymentReceiptUrl)}
+                errorMessage={governmentFeeErrors.paymentReceiptUrl}
+                onValueChange={(value) => {
+                  setGovernmentFeeForm((previous) => ({
+                    ...previous,
+                    paymentReceiptUrl: value,
+                  }));
+                  if (value.trim()) {
+                    setGovernmentFeeErrors((previous) => ({
+                      ...previous,
+                      paymentReceiptUrl: undefined,
+                    }));
+                  }
+                }}
+              />
+            </div>
+
+            <Textarea
+              isRequired
+              label="Remark"
+              placeholder="Enter government fee payment remark"
+              minRows={4}
+              maxRows={7}
+              value={governmentFeeForm.remark}
+              isInvalid={Boolean(governmentFeeErrors.remark)}
+              errorMessage={governmentFeeErrors.remark}
+              onValueChange={(value) => {
+                setGovernmentFeeForm((previous) => ({
+                  ...previous,
+                  remark: value,
+                }));
+                if (value.trim()) {
+                  setGovernmentFeeErrors((previous) => ({
+                    ...previous,
+                    remark: undefined,
+                  }));
+                }
+              }}
+            />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              variant="flat"
+              isDisabled={isPayingGovernmentFee}
+              onPress={closeGovernmentFeeModal}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              isLoading={isPayingGovernmentFee}
+              onPress={handleGovernmentFeePayment}
+            >
+              Submit Government Fee
             </Button>
           </ModalFooter>
         </ModalContent>
