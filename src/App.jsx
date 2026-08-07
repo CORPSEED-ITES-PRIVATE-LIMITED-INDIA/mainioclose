@@ -22,6 +22,7 @@ import {
 import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
 import { restoreSession } from "./toolkit/slices/authSlice";
+import AdminPoApproval from "./admin/AdminPoApproval";
 
 const HomePage = lazy(() => import("./home/HomePage"));
 const Login = lazy(() => import("./login/Login"));
@@ -107,6 +108,7 @@ function App() {
                 path="admin/vendorRestrictions"
                 element={<AdminVendorRestrictionApproval />}
               />
+              <Route path="admin/poApproval" element={<AdminPoApproval />} />
 
               {ProcurementRouting()}
               {ERPSettingRouting()}

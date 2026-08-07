@@ -1644,6 +1644,77 @@ export const payGovernmentPortalFee = createAsyncThunk(
     }
   },
 );
+export const approveAdminPOApproval = createAsyncThunk(
+  "approveAdminPOApproval",
+  async ({ poId, adminUserId,comment  }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/purchase-orders/${poId}/admin-approve?adminUserId=${adminUserId}&comment=${comment}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to update lifecycle request decision.",
+        },
+      );
+    }
+  },
+);
+export const rejectAdminPOApproval = createAsyncThunk(
+  "rejectAdminPOApproval",
+  async ({ poId, adminUserId,reason  }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/purchase-orders/${poId}/admin-reject?adminUserId=${adminUserId}&reason=${reason}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to update lifecycle request decision.",
+        },
+      );
+    }
+  },
+);
+
+export const getAllPOByStatus = createAsyncThunk(
+  "getAllPOByStatus",
+  async ({  page=0,size=10,status  }, { rejectWithValue }) => {
+    try{
+
+      const params = {
+        page,
+        size,
+      };
+      
+      if (
+        status !== undefined &&
+        status !== null &&
+        status !== "" &&
+        status !== "ALL"
+      ) {
+        params.status = status;
+      }
+      
+      const response = await api.get("/operationService/api/purchase-orders", {
+        params,
+      });
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to update lifecycle request decision.",
+        },
+      );
+    }
+  },
+);
+
 
 export const OperationSlice = createSlice({
   name: "operation",
@@ -1682,6 +1753,7 @@ export const OperationSlice = createSlice({
     expensePaymentQueueError: null,
     accountsDecisionLoading: false,
     accountsDecisionError: null,
+    procurementOrderByStatus:[],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2085,6 +2157,23 @@ export const OperationSlice = createSlice({
       getAllVendorQuotationLegalRequests.rejected,
       (state, action) => {
         state.loading = "rejected";
+      },
+    );
+    builder.addCase(getAllPOByStatus.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllPOByStatus.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.procurementOrderByStatus = action.payload;
+      },
+    );
+    builder.addCase(
+      getAllPOByStatus.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.procurementOrderByStatus = [];
       },
     );
 

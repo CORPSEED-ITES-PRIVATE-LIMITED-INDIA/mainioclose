@@ -7,6 +7,7 @@ import {
   Input,
   InputNumber,
   Modal,
+  notification,
 } from "antd";
 import dayjs from "dayjs";
 import { useDispatch } from "react-redux";
@@ -42,6 +43,7 @@ const CreatePurchaseOrderModal = ({
 }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
+  const [api, contextHolder] = notification.useNotification();
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +132,7 @@ const CreatePurchaseOrderModal = ({
       onSuccess?.();
       onClose?.();
     } catch (error) {
-      addToast({
+      api.error({
         title: "Something went wrong",
         description:
           error?.data?.message ||
@@ -152,6 +154,7 @@ const CreatePurchaseOrderModal = ({
       maskClosable={false}
       footer={null}
     >
+      {contextHolder}
       <Form
         form={form}
         layout="vertical"

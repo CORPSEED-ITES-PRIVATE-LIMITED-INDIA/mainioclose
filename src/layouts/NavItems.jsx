@@ -248,6 +248,12 @@ export const navItems = [
         url: "admin/vendorRestrictions",
         key: "vendorRestrictions",
       },
+      {
+        title: "PO Approval",
+        icon: "",
+        url: "admin/poApproval",
+        key: "poApproval",
+      },
     ],
   },
   {
