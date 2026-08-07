@@ -1,15 +1,13 @@
 import React, { useEffect } from "react";
 import {
   Button,
-  DatePicker,
   Divider,
   Form,
   Input,
   InputNumber,
-  Modal,
   notification,
+  Modal,
 } from "antd";
-import dayjs from "dayjs";
 import { useDispatch } from "react-redux";
 import { addToast } from "@heroui/react";
 import { createProcurementPurchaseOrder } from "../../toolkit/slices/operationSlice";
@@ -56,7 +54,6 @@ const CreatePurchaseOrderModal = ({
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
       remarks: "",
-      validTillDate: dayjs().add(15, "day"),
       createdBy: Number(createdBy || userId || 0),
       userId: Number(userId || 0),
     });
@@ -87,33 +84,21 @@ const CreatePurchaseOrderModal = ({
       finalAmount,
 
       /*
-       * Existing API payload keys are preserved.
-       * Tax, TDS, payment type and attachment values will be supplied
+       * Tax and TDS are captured here as rates only.
+       * Actual tax/TDS amounts, payment type and attachments are supplied
        * while raising the procurement payment request.
        */
       gstRate: 0,
-      taxType: null,
-
       tdsPercentage: 0,
-      tdsAmount: 0,
 
-      cgstAmount: 0,
-      sgstAmount: 0,
-      igstAmount: 0,
-
-      totalTaxAmount: 0,
-      grandTotal: finalAmount,
+      placeOfSupplyStateCode: "",
 
       scopeOfWork: values.scopeOfWork?.trim() || "",
       termsAndConditions: values.termsAndConditions?.trim() || "",
       remarks: values.remarks?.trim() || "",
 
-      validTillDate: values.validTillDate
-        ? dayjs(values.validTillDate).format("YYYY-MM-DD")
-        : null,
-
-      paymentTypeName: "",
       attachmentUrls: [],
+      paymentTypeName: "",
 
       createdBy: Number(createdBy || userId || 0),
       userId: Number(userId || 0),
@@ -175,19 +160,6 @@ const CreatePurchaseOrderModal = ({
             ]}
           >
             <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Valid Till Date"
-            name="validTillDate"
-            rules={[
-              {
-                required: true,
-                message: "Please select valid till date",
-              },
-            ]}
-          >
-            <DatePicker className="w-full" format="YYYY-MM-DD" />
           </Form.Item>
 
           <Form.Item

@@ -428,7 +428,7 @@ const priorityConfig = {
 
 function SectionTitle({ title, subtitle, action = "View All" }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">
         <h3 className="truncate text-[13px] font-semibold text-slate-950">
           {title}
@@ -453,12 +453,12 @@ function StatCard({ item }) {
 
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardBody className="p-3">
-        <div className="flex items-center gap-3">
+      <CardBody className="p-2.5">
+        <div className="flex items-center gap-2.5">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${item.bg}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${item.bg}`}
           >
-            <Icon size={19} className={item.iconColor} strokeWidth={2.2} />
+            <Icon size={18} className={item.iconColor} strokeWidth={2.2} />
           </div>
 
           <div className="min-w-0">
@@ -466,7 +466,7 @@ function StatCard({ item }) {
               {item.title}
             </p>
 
-            <h2 className="mt-1 truncate text-lg font-bold leading-6 text-slate-950">
+            <h2 className="mt-0.5 truncate text-lg font-bold leading-5 text-slate-950">
               {item.value}
             </h2>
 
@@ -495,7 +495,7 @@ function TopProjectCards({
 
   if (!userId) {
     return (
-      <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-5 text-center">
+      <div className="col-span-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-4 text-center">
         <p className="text-xs font-semibold text-amber-800">
           User ID is missing from the route.
         </p>
@@ -512,9 +512,9 @@ function TopProjectCards({
         key={index}
         className="animate-pulse rounded-xl border border-slate-200 shadow-sm"
       >
-        <CardBody className="p-3">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
+        <CardBody className="p-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 shrink-0 rounded-full bg-slate-200" />
             <div className="min-w-0 flex-1">
               <div className="h-3 w-24 rounded bg-slate-200" />
               <div className="mt-2 h-5 w-14 rounded bg-slate-200" />
@@ -528,7 +528,7 @@ function TopProjectCards({
 
   if (hasError) {
     return (
-      <div className="col-span-full flex flex-col items-center rounded-xl border border-red-200 bg-red-50 px-3 py-5 text-center">
+      <div className="col-span-full flex flex-col items-center rounded-xl border border-red-200 bg-red-50 px-3 py-4 text-center">
         <AlertTriangle size={22} className="text-red-500" />
         <p className="mt-2 text-xs font-semibold text-red-700">
           Unable to load project summary
@@ -540,7 +540,7 @@ function TopProjectCards({
           size="sm"
           color="danger"
           variant="flat"
-          className="mt-3"
+          className="mt-2"
           onPress={onRetry}
         >
           Retry
@@ -551,7 +551,7 @@ function TopProjectCards({
 
   if (!Array.isArray(cards) || cards.length === 0) {
     return (
-      <div className="col-span-full rounded-xl border border-slate-200 bg-white px-3 py-5 text-center shadow-sm">
+      <div className="col-span-full rounded-xl border border-slate-200 bg-white px-3 py-4 text-center shadow-sm">
         <p className="text-xs font-semibold text-slate-700">
           No project summary found
         </p>
@@ -570,28 +570,28 @@ function TopProjectCards({
 function MilestoneOverview() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <SectionTitle
           title="Milestone Overview"
           subtitle="Completion status across all projects"
         />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
-        <div className="space-y-3">
+      <CardBody className="px-3 pb-2.5">
+        <div className="space-y-2">
           {milestoneOverview.map((item) => {
             const Icon = item.icon;
 
             return (
               <div
                 key={item.title}
-                className="rounded-xl border border-slate-100 px-3 py-3"
+                className="rounded-xl border border-slate-100 px-3 py-2"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${item.bg}`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.bg}`}
                   >
-                    <Icon size={17} className={item.iconColor} />
+                    <Icon size={16} className={item.iconColor} />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -608,7 +608,7 @@ function MilestoneOverview() {
                   </p>
                 </div>
 
-                <div className="mt-3 pl-12">
+                <div className="mt-2 pl-[42px]">
                   <Progress
                     aria-label={item.title}
                     value={item.avgCompletion}
@@ -642,7 +642,7 @@ function ProjectStatusOverview({
 
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <SectionTitle
           title="Project Stage Overview"
           subtitle={
@@ -654,9 +654,9 @@ function ProjectStatusOverview({
         />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3" aria-live="polite">
+      <CardBody className="px-3 pb-2.5" aria-live="polite">
         {!userId ? (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-4 text-center">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-center">
             <p className="text-xs font-semibold text-amber-800">
               User information is not available.
             </p>
@@ -665,14 +665,14 @@ function ProjectStatusOverview({
             </p>
           </div>
         ) : isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="animate-pulse rounded-xl border border-slate-100 px-3 py-3"
+                className="animate-pulse rounded-xl border border-slate-100 px-3 py-2"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-slate-200" />
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-full bg-slate-200" />
                   <div className="flex-1">
                     <div className="h-3 w-28 rounded bg-slate-200" />
                     <div className="mt-2 h-2.5 w-40 rounded bg-slate-100" />
@@ -680,12 +680,12 @@ function ProjectStatusOverview({
                   <div className="h-3 w-8 rounded bg-slate-200" />
                   <div className="h-3 w-10 rounded bg-slate-100" />
                 </div>
-                <div className="mt-3 ml-12 h-1.5 rounded-full bg-slate-100" />
+                <div className="mt-2 ml-[42px] h-1.5 rounded-full bg-slate-100" />
               </div>
             ))}
           </div>
         ) : hasError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-4 text-center">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-center">
             <AlertTriangle className="mx-auto text-red-500" size={22} />
             <p className="mt-2 text-xs font-semibold text-red-700">
               Unable to load project stages
@@ -697,14 +697,14 @@ function ProjectStatusOverview({
               size="sm"
               color="danger"
               variant="flat"
-              className="mt-3"
+              className="mt-2"
               onPress={onRetry}
             >
               Retry
             </Button>
           </div>
         ) : !Array.isArray(cards) || cards.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-5 text-center">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
             <p className="text-xs font-semibold text-slate-700">
               No project stage data found
             </p>
@@ -713,7 +713,7 @@ function ProjectStatusOverview({
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {cards.map((item, index) => {
               const config =
                 projectStageConfig[item.type] || defaultProjectStageConfig;
@@ -727,13 +727,13 @@ function ProjectStatusOverview({
               return (
                 <div
                   key={item.type || index}
-                  className="rounded-xl border border-slate-100 px-3 py-3"
+                  className="rounded-xl border border-slate-100 px-3 py-2"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bg}`}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${config.bg}`}
                     >
-                      <Icon size={17} className={config.iconColor} />
+                      <Icon size={16} className={config.iconColor} />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -756,7 +756,7 @@ function ProjectStatusOverview({
                     </p>
                   </div>
 
-                  <div className="mt-3 pl-12">
+                  <div className="mt-2 pl-[42px]">
                     <Progress
                       aria-label={item.label || item.type}
                       value={percentage}
@@ -789,7 +789,7 @@ function PortfolioCompletionChart() {
 
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <div className="flex w-full items-center justify-between">
           <SectionTitle
             title="Project Completion Distribution"
@@ -800,7 +800,7 @@ function PortfolioCompletionChart() {
           <Button
             size="sm"
             variant="bordered"
-            className="h-9 rounded-lg border-slate-200 text-xs"
+            className="h-8 rounded-lg border-slate-200 text-xs"
             endContent={<ChevronDown size={14} />}
           >
             This Month
@@ -808,18 +808,18 @@ function PortfolioCompletionChart() {
         </div>
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
-        <div className="space-y-4">
+      <CardBody className="px-3 pb-2.5">
+        <div className="space-y-2.5">
           {bars.map((item) => (
             <div
               key={item.label}
-              className="grid grid-cols-[70px_minmax(0,1fr)_45px] items-center gap-3"
+              className="grid grid-cols-[70px_minmax(0,1fr)_45px] items-center gap-2.5"
             >
               <p className="text-xs font-semibold text-slate-700">
                 {item.label}
               </p>
 
-              <div className="h-8 overflow-hidden rounded-lg bg-slate-100">
+              <div className="h-7 overflow-hidden rounded-lg bg-slate-100">
                 <div
                   className="flex h-full items-center justify-end rounded-lg bg-blue-600 pr-2"
                   style={{ width: `${item.value}%` }}
@@ -844,18 +844,18 @@ function PortfolioCompletionChart() {
 function DepartmentWorkload() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <SectionTitle
           title="Team Workload"
           subtitle="Assigned vs completed milestone work"
         />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
-        <div className="space-y-4">
+      <CardBody className="px-3 pb-2.5">
+        <div className="space-y-2.5">
           {departmentWorkload.map((item) => (
             <div key={item.name}>
-              <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="mb-1.5 flex items-center justify-between gap-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold text-slate-900">
                     {item.name}
@@ -890,7 +890,7 @@ function DepartmentWorkload() {
 
 function MilestoneMiniProgress({ milestones = [] }) {
   return (
-    <div className="flex min-w-[260px] flex-col gap-2">
+    <div className="flex min-w-[260px] flex-col gap-1.5">
       {milestones.map((milestone) => {
         const isCompleted = milestone.completion === 100;
 
@@ -931,8 +931,8 @@ function MilestoneMiniProgress({ milestones = [] }) {
 function ProjectsTable() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <CardHeader className="px-3 pt-2.5 pb-0">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <SectionTitle
             title="All Projects Milestone Tracker"
             subtitle="A milestone is completed only when completion reaches 100%"
@@ -943,7 +943,7 @@ function ProjectsTable() {
             <Button
               size="sm"
               variant="bordered"
-              className="h-9 rounded-lg border-slate-200 text-xs"
+              className="h-8 rounded-lg border-slate-200 text-xs"
               startContent={<Filter size={14} />}
             >
               Filter
@@ -954,7 +954,7 @@ function ProjectsTable() {
                 <Button
                   size="sm"
                   variant="bordered"
-                  className="h-9 rounded-lg border-slate-200 text-xs"
+                  className="h-8 rounded-lg border-slate-200 text-xs"
                   endContent={<ChevronDown size={14} />}
                 >
                   Stage
@@ -973,13 +973,13 @@ function ProjectsTable() {
         </div>
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
+      <CardBody className="px-3 pb-2.5">
         <Table
           aria-label="Projects milestone table"
           removeWrapper
           classNames={{
-            th: "bg-slate-50 text-[11px] text-slate-600",
-            td: "text-xs",
+            th: "bg-slate-50 text-[11px] text-slate-600 h-8 py-0",
+            td: "text-xs py-2",
           }}
         >
           <TableHeader>
@@ -1007,7 +1007,7 @@ function ProjectsTable() {
                       <p className="whitespace-nowrap font-semibold text-slate-950">
                         {project.projectNo}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-0.5 text-[11px] text-slate-500">
                         Value: {project.amount}
                       </p>
                     </div>
@@ -1018,7 +1018,7 @@ function ProjectsTable() {
                       <p className="truncate font-semibold text-slate-950">
                         {project.company}
                       </p>
-                      <p className="mt-1 truncate text-[11px] text-slate-500">
+                      <p className="mt-0.5 truncate text-[11px] text-slate-500">
                         {project.service}
                       </p>
                     </div>
@@ -1067,7 +1067,7 @@ function ProjectsTable() {
                       <p className="whitespace-nowrap font-semibold text-slate-950">
                         {project.currentMilestone}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-0.5 text-[11px] text-slate-500">
                         Pending docs: {project.pendingDocs}
                       </p>
                     </div>
@@ -1086,7 +1086,7 @@ function ProjectsTable() {
                         size="sm"
                         variant="flat"
                         color={priorityConfig[project.priority] || "default"}
-                        className="mt-1 text-[10px]"
+                        className="mt-0.5 text-[10px]"
                       >
                         {project.priority}
                       </Chip>
@@ -1111,26 +1111,26 @@ function ProjectsTable() {
 function DueProjects() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <SectionTitle
           title="Due / Risk Queue"
           subtitle="Projects requiring immediate attention"
         />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
+      <CardBody className="px-3 pb-2.5">
         <div className="space-y-2">
           {dueProjects.map((item) => (
             <div
               key={item.projectNo}
-              className="rounded-xl border border-slate-100 px-3 py-3 hover:bg-slate-50"
+              className="rounded-xl border border-slate-100 px-3 py-2 hover:bg-slate-50"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold text-slate-950">
                     {item.company}
                   </p>
-                  <p className="mt-1 truncate text-[11px] text-slate-500">
+                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
                     {item.projectNo} • {item.milestone}
                   </p>
                 </div>
@@ -1145,17 +1145,17 @@ function DueProjects() {
                 </Chip>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-                <div className="rounded-lg bg-slate-50 px-2 py-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
                   <p className="text-slate-500">Due Date</p>
-                  <p className="mt-1 font-semibold text-slate-950">
+                  <p className="mt-0.5 font-semibold text-slate-950">
                     {item.due}
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-slate-50 px-2 py-2">
+                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
                   <p className="text-slate-500">Owner</p>
-                  <p className="mt-1 font-semibold text-slate-950">
+                  <p className="mt-0.5 font-semibold text-slate-950">
                     {item.owner}
                   </p>
                 </div>
@@ -1171,14 +1171,14 @@ function DueProjects() {
 function RecentActivities() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-3 pb-0">
+      <CardHeader className="px-3 pt-2.5 pb-0">
         <SectionTitle title="Recent Project Activities" action={null} />
       </CardHeader>
 
-      <CardBody className="px-3 pb-3">
-        <div className="space-y-4">
+      <CardBody className="px-3 pb-2.5">
+        <div className="space-y-2.5">
           {activities.map((activity) => (
-            <div key={activity.title} className="flex gap-3">
+            <div key={activity.title} className="flex gap-2.5">
               <div className="pt-1">
                 <span
                   className={`block h-2.5 w-2.5 rounded-full ${activity.dot}`}
@@ -1189,8 +1189,8 @@ function RecentActivities() {
                 <p className="text-xs font-semibold text-slate-900">
                   {activity.title}
                 </p>
-                <p className="mt-1 text-xs text-slate-600">{activity.desc}</p>
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-600">{activity.desc}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">
                   {activity.time}
                 </p>
               </div>
@@ -1205,10 +1205,10 @@ function RecentActivities() {
 function MilestoneDefinitionCard() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardBody className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50">
-            <Workflow size={19} className="text-green-600" />
+      <CardBody className="p-3">
+        <div className="flex items-start gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-50">
+            <Workflow size={18} className="text-green-600" />
           </div>
 
           <div>
@@ -1223,22 +1223,22 @@ function MilestoneDefinitionCard() {
               exactly 100%.
             </p>
 
-            <Divider className="my-3" />
+            <Divider className="my-2.5" />
 
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-slate-50 px-2 py-3">
+              <div className="rounded-xl bg-slate-50 px-2 py-2.5">
                 <p className="text-base font-bold text-slate-950">0-99%</p>
-                <p className="mt-1 text-[11px] text-slate-500">In Progress</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">In Progress</p>
               </div>
 
-              <div className="rounded-xl bg-green-50 px-2 py-3">
+              <div className="rounded-xl bg-green-50 px-2 py-2.5">
                 <p className="text-base font-bold text-green-600">100%</p>
-                <p className="mt-1 text-[11px] text-slate-500">Completed</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">Completed</p>
               </div>
 
-              <div className="rounded-xl bg-orange-50 px-2 py-3">
+              <div className="rounded-xl bg-orange-50 px-2 py-2.5">
                 <p className="text-base font-bold text-orange-600">Rework</p>
-                <p className="mt-1 text-[11px] text-slate-500">Correction</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">Correction</p>
               </div>
             </div>
           </div>
@@ -1308,8 +1308,8 @@ export default function OperationsDashboard() {
 
   return (
     <div className="max-h-[85vh] overflow-auto overflow-x-hidden bg-slate-50 text-slate-900">
-      <div className="w-full p-2 sm:p-3 lg:p-4">
-        <div className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="w-full p-2 sm:p-2.5 lg:p-3">
+        <div className="mb-2 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <Layers3 size={20} className="text-blue-600" />
@@ -1318,7 +1318,7 @@ export default function OperationsDashboard() {
               </h1>
             </div>
 
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-slate-500">
               Track all projects, milestone-wise completion, stage percentage,
               workload and risk queue.
             </p>
@@ -1328,7 +1328,7 @@ export default function OperationsDashboard() {
             <Button
               size="sm"
               variant="bordered"
-              className="h-9 rounded-lg border-slate-200 text-xs"
+              className="h-8 rounded-lg border-slate-200 text-xs"
               startContent={<CalendarDays size={14} />}
             >
               Current Month
@@ -1337,7 +1337,7 @@ export default function OperationsDashboard() {
             <Button
               size="sm"
               variant="bordered"
-              className="h-9 rounded-lg border-slate-200 text-xs"
+              className="h-8 rounded-lg border-slate-200 text-xs"
               startContent={<Users size={14} />}
             >
               User ID: {userId || "Not found"}
@@ -1346,7 +1346,7 @@ export default function OperationsDashboard() {
             <Button
               size="sm"
               color="primary"
-              className="h-9 rounded-lg text-xs"
+              className="h-8 rounded-lg text-xs"
               startContent={<BarChart3 size={14} />}
             >
               Export Report
@@ -1354,7 +1354,7 @@ export default function OperationsDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <TopProjectCards
             cards={topCards}
             loading={userProjectDashboardLoading}
@@ -1364,7 +1364,7 @@ export default function OperationsDashboard() {
           />
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">
+        <div className="mt-2 grid grid-cols-1 gap-2 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">
           <PortfolioCompletionChart />
           <MilestoneOverview />
           <ProjectStatusOverview
@@ -1375,18 +1375,15 @@ export default function OperationsDashboard() {
             userId={userId}
             onRetry={fetchProjectOverview}
           />
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">
           <DepartmentWorkload />
           <DueProjects />
-          <div className="space-y-3">
+          <div className="space-y-2">
             <MilestoneDefinitionCard />
             <RecentActivities />
           </div>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-2">
           <ProjectsTable />
         </div>
       </div>
