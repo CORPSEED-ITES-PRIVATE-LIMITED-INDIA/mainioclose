@@ -1504,7 +1504,7 @@ const Expenses = () => {
                 >
                   <SelectItem key="CASH">Cash</SelectItem>
                   <SelectItem key="UPI">UPI</SelectItem>
-                  <SelectItem key="CARD">Card</SelectItem>
+                  {/* <SelectItem key="CARD">Card</SelectItem>   */}
                   <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
                   <SelectItem key="CHEQUE">Cheque</SelectItem>
                 </Select>
