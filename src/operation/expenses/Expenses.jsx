@@ -260,9 +260,9 @@ const Expenses = () => {
     paymentDate: "",
     paymentReference: "",
     paymentReceiptUrl: "",
+    bankLedgerId: "",
     remark: "",
   });
-
   const [governmentFeeErrors, setGovernmentFeeErrors] = useState({});
 
   const [decisionForm, setDecisionForm] = useState({
@@ -621,6 +621,7 @@ const Expenses = () => {
       paymentDate: "",
       paymentReference: "",
       paymentReceiptUrl: "",
+      bankLedgerId: "",
       remark: "",
     });
 
@@ -645,9 +646,10 @@ const Expenses = () => {
         : dayjs().format("YYYY-MM-DD"),
 
       paymentReference: expense?.governmentPaymentReference || "",
-
       paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
-
+      bankLedgerId: expense?.governmentPaymentBankLedgerId
+        ? String(expense.governmentPaymentBankLedgerId)
+        : "",
       remark: expense?.governmentPaymentRemark || "",
     });
 
@@ -677,6 +679,9 @@ const Expenses = () => {
 
     if (!governmentFeeForm.remark.trim()) {
       errors.remark = "Remark is required";
+    }
+    if (!governmentFeeForm.bankLedgerId) {
+      errors.bankLedgerId = "Bank/Cash ledger is required";
     }
 
     setGovernmentFeeErrors(errors);
@@ -722,6 +727,7 @@ const Expenses = () => {
             paymentDate: governmentFeeForm.paymentDate,
             paymentReference: governmentFeeForm.paymentReference.trim(),
             paymentReceiptUrl: governmentFeeForm.paymentReceiptUrl.trim(),
+            paymentBankLedgerId: Number(governmentFeeForm.bankLedgerId),
             remark: governmentFeeForm.remark.trim(),
           },
         }),
@@ -1743,6 +1749,35 @@ const Expenses = () => {
                   }
                 }}
               />
+              <div>
+                <NewSelect
+                  isRequired
+                  label="Select Bank/Cash Ledger"
+                  data={paymentLedgerList || []}
+                  labelKey="ledgerName"
+                  valueKey="id"
+                  value={governmentFeeForm.bankLedgerId}
+                  onChange={(value) => {
+                    setGovernmentFeeForm((previous) => ({
+                      ...previous,
+                      bankLedgerId: value || "",
+                    }));
+
+                    if (value) {
+                      setGovernmentFeeErrors((previous) => ({
+                        ...previous,
+                        bankLedgerId: undefined,
+                      }));
+                    }
+                  }}
+                />
+
+                {governmentFeeErrors.bankLedgerId && (
+                  <p className="mt-1 text-xs text-danger">
+                    {governmentFeeErrors.bankLedgerId}
+                  </p>
+                )}
+              </div>
 
               {/* CHANGED:
                   Payment Receipt URL Input -> FileUploader */}
