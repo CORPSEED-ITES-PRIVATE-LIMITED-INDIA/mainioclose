@@ -640,6 +640,7 @@ const Expenses = () => {
       paymentDate: "",
       paymentReference: "",
       paymentReceiptUrl: "",
+      paymentMode: "",
       bankLedgerId: "",
       remark: "",
     });
@@ -667,7 +668,9 @@ const Expenses = () => {
       paymentReference: expense?.governmentPaymentReference || "",
       paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
       paymentMode: expense?.governmentPaymentMode || "",
-      bankLedgerId: expense?.governmentPaymentBankLedgerId,
+      bankLedgerId: expense?.governmentPaymentBankLedgerId
+        ? String(expense.governmentPaymentBankLedgerId)
+        : "",
       remark: expense?.governmentPaymentRemark || "",
     });
 
@@ -1531,43 +1534,11 @@ const Expenses = () => {
                   <SelectItem key="CHEQUE">Cheque</SelectItem>
                 </Select>
 
-                <Select
-                  isRequired
-                  label="Payment Mode"
-                  placeholder="Select payment mode"
-                  selectedKeys={
-                    governmentFeeForm.paymentMode
-                      ? new Set([governmentFeeForm.paymentMode])
-                      : new Set([])
-                  }
-                  isInvalid={Boolean(governmentFeeErrors.paymentMode)}
-                  errorMessage={governmentFeeErrors.paymentMode}
-                  onSelectionChange={(keys) => {
-                    const value = Array.from(keys)[0];
-
-                    setGovernmentFeeForm((previous) => ({
-                      ...previous,
-                      paymentMode: value ? String(value) : "",
-                      bankLedgerId: "",
-                    }));
-
-                    setGovernmentFeeErrors((previous) => ({
-                      ...previous,
-                      paymentMode: undefined,
-                      bankLedgerId: undefined,
-                    }));
-                  }}
-                >
-                  <SelectItem key="UPI">UPI</SelectItem>
-                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
-                  <SelectItem key="CHEQUE">Cheque</SelectItem>
-                </Select>
-
                 <div>
                   <NewSelect
                     isRequired
-                    label="Select Bank Ledger"
-                    data={filteredGovernmentFeeLedgerList}
+                    label="Select Bank/Cash Ledger"
+                    data={filteredPaymentLedgerList}
                     labelKey="ledgerName"
                     valueKey="id"
                     value={decisionForm.bankLedgerId}
@@ -1803,11 +1774,43 @@ const Expenses = () => {
                   }
                 }}
               />
+              <Select
+                isRequired
+                label="Payment Mode"
+                placeholder="Select payment mode"
+                selectedKeys={
+                  governmentFeeForm.paymentMode
+                    ? new Set([governmentFeeForm.paymentMode])
+                    : new Set([])
+                }
+                isInvalid={Boolean(governmentFeeErrors.paymentMode)}
+                errorMessage={governmentFeeErrors.paymentMode}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0];
+
+                  setGovernmentFeeForm((previous) => ({
+                    ...previous,
+                    paymentMode: value ? String(value) : "",
+                    bankLedgerId: "",
+                  }));
+
+                  setGovernmentFeeErrors((previous) => ({
+                    ...previous,
+                    paymentMode: undefined,
+                    bankLedgerId: undefined,
+                  }));
+                }}
+              >
+                <SelectItem key="UPI">UPI</SelectItem>
+                <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                <SelectItem key="CHEQUE">Cheque</SelectItem>
+              </Select>
+
               <div>
                 <NewSelect
                   isRequired
-                  label="Select Bank/Cash Ledger"
-                  data={paymentLedgerList || []}
+                  label="Select Bank Ledger"
+                  data={filteredGovernmentFeeLedgerList}
                   labelKey="ledgerName"
                   valueKey="id"
                   value={governmentFeeForm.bankLedgerId}

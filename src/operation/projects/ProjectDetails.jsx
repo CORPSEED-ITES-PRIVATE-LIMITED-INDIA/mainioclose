@@ -507,7 +507,7 @@ const ProjectDetails = () => {
   const vendorDrawer = useDisclosure();
   const activityDrawer = useDisclosure();
   const reopenModal = useDisclosure();
-
+                
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
   );
