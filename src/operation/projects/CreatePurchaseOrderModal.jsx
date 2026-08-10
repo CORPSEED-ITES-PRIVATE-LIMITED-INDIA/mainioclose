@@ -7,6 +7,7 @@ import {
   InputNumber,
   notification,
   Modal,
+  Select,
 } from "antd";
 import { useDispatch } from "react-redux";
 import { addToast } from "@heroui/react";
@@ -28,6 +29,16 @@ const isRichTextEmpty = (html = "") => {
 
   return !text;
 };
+
+const paymentTermsOptions = [
+  { label: "NET-0 (Immediate)", value: 0 },
+  { label: "NET-7", value: 7 },
+  { label: "NET-15", value: 15 },
+  { label: "NET-30", value: 30 },
+  { label: "NET-45", value: 45 },
+  { label: "NET-60", value: 60 },
+  { label: "NET-90", value: 90 },
+];
 
 const CreatePurchaseOrderModal = ({
   open,
@@ -51,6 +62,7 @@ const CreatePurchaseOrderModal = ({
       vendorId: Number(vendorId || 0),
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
+      paymentTerms: 30,
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
       remarks: "",
@@ -82,6 +94,8 @@ const CreatePurchaseOrderModal = ({
       poReferenceNumber: values.poReferenceNumber?.trim() || "",
 
       finalAmount,
+
+      paymentTerms: Number(values.paymentTerms),
 
       /*
        * Tax and TDS are captured here as rates only.
@@ -194,6 +208,57 @@ const CreatePurchaseOrderModal = ({
               min={0}
               precision={2}
               placeholder="Enter final amount"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Amount"
+            name="finalAmount"
+            rules={[
+              {
+                required: true,
+                message: "Please enter final amount",
+              },
+              {
+                validator: (_, value) => {
+                  if (value === null || value === undefined || value === "") {
+                    return Promise.resolve();
+                  }
+
+                  if (Number(value) < 0) {
+                    return Promise.reject(
+                      new Error("Final amount cannot be negative"),
+                    );
+                  }
+
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <InputNumber
+              controls={false}
+              className="w-full"
+              style={{ width: "100%" }}
+              min={0}
+              precision={2}
+              placeholder="Enter final amount"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Payment Terms"
+            name="paymentTerms"
+            rules={[
+              {
+                required: true,
+                message: "Please select payment terms",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Select payment terms"
+              options={paymentTermsOptions}
             />
           </Form.Item>
         </div>

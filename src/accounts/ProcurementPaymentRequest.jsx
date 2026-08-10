@@ -47,6 +47,8 @@ const columns = [
   { name: "PROJECT NO.", uid: "projectNo" },
   { name: "VENDOR NAME", uid: "vendorName" },
   { name: "AMOUNT", uid: "amount" },
+  { name: "PAYMENT TERM", uid: "paymentTerm" },
+  { name: "PAYMENT REMAINING DAYS", uid: "pendingDays" },
   { name: "GST TYPE", uid: "gstType" },
   { name: "GST %", uid: "gstPercentage" },
   { name: "CGST", uid: "cgstAmount" },
@@ -113,6 +115,8 @@ const INITIAL_VISIBLE_COLUMNS = [
   "projectName",
   "vendorName",
   "amount",
+  "paymentTerm",
+  "pendingDays",
   "gstType",
   "gstPercentage",
   "cgstAmount",
@@ -616,6 +620,22 @@ const ProcurementPaymentRequest = () => {
           <div className="flex flex-col">
             <span className="font-normal text-[12.5px]">
               {inrCurrency(rowData?.amount) || "-"}
+            </span>
+          </div>
+        );
+      case "paymentTerm":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal text-[12.5px]">
+              {rowData?.paymentTerm || "-"}
+            </span>
+          </div>
+        );
+      case "pendingDays":
+        return (
+          <div className="flex flex-col">
+            <span className="font-normal text-[12.5px]">
+              {rowData?.pendingDays || "-"}
             </span>
           </div>
         );
