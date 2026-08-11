@@ -1644,6 +1644,25 @@ export const payGovernmentPortalFee = createAsyncThunk(
     }
   },
 );
+export const accountsApproveGovernmentFee = createAsyncThunk(
+  "accountsApproveGovernmentFee",
+  async ({ expenseId,projectId,userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/projects/expenses/${expenseId}/government-fee/payment-decision?projectId=${projectId}&userId=${userId}`,
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable to update lifecycle request decision.",
+        },
+      );
+    }
+  },
+);
 export const approveAdminPOApproval = createAsyncThunk(
   "approveAdminPOApproval",
   async ({ poId, adminUserId,comment  }, { rejectWithValue }) => {

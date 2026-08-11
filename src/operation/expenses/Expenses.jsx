@@ -37,6 +37,7 @@ import {
   getExpenseApprovalQueueList,
   updateCrtExpenseDecision,
   payGovernmentPortalFee,
+  accountsApproveGovernmentFee,
 } from "../../toolkit/slices/operationSlice";
 import { getActivePaymentLedgerForPaymentRegister } from "../../toolkit/slices/accountSlice";
 import NewSelect from "../../components/NewSelect";
@@ -109,6 +110,11 @@ const crtDecisionOptions = [
   { label: "Approved", value: "APPROVED" },
   { label: "Rejected", value: "REJECTED" },
   { label: "On Hold", value: "ON_HOLD" },
+];
+
+const governmentFeeDecisionOptions = [
+  { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
 ];
 
 const formatText = (value) => {
@@ -279,6 +285,24 @@ const Expenses = () => {
 
   const [decisionErrors, setDecisionErrors] = useState({});
 
+  const [
+    isGovernmentFeeDecisionModalOpen,
+    setIsGovernmentFeeDecisionModalOpen,
+  ] = useState(false);
+  const [governmentFeeDecisionExpense, setGovernmentFeeDecisionExpense] =
+    useState(null);
+  const [
+    isSubmittingGovernmentFeeDecision,
+    setIsSubmittingGovernmentFeeDecision,
+  ] = useState(false);
+
+  const [governmentFeeDecisionForm, setGovernmentFeeDecisionForm] = useState({
+    status: "",
+    remark: "",
+  });
+  const [governmentFeeDecisionErrors, setGovernmentFeeDecisionErrors] =
+    useState({});
+
   useEffect(() => {
     dispatch(getActivePaymentLedgerForPaymentRegister());
   }, [dispatch]);
@@ -365,6 +389,114 @@ const Expenses = () => {
   useEffect(() => {
     fetchExpenseApprovalQueue();
   }, [fetchExpenseApprovalQueue]);
+
+  const closeGovernmentFeeDecisionModal = useCallback(() => {
+    if (isSubmittingGovernmentFeeDecision) {
+      return;
+    }
+
+    setIsGovernmentFeeDecisionModalOpen(false);
+    setGovernmentFeeDecisionExpense(null);
+    setGovernmentFeeDecisionForm({ status: "", remark: "" });
+    setGovernmentFeeDecisionErrors({});
+  }, [isSubmittingGovernmentFeeDecision]);
+
+  const openGovernmentFeeDecisionModal = useCallback((expense) => {
+    setGovernmentFeeDecisionExpense(expense);
+    setGovernmentFeeDecisionForm({ status: "", remark: "" });
+    setGovernmentFeeDecisionErrors({});
+    setIsGovernmentFeeDecisionModalOpen(true);
+  }, []);
+
+  const validateGovernmentFeeDecisionForm = useCallback(() => {
+    const errors = {};
+
+    if (!governmentFeeDecisionForm.status) {
+      errors.status = "Status is required";
+    }
+
+    if (!governmentFeeDecisionForm.remark.trim()) {
+      errors.remark = "Remark is required";
+    }
+
+    setGovernmentFeeDecisionErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  }, [governmentFeeDecisionForm]);
+
+  const handleGovernmentFeeDecision = useCallback(async () => {
+    if (!validateGovernmentFeeDecisionForm()) {
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({
+        title: "User not found",
+        description: "User ID is required to submit this decision.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    if (
+      !governmentFeeDecisionExpense?.projectId ||
+      !governmentFeeDecisionExpense?.expenseId
+    ) {
+      addToast({
+        title: "Expense details missing",
+        description: "Project ID and expense ID are required.",
+        color: "danger",
+      });
+
+      return;
+    }
+
+    setIsSubmittingGovernmentFeeDecision(true);
+
+    try {
+      await dispatch(
+        accountsApproveGovernmentFee({
+          expenseId: governmentFeeDecisionExpense.expenseId,
+          projectId: governmentFeeDecisionExpense.projectId,
+          userId: resolvedUserId,
+          data: {
+            status: governmentFeeDecisionForm.status,
+            remark: governmentFeeDecisionForm.remark.trim(),
+          },
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "Decision submitted",
+        description: "The government fee decision was submitted successfully.",
+        color: "success",
+      });
+
+      closeGovernmentFeeDecisionModal();
+      fetchExpenseApprovalQueue();
+    } catch (error) {
+      addToast({
+        title: "Failed to submit decision",
+        description:
+          error?.message ||
+          error?.errorMessage ||
+          error ||
+          "Unable to submit the government fee decision.",
+        color: "danger",
+      });
+    } finally {
+      setIsSubmittingGovernmentFeeDecision(false);
+    }
+  }, [
+    closeGovernmentFeeDecisionModal,
+    dispatch,
+    fetchExpenseApprovalQueue,
+    governmentFeeDecisionExpense,
+    governmentFeeDecisionForm,
+    resolvedUserId,
+    validateGovernmentFeeDecisionForm,
+  ]);
 
   const expenseRows = useMemo(() => {
     return Array.isArray(expenseApprovalQueueList)
@@ -1036,8 +1168,11 @@ const Expenses = () => {
               expense?.approvalStatus,
             );
 
-          // Government Fee button ONLY for GOVERNMENT_FEE expenses
-          // during CRT review.
+          // NEW: Accounts decision on the government fee, before payment.
+          const canDecideGovernmentFee =
+            expense?.expenseCategory === "GOVERNMENT_FEE" &&
+            expense?.accountsApprovalStatus === "PENDING";
+
           const canPayGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&
             expense?.accountsApprovalStatus === "APPROVED";
@@ -1060,11 +1195,21 @@ const Expenses = () => {
                   aria-label="Expense actions"
                   disabledKeys={[
                     ...(canUpdateStatus ? [] : ["updateStatus"]),
+                    ...(canDecideGovernmentFee
+                      ? []
+                      : ["governmentFeeDecision"]),
                     ...(canPayGovernmentFee ? [] : ["governmentFee"]),
                   ]}
                   onAction={(key) => {
                     if (key === "updateStatus" && canUpdateStatus) {
                       openStatusModal(expense);
+                    }
+
+                    if (
+                      key === "governmentFeeDecision" &&
+                      canDecideGovernmentFee
+                    ) {
+                      openGovernmentFeeDecisionModal(expense);
                     }
 
                     if (key === "governmentFee" && canPayGovernmentFee) {
@@ -1082,6 +1227,17 @@ const Expenses = () => {
                     }
                   >
                     Update Status
+                  </DropdownItem>
+
+                  <DropdownItem
+                    key="governmentFeeDecision"
+                    description={
+                      canDecideGovernmentFee
+                        ? "Approve or reject the government fee request"
+                        : "Available only while accounts approval is pending"
+                    }
+                  >
+                    Government Fee Decision
                   </DropdownItem>
 
                   <DropdownItem
@@ -1903,6 +2059,120 @@ const Expenses = () => {
               onPress={handleGovernmentFeePayment}
             >
               Submit Government Fee
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {/* GOVERNMENT FEE DECISION MODAL */}
+      <Modal
+        size="lg"
+        isOpen={isGovernmentFeeDecisionModalOpen}
+        placement="center"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            closeGovernmentFeeDecisionModal();
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Government Fee Decision
+            <span className="text-sm font-normal text-default-500">
+              {governmentFeeDecisionExpense?.projectName || "Project"}
+              {governmentFeeDecisionExpense?.expenseId
+                ? ` • Expense ID: ${governmentFeeDecisionExpense.expenseId}`
+                : ""}
+            </span>
+          </ModalHeader>
+
+          <ModalBody>
+            <div className="rounded-lg bg-default-100 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-default-500">Requested amount</span>
+
+                <span className="font-semibold">
+                  {formatCurrency(
+                    governmentFeeDecisionExpense?.requestedAmount,
+                    governmentFeeDecisionExpense?.currencyCode,
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <Select
+              isRequired
+              label="Status"
+              placeholder="Select status"
+              selectedKeys={
+                governmentFeeDecisionForm.status
+                  ? new Set([governmentFeeDecisionForm.status])
+                  : new Set([])
+              }
+              isInvalid={Boolean(governmentFeeDecisionErrors.status)}
+              errorMessage={governmentFeeDecisionErrors.status}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0];
+
+                setGovernmentFeeDecisionForm((previous) => ({
+                  ...previous,
+                  status: value ? String(value) : "",
+                }));
+
+                if (value) {
+                  setGovernmentFeeDecisionErrors((previous) => ({
+                    ...previous,
+                    status: undefined,
+                  }));
+                }
+              }}
+            >
+              {governmentFeeDecisionOptions.map((option) => (
+                <SelectItem key={option.value} textValue={option.label}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </Select>
+
+            <Textarea
+              isRequired
+              label="Remark"
+              placeholder="Enter decision remark"
+              minRows={4}
+              maxRows={7}
+              value={governmentFeeDecisionForm.remark}
+              isInvalid={Boolean(governmentFeeDecisionErrors.remark)}
+              errorMessage={governmentFeeDecisionErrors.remark}
+              onValueChange={(value) => {
+                setGovernmentFeeDecisionForm((previous) => ({
+                  ...previous,
+                  remark: value,
+                }));
+
+                if (value.trim()) {
+                  setGovernmentFeeDecisionErrors((previous) => ({
+                    ...previous,
+                    remark: undefined,
+                  }));
+                }
+              }}
+            />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              variant="flat"
+              isDisabled={isSubmittingGovernmentFeeDecision}
+              onPress={closeGovernmentFeeDecisionModal}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              color="primary"
+              isLoading={isSubmittingGovernmentFeeDecision}
+              onPress={handleGovernmentFeeDecision}
+            >
+              Submit Decision
             </Button>
           </ModalFooter>
         </ModalContent>
