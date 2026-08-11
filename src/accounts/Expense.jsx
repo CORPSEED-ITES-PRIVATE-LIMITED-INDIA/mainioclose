@@ -118,11 +118,11 @@ const INITIAL_DECISION_FORM = {
   approvedAmount: "",
   remark: "",
   // Fund transfer fields (used only when status === "APPROVED")
-  fromBankLedgerId: "",
-  toBankLedgerId: "",
-  transferDate: "",
-  transferReference: "",
-  transferProofUrl: "",
+  // fromBankLedgerId: "",
+  // toBankLedgerId: "",
+  // transferDate: "",
+  // transferReference: "",
+  // transferProofUrl: "",
 };
 
 // Only bank ledgers are allowed for fund transfer (exclude cash ledgers).
@@ -226,6 +226,15 @@ const Expense = () => {
 
   const currentUser = useSelector((state) => state.auth?.currentUser);
 
+  const INITIAL_FUND_TRANSFER_FORM = {
+    fromBankLedgerId: "",
+    toBankLedgerId: "",
+    transferDate: "",
+    transferReference: "",
+    transferProofUrl: "",
+    remark: "",
+  };
+
   const paymentQueue = useSelector(
     (state) => state.operation.expensePaymentQueueList,
   );
@@ -260,6 +269,19 @@ const Expense = () => {
   const [decisionForm, setDecisionForm] = useState(INITIAL_DECISION_FORM);
   const [decisionErrors, setDecisionErrors] = useState({});
   const [isDecisionSubmitting, setIsDecisionSubmitting] = useState(false);
+
+  const [fundTransferExpense, setFundTransferExpense] = useState(null);
+  const [fundTransferForm, setFundTransferForm] = useState(
+    INITIAL_FUND_TRANSFER_FORM,
+  );
+  const [fundTransferErrors, setFundTransferErrors] = useState({});
+  const [isFundTransferSubmitting, setIsFundTransferSubmitting] =
+    useState(false);
+  const [
+    isFundTransferAttachmentUploading,
+    setIsFundTransferAttachmentUploading,
+  ] = useState(false);
+  const fundTransferDisclosure = useDisclosure();
 
   const fetchPaymentQueue = useCallback(() => {
     if (!resolvedUserId) {
@@ -426,14 +448,9 @@ const Expense = () => {
       setSelectedExpense(expense);
       setDecisionForm({
         ...INITIAL_DECISION_FORM,
-        status: "",
         approvedAmount:
-          expense?.approvedAmount !== null &&
-          expense?.approvedAmount !== undefined
-            ? String(expense.approvedAmount)
-            : String(expense?.requestedAmount ?? ""),
-        remark: "",
-        transferDate: dayjs().format("YYYY-MM-DD"),
+          expense?.approvedAmount ?? expense?.requestedAmount ?? "",
+        approvalDate: dayjs().format("YYYY-MM-DD"),
       });
       setDecisionErrors({});
       onOpen();
@@ -465,35 +482,8 @@ const Expense = () => {
       }
 
       // Fund transfer validations (only required on approval)
-      const fromBankLedgerId = Number(decisionForm.fromBankLedgerId);
-      const toBankLedgerId = Number(decisionForm.toBankLedgerId);
-
-      if (decisionForm.fromBankLedgerId === "") {
-        errors.fromBankLedgerId = "From bank is required";
-      } else if (!Number.isFinite(fromBankLedgerId) || fromBankLedgerId <= 0) {
-        errors.fromBankLedgerId = "Select a valid from bank";
-      }
-
-      if (decisionForm.toBankLedgerId === "") {
-        errors.toBankLedgerId = "To bank is required";
-      } else if (!Number.isFinite(toBankLedgerId) || toBankLedgerId <= 0) {
-        errors.toBankLedgerId = "Select a valid to bank";
-      }
-
-      if (
-        !errors.fromBankLedgerId &&
-        !errors.toBankLedgerId &&
-        fromBankLedgerId === toBankLedgerId
-      ) {
-        errors.toBankLedgerId = "To bank must be different from the from bank";
-      }
-
-      if (!decisionForm.transferDate) {
-        errors.transferDate = "Transfer date is required";
-      }
-
-      if (!decisionForm.transferReference?.trim()) {
-        errors.transferReference = "Transfer reference is required";
+      if (decisionForm.status === "APPROVED" && !decisionForm.approvalDate) {
+        errors.approvalDate = "Approval date is required";
       }
     }
 
@@ -531,6 +521,7 @@ const Expense = () => {
         approvedAmount: isApproved
           ? Number(Number(decisionForm.approvedAmount).toFixed(2))
           : null,
+        approvalDate: isApproved ? decisionForm.approvalDate : null,
         remark: decisionForm.remark.trim(),
       };
 
@@ -557,56 +548,56 @@ const Expense = () => {
       }
 
       // On approval, also trigger the fund transfer.
-      if (isApproved) {
-        const transferPayload = {
-          fromBankLedgerId: Number(decisionForm.fromBankLedgerId),
-          fromBankName: getBankLedgerName(decisionForm.fromBankLedgerId),
-          toBankLedgerId: Number(decisionForm.toBankLedgerId),
-          toBankName: getBankLedgerName(decisionForm.toBankLedgerId),
-          amount: Number(Number(decisionForm.approvedAmount).toFixed(2)),
-          transferDate: decisionForm.transferDate,
-          transferReference: decisionForm.transferReference.trim(),
-          transferProofUrl: decisionForm.transferProofUrl.trim(),
-          remark: decisionForm.remark.trim(),
-        };
+      // if (isApproved) {
+      //   const transferPayload = {
+      //     fromBankLedgerId: Number(decisionForm.fromBankLedgerId),
+      //     fromBankName: getBankLedgerName(decisionForm.fromBankLedgerId),
+      //     toBankLedgerId: Number(decisionForm.toBankLedgerId),
+      //     toBankName: getBankLedgerName(decisionForm.toBankLedgerId),
+      //     amount: Number(Number(decisionForm.approvedAmount).toFixed(2)),
+      //     transferDate: decisionForm.transferDate,
+      //     transferReference: decisionForm.transferReference.trim(),
+      //     transferProofUrl: decisionForm.transferProofUrl.trim(),
+      //     remark: decisionForm.remark.trim(),
+      //   };
 
-        const transferResponse = await dispatch(
-          expenseFundTransfer({
-            expenseId: selectedExpense.expenseId,
-            projectId: selectedExpense.projectId,
-            userId: resolvedUserId,
-            data: transferPayload,
-          }),
-        );
+      //   const transferResponse = await dispatch(
+      //     expenseFundTransfer({
+      //       expenseId: selectedExpense.expenseId,
+      //       projectId: selectedExpense.projectId,
+      //       userId: resolvedUserId,
+      //       data: transferPayload,
+      //     }),
+      //   );
 
-        if (transferResponse?.meta?.requestStatus !== "fulfilled") {
-          addToast({
-            title: "Accounts decision saved, but fund transfer failed",
-            description:
-              transferResponse?.payload?.message ||
-              transferResponse?.payload?.error ||
-              transferResponse?.payload ||
-              "The expense was approved but the fund transfer could not be completed.",
-            color: "warning",
-          });
+      //   if (transferResponse?.meta?.requestStatus !== "fulfilled") {
+      //     addToast({
+      //       title: "Accounts decision saved, but fund transfer failed",
+      //       description:
+      //         transferResponse?.payload?.message ||
+      //         transferResponse?.payload?.error ||
+      //         transferResponse?.payload ||
+      //         "The expense was approved but the fund transfer could not be completed.",
+      //       color: "warning",
+      //     });
 
-          resetDecisionModal();
-          onClose();
-          fetchPaymentQueue();
-          return;
-        }
+      //     resetDecisionModal();
+      //     onClose();
+      //     fetchPaymentQueue();
+      //     return;
+      //   }
 
-        addToast({
-          title: "Accounts decision & fund transfer completed",
-          description: `Expense #${selectedExpense.expenseId} was approved and funds were transferred.`,
-          color: "success",
-        });
+      //   addToast({
+      //     title: "Accounts decision & fund transfer completed",
+      //     description: `Expense #${selectedExpense.expenseId} was approved and funds were transferred.`,
+      //     color: "success",
+      //   });
 
-        resetDecisionModal();
-        onClose();
-        fetchPaymentQueue();
-        return;
-      }
+      //   resetDecisionModal();
+      //   onClose();
+      //   fetchPaymentQueue();
+      //   return;
+      // }
 
       addToast({
         title: "Accounts decision updated successfully",
@@ -633,12 +624,164 @@ const Expense = () => {
     decisionForm,
     dispatch,
     fetchPaymentQueue,
-    getBankLedgerName,
     onClose,
     resetDecisionModal,
     resolvedUserId,
     selectedExpense,
     validateDecisionForm,
+  ]);
+
+  const resetFundTransferModal = useCallback(() => {
+    setFundTransferExpense(null);
+    setFundTransferForm(INITIAL_FUND_TRANSFER_FORM);
+    setFundTransferErrors({});
+    setIsFundTransferSubmitting(false);
+    setIsFundTransferAttachmentUploading(false);
+  }, []);
+
+  const openFundTransferModal = useCallback(
+    (expense) => {
+      setFundTransferExpense(expense);
+      setFundTransferForm({
+        ...INITIAL_FUND_TRANSFER_FORM,
+        transferDate: dayjs().format("YYYY-MM-DD"),
+      });
+      setFundTransferErrors({});
+      fundTransferDisclosure.onOpen();
+    },
+    [fundTransferDisclosure],
+  );
+
+  const validateFundTransferForm = useCallback(() => {
+    const errors = {};
+    const fromBankLedgerId = Number(fundTransferForm.fromBankLedgerId);
+    const toBankLedgerId = Number(fundTransferForm.toBankLedgerId);
+
+    if (fundTransferForm.fromBankLedgerId === "") {
+      errors.fromBankLedgerId = "From bank is required";
+    } else if (!Number.isFinite(fromBankLedgerId) || fromBankLedgerId <= 0) {
+      errors.fromBankLedgerId = "Select a valid from bank";
+    }
+
+    if (fundTransferForm.toBankLedgerId === "") {
+      errors.toBankLedgerId = "To bank is required";
+    } else if (!Number.isFinite(toBankLedgerId) || toBankLedgerId <= 0) {
+      errors.toBankLedgerId = "Select a valid to bank";
+    }
+
+    if (
+      !errors.fromBankLedgerId &&
+      !errors.toBankLedgerId &&
+      fromBankLedgerId === toBankLedgerId
+    ) {
+      errors.toBankLedgerId = "To bank must be different from the from bank";
+    }
+
+    if (!fundTransferForm.transferDate) {
+      errors.transferDate = "Transfer date is required";
+    }
+
+    if (!fundTransferForm.transferReference?.trim()) {
+      errors.transferReference = "Transfer reference is required";
+    }
+
+    if (!fundTransferForm.remark?.trim()) {
+      errors.remark = "Remark is required";
+    }
+
+    setFundTransferErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [fundTransferForm]);
+
+  const handleFundTransfer = useCallback(async () => {
+    if (!fundTransferExpense?.expenseId || !fundTransferExpense?.projectId) {
+      addToast({
+        title: "Expense details are missing",
+        description: "Expense ID and project ID are required.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({ title: "User ID is required", color: "danger" });
+      return;
+    }
+
+    if (!validateFundTransferForm()) return;
+
+    try {
+      setIsFundTransferSubmitting(true);
+
+      const payload = {
+        fromBankLedgerId: Number(fundTransferForm.fromBankLedgerId),
+        fromBankName: getBankLedgerName(fundTransferForm.fromBankLedgerId),
+        toBankLedgerId: Number(fundTransferForm.toBankLedgerId),
+        toBankName: getBankLedgerName(fundTransferForm.toBankLedgerId),
+        amount: Number(
+          fundTransferExpense?.approvedAmount ??
+            fundTransferExpense?.requestedAmount ??
+            0,
+        ),
+        transferDate: fundTransferForm.transferDate,
+        transferReference: fundTransferForm.transferReference.trim(),
+        transferProofUrl: fundTransferForm.transferProofUrl.trim(),
+        remark: fundTransferForm.remark.trim(),
+      };
+
+      const response = await dispatch(
+        expenseFundTransfer({
+          expenseId: fundTransferExpense.expenseId,
+          projectId: fundTransferExpense.projectId,
+          userId: resolvedUserId,
+          data: payload,
+        }),
+      );
+
+      if (response?.meta?.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Failed to submit fund transfer",
+          description:
+            response?.payload?.message ||
+            response?.payload?.error ||
+            response?.payload ||
+            "Something went wrong while submitting the fund transfer.",
+          color: "danger",
+        });
+        return;
+      }
+
+      addToast({
+        title: "Fund transfer submitted",
+        description: `Expense #${fundTransferExpense.expenseId} funds were transferred.`,
+        color: "success",
+      });
+
+      resetFundTransferModal();
+      fundTransferDisclosure.onClose();
+      fetchPaymentQueue();
+    } catch (error) {
+      addToast({
+        title: "Failed to submit fund transfer",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong while submitting the fund transfer.",
+        color: "danger",
+      });
+    } finally {
+      setIsFundTransferSubmitting(false);
+    }
+  }, [
+    dispatch,
+    fetchPaymentQueue,
+    fundTransferDisclosure,
+    fundTransferExpense,
+    fundTransferForm,
+    getBankLedgerName,
+    resetFundTransferModal,
+    resolvedUserId,
+    validateFundTransferForm,
   ]);
 
   const renderCell = useCallback(
@@ -878,14 +1021,14 @@ const Expense = () => {
             expense?.accountsApprovalStatus || "",
           ).toUpperCase();
 
-          // const canTakeDecision =
-          //   approvalStage === "ACCOUNTS_REVIEW" &&
-          //   crtStatus === "APPROVED" &&
-          //   !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
+          const canTakeAccountsDecision =
+            approvalStage === "ACCOUNTS_REVIEW" &&
+            crtStatus === "APPROVED" &&
+            !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
 
-          // if (!canTakeDecision) {
-          //   return <span className="text-default-400">-</span>;
-          // }
+          const canFundTransfer =
+            accountsStatus === "APPROVED" &&
+            expense?.accountPostingStatus === "POSTED"; // confirm actual field name with backend
 
           return (
             <Dropdown placement="bottom-end">
@@ -899,13 +1042,30 @@ const Expense = () => {
                   <EllipsisVertical className="h-4 w-4" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu aria-label="Expense accounts actions">
-                <DropdownItem
-                  key="update-accounts-decision"
-                  onPress={() => openDecisionModal(expense)}
-                >
+              <DropdownMenu
+                aria-label="Expense accounts actions"
+                disabledKeys={[
+                  ...(canTakeAccountsDecision
+                    ? []
+                    : ["update-accounts-decision"]),
+                  ...(canFundTransfer ? [] : ["fund-transfer"]),
+                ]}
+                onAction={(key) => {
+                  if (
+                    key === "update-accounts-decision" &&
+                    canTakeAccountsDecision
+                  ) {
+                    openDecisionModal(expense);
+                  }
+                  if (key === "fund-transfer" && canFundTransfer) {
+                    openFundTransferModal(expense);
+                  }
+                }}
+              >
+                <DropdownItem key="update-accounts-decision">
                   Update Status
                 </DropdownItem>
+                <DropdownItem key="fund-transfer">Fund Transfer</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           );
@@ -915,7 +1075,7 @@ const Expense = () => {
           return expense?.[columnKey] ?? "-";
       }
     },
-    [openDecisionModal],
+    [openDecisionModal, openFundTransferModal],
   );
 
   const topContent = useMemo(
@@ -1248,170 +1408,25 @@ const Expense = () => {
 
                 {/* Fund Transfer */}
                 {isApprovedDecision && (
-                  <div className="rounded-xl border border-default-200 bg-default-50/50 p-4">
-                    <div className="mb-3">
-                      <p className="text-sm font-semibold">
-                        Fund Transfer Details
-                      </p>
-                      <p className="text-xs text-default-500">
-                        Enter the bank details used for this payment.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <NewSelect
-                          isRequired
-                          label="From Bank"
-                          data={bankLedgerList}
-                          labelKey="ledgerName"
-                          valueKey="id"
-                          value={decisionForm.fromBankLedgerId ?? ""}
-                          onChange={(value) => {
-                            setDecisionForm((previous) => ({
-                              ...previous,
-                              fromBankLedgerId: value ?? "",
-                            }));
-
-                            setDecisionErrors((previous) => ({
-                              ...previous,
-                              fromBankLedgerId: "",
-                            }));
-                          }}
-                        />
-
-                        {decisionErrors.fromBankLedgerId && (
-                          <p className="mt-1 text-xs text-danger">
-                            {decisionErrors.fromBankLedgerId}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <NewSelect
-                          isRequired
-                          label="To Bank"
-                          data={bankLedgerList}
-                          labelKey="ledgerName"
-                          valueKey="id"
-                          value={decisionForm.toBankLedgerId ?? ""}
-                          onChange={(value) => {
-                            setDecisionForm((previous) => ({
-                              ...previous,
-                              toBankLedgerId: value ?? "",
-                            }));
-
-                            setDecisionErrors((previous) => ({
-                              ...previous,
-                              toBankLedgerId: "",
-                            }));
-                          }}
-                        />
-
-                        {decisionErrors.toBankLedgerId && (
-                          <p className="mt-1 text-xs text-danger">
-                            {decisionErrors.toBankLedgerId}
-                          </p>
-                        )}
-                      </div>
-
-                      <DatePicker
-                        label="Transfer Date"
-                        isRequired
-                        variant="bordered"
-                        granularity="day"
-                        maxValue={today(getLocalTimeZone())}
-                        value={
-                          decisionForm.transferDate
-                            ? parseDate(decisionForm.transferDate)
-                            : null
-                        }
-                        isInvalid={Boolean(decisionErrors.transferDate)}
-                        errorMessage={decisionErrors.transferDate}
-                        onChange={(date) => {
-                          setDecisionForm((previous) => ({
-                            ...previous,
-                            transferDate: date?.toString() || "",
-                          }));
-
-                          setDecisionErrors((previous) => ({
-                            ...previous,
-                            transferDate: "",
-                          }));
-                        }}
-                      />
-
-                      <Input
-                        label="Transfer Reference"
-                        placeholder="Enter transfer reference"
-                        isRequired
-                        value={decisionForm.transferReference}
-                        isInvalid={Boolean(decisionErrors.transferReference)}
-                        errorMessage={decisionErrors.transferReference}
-                        onValueChange={(value) => {
-                          setDecisionForm((previous) => ({
-                            ...previous,
-                            transferReference: value,
-                          }));
-
-                          setDecisionErrors((previous) => ({
-                            ...previous,
-                            transferReference: "",
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="mt-4">
-                      <FileUploader
-                        label="Transfer Proof Attachment"
-                        placeholder="Drag & drop proof file here, paste, or choose a file"
-                        value={decisionForm.transferProofUrl}
-                        uploadingType="single"
-                        isRequired={false}
-                        onChange={(value) => {
-                          setDecisionForm((previous) => ({
-                            ...previous,
-                            transferProofUrl: value || "",
-                          }));
-
-                          setDecisionErrors((previous) => ({
-                            ...previous,
-                            transferProofUrl: "",
-                          }));
-                        }}
-                        onUploadingChange={setIsAttachmentUploading}
-                        onUploadSuccess={(uploadedMeta) => {
-                          setDecisionForm((previous) => ({
-                            ...previous,
-                            transferProofUrl: uploadedMeta?.filePath || "",
-                          }));
-
-                          addToast({
-                            title: "Attachment uploaded",
-                            description: uploadedMeta?.fileName
-                              ? `${uploadedMeta.fileName} uploaded successfully.`
-                              : "Transfer proof uploaded successfully.",
-                            color: "success",
-                          });
-                        }}
-                        errorMessage={decisionErrors.transferProofUrl}
-                      />
-                    </div>
-
-                    <div className="mt-3 rounded-lg bg-primary-50 px-3 py-2">
-                      <p className="text-xs text-default-500">
-                        Transfer amount
-                      </p>
-
-                      <p className="text-sm font-semibold text-primary">
-                        {formatCurrency(
-                          decisionForm.approvedAmount,
-                          selectedExpense?.currencyCode,
-                        )}
-                      </p>
-                    </div>
-                  </div>
+                  <DatePicker
+                    label="Approval Date"
+                    isRequired
+                    maxValue={today(getLocalTimeZone())}
+                    value={
+                      decisionForm.approvalDate
+                        ? parseDate(decisionForm.approvalDate)
+                        : null
+                    }
+                    isInvalid={Boolean(decisionErrors.approvalDate)}
+                    errorMessage={decisionErrors.approvalDate}
+                    onChange={(date) => {
+                      setDecisionForm((p) => ({
+                        ...p,
+                        approvalDate: date?.toString() || "",
+                      }));
+                      setDecisionErrors((p) => ({ ...p, approvalDate: "" }));
+                    }}
+                  />
                 )}
 
                 {/* Remark */}
@@ -1459,6 +1474,234 @@ const Expense = () => {
                   {isAttachmentUploading
                     ? "Uploading Attachment..."
                     : "Submit Decision"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={fundTransferDisclosure.isOpen}
+        onOpenChange={fundTransferDisclosure.onOpenChange}
+        size="2xl"
+        scrollBehavior="inside"
+        isDismissable={!isFundTransferSubmitting}
+        isKeyboardDismissDisabled={isFundTransferSubmitting}
+        onClose={resetFundTransferModal}
+        classNames={{
+          base: "max-h-[90vh]",
+          header: "border-b border-default-200 px-5 py-4",
+          body: "px-5 py-4 overflow-y-auto",
+          footer: "border-t border-default-200 px-5 py-4",
+        }}
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <span className="text-base font-semibold">Fund Transfer</span>
+                <span className="text-xs font-normal text-default-500">
+                  Expense #{fundTransferExpense?.expenseId || "-"} ·{" "}
+                  {fundTransferExpense?.projectName || "-"}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="gap-4">
+                <div className="rounded-xl border border-default-200 bg-default-50/70 p-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-default-500">
+                        Approved Amount
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">
+                        {formatCurrency(
+                          fundTransferExpense?.approvedAmount,
+                          fundTransferExpense?.currencyCode,
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-default-500">
+                        Accounts Status
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">
+                        {formatText(
+                          fundTransferExpense?.accountsApprovalStatus,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <NewSelect
+                      isRequired
+                      label="From Bank"
+                      data={bankLedgerList}
+                      labelKey="ledgerName"
+                      valueKey="id"
+                      value={fundTransferForm.fromBankLedgerId ?? ""}
+                      onChange={(value) => {
+                        setFundTransferForm((p) => ({
+                          ...p,
+                          fromBankLedgerId: value ?? "",
+                        }));
+                        setFundTransferErrors((p) => ({
+                          ...p,
+                          fromBankLedgerId: "",
+                        }));
+                      }}
+                    />
+                    {fundTransferErrors.fromBankLedgerId && (
+                      <p className="mt-1 text-xs text-danger">
+                        {fundTransferErrors.fromBankLedgerId}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <NewSelect
+                      isRequired
+                      label="To Bank"
+                      data={bankLedgerList}
+                      labelKey="ledgerName"
+                      valueKey="id"
+                      value={fundTransferForm.toBankLedgerId ?? ""}
+                      onChange={(value) => {
+                        setFundTransferForm((p) => ({
+                          ...p,
+                          toBankLedgerId: value ?? "",
+                        }));
+                        setFundTransferErrors((p) => ({
+                          ...p,
+                          toBankLedgerId: "",
+                        }));
+                      }}
+                    />
+                    {fundTransferErrors.toBankLedgerId && (
+                      <p className="mt-1 text-xs text-danger">
+                        {fundTransferErrors.toBankLedgerId}
+                      </p>
+                    )}
+                  </div>
+
+                  <DatePicker
+                    label="Transfer Date"
+                    isRequired
+                    variant="bordered"
+                    granularity="day"
+                    maxValue={today(getLocalTimeZone())}
+                    value={
+                      fundTransferForm.transferDate
+                        ? parseDate(fundTransferForm.transferDate)
+                        : null
+                    }
+                    isInvalid={Boolean(fundTransferErrors.transferDate)}
+                    errorMessage={fundTransferErrors.transferDate}
+                    onChange={(date) => {
+                      setFundTransferForm((p) => ({
+                        ...p,
+                        transferDate: date?.toString() || "",
+                      }));
+                      setFundTransferErrors((p) => ({
+                        ...p,
+                        transferDate: "",
+                      }));
+                    }}
+                  />
+
+                  <Input
+                    label="Transfer Reference"
+                    placeholder="Enter transfer reference"
+                    isRequired
+                    value={fundTransferForm.transferReference}
+                    isInvalid={Boolean(fundTransferErrors.transferReference)}
+                    errorMessage={fundTransferErrors.transferReference}
+                    onValueChange={(value) => {
+                      setFundTransferForm((p) => ({
+                        ...p,
+                        transferReference: value,
+                      }));
+                      setFundTransferErrors((p) => ({
+                        ...p,
+                        transferReference: "",
+                      }));
+                    }}
+                  />
+                </div>
+
+                <FileUploader
+                  label="Transfer Proof Attachment"
+                  placeholder="Drag & drop proof file here, paste, or choose a file"
+                  value={fundTransferForm.transferProofUrl}
+                  uploadingType="single"
+                  isRequired={false}
+                  onChange={(value) => {
+                    setFundTransferForm((p) => ({
+                      ...p,
+                      transferProofUrl: value || "",
+                    }));
+                    setFundTransferErrors((p) => ({
+                      ...p,
+                      transferProofUrl: "",
+                    }));
+                  }}
+                  onUploadingChange={setIsFundTransferAttachmentUploading}
+                  onUploadSuccess={(uploadedMeta) => {
+                    setFundTransferForm((p) => ({
+                      ...p,
+                      transferProofUrl: uploadedMeta?.filePath || "",
+                    }));
+                    addToast({
+                      title: "Attachment uploaded",
+                      description: uploadedMeta?.fileName
+                        ? `${uploadedMeta.fileName} uploaded successfully.`
+                        : "Transfer proof uploaded successfully.",
+                      color: "success",
+                    });
+                  }}
+                  errorMessage={fundTransferErrors.transferProofUrl}
+                />
+
+                <Textarea
+                  label="Remark"
+                  placeholder="Enter fund transfer remark"
+                  minRows={3}
+                  isRequired
+                  value={fundTransferForm.remark}
+                  isInvalid={Boolean(fundTransferErrors.remark)}
+                  errorMessage={fundTransferErrors.remark}
+                  onValueChange={(value) => {
+                    setFundTransferForm((p) => ({ ...p, remark: value }));
+                    setFundTransferErrors((p) => ({ ...p, remark: "" }));
+                  }}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  isDisabled={isFundTransferSubmitting}
+                  onPress={() => {
+                    resetFundTransferModal();
+                    modalClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={
+                    isFundTransferSubmitting ||
+                    isFundTransferAttachmentUploading
+                  }
+                  isDisabled={isFundTransferAttachmentUploading}
+                  onPress={handleFundTransfer}
+                >
+                  {isFundTransferAttachmentUploading
+                    ? "Uploading Attachment..."
+                    : "Submit Fund Transfer"}
                 </Button>
               </ModalFooter>
             </>
