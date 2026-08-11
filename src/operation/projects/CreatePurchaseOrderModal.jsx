@@ -212,41 +212,6 @@ const CreatePurchaseOrderModal = ({
           </Form.Item>
 
           <Form.Item
-            label="Amount"
-            name="finalAmount"
-            rules={[
-              {
-                required: true,
-                message: "Please enter final amount",
-              },
-              {
-                validator: (_, value) => {
-                  if (value === null || value === undefined || value === "") {
-                    return Promise.resolve();
-                  }
-
-                  if (Number(value) < 0) {
-                    return Promise.reject(
-                      new Error("Final amount cannot be negative"),
-                    );
-                  }
-
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <InputNumber
-              controls={false}
-              className="w-full"
-              style={{ width: "100%" }}
-              min={0}
-              precision={2}
-              placeholder="Enter final amount"
-            />
-          </Form.Item>
-
-          <Form.Item
             label="Payment Terms"
             name="paymentTerms"
             rules={[

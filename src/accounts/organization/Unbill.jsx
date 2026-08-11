@@ -879,7 +879,7 @@ const Unbill = () => {
                 >
                   Unbilled View
                 </DropdownItem>
-                <DropdownItem
+                {/* <DropdownItem
                   key="advanceinvoiceview"
                   onPress={() => {
                     setIsAdvanceInvoice(true);
@@ -890,7 +890,7 @@ const Unbill = () => {
                   }}
                 >
                   Advance Invoice View
-                </DropdownItem>
+                </DropdownItem> */}
                 <DropdownItem
                   key="status"
                   onPress={() => {
