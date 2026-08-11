@@ -103,6 +103,17 @@ const CompanyAndUnitsInLead = () => {
   const [isInitializingUnit, setIsInitializingUnit] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
 
+  // "Use Existing Company / Unit / Contact" picks inside the modal are kept
+  // here (pending) until the user presses the modal's "Link" button. Only
+  // then do we call the link API and let it flow into the confirmed
+  // selected* state above, which is what the page cards actually render.
+  const [pendingCompanyId, setPendingCompanyId] = useState(null);
+  const [pendingCompanyDetail, setPendingCompanyDetail] = useState(null);
+  const [pendingUnitId, setPendingUnitId] = useState(null);
+  const [pendingUnitDetail, setPendingUnitDetail] = useState(null);
+  const [pendingContactId, setPendingContactId] = useState(null);
+  const [pendingContactDetail, setPendingContactDetail] = useState(null);
+
   const iconClass = "w-4 h-4 text-gray-500";
 
   const normalizeName = (value) =>
@@ -148,6 +159,30 @@ const CompanyAndUnitsInLead = () => {
       ? selectedUnitDetail.unitContacts
       : [];
   }, [selectedUnitDetail]);
+
+  // Options for the modal's "Use Existing Company/Unit/Contact" selects,
+  // driven by the pending (not-yet-linked) picks rather than the confirmed
+  // selection so browsing options never touches the page's rendered cards.
+  const modalUnits = useMemo(() => {
+    if (Array.isArray(pendingCompanyDetail?.units)) {
+      return pendingCompanyDetail.units;
+    }
+    return units;
+  }, [pendingCompanyDetail, units]);
+
+  const modalContacts = useMemo(() => {
+    return Array.isArray(pendingUnitDetail?.unitContacts)
+      ? pendingUnitDetail.unitContacts
+      : [];
+  }, [pendingUnitDetail]);
+
+  // The company/unit that "+ Unit" / "+ Contact" quick-add inside the modal
+  // should attach to: the pending pick while browsing existing records,
+  // falling back to the already-confirmed company otherwise.
+  const contextCompany = pendingCompanyDetail || effectiveCompany;
+  const contextCompanyId =
+    contextCompany?.id || pendingCompanyId || selectedCompanyId;
+  const contextUnitId = pendingUnitId || selectedUnitId;
 
   const refreshLeadCompanyAndUnits = () => {
     dispatch(getAllCompanyByUserId(userId));
@@ -225,31 +260,9 @@ const CompanyAndUnitsInLead = () => {
     contactForm.resetFields();
   };
 
-  const handleSelectExistingCompany = (companyId) => {
-    setSelectedCompanyId(companyId);
-    setSelectedUnitId(null);
-    setSelectedContactId(null);
-    setSelectedUnitDetail(null);
-    setSelectedContactDetail(null);
-
-    companyForm.setFieldsValue({
-      existingCompanyId: companyId,
-      existingUnitId: undefined,
-      existingContactId: undefined,
-    });
-
-    if (!companyId) {
-      setSelectedCompanyDetail(null);
-      return;
-    }
-
-    dispatch(getBasicCompanyDetailByCompanyId(companyId)).then((resp) => {
-      if (resp?.meta?.requestStatus === "fulfilled") {
-        setSelectedCompanyDetail(resp?.payload);
-      }
-    });
-  };
-
+  // Used by the standalone "Link" icon on a unit row (Company unit detail
+  // card, outside the modal) — that's a direct, explicit "link this unit
+  // now" action, so it links immediately as before.
   const handleSelectUnit = async (unitId) => {
     const resp = await dispatch(
       linkCompanyAndUnitsWithLead({
@@ -281,14 +294,63 @@ const CompanyAndUnitsInLead = () => {
     setSelectedUnitDetail(selected || null);
   };
 
+  // Modal-only pick: browsing "Use Existing Company" just previews the
+  // company (fetches its detail for the modal's own dropdowns/summary
+  // chips) without touching the confirmed selection or dispatching any
+  // link call — that only happens when the modal's "Link" button is
+  // pressed (see handleLinkExistingCompany).
+  const handleSelectExistingCompany = (companyId) => {
+    setPendingCompanyId(companyId);
+    setPendingUnitId(null);
+    setPendingContactId(null);
+    setPendingUnitDetail(null);
+    setPendingContactDetail(null);
+
+    companyForm.setFieldsValue({
+      existingCompanyId: companyId,
+      existingUnitId: undefined,
+      existingContactId: undefined,
+    });
+
+    if (!companyId) {
+      setPendingCompanyDetail(null);
+      return;
+    }
+
+    dispatch(getBasicCompanyDetailByCompanyId(companyId)).then((resp) => {
+      if (resp?.meta?.requestStatus === "fulfilled") {
+        setPendingCompanyDetail(resp?.payload);
+      }
+    });
+  };
+
+  // Modal-only pick: no API call, no confirmed-state change — just
+  // previews which unit would be linked once "Link" is pressed.
+  const handleSelectUnitInModal = (unitId) => {
+    setPendingUnitId(unitId);
+    setPendingContactId(null);
+    setPendingContactDetail(null);
+
+    companyForm.setFieldsValue({
+      existingUnitId: unitId,
+      existingContactId: undefined,
+    });
+
+    const selected = modalUnits?.find(
+      (item) => String(item?.id) === String(unitId),
+    );
+    setPendingUnitDetail(selected || null);
+  };
+
+  // Modal-only pick: same, previews the contact without linking anything.
   const handleSelectContact = (contactId) => {
-    setSelectedContactId(contactId);
+    setPendingContactId(contactId);
     companyForm.setFieldsValue({ existingContactId: contactId });
 
-    const selected = contacts?.find(
+    const selected = modalContacts?.find(
       (item) => String(item?.id) === String(contactId),
     );
-    setSelectedContactDetail(selected || null);
+    setPendingContactDetail(selected || null);
   };
 
   const openCompanyModal = () => {
@@ -340,6 +402,12 @@ const CompanyAndUnitsInLead = () => {
   const handleCloseCompanyModal = () => {
     setCompanyModal(false);
     setUseExistingSelection(false);
+    setPendingCompanyId(null);
+    setPendingCompanyDetail(null);
+    setPendingUnitId(null);
+    setPendingUnitDetail(null);
+    setPendingContactId(null);
+    setPendingContactDetail(null);
     companyForm.resetFields();
   };
 
@@ -506,7 +574,7 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
-    if (!effectiveCompany?.id && !selectedCompanyId) {
+    if (!contextCompanyId) {
       addToast({
         title: "RESTRICTED",
         description: "Please select a company before adding a unit.",
@@ -626,7 +694,7 @@ const CompanyAndUnitsInLead = () => {
       return;
     }
 
-    if (!effectiveCompany?.id) {
+    if (!contextCompanyId) {
       addToast({
         title: "RESTRICTED",
         description: "Please select a company before adding a unit.",
@@ -644,7 +712,7 @@ const CompanyAndUnitsInLead = () => {
       contactNo: "",
       whatsappNo: "",
       clientDesignationId: "",
-      companyUnitId: selectedUnitId,
+      companyUnitId: contextUnitId,
     });
 
     setContactModal(true);
@@ -845,7 +913,7 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const onSubmitUnit = (values) => {
-    if (!effectiveCompany?.id) {
+    if (!contextCompanyId) {
       api.warning({
         title: "WARNING",
         description: "Please select or create company first !.",
@@ -964,7 +1032,7 @@ const CompanyAndUnitsInLead = () => {
     } else {
       dispatch(
         createBasicUnitByCompanyId({
-          companyId: effectiveCompany?.id,
+          companyId: contextCompanyId,
           updatedBy: userId,
           data: payload,
         }),
@@ -979,7 +1047,7 @@ const CompanyAndUnitsInLead = () => {
 
             dispatch(
               linkCompanyAndUnitsWithLead({
-                companyId: effectiveCompany?.id,
+                companyId: contextCompanyId,
                 leadId,
                 unitId: newUnit?.id,
                 userId,
@@ -1016,10 +1084,7 @@ const CompanyAndUnitsInLead = () => {
 
             dispatch(
               linkCompanyAndUnitsWithLead({
-                companyId:
-                  newUnit?.companyId ||
-                  selectedCompanyId ||
-                  effectiveCompany?.id,
+                companyId: newUnit?.companyId || contextCompanyId,
                 leadId,
                 unitId: newUnit?.id,
                 userId,
@@ -1065,7 +1130,7 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const onSubmitContact = (values) => {
-    if (!effectiveCompany?.id) {
+    if (!contextCompanyId) {
       addToast({
         title: "ERROR",
         description: "Please select or create company first",
@@ -1076,8 +1141,8 @@ const CompanyAndUnitsInLead = () => {
 
     const payload = {
       ...values,
-      companyId: effectiveCompany?.id,
-      companyUnitId: values?.companyUnitId || selectedUnitId || null,
+      companyId: contextCompanyId,
+      companyUnitId: values?.companyUnitId || contextUnitId || null,
     };
 
     setContactLoading(true);
@@ -1135,7 +1200,7 @@ const CompanyAndUnitsInLead = () => {
   };
 
   const validateCompanySelected = () => {
-    if (!effectiveCompany?.id && !selectedCompanyId) {
+    if (!contextCompanyId) {
       api.warning({
         title: "Company not selected",
         description: "Please select or create a company first.",
@@ -1564,7 +1629,11 @@ const CompanyAndUnitsInLead = () => {
                 const companyId =
                   selectedCompanyId || effectiveCompany?.id || undefined;
 
-                setSelectedCompanyId(companyId);
+                setPendingCompanyId(companyId);
+                setPendingUnitId(selectedUnitId || null);
+                setPendingUnitDetail(selectedUnitDetail || null);
+                setPendingContactId(selectedContactId || null);
+                setPendingContactDetail(selectedContactDetail || null);
 
                 companyForm.setFieldsValue({
                   existingCompanyId: companyId,
@@ -1576,11 +1645,18 @@ const CompanyAndUnitsInLead = () => {
                   dispatch(getBasicCompanyDetailByCompanyId(companyId)).then(
                     (resp) => {
                       if (resp?.meta?.requestStatus === "fulfilled") {
-                        setSelectedCompanyDetail(resp?.payload);
+                        setPendingCompanyDetail(resp?.payload);
                       }
                     },
                   );
                 }
+              } else {
+                setPendingCompanyId(null);
+                setPendingCompanyDetail(null);
+                setPendingUnitId(null);
+                setPendingUnitDetail(null);
+                setPendingContactId(null);
+                setPendingContactDetail(null);
               }
             }}
           />
@@ -1626,7 +1702,7 @@ const CompanyAndUnitsInLead = () => {
                     <Select
                       showSearch
                       allowClear
-                      options={units}
+                      options={modalUnits}
                       fieldNames={{ label: "unitName", value: "id" }}
                       filterOption={(input, option) =>
                         String(option?.unitName || "")
@@ -1634,8 +1710,8 @@ const CompanyAndUnitsInLead = () => {
                           .includes(input.trim().toLowerCase())
                       }
                       placeholder="Choose unit"
-                      disabled={!effectiveCompany?.id && !selectedCompanyId}
-                      onChange={handleSelectUnit}
+                      disabled={!contextCompanyId}
+                      onChange={handleSelectUnitInModal}
                       className="w-full"
                     />
                   </Form.Item>
@@ -1643,7 +1719,7 @@ const CompanyAndUnitsInLead = () => {
                   <AntButton
                     type="primary"
                     icon={<Plus size={15} />}
-                    disabled={!effectiveCompany?.id && !selectedCompanyId}
+                    disabled={!contextCompanyId}
                     onClick={openAddUnitModal}
                   >
                     Unit
@@ -1657,7 +1733,7 @@ const CompanyAndUnitsInLead = () => {
                     <Select
                       showSearch
                       allowClear
-                      options={contacts}
+                      options={modalContacts}
                       fieldNames={{ label: "name", value: "id" }}
                       placeholder="Choose contact"
                       filterOption={(input, option) =>
@@ -1665,7 +1741,7 @@ const CompanyAndUnitsInLead = () => {
                           .toLowerCase()
                           .includes(input.trim().toLowerCase())
                       }
-                      disabled={!selectedUnitDetail?.id}
+                      disabled={!pendingUnitDetail?.id}
                       onChange={handleSelectContact}
                       className="w-full"
                     />
@@ -1674,7 +1750,7 @@ const CompanyAndUnitsInLead = () => {
                   <AntButton
                     type="primary"
                     icon={<Plus size={15} />}
-                    disabled={!selectedUnitId}
+                    disabled={!contextUnitId}
                     onClick={openAddContactModal}
                   >
                     Contact
@@ -1682,23 +1758,27 @@ const CompanyAndUnitsInLead = () => {
                 </Space.Compact>
               </Form.Item>
 
-              {(selectedCompanyId || selectedUnitId || selectedContactId) && (
+              {(pendingCompanyId || pendingUnitId || pendingContactId) && (
                 <div className="mt-2 flex min-w-0 flex-wrap gap-2 md:col-span-2">
-                  {selectedCompanyId && (
+                  <span className="w-full text-xs text-gray-500">
+                    Pending selection — press "Link" below to confirm.
+                  </span>
+
+                  {pendingCompanyId && (
                     <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
-                      Company: {effectiveCompany?.name || "Selected"}
+                      Company: {pendingCompanyDetail?.name || "Selected"}
                     </span>
                   )}
 
-                  {selectedUnitId && (
+                  {pendingUnitId && (
                     <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
-                      Unit: {selectedUnitDetail?.unitName || "Selected"}
+                      Unit: {pendingUnitDetail?.unitName || "Selected"}
                     </span>
                   )}
 
-                  {selectedContactId && (
+                  {pendingContactId && (
                     <span className="max-w-full break-words rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700">
-                      Contact: {selectedContactDetail?.name || "Selected"}
+                      Contact: {pendingContactDetail?.name || "Selected"}
                     </span>
                   )}
                 </div>

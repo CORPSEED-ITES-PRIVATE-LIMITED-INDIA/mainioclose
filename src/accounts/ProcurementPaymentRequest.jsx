@@ -518,7 +518,6 @@ const ProcurementPaymentRequest = () => {
       paymentMode: releasePaymentMode,
       bankLedgerId: Number(releaseBankLedgerId),
       ledgerId: Number(releaseBankLedgerId),
-      ledgerType: selectedLedgerType,
 
       transactionReference: String(releaseTransactionReference || "").trim(),
 
@@ -529,11 +528,11 @@ const ProcurementPaymentRequest = () => {
 
       tdsActive: releaseTdsActive ? true : false,
       tdsPercentage: releaseTdsActive ? Number(releaseTdsPercentage) : null,
-      tdsAmount: releaseTdsActive ? releaseTdsAmount : 0,
+      // tdsAmount: releaseTdsActive ? releaseTdsAmount : 0,
 
       // Existing payload field remains unchanged. Its value is calculated
       // from the custom paying amount after deducting TDS.
-      bankPaymentAmount: releaseBankPaymentAmount,
+      bankPaymentAmount: releaseCustomPayableAmount,
 
       // Used only when the backend response already provides this ledger ID.
       // Otherwise the backend should resolve its system TDS Payable ledger.
