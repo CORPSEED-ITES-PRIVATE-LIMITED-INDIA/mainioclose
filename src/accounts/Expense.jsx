@@ -25,7 +25,7 @@ import {
   Textarea,
   useDisclosure,
 } from "@heroui/react";
-import { parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import {
   ChevronDown,
   EllipsisVertical,
@@ -1320,6 +1320,7 @@ const Expense = () => {
                         isRequired
                         variant="bordered"
                         granularity="day"
+                        maxValue={today(getLocalTimeZone())}
                         value={
                           decisionForm.transferDate
                             ? parseDate(decisionForm.transferDate)

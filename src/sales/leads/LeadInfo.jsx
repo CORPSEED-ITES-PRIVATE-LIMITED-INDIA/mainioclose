@@ -851,12 +851,12 @@ const LeadInfo = () => {
                   </Card> */}
                 </div>
                 <div className="w-full">
-                  <Card className="my-1.5">
-                    <CardHeader className="px-3 py-2">
+                  <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
+                    <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                       <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2">
-                          <Phone className={iconClass} />{" "}
-                          <p className="text-sm font-medium">
+                          <Phone className={iconClass} />
+                          <p className="text-sm font-semibold">
                             Company Representative
                           </p>
                         </div>
@@ -864,7 +864,7 @@ const LeadInfo = () => {
                           size="sm"
                           isIconOnly
                           variant="light"
-                          className="w-6 h-6 rounded-full bg-none"
+                          className="h-6 w-6 min-w-6 rounded-full"
                           onPress={() => {
                             if (
                               leadData?.proposalStatus === "INITIATED" ||
@@ -891,73 +891,48 @@ const LeadInfo = () => {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardBody className="max-h-[300px] overflow-auto">
+                    <CardBody className="flex max-h-[300px] flex-col gap-2 overflow-auto p-3">
                       {leadData?.clients?.map((item) => {
                         return (
                           <div
                             key={item?.name}
-                            className="flex justify-between items-center border rounded-md mb-2 px-2"
+                            className="rounded-xl border border-default-200 bg-default-50/60 p-2.5"
                           >
-                            <div className="flex flex-col p-3">
-                              <span className="font-medium text-xm">
-                                {item?.name || "-"}
-                              </span>
-                              {item?.emails && (
-                                <div className="flex items-center gap-2">
-                                  <Mail className="w-4 h-4" />
-                                  <span className="block max-w-full break-all text-sm text-default-500">
-                                    {item?.emails || ""}
-                                  </span>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-default-700">
+                                  {item?.name || "-"}
+                                </p>
+                                <div className="mt-1.5 flex flex-col gap-1">
+                                  {item?.emails && (
+                                    <div className="flex items-center gap-1.5 text-default-500">
+                                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="block max-w-full break-all text-xs">
+                                        {item?.emails || ""}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {item?.contactNo && (
+                                    <div className="flex items-center gap-1.5 text-default-500">
+                                      <Smartphone className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="text-xs">
+                                        {item?.contactNo || ""}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {item?.contactNo && (
-                                <div className="flex items-center gap-2">
-                                  <Smartphone className="w-4 h-4" />
-                                  <span className="text-sm text-default-500">
-                                    {item?.contactNo || ""}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <Dropdown>
-                              <DropdownTrigger>
-                                <Button variant="light" isIconOnly size="sm">
-                                  <EllipsisVertical className={iconClass} />
-                                </Button>
-                              </DropdownTrigger>
-                              <DropdownMenu aria-label="Static Actions">
-                                <DropdownItem
-                                  key="edit"
-                                  startContent={
-                                    <Pencil className={iconClass} />
-                                  }
-                                  onPress={() => {
-                                    if (
-                                      leadData?.proposalStatus ===
-                                        "INITIATED" ||
-                                      leadData?.proposalStatus === "APPROVED" ||
-                                      leadData?.proposalStatus === "DRAFT"
-                                    ) {
-                                      addToast({
-                                        title: "RESTRICTED",
-                                        color: "danger",
-                                        description:
-                                          "Contact details cannot be changed as proposal is already approved or initiated.",
-                                      });
-                                      return;
-                                    }
-                                    editContactModalPress(item);
-                                  }}
-                                >
-                                  Edit
-                                </DropdownItem>
-                                {adminRole && (
+                              </div>
+                              <Dropdown>
+                                <DropdownTrigger>
+                                  <Button variant="light" isIconOnly size="sm">
+                                    <EllipsisVertical className={iconClass} />
+                                  </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Static Actions">
                                   <DropdownItem
-                                    key="delete"
-                                    color="danger"
-                                    className="text-danger"
+                                    key="edit"
                                     startContent={
-                                      <Trash className={iconClass} />
+                                      <Pencil className={iconClass} />
                                     }
                                     onPress={() => {
                                       if (
@@ -971,18 +946,48 @@ const LeadInfo = () => {
                                           title: "RESTRICTED",
                                           color: "danger",
                                           description:
-                                            "Contact details cannot be deleted as proposal is already approved or Draft or initiated.",
+                                            "Contact details cannot be changed as proposal is already approved or initiated.",
                                         });
                                         return;
                                       }
-                                      handleDeleteContact(item);
+                                      editContactModalPress(item);
                                     }}
                                   >
-                                    Delete
+                                    Edit
                                   </DropdownItem>
-                                )}
-                              </DropdownMenu>
-                            </Dropdown>
+                                  {adminRole && (
+                                    <DropdownItem
+                                      key="delete"
+                                      color="danger"
+                                      className="text-danger"
+                                      startContent={
+                                        <Trash className={iconClass} />
+                                      }
+                                      onPress={() => {
+                                        if (
+                                          leadData?.proposalStatus ===
+                                            "INITIATED" ||
+                                          leadData?.proposalStatus ===
+                                            "APPROVED" ||
+                                          leadData?.proposalStatus === "DRAFT"
+                                        ) {
+                                          addToast({
+                                            title: "RESTRICTED",
+                                            color: "danger",
+                                            description:
+                                              "Contact details cannot be deleted as proposal is already approved or Draft or initiated.",
+                                          });
+                                          return;
+                                        }
+                                        handleDeleteContact(item);
+                                      }}
+                                    >
+                                      Delete
+                                    </DropdownItem>
+                                  )}
+                                </DropdownMenu>
+                              </Dropdown>
+                            </div>
                           </div>
                         );
                       })}
@@ -1445,14 +1450,14 @@ const LeadInfo = () => {
               </div>
             </div>
             <div>
-              <Card className="my-1.5">
-                <CardHeader className="px-3 py-2">
+              <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
+                <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                   <div className="flex items-center gap-2">
                     <MessageCircle className={iconClass} />
-                    <p className="text-sm font-medium">Comments / Upload </p>
+                    <p className="text-sm font-semibold">Comments / Upload</p>
                   </div>
                 </CardHeader>
-                <CardBody className="px-3 py-2.5">
+                <CardBody className="flex flex-col gap-3 p-3">
                   <NewSelect
                     placeholder="Select comment..."
                     data={[{ name: "Other" }, ...allComments]}
@@ -1480,7 +1485,6 @@ const LeadInfo = () => {
                   />
                   {selectedComment === "Other" && (
                     <Textarea
-                      className="my-1.5"
                       value={customComment}
                       placeholder="Please write your remarks"
                       onChange={(e) => {
@@ -1506,74 +1510,72 @@ const LeadInfo = () => {
                     leadData={leadData}
                   />
                 </CardBody>
-                <CardFooter className="flex justify-end">
-                  <div>
-                    <Button
-                      color="primary"
-                      isDisabled={remarkLoading === "pending"}
-                      isLoading={remarkLoading === "pending"}
-                      onPress={onSubmit}
-                    >
-                      Submit
-                    </Button>
-                  </div>
+                <CardFooter className="justify-end border-t border-default-200 px-3 py-2.5">
+                  <Button
+                    color="primary"
+                    isDisabled={remarkLoading === "pending"}
+                    isLoading={remarkLoading === "pending"}
+                    onPress={onSubmit}
+                  >
+                    Submit
+                  </Button>
                 </CardFooter>
               </Card>
-              <Card className="my-1.5">
-                <CardHeader className="px-3 py-2">
+              <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
+                <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                   <div className="flex items-center gap-2">
                     <MessageSquareMore className={iconClass} />
-                    <p className="text-sm font-medium">Remarks </p>
+                    <p className="text-sm font-semibold">Remarks</p>
                   </div>
                 </CardHeader>
-                <CardBody className="max-h-[200px] overflow-auto">
+                <CardBody className="flex max-h-[260px] flex-col gap-2 overflow-auto p-3">
                   {remarkData?.map((remark) => {
                     return (
                       <div
                         key={`remark${remark?.id}`}
-                        className="rounded-md border-1 p-2 my-1"
+                        className="rounded-xl border border-default-200 bg-default-50/60 p-2.5"
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <User
-                                description={dayjs(
-                                  remark?.latestUpdated,
-                                )?.format("DD-MM-YYYY, HH:mm A")}
-                                name={remark?.updatedBy?.fullName}
-                              />
-                            </div>
-                            <p className="text-sm">{remark?.message}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex justify-between items-center">
-                              <ImageGroup
-                                images={remark?.imageList?.map(
-                                  (item) => item?.filePath,
-                                )}
-                              />
-                            </div>
-                            <div className="flex items-center gap-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <User
+                            description={dayjs(
+                              remark?.latestUpdated,
+                            )?.format("DD-MM-YYYY, HH:mm A")}
+                            name={remark?.updatedBy?.fullName}
+                          />
+                          <div className="flex items-center gap-1">
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              className="h-7 w-7 min-w-7 rounded-full"
+                              onPress={() => updateRemarkModalPress(remark)}
+                            >
+                              <Pencil className={iconClass} />
+                            </Button>
+                            {adminRole && (
                               <Button
                                 isIconOnly
                                 size="sm"
                                 variant="light"
-                                onPress={() => updateRemarkModalPress(remark)}
+                                className="h-7 w-7 min-w-7 rounded-full"
+                                onPress={() => deleteRemarkModalPress(remark)}
                               >
-                                <Pencil className={iconClass} />
+                                <Trash className={iconClass} color="red" />
                               </Button>
-                              {adminRole && (
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  onPress={() => deleteRemarkModalPress(remark)}
-                                >
-                                  <Trash className={iconClass} color="red" />
-                                </Button>
-                              )}
-                            </div>
+                            )}
                           </div>
+                        </div>
+                        <div className="mt-2 rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                          <p className="whitespace-pre-wrap break-words text-sm text-default-700">
+                            {remark?.message}
+                          </p>
+                        </div>
+                        <div className="mt-2 flex items-center">
+                          <ImageGroup
+                            images={remark?.imageList?.map(
+                              (item) => item?.filePath,
+                            )}
+                          />
                         </div>
                       </div>
                     );

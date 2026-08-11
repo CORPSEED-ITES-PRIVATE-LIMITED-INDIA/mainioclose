@@ -473,6 +473,23 @@ export const getProcurementPaymentRequestList = createAsyncThunk(
   },
 );
 
+// Government-fee journal vouchers, shown as the "Debit Note" list in
+// src/accounts/organization/DebitNotes.jsx. `page` here is 1-indexed (UI
+// convention across this app), converted to the backend's 0-indexed page.
+export const getGovernmentFeeDebitNotes = createAsyncThunk(
+  "getGovernmentFeeDebitNotes",
+  async ({ page = 1, size = 20 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/internal/project-expenses/government-fee?page=${page - 1}&size=${size}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 export const approveProcurementPaymentRequest = createAsyncThunk(
   "approveProcurementPaymentRequest",
   async ({ paymentRequestId, userId, data }, { rejectWithValue }) => {
@@ -840,6 +857,13 @@ const AccountSlice = createSlice({
     tdsDetail: {},
     procurementPurchaseOrderList: [],
     procurementPaymentRequestList: [],
+    governmentFeeDebitNoteList: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+    },
+    governmentFeeDebitNoteLoading: "idle",
+    governmentFeeDebitNoteError: null,
     invoicesByUnbilled: [],
     vendorsDetails: [],
     paymentLegerList: [],
@@ -1102,6 +1126,27 @@ const AccountSlice = createSlice({
     builder.addCase(getProcurementPaymentRequestList.rejected, (state) => {
       state.loading = "rejected";
       state.procurementPaymentRequestList = [];
+    });
+
+    builder.addCase(getGovernmentFeeDebitNotes.pending, (state) => {
+      state.governmentFeeDebitNoteLoading = "pending";
+      state.governmentFeeDebitNoteError = null;
+    });
+    builder.addCase(
+      getGovernmentFeeDebitNotes.fulfilled,
+      (state, action) => {
+        state.governmentFeeDebitNoteLoading = "success";
+        state.governmentFeeDebitNoteList = action.payload || {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+        };
+      },
+    );
+    builder.addCase(getGovernmentFeeDebitNotes.rejected, (state, action) => {
+      state.governmentFeeDebitNoteLoading = "rejected";
+      state.governmentFeeDebitNoteError =
+        action.payload?.message || "Failed to load debit notes.";
     });
 
     builder.addCase(getInvoicesByUnbilledId.pending, (state) => {

@@ -127,6 +127,11 @@ export const navItems = [
         key: "allInvoice",
       },
       {
+        title: "Purchase invoices",
+        url: "accounts/purchaseInvoices",
+        key: "purchaseInvoices",
+      },
+      {
         title: "Advance invoices",
         url: "accounts/advanceInvoices",
         key: "advanceInvoices",
@@ -173,6 +178,11 @@ export const navItems = [
         title: "Credit Note",
         url: "accounts/creditNote",
         key: "creditnote",
+      },
+      {
+        title: "Debit Note",
+        url: "accounts/debitNote",
+        key: "debitnote",
       },
     ],
   },
@@ -552,6 +562,12 @@ export const accountNavItems = [
     icon: "FileText",
   },
   {
+    title: "Purchase invoices",
+    url: "accounts/purchaseInvoices",
+    key: "purchaseInvoices",
+    icon: "ReceiptText",
+  },
+  {
     title: "Advance invoices",
     url: "accounts/advanceInvoices",
     icon: "BookOpenText",
@@ -587,6 +603,12 @@ export const accountNavItems = [
     title: "Credit Note",
     url: "accounts/creditNote",
     key: "creditnote",
+    icon: "FileText",
+  },
+  {
+    title: "Debit Note",
+    url: "accounts/debitNote",
+    key: "debitnote",
     icon: "FileText",
   },
   {

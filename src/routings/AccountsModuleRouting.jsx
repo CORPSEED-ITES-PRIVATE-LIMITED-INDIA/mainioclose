@@ -23,6 +23,9 @@ const PaymentRegister = lazy(
   () => import("../accounts/organization/PaymentRegister"),
 );
 const AllInvoice = lazy(() => import("../accounts/organization/AllInvoice"));
+const PurchaseInvoices = lazy(
+  () => import("../accounts/organization/PurchaseInvoices"),
+);
 const Unbill = lazy(() => import("../accounts/organization/Unbill"));
 const ProfitLoss = lazy(() => import("../accounts/organization/ProfitLoss"));
 const CashFlow = lazy(() => import("../accounts/organization/CashFlow"));
@@ -57,6 +60,9 @@ const CompanyUnitsInAccount = lazy(
 const Expense = lazy(() => import("../accounts/Expense"));
 const Taxation = lazy(() => import("../accounts/organization/Taxation"));
 const CreditNote = lazy(() => import("../accounts/CreditNote"));
+const DebitNotes = lazy(
+  () => import("../accounts/organization/DebitNotes"),
+);
 const ProcurementPaymentRequest = lazy(
   () => import("../accounts/ProcurementPaymentRequest"),
 );
@@ -85,12 +91,17 @@ export const AccountsModuleRouting = () => {
       />
       <Route path="accounts/vendorDetails" element={<VendorDetails />} />
       <Route path="accounts/creditNote" element={<CreditNote />} />
+      <Route path="accounts/debitNote" element={<DebitNotes />} />
       <Route path="accounts/paymentApprovals" element={<PaymentApprovals />} />
       <Route path="accounts/companyForm" element={<CompanyForm />} />
       <Route path="accounts/orgEstimate" element={<OrganizationEstimate />} />
       <Route path="accounts/bankStatement" element={<BankStatement />} />
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
+      <Route
+        path="accounts/purchaseInvoices"
+        element={<PurchaseInvoices />}
+      />
       <Route path="accounts/advanceInvoices" element={<AdvanceInvoices />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
       <Route
