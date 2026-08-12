@@ -588,16 +588,14 @@ const RaiseProcurementPaymentRequestModal = ({
                 name="gstActive"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Input
+                    {...field}
+                    isReadOnly
+                    isDisabled
                     label="GST Applicable"
-                    selectedKeys={new Set([field.value ? "true" : "false"])}
-                    onSelectionChange={(keys) => {
-                      field.onChange(Array.from(keys)?.[0] === "true");
-                    }}
-                  >
-                    <SelectItem key="true">Yes</SelectItem>
-                    <SelectItem key="false">No</SelectItem>
-                  </Select>
+                    description="Fixed from the Purchase Order"
+                    value={field.value ? "Yes" : "No"}
+                  />
                 )}
               />
 
@@ -605,29 +603,15 @@ const RaiseProcurementPaymentRequestModal = ({
                 <Controller
                   name="gstPercentage"
                   control={control}
-                  rules={{
-                    required: "GST rate is required",
-                  }}
-                  render={({ field, fieldState: { error } }) => (
-                    <Select
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      isReadOnly
+                      isDisabled
                       label="GST Rate"
-                      isRequired
-                      selectedKeys={
-                        field.value
-                          ? new Set([String(field.value)])
-                          : new Set([])
-                      }
-                      onSelectionChange={(keys) => {
-                        field.onChange(Array.from(keys)?.[0] || "");
-                      }}
-                      isInvalid={Boolean(error)}
-                      errorMessage={error?.message}
-                    >
-                      <SelectItem key="5">5%</SelectItem>
-                      <SelectItem key="12">12%</SelectItem>
-                      <SelectItem key="18">18%</SelectItem>
-                      <SelectItem key="28">28%</SelectItem>
-                    </Select>
+                      description="Fixed from the Purchase Order"
+                      value={`${Number(field.value || 0)}%`}
+                    />
                   )}
                 />
               )}
