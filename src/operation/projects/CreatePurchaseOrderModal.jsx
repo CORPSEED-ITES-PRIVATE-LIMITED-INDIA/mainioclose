@@ -41,8 +41,8 @@ const paymentTermsOptions = [
 ];
 
 const gstApplicableOptions = [
-  { label: "Yes", value: true },
-  { label: "No", value: false },
+  { label: "Yes", value: "true" },
+  { label: "No", value: "false" },
 ];
 
 const gstRateOptions = [
@@ -79,7 +79,7 @@ const CreatePurchaseOrderModal = ({
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
       paymentTerms: 30,
-      gstActive: false,
+      gstActive: "false",
       gstPercentage: undefined,
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
@@ -103,6 +103,7 @@ const CreatePurchaseOrderModal = ({
   };
 
   const handleSubmit = async (values) => {
+    console.log("DEBUG handleSubmit values", values); // TEMP DEBUG -- remove before finishing.
     const finalAmount = roundAmount(values.finalAmount);
 
     const payload = {
@@ -120,7 +121,8 @@ const CreatePurchaseOrderModal = ({
        * Actual tax/TDS amounts, payment type and attachments are supplied
        * while raising the procurement payment request.
        */
-      gstRate: values.gstActive ? Number(values.gstPercentage) : 0,
+      gstActive: values.gstActive === "true",
+      gstRate: values.gstActive === "true" ? Number(values.gstPercentage) : 0,
       tdsPercentage: 0,
 
       placeOfSupplyStateCode: "",
@@ -261,7 +263,7 @@ const CreatePurchaseOrderModal = ({
             />
           </Form.Item>
 
-          {gstActive && (
+          {gstActive === "true" && (
             <Form.Item
               label="GST Rate"
               name="gstPercentage"

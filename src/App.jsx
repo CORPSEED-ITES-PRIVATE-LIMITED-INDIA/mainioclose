@@ -23,6 +23,21 @@ import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
 import { restoreSession } from "./toolkit/slices/authSlice";
 import AdminPoApproval from "./admin/AdminPoApproval";
+import CreatePurchaseOrderModal from "./operation/projects/CreatePurchaseOrderModal";
+
+// TEMP DEBUG HARNESS -- remove before finishing.
+const TestPoModalHarness = () => (
+  <CreatePurchaseOrderModal
+    open={true}
+    onClose={() => console.log("DEBUG onClose")}
+    procurementAssignmentId={1}
+    userId={1}
+    createdBy={1}
+    defaultEstimatedAmount={1000}
+    onSuccess={() => console.log("DEBUG onSuccess")}
+    vendorId={1}
+  />
+);
 
 const HomePage = lazy(() => import("./home/HomePage"));
 const Login = lazy(() => import("./login/Login"));
@@ -130,6 +145,7 @@ function App() {
           </Route>
 
           <Route path="/unauthorized" element={<div>Unauthorized</div>} />
+          <Route path="/test-po-modal" element={<TestPoModalHarness />} />
         </Routes>
       </Suspense>
     </AliveScope>
