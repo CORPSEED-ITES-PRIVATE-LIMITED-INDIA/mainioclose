@@ -40,6 +40,21 @@ const paymentTermsOptions = [
   { label: "NET-90", value: 90 },
 ];
 
+const gstApplicableOptions = [
+  { label: "Yes", value: true },
+  { label: "No", value: false },
+];
+
+const gstRateOptions = [
+  { label: "0%", value: 0 },
+  { label: "1.5%", value: 1.5 },
+  { label: "3%", value: 3 },
+  { label: "5%", value: 5 },
+  { label: "12%", value: 12 },
+  { label: "18%", value: 18 },
+  { label: "28%", value: 28 },
+];
+
 const CreatePurchaseOrderModal = ({
   open,
   onClose,
@@ -53,6 +68,7 @@ const CreatePurchaseOrderModal = ({
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [api, contextHolder] = notification.useNotification();
+  const gstActive = Form.useWatch("gstActive", form);
 
   useEffect(() => {
     if (!open) return;
@@ -63,6 +79,8 @@ const CreatePurchaseOrderModal = ({
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
       paymentTerms: 30,
+      gstActive: false,
+      gstPercentage: undefined,
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
       remarks: "",
@@ -102,7 +120,7 @@ const CreatePurchaseOrderModal = ({
        * Actual tax/TDS amounts, payment type and attachments are supplied
        * while raising the procurement payment request.
        */
-      gstRate: 0,
+      gstRate: values.gstActive ? Number(values.gstPercentage) : 0,
       tdsPercentage: 0,
 
       placeOfSupplyStateCode: "",
@@ -226,6 +244,37 @@ const CreatePurchaseOrderModal = ({
               options={paymentTermsOptions}
             />
           </Form.Item>
+
+          <Form.Item
+            label="GST Applicable"
+            name="gstActive"
+            rules={[
+              {
+                required: true,
+                message: "Please select GST applicability",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Select GST applicability"
+              options={gstApplicableOptions}
+            />
+          </Form.Item>
+
+          {gstActive && (
+            <Form.Item
+              label="GST Rate"
+              name="gstPercentage"
+              rules={[
+                {
+                  required: true,
+                  message: "Please select GST rate",
+                },
+              ]}
+            >
+              <Select placeholder="Select GST rate" options={gstRateOptions} />
+            </Form.Item>
+          )}
         </div>
 
         <Form.Item label="Remarks" name="remarks">
