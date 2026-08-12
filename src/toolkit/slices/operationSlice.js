@@ -1665,36 +1665,33 @@ export const accountsApproveGovernmentFee = createAsyncThunk(
 );
 export const approveAdminPOApproval = createAsyncThunk(
   "approveAdminPOApproval",
-  async ({ poId, adminUserId,comment  }, { rejectWithValue }) => {
+  async ({ poId, adminUserId, comment }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/operationService/api/purchase-orders/${poId}/admin-approve?adminUserId=${adminUserId}&comment=${comment}`,
+        `/operationService/api/purchase-orders/${poId}/admin-approve/${adminUserId}`,
+        { comment },
       );
-
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || {
-          message: "Unable to update lifecycle request decision.",
-        },
+        error?.response?.data || { message: "Unable to approve purchase order." },
       );
     }
   },
 );
+
 export const rejectAdminPOApproval = createAsyncThunk(
   "rejectAdminPOApproval",
-  async ({ poId, adminUserId,reason  }, { rejectWithValue }) => {
+  async ({ poId, adminUserId, reason }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/operationService/api/purchase-orders/${poId}/admin-reject?adminUserId=${adminUserId}&reason=${reason}`,
+        `/operationService/api/purchase-orders/${poId}/admin-reject/${adminUserId}`,
+        { reason },
       );
-
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || {
-          message: "Unable to update lifecycle request decision.",
-        },
+        error?.response?.data || { message: "Unable to reject purchase order." },
       );
     }
   },

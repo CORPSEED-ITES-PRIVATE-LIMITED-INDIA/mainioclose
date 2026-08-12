@@ -28,6 +28,7 @@ import {
   rejectAdminPOApproval,
   getAllPOByStatus,
 } from "../toolkit/slices/operationSlice";
+import { useParams } from "react-router-dom";
 
 export const columns = [
   { name: "PO NUMBER", uid: "poNumber" },
@@ -46,6 +47,7 @@ const FIXED_STATUS = "ADMIN_APPROVAL_PENDING";
 const AdminPoApproval = () => {
   const dispatch = useDispatch();
   const actionModal = useDisclosure();
+  const { userId } = useParams();
 
   const poData = useSelector(
     (state) => state.operation.procurementOrderByStatus,
@@ -116,12 +118,12 @@ const AdminPoApproval = () => {
       actionType === "approve"
         ? approveAdminPOApproval({
             poId: rowItem.id,
-            adminUserId: CURRENT_ADMIN_USER_ID,
+            adminUserId: userId,
             comment: actionComment,
           })
         : rejectAdminPOApproval({
             poId: rowItem.id,
-            adminUserId: CURRENT_ADMIN_USER_ID,
+            adminUserId: userId,
             reason: actionComment,
           });
 
