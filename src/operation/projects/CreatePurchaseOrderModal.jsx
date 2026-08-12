@@ -121,8 +121,8 @@ const CreatePurchaseOrderModal = ({
        * Actual tax/TDS amounts, payment type and attachments are supplied
        * while raising the procurement payment request.
        */
-      gstActive: values.gstActive === "true",
-      gstRate: values.gstActive === "true" ? Number(values.gstPercentage) : 0,
+      gstActive: values.gstActive,
+      gstRate: Number(values.gstPercentage),
       tdsPercentage: 0,
 
       placeOfSupplyStateCode: "",
