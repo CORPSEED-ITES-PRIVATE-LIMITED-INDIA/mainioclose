@@ -68,7 +68,7 @@ const CreatePurchaseOrderModal = ({
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [api, contextHolder] = notification.useNotification();
-  const gstActive = Form.useWatch("gstActive", form);
+  const gstActive = Form.useWatch("gstApplicable", form);
 
   useEffect(() => {
     if (!open) return;
@@ -79,7 +79,7 @@ const CreatePurchaseOrderModal = ({
       poReferenceNumber: "",
       finalAmount: Number(defaultEstimatedAmount || 0),
       paymentTerms: 30,
-      gstActive: "false",
+      gstApplicable: false,
       gstPercentage: undefined,
       scopeOfWork: "<p></p>",
       termsAndConditions: "<p></p>",
@@ -109,24 +109,12 @@ const CreatePurchaseOrderModal = ({
     const payload = {
       procurementAssignmentId: Number(procurementAssignmentId || 0),
       vendorId: Number(vendorId || 0),
-
       poReferenceNumber: values.poReferenceNumber?.trim() || "",
-
       finalAmount,
-
       paymentTerms: Number(values.paymentTerms),
-
-      /*
-       * Tax and TDS are captured here as rates only.
-       * Actual tax/TDS amounts, payment type and attachments are supplied
-       * while raising the procurement payment request.
-       */
-      gstActive: values.gstActive,
-      gstRate: Number(values.gstPercentage),
-      tdsPercentage: 0,
-
+      gstApplicable: values.gstApplicable,
+      gstPercentage: Number(values.gstPercentage),
       placeOfSupplyStateCode: "",
-
       scopeOfWork: values.scopeOfWork?.trim() || "",
       termsAndConditions: values.termsAndConditions?.trim() || "",
       remarks: values.remarks?.trim() || "",
@@ -249,7 +237,7 @@ const CreatePurchaseOrderModal = ({
 
           <Form.Item
             label="GST Applicable"
-            name="gstActive"
+            name="gstApplicable"
             rules={[
               {
                 required: true,
