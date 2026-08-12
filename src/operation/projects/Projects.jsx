@@ -201,9 +201,12 @@ const Projects = () => {
   useEffect(() => {
     dispatch(getAllProjectsForOperations(paginationData));
     dispatch(getTotalCountForOperationProjects(userId));
+  }, [dispatch, userId, paginationData?.page, paginationData?.size]);
+
+  useEffect(() => {
     dispatch(getAllUsers());
     dispatch(getAllCountries());
-  }, [dispatch, userId]);
+  }, []);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -608,7 +611,7 @@ const Projects = () => {
           <div className="flex items-center gap-1.5">
             <Select
               size="sm"
-              className="w-[140px]"
+              className="w-[220px]"
               selectionMode="single"
               selectedKeys={[searchBy]}
               onSelectionChange={(e) => {

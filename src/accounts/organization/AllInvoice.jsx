@@ -415,7 +415,7 @@ const AllInvoice = () => {
                   }}
                 >
                   <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
-                  <DropdownItem key="viewEstimate">Estimate</DropdownItem>
+                  {/* <DropdownItem key="viewEstimate">Estimate</DropdownItem> */}
                   {!(
                     rowData?.status?.toLowerCase() === "e_invoice_confirmed" ||
                     rowData?.gstRegistrationType?.toLowerCase() ===

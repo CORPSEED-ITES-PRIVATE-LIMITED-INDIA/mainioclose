@@ -132,6 +132,52 @@ const getInitials = (name = "") => {
     .toUpperCase();
 };
 
+// Walks a react-hook-form `errors` object (including nested field-array
+// errors) and returns the first human-readable message it finds, so a
+// failed validation can be surfaced to the user instead of failing silently.
+const getFirstFormErrorMessage = (errors) => {
+  if (!errors) return null;
+
+  if (Array.isArray(errors)) {
+    for (const item of errors) {
+      const message = getFirstFormErrorMessage(item);
+
+      if (message) return message;
+    }
+
+    return null;
+  }
+
+  if (typeof errors === "object") {
+    if (typeof errors.message === "string" && errors.message) {
+      return errors.message;
+    }
+
+    for (const key of Object.keys(errors)) {
+      const message = getFirstFormErrorMessage(errors[key]);
+
+      if (message) return message;
+    }
+  }
+
+  return null;
+};
+
+// Shared react-hook-form "invalid" handler: without this, a schema failure
+// (e.g. a required field left empty) blocks submission with no visible
+// feedback. Wire this as the second argument to every handleSubmit() call.
+const handleFormValidationError = (errors) => {
+  const message =
+    getFirstFormErrorMessage(errors) ||
+    "Please fix the highlighted errors and try again.";
+
+  addToast({
+    title: "VALIDATION ERROR",
+    description: message,
+    color: "danger",
+  });
+};
+
 const quotationStatusOptions = [
   "ALL",
   "DRAFT",
@@ -170,6 +216,8 @@ const quotationDefaultValues = {
       unit: "",
       unitRate: "",
       taxPercent: "",
+      gstActive: false,
+      gstPercentage: "",
       remarks: "",
     },
   ],
@@ -186,16 +234,30 @@ const quotationSchema = z.object({
   documents: z.array(z.any()).optional(),
   items: z
     .array(
-      z.object({
-        itemType: z.string().min(1, "Item type is required"),
-        itemName: z.string().min(1, "Item name is required"),
-        description: z.string().optional(),
-        quantity: z.string().min(1, "Quantity is required"),
-        unit: z.string().min(1, "Unit is required"),
-        unitRate: z.string().min(1, "Unit rate is required"),
-        taxPercent: z.string().optional(),
-        remarks: z.string().optional(),
-      }),
+      z
+        .object({
+          itemType: z.string().min(1, "Item type is required"),
+          itemName: z.string().min(1, "Item name is required"),
+          description: z.string().optional(),
+          quantity: z.string().min(1, "Quantity is required"),
+          unit: z.string().min(1, "Unit is required"),
+          unitRate: z.string().min(1, "Unit rate is required"),
+          gstActive: z.boolean({
+            required_error: "Please select whether GST is applicable",
+            invalid_type_error: "Please select whether GST is applicable",
+          }),
+          gstPercentage: z.string().optional(),
+          remarks: z.string().optional(),
+        })
+        .superRefine((item, ctx) => {
+          if (item.gstActive && !item.gstPercentage) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["gstPercentage"],
+              message: "GST rate is required when GST is applicable",
+            });
+          }
+        }),
     )
     .min(1, "At least one item is required"),
 });
@@ -597,6 +659,7 @@ const Quote = () => {
     handleSubmit: handleQuotationFormSubmit,
     reset: resetQuotationForm,
     formState: { errors: quotationErrors },
+    watch: watchQuotationForm,
   } = useForm({
     resolver: zodResolver(quotationSchema),
     defaultValues: quotationDefaultValues,
@@ -1165,7 +1228,8 @@ const Quote = () => {
         quantity: Number(item.quantity),
         unit: item.unit,
         unitRate: Number(item.unitRate),
-        taxPercent: Number(item.taxPercent || 0),
+        gstActive: Number(item.gstActive || 0),
+        gstPercentage: Number(item.gstPercentage || 0),
         remarks: item.remarks || "",
       })),
     };
@@ -2985,7 +3049,12 @@ const Quote = () => {
               </div>
             </ModalHeader>
 
-            <form onSubmit={handleQuotationFormSubmit(onSubmitQuotation)}>
+            <form
+              onSubmit={handleQuotationFormSubmit(
+                onSubmitQuotation,
+                handleFormValidationError,
+              )}
+            >
               <ModalBody className="px-6 py-5">
                 <div className="max-h-[65vh] space-y-5 overflow-y-auto overflow-x-hidden pr-1">
                   <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
@@ -3205,6 +3274,8 @@ const Quote = () => {
                             unit: "",
                             unitRate: "",
                             taxPercent: "",
+                            gstActive: false,
+                            gstPercentage: "",
                             remarks: "",
                           })
                         }
@@ -3357,7 +3428,7 @@ const Quote = () => {
                               )}
                             />
 
-                            <Controller
+                            {/* <Controller
                               name={`items.${index}.taxPercent`}
                               control={quotationControl}
                               render={({ field }) => (
@@ -3369,7 +3440,65 @@ const Quote = () => {
                                   }
                                 />
                               )}
+                            /> */}
+                            <Controller
+                              // name="gstActive"
+                              name={`items.${index}.gstActive`}
+                              control={quotationControl}
+                              render={({ field, fieldState: { error } }) => (
+                                <Select
+                                  label="GST Applicable"
+                                  isRequired
+                                  selectedKeys={
+                                    new Set([field.value ? "true" : "false"])
+                                  }
+                                  onSelectionChange={(keys) => {
+                                    field.onChange(
+                                      Array.from(keys)?.[0] === "true",
+                                    );
+                                  }}
+                                  isInvalid={Boolean(error)}
+                                  errorMessage={error?.message}
+                                >
+                                  <SelectItem key="true">Yes</SelectItem>
+                                  <SelectItem key="false">No</SelectItem>
+                                </Select>
+                              )}
                             />
+
+                            {watchQuotationForm(`items.${index}.gstActive`) && (
+                              <Controller
+                                // name="gstPercentage"
+                                name={`items.${index}.gstPercentage`}
+                                control={quotationControl}
+                                render={({ field, fieldState: { error } }) => (
+                                  <Select
+                                    label="GST Rate"
+                                    isRequired
+                                    selectedKeys={
+                                      field.value
+                                        ? new Set([String(field.value)])
+                                        : new Set([])
+                                    }
+                                    onSelectionChange={(keys) => {
+                                      field.onChange(
+                                        Array.from(keys)?.[0] || "",
+                                      );
+                                    }}
+                                    isInvalid={Boolean(error)}
+                                    errorMessage={error?.message}
+                                  >
+                                    <SelectItem key="0">0%</SelectItem>
+                                    <SelectItem key="1.5">1.5%</SelectItem>
+                                    <SelectItem key="3">3%</SelectItem>
+                                    <SelectItem key="5">5%</SelectItem>
+                                    <SelectItem key="12">12%</SelectItem>
+                                    <SelectItem key="18">18%</SelectItem>
+                                    <SelectItem key="28">28%</SelectItem>
+                                  </Select>
+                                )}
+                              />
+                            )}
 
                             <div className="md:col-span-3">
                               <Controller
@@ -3441,7 +3570,12 @@ const Quote = () => {
           <>
             <ModalHeader className="border-b">Initiate Agreement</ModalHeader>
 
-            <form onSubmit={handleRegisterVendorSubmit(onSubmitRegisterVendor)}>
+            <form
+              onSubmit={handleRegisterVendorSubmit(
+                onSubmitRegisterVendor,
+                handleFormValidationError,
+              )}
+            >
               <ModalBody>
                 <div className="max-h-[65vh] overflow-auto p-2">
                   <div className="rounded-xl border bg-gray-50 p-4">
@@ -3672,7 +3806,12 @@ const Quote = () => {
               </div>
             </ModalHeader>
 
-            <form onSubmit={handleLegalRequestSubmit(onSubmitLegalRequest)}>
+            <form
+              onSubmit={handleLegalRequestSubmit(
+                onSubmitLegalRequest,
+                handleFormValidationError,
+              )}
+            >
               <ModalBody className="space-y-4 px-6 py-5">
                 <Input
                   label="Quotation"
@@ -3810,6 +3949,7 @@ const Quote = () => {
             <form
               onSubmit={handleVendorAgreementSubmit(
                 onSubmitSendAgreementToVendor,
+                handleFormValidationError,
               )}
             >
               <ModalBody className="space-y-4 px-6 py-5">
@@ -3959,7 +4099,10 @@ const Quote = () => {
               </ModalHeader>
 
               <form
-                onSubmit={handleSendToAccountsSubmit(onSubmitSendToAccounts)}
+                onSubmit={handleSendToAccountsSubmit(
+                  onSubmitSendToAccounts,
+                  handleFormValidationError,
+                )}
                 className="flex min-h-0 flex-1 flex-col"
               >
                 <ModalBody>
@@ -4562,7 +4705,12 @@ const Quote = () => {
               </div>
             </ModalHeader>
 
-            <form onSubmit={handleOnboardingSubmit(onSubmitOnboardingForm)}>
+            <form
+              onSubmit={handleOnboardingSubmit(
+                onSubmitOnboardingForm,
+                handleFormValidationError,
+              )}
+            >
               <ModalBody className="px-6 py-5">
                 <div className="max-h-[65vh] space-y-5 overflow-y-auto overflow-x-hidden pr-1">
                   <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5">

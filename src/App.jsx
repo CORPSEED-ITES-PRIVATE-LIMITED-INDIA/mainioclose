@@ -23,6 +23,43 @@ import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
 import { restoreSession } from "./toolkit/slices/authSlice";
 import AdminPoApproval from "./admin/AdminPoApproval";
+import CreatePurchaseOrderModal from "./operation/projects/CreatePurchaseOrderModal";
+import { Form as AntForm, Select as AntSelect } from "antd";
+
+// TEMP DEBUG HARNESS -- remove before finishing.
+const TestGstSelectHarness = () => {
+  const [form] = AntForm.useForm();
+  const gstActive = AntForm.useWatch("gstActive", form);
+  return (
+    <div style={{ padding: 40 }}>
+      <div style={{ marginBottom: 20 }}>Current watched gstActive: {JSON.stringify(gstActive)}</div>
+      <AntForm form={form} layout="vertical" style={{ maxWidth: 300 }}>
+        <AntForm.Item label="GST Applicable" name="gstActive" initialValue="false">
+          <AntSelect
+            options={[
+              { label: "Yes", value: "true" },
+              { label: "No", value: "false" },
+            ]}
+          />
+        </AntForm.Item>
+      </AntForm>
+    </div>
+  );
+};
+
+// TEMP DEBUG HARNESS -- remove before finishing.
+const TestPoModalHarness = () => (
+  <CreatePurchaseOrderModal
+    open={true}
+    onClose={() => console.log("DEBUG onClose")}
+    procurementAssignmentId={1}
+    userId={1}
+    createdBy={1}
+    defaultEstimatedAmount={1000}
+    onSuccess={() => console.log("DEBUG onSuccess")}
+    vendorId={1}
+  />
+);
 
 const HomePage = lazy(() => import("./home/HomePage"));
 const Login = lazy(() => import("./login/Login"));
@@ -130,6 +167,8 @@ function App() {
           </Route>
 
           <Route path="/unauthorized" element={<div>Unauthorized</div>} />
+          <Route path="/test-po-modal" element={<TestPoModalHarness />} />
+          <Route path="/test-gst-select" element={<TestGstSelectHarness />} />
         </Routes>
       </Suspense>
     </AliveScope>
