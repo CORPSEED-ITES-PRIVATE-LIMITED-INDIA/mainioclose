@@ -1171,7 +1171,8 @@ const Expenses = () => {
           // NEW: Accounts decision on the government fee, before payment.
           const canDecideGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&
-            expense?.accountsApprovalStatus === "PENDING";
+            expense?.accountsApprovalStatus === "APPROVED" &&
+            expense?.paymentStatus === "PROCESSING";
 
           const canPayGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&
