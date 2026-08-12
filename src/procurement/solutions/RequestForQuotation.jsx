@@ -1047,7 +1047,9 @@ const RequestForQuotation = () => {
             description:
               resp?.payload?.message ||
               resp?.payload?.data?.message ||
-              "Failed to send RFQ.",
+              (resp?.payload?.errorCode === "ERR_VENDORS_ALREADY_PROGRESSED"
+                ? "All selected vendors have already moved past the RFQ-sent stage."
+                : "Failed to send RFQ."),
             color: "danger",
           });
         }

@@ -511,6 +511,29 @@ const getVendorAccountsBaseDetails = (
   };
 };
 
+const isLegalAgreementAgreed = (legalRequest) => {
+  return (
+    String(legalRequest?.status || "")
+      .trim()
+      .toUpperCase() === "AGREEMENT_AGREED"
+  );
+};
+
+const isLegalAgreementDisagreed = (legalRequest) => {
+  return (
+    String(legalRequest?.status || "")
+      .trim()
+      .toUpperCase() === "AGREEMENT_DISAGREED"
+  );
+};
+
+const isVendorActive = (finalization, quotation) => {
+  const vendorStatus =
+    finalization?.vendorStatus || quotation?.vendorStatus || "";
+
+  return String(vendorStatus).trim().toUpperCase() === "ACTIVE";
+};
+
 const getChatAttachmentUrl = (file) => {
   return (
     file?.fileUrl ||
@@ -1625,6 +1648,24 @@ const Quote = () => {
       return;
     }
 
+    /*
+     * FIX: backend now rejects onboarding for an already-ACTIVE vendor
+     * (ERR_ACTIVE_VENDOR_ONBOARDING_NOT_REQUIRED). Route the user
+     * straight to the legal request step instead of showing a form that
+     * will fail on submit.
+     */
+    if (isVendorActive(finalization, quotation)) {
+      addToast({
+        title: "Onboarding not required",
+        description:
+          "This vendor is already active. You can proceed directly to the service agreement request.",
+        color: "warning",
+      });
+
+      handleOpenLegalRequest(quotation);
+      return;
+    }
+
     setSelectedQuote(quotation);
     setSelectedVendorFinalization(finalization);
 
@@ -1882,6 +1923,35 @@ const Quote = () => {
         return;
       }
 
+      /*
+       * FIX: mirror the backend guard — final agreement can only be sent
+       * once the legal request tied to this quotation is AGREEMENT_AGREED.
+       * Checking this client-side avoids a wasted round trip and a
+       * confusing error toast after the user fills the whole form.
+       */
+      const legalRequest = getLegalRequestForQuotation(quotation);
+
+      if (!legalRequest?.id) {
+        addToast({
+          title: "ERROR",
+          description:
+            "No legal request found for this quotation. Please raise a service agreement request first.",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (!isLegalAgreementAgreed(legalRequest)) {
+        addToast({
+          title: "ERROR",
+          description: `Final agreement can only be sent once Legal marks it as AGREED. Current status: ${
+            legalRequest?.status || "PENDING"
+          }.`,
+          color: "danger",
+        });
+        return;
+      }
+
       setSelectedQuotation(quotation);
 
       resetVendorAgreementForm({
@@ -1895,8 +1965,84 @@ const Quote = () => {
 
       sendAgreementModal.onOpen();
     },
-    [resetVendorAgreementForm, sendAgreementModal],
+    [getLegalRequestForQuotation, resetVendorAgreementForm, sendAgreementModal],
   );
+  const handleOpenLegalRequest = (quotation) => {
+    if (!quotation?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Vendor quotation ID is missing.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const existingLegalRequest = getLegalRequestForQuotation(quotation);
+
+    /*
+     * FIX: only block if there's an active (non-disagreed) legal request.
+     * If the previous request was DISAGREED, the backend now allows a
+     * fresh request to be raised — match that here instead of blocking
+     * unconditionally.
+     */
+    if (
+      existingLegalRequest?.id &&
+      !isLegalAgreementDisagreed(existingLegalRequest)
+    ) {
+      addToast({
+        title: "Legal request already sent",
+        description: `Service agreement request already exists with status ${existingLegalRequest.status || "-"}.`,
+        color: "warning",
+      });
+      return;
+    }
+
+    const finalization = getFinalizationForQuotation(quotation);
+
+    if (!finalization?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Please finalize vendor before sending legal request.",
+        color: "danger",
+      });
+      return;
+    }
+
+    /*
+     * FIX: an already-ACTIVE vendor skips onboarding entirely (backend
+     * fix #5), so it will never reach ONBOARDING_STARTED. Allow the
+     * legal request gate to pass for active vendors directly off
+     * FINALIZED status instead of requiring ONBOARDING_STARTED.
+     */
+    const activeVendorShortcut = isVendorActive(finalization, quotation);
+
+    if (
+      !activeVendorShortcut &&
+      finalization?.status !== "ONBOARDING_STARTED"
+    ) {
+      addToast({
+        title: "ERROR",
+        description:
+          "Please start onboarding before sending service agreement request to legal team.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setSelectedVendorFinalization(finalization);
+    setSelectedQuotation(quotation);
+    resetLegalRequestForm({
+      legalRequestTitle: "Service Agreement Preparation Request",
+      notes:
+        finalization?.description ||
+        quotation?.items?.[0]?.description ||
+        quotation?.remarks ||
+        "Please prepare service agreement for finalized vendor.",
+      statusReason: "Service agreement required after onboarding started.",
+      assignedToLegal: "",
+    });
+    legalRequestModal.onOpen();
+  };
 
   const onSubmitSendAgreementToVendor = (values) => {
     const resolvedUserId =
@@ -2327,8 +2473,17 @@ const Quote = () => {
               .trim()
               .toUpperCase() === "ACCEPTED";
 
-          // Once accepted, allow only View
-          if (isAccepted) {
+          /*
+           * FIX: ACTIVE_VENDOR_MAPPED means the accounts/onboarding workflow
+           * was fully skipped via the active-vendor shortcut on the backend.
+           * Treat it the same as ACCEPTED — nothing further to do here.
+           */
+          const isActiveVendorMapped =
+            String(finalization?.status || "")
+              .trim()
+              .toUpperCase() === "ACTIVE_VENDOR_MAPPED";
+
+          if (isAccepted || isActiveVendorMapped) {
             return (
               <Dropdown>
                 <DropdownTrigger>
@@ -2350,15 +2505,31 @@ const Quote = () => {
             );
           }
 
+          const activeVendorShortcut = isVendorActive(finalization, rowData);
+
           const onboardingStarted =
-            finalization?.status === "ONBOARDING_STARTED";
+            finalization?.status === "ONBOARDING_STARTED" ||
+            activeVendorShortcut;
 
           const canSendToAccounts =
             ["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
               rowData?.status,
             ) &&
             finalization?.id &&
-            !finalization?.sentToAccounts;
+            !finalization?.sentToAccounts &&
+            !activeVendorShortcut;
+
+          /*
+           * FIX: only show / allow "Send Agreement To Vendor" once Legal has
+           * actually marked the agreement AGREED — matches the backend guard
+           * in sendAgreementToVendor.
+           */
+          const canSendAgreementToVendor =
+            rowData?.agreementFileUrl &&
+            isLegalAgreementAgreed(existingLegalRequest) &&
+            !["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
+              rowData?.status,
+            );
 
           return (
             <Dropdown>
@@ -2377,35 +2548,42 @@ const Quote = () => {
                   View
                 </DropdownItem>
 
+                {canSendAgreementToVendor && (
+                  <DropdownItem
+                    key="sendAgreementToVendor"
+                    startContent={<FileText size={15} />}
+                    onPress={() => handleOpenSendAgreementToVendor(rowData)}
+                  >
+                    Send Agreement To Vendor
+                  </DropdownItem>
+                )}
+
                 {rowData?.agreementFileUrl &&
+                  !isLegalAgreementAgreed(existingLegalRequest) &&
                   ![
                     "AGREEMENT_SENT_TO_VENDOR",
                     "REJECTED_BY_ACCOUNTS",
                   ].includes(rowData?.status) && (
-                    <>
-                      <DropdownItem
-                        key="sendAgreementToVendor"
-                        startContent={<FileText size={15} />}
-                        onPress={() => handleOpenSendAgreementToVendor(rowData)}
-                      >
-                        Send Agreement To Vendor
-                      </DropdownItem>
-                    </>
+                    <DropdownItem
+                      key="agreementPendingLegalDecision"
+                      startContent={<FileText size={15} />}
+                      isDisabled
+                    >
+                      Awaiting Legal Decision
+                    </DropdownItem>
                   )}
 
                 {["AGREEMENT_SENT_TO_VENDOR", "REJECTED_BY_ACCOUNTS"].includes(
                   rowData?.status,
                 ) &&
                   finalization?.sentToAccounts && (
-                    <>
-                      <DropdownItem
-                        key="sentToAccounts"
-                        startContent={<FileText size={15} />}
-                        isDisabled
-                      >
-                        Sent To Accounts
-                      </DropdownItem>
-                    </>
+                    <DropdownItem
+                      key="sentToAccounts"
+                      startContent={<FileText size={15} />}
+                      isDisabled
+                    >
+                      Sent To Accounts
+                    </DropdownItem>
                   )}
 
                 {canSendToAccounts && (
@@ -2427,7 +2605,8 @@ const Quote = () => {
                     Initiate Agreement
                   </DropdownItem>
                 ) : onboardingStarted ? (
-                  existingLegalRequest?.id ? (
+                  existingLegalRequest?.id &&
+                  !isLegalAgreementDisagreed(existingLegalRequest) ? (
                     <>
                       <DropdownItem
                         key="history"
@@ -2451,7 +2630,9 @@ const Quote = () => {
                       startContent={<FileText size={15} />}
                       onPress={() => handleOpenLegalRequest(rowData)}
                     >
-                      Service Agreement Request
+                      {existingLegalRequest?.id
+                        ? "Resubmit Service Agreement Request"
+                        : "Service Agreement Request"}
                     </DropdownItem>
                   )
                 ) : (
