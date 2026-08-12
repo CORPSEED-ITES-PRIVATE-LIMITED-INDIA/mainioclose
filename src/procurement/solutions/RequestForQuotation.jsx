@@ -46,6 +46,7 @@ import {
   Plus,
   Search,
   Send,
+  ChevronDown,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -553,7 +554,7 @@ const RequestForQuotation = () => {
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
-  const [filteration, setFilteration] = useState({ page: 1, size: 10 });
+  const [filteration, setFilteration] = useState({ page: 1, size: 50 });
 
   const rfqList = useMemo(
     () => normalizePageContent(rfqResponse),
@@ -1290,42 +1291,63 @@ const RequestForQuotation = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={RFQ_VENDOR_STATUS_OPTIONS}
-                labelKey="label"
-                valueKey="value"
-                label="Status"
-                value={status}
-                onChange={(value) => {
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectionMode="single"
+                selectedKeys={[status]}
+                onSelectionChange={(e) => {
+                  let value = Array?.from(e)[0];
                   if (value) {
                     setStatus(value);
                     setFilteration((prev) => ({ ...prev, page: 1 }));
                   }
                 }}
-              />
-            </div>
+              >
+                {RFQ_VENDOR_STATUS_OPTIONS?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
             <Button
               size="sm"

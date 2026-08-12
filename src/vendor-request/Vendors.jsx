@@ -745,7 +745,13 @@ const Vendors = () => {
         return (
           <Chip
             size="sm"
-            color={rowData?.status === "Active" ? "success" : "danger"}
+            color={
+              rowData?.status?.toUpperCase() === "ACTIVE"
+                ? "success"
+                : rowData?.status?.toUpperCase() === "ONBOARDING"
+                  ? "warning"
+                  : "danger"
+            }
             variant="flat"
           >
             {rowData?.status || "-"}
@@ -932,7 +938,7 @@ const Vendors = () => {
           td: "py-1.5 text-[12.5px]",
         }}
         selectedKeys={selectedKeys}
-        selectionMode="multiple"
+        // selectionMode="multiple"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"

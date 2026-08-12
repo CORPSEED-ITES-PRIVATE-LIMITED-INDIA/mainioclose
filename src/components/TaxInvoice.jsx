@@ -866,7 +866,7 @@ Corpseed Team`,
                   {inv?.companyUnitGstNo?.slice(0, 2)}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {inv?.contactName || ""}
+                  E-mail : {inv?.contactEmail || ""}
                 </div>
               </div>
 
@@ -887,7 +887,7 @@ Corpseed Team`,
                   {inv?.companyUnitGstNo?.slice(0, 2)}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {inv?.contactName || ""}
+                  E-mail : {inv?.contactEmail || ""}
                 </div>
               </div>
             </div>
