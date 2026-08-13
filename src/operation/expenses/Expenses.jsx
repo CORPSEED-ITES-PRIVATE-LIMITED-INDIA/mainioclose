@@ -1176,7 +1176,8 @@ const Expenses = () => {
 
           const canPayGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&
-            expense?.accountsApprovalStatus === "APPROVED";
+            expense?.accountsApprovalStatus === "APPROVED" &&
+            expense?.paymentStatus === "PROCESSING";
 
           return (
             <div className="flex justify-center">
@@ -1230,7 +1231,7 @@ const Expenses = () => {
                     Update Status
                   </DropdownItem>
 
-                  <DropdownItem
+                  {/* <DropdownItem
                     key="governmentFeeDecision"
                     description={
                       canDecideGovernmentFee
@@ -1239,7 +1240,7 @@ const Expenses = () => {
                     }
                   >
                     Government Fee Decision
-                  </DropdownItem>
+                  </DropdownItem> */}
 
                   <DropdownItem
                     key="governmentFee"
