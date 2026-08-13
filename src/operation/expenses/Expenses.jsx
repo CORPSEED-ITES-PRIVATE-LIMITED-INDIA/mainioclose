@@ -1172,7 +1172,7 @@ const Expenses = () => {
           const canDecideGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&
             expense?.accountsApprovalStatus === "APPROVED" &&
-            expense?.paymentStatus === "PROCESSING";
+            expense?.crtApprovalStatus === "PROCESSING";
 
           const canPayGovernmentFee =
             expense?.expenseCategory === "GOVERNMENT_FEE" &&

@@ -1026,9 +1026,14 @@ const Expense = () => {
             crtStatus === "APPROVED" &&
             !["APPROVED", "REJECTED", "CANCELLED"].includes(accountsStatus);
 
+          const paymentStatusValue = String(
+            expense?.paymentStatus || "",
+          ).toUpperCase();
+
           const canFundTransfer =
+            approvalStage === "COMPLETED" &&
             accountsStatus === "APPROVED" &&
-            expense?.accountPostingStatus === "POSTED"; // confirm actual field name with backend
+            paymentStatusValue === "PENDING";
 
           return (
             <Dropdown placement="bottom-end">
