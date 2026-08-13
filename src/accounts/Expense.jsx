@@ -40,6 +40,7 @@ import { useParams } from "react-router-dom";
 import {
   getExpensePaymentQueueList,
   updateExpenseAccountsDecision,
+  accountsApproveGovernmentFee,
 } from "../toolkit/slices/operationSlice";
 import FileUploader from "../components/FileUploader.jsx";
 import {
@@ -124,6 +125,16 @@ const INITIAL_DECISION_FORM = {
   // transferReference: "",
   // transferProofUrl: "",
 };
+
+const INITIAL_GOV_FEE_FORM = {
+  status: "",
+  remark: "",
+};
+
+const GOV_FEE_DECISION_OPTIONS = [
+  { label: "Approved", value: "APPROVED" },
+  { label: "Rejected", value: "REJECTED" },
+];
 
 // Only bank ledgers are allowed for fund transfer (exclude cash ledgers).
 const isCashLedger = (ledger) => {
@@ -277,6 +288,12 @@ const Expense = () => {
   const [fundTransferErrors, setFundTransferErrors] = useState({});
   const [isFundTransferSubmitting, setIsFundTransferSubmitting] =
     useState(false);
+
+  const [govFeeExpense, setGovFeeExpense] = useState(null);
+  const [govFeeForm, setGovFeeForm] = useState(INITIAL_GOV_FEE_FORM);
+  const [govFeeErrors, setGovFeeErrors] = useState({});
+  const [isGovFeeSubmitting, setIsGovFeeSubmitting] = useState(false);
+  const govFeeDisclosure = useDisclosure();
   const [
     isFundTransferAttachmentUploading,
     setIsFundTransferAttachmentUploading,
@@ -784,6 +801,117 @@ const Expense = () => {
     validateFundTransferForm,
   ]);
 
+  const resetGovFeeModal = useCallback(() => {
+    setGovFeeExpense(null);
+    setGovFeeForm(INITIAL_GOV_FEE_FORM);
+    setGovFeeErrors({});
+    setIsGovFeeSubmitting(false);
+  }, []);
+
+  const openGovFeeModal = useCallback(
+    (expense) => {
+      setGovFeeExpense(expense);
+      setGovFeeForm(INITIAL_GOV_FEE_FORM);
+      setGovFeeErrors({});
+      govFeeDisclosure.onOpen();
+    },
+    [govFeeDisclosure],
+  );
+
+  const validateGovFeeForm = useCallback(() => {
+    const errors = {};
+
+    if (!govFeeForm.status) {
+      errors.status = "Status is required";
+    }
+
+    if (!govFeeForm.remark?.trim()) {
+      errors.remark = "Remark is required";
+    }
+
+    setGovFeeErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [govFeeForm]);
+
+  const handleGovFeeDecision = useCallback(async () => {
+    if (!govFeeExpense?.expenseId || !govFeeExpense?.projectId) {
+      addToast({
+        title: "Expense details are missing",
+        description: "Expense ID and project ID are required.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!resolvedUserId) {
+      addToast({ title: "User ID is required", color: "danger" });
+      return;
+    }
+
+    if (!validateGovFeeForm()) return;
+
+    try {
+      setIsGovFeeSubmitting(true);
+
+      const payload = {
+        status: govFeeForm.status,
+        remark: govFeeForm.remark.trim(),
+      };
+
+      const response = await dispatch(
+        accountsApproveGovernmentFee({
+          expenseId: govFeeExpense.expenseId,
+          projectId: govFeeExpense.projectId,
+          userId: resolvedUserId,
+          data: payload,
+        }),
+      );
+
+      if (response?.meta?.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Failed to update government fee payment decision",
+          description:
+            response?.payload?.message ||
+            response?.payload?.error ||
+            response?.payload ||
+            "Something went wrong while updating the government fee decision.",
+          color: "danger",
+        });
+        return;
+      }
+
+      addToast({
+        title: "Government fee payment decision updated",
+        description: `Expense #${govFeeExpense.expenseId} government fee payment was updated.`,
+        color: "success",
+      });
+
+      resetGovFeeModal();
+      govFeeDisclosure.onClose();
+      fetchPaymentQueue();
+    } catch (error) {
+      addToast({
+        title: "Failed to update government fee payment decision",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong while updating the government fee decision.",
+        color: "danger",
+      });
+    } finally {
+      setIsGovFeeSubmitting(false);
+    }
+  }, [
+    dispatch,
+    fetchPaymentQueue,
+    govFeeDisclosure,
+    govFeeExpense,
+    govFeeForm,
+    resetGovFeeModal,
+    resolvedUserId,
+    validateGovFeeForm,
+  ]);
+
   const renderCell = useCallback(
     (expense, columnKey) => {
       const currencyCode = expense?.currencyCode || "INR";
@@ -1035,6 +1163,15 @@ const Expense = () => {
             accountsStatus === "APPROVED" &&
             paymentStatusValue === "PENDING";
 
+          const approvalStatusValue = String(
+            expense?.approvalStatus || "",
+          ).toUpperCase();
+
+          const canGovFeePaymentDecision =
+            approvalStage === "COMPLETED" &&
+            accountsStatus === "APPROVED" &&
+            paymentStatusValue === "PROCESSING";
+
           return (
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
@@ -1047,6 +1184,43 @@ const Expense = () => {
                   <EllipsisVertical className="h-4 w-4" />
                 </Button>
               </DropdownTrigger>
+              <DropdownMenu
+                aria-label="Expense accounts actions"
+                disabledKeys={[
+                  ...(canTakeAccountsDecision
+                    ? []
+                    : ["update-accounts-decision"]),
+                  ...(canFundTransfer ? [] : ["fund-transfer"]),
+                  ...(canGovFeePaymentDecision
+                    ? []
+                    : ["gov-fee-payment-decision"]),
+                ]}
+                onAction={(key) => {
+                  if (
+                    key === "update-accounts-decision" &&
+                    canTakeAccountsDecision
+                  ) {
+                    openDecisionModal(expense);
+                  }
+                  if (key === "fund-transfer" && canFundTransfer) {
+                    openFundTransferModal(expense);
+                  }
+                  if (
+                    key === "gov-fee-payment-decision" &&
+                    canGovFeePaymentDecision
+                  ) {
+                    openGovFeeModal(expense);
+                  }
+                }}
+              >
+                <DropdownItem key="update-accounts-decision">
+                  Update Status
+                </DropdownItem>
+                <DropdownItem key="fund-transfer">Fund Transfer</DropdownItem>
+                <DropdownItem key="gov-fee-payment-decision">
+                  Government Fee Payment Decision
+                </DropdownItem>
+              </DropdownMenu>
               <DropdownMenu
                 aria-label="Expense accounts actions"
                 disabledKeys={[
@@ -1080,7 +1254,7 @@ const Expense = () => {
           return expense?.[columnKey] ?? "-";
       }
     },
-    [openDecisionModal, openFundTransferModal],
+    [openDecisionModal, openFundTransferModal, openGovFeeModal],
   );
 
   const topContent = useMemo(
@@ -1707,6 +1881,108 @@ const Expense = () => {
                   {isFundTransferAttachmentUploading
                     ? "Uploading Attachment..."
                     : "Submit Fund Transfer"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={govFeeDisclosure.isOpen}
+        onOpenChange={govFeeDisclosure.onOpenChange}
+        size="lg"
+        scrollBehavior="inside"
+        isDismissable={!isGovFeeSubmitting}
+        isKeyboardDismissDisabled={isGovFeeSubmitting}
+        onClose={resetGovFeeModal}
+        classNames={{
+          base: "max-h-[90vh]",
+          header: "border-b border-default-200 px-5 py-4",
+          body: "px-5 py-4 overflow-y-auto",
+          footer: "border-t border-default-200 px-5 py-4",
+        }}
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <span className="text-base font-semibold">
+                  Government Fee Payment Decision
+                </span>
+                <span className="text-xs font-normal text-default-500">
+                  Expense #{govFeeExpense?.expenseId || "-"} ·{" "}
+                  {govFeeExpense?.projectName || "-"}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="gap-4">
+                <Select
+                  label="Status"
+                  placeholder="Select government fee payment decision"
+                  isRequired
+                  selectedKeys={
+                    govFeeForm.status
+                      ? new Set([govFeeForm.status])
+                      : new Set([])
+                  }
+                  isInvalid={Boolean(govFeeErrors.status)}
+                  errorMessage={govFeeErrors.status}
+                  onSelectionChange={(keys) => {
+                    const status = String(Array.from(keys)[0] || "");
+
+                    setGovFeeForm((previous) => ({ ...previous, status }));
+                    setGovFeeErrors((previous) => ({
+                      ...previous,
+                      status: "",
+                    }));
+                  }}
+                >
+                  {GOV_FEE_DECISION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} textValue={option.label}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+
+                <Textarea
+                  label="Remark"
+                  placeholder="Enter government fee payment remark"
+                  minRows={3}
+                  isRequired
+                  value={govFeeForm.remark}
+                  isInvalid={Boolean(govFeeErrors.remark)}
+                  errorMessage={govFeeErrors.remark}
+                  onValueChange={(value) => {
+                    setGovFeeForm((previous) => ({
+                      ...previous,
+                      remark: value,
+                    }));
+                    setGovFeeErrors((previous) => ({
+                      ...previous,
+                      remark: "",
+                    }));
+                  }}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  isDisabled={isGovFeeSubmitting}
+                  onPress={() => {
+                    resetGovFeeModal();
+                    modalClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  isLoading={isGovFeeSubmitting}
+                  onPress={handleGovFeeDecision}
+                >
+                  Submit Decision
                 </Button>
               </ModalFooter>
             </>
