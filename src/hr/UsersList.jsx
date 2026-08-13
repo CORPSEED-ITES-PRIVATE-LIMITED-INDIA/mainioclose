@@ -363,10 +363,9 @@ const UsersList = () => {
 
   const onSubmit = async (formValues) => {
     const managerFlag = Boolean(formValues?.managerFlag);
-    const managerId =
-      managerFlag && formValues?.managerId
-        ? Number(formValues.managerId)
-        : null;
+    const managerId = formValues?.managerId
+      ? Number(formValues.managerId)
+      : null;
 
     const values = {
       ...formValues,
@@ -509,9 +508,7 @@ const UsersList = () => {
             designationId: values.designationId,
             departmentIds: [values.departmentId],
             roleIds: authUser?.role?.map((role) => role.id) || [],
-            managerId: values.managerFlag
-              ? createdUser?.managers?.id || values.managerId
-              : null,
+            managerId: createdUser?.managers?.id || values.managerId,
             managerFlag: values.managerFlag,
             bucketSize: Number(values.lockerSize),
             lockerSize: Number(values.lockerSize),
