@@ -474,7 +474,7 @@ Corpseed Team`,
                       Payment Terms
                     </div>
                     <div className="text-[11px] font-bold">
-                      {po?.paymentTypeName || "NA"}
+                      {po?.paymentTerms || "NA"} days
                     </div>
                   </div>
                 </div>

@@ -766,7 +766,7 @@ export const salesNavItems = [
   },
   {
     title: "Advance Invoice",
-    icon: "",
+    icon: "BookOpenText",
     url: "sales/advanceTaxInvoice",
     key: "advanceInvoice",
   },
@@ -869,12 +869,12 @@ export const operationNavItems = [
     url: "operation/projects",
     key: "projects",
   },
-  {
-    title: "Settings",
-    icon: "Settings",
-    url: "operation/settings",
-    key: "settings",
-  },
+  // {
+  //   title: "Settings",
+  //   icon: "Settings",
+  //   url: "operation/settings",
+  //   key: "settings",
+  // },
 ];
 
 export const operationEmpItems = [

@@ -61,6 +61,7 @@ const COLUMNS = [
   { name: "GST TYPE", uid: "gstRegistrationType" },
   { name: "REQUEST STATUS", uid: "requestStatus" },
   { name: "REVIEW DETAILS", uid: "reviewDetails" },
+  { name: "E-INVOICE ATTACHMENT", uid: "einvoiceAttachmentUrl" },
   { name: "ACTIONS", uid: "actions", align: "center" },
 ];
 
@@ -823,6 +824,20 @@ const AdvanceInvoices = () => {
               </p>
             ) : null}
           </div>
+        );
+
+      case "einvoiceAttachmentUrl":
+        return item?.einvoiceAttachmentUrl ? (
+          <a
+            href={item.einvoiceAttachmentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="whitespace-nowrap text-[12.5px] text-blue-500 hover:underline"
+          >
+            View Attachment
+          </a>
+        ) : (
+          <span className="text-[12.5px] text-default-400">-</span>
         );
 
       case "actions": {
