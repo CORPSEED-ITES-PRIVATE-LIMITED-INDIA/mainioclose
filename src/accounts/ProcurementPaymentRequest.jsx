@@ -179,6 +179,10 @@ const ProcurementPaymentRequest = () => {
   const [releasePaymentProof, setReleasePaymentProof] = useState("");
   const [isReleaseFileUploading, setIsReleaseFileUploading] = useState(false);
   const [isReleaseSubmitting, setIsReleaseSubmitting] = useState(false);
+  const [releaseInvoiceNumber, setReleaseInvoiceNumber] = useState("");
+  const [releaseInvoiceDate, setReleaseInvoiceDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -262,6 +266,8 @@ const ProcurementPaymentRequest = () => {
     setReleaseTransactionReference("");
     setReleasePaymentDate(dayjs().format("YYYY-MM-DD"));
     setReleasePaymentProof("");
+    setReleaseInvoiceNumber("");
+    setReleaseInvoiceDate(dayjs().format("YYYY-MM-DD"));
     setIsReleaseFileUploading(false);
     setIsReleaseSubmitting(false);
   }, []);
@@ -500,6 +506,31 @@ const ProcurementPaymentRequest = () => {
       return;
     }
 
+    if (!String(releaseInvoiceNumber || "").trim()) {
+      addToast({
+        title: "Invoice number is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!releaseInvoiceDate) {
+      addToast({
+        title: "Invoice date is required",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (dayjs(releaseInvoiceDate).isAfter(dayjs(), "day")) {
+      addToast({
+        title: "Invalid invoice date",
+        description: "Invoice date cannot be in the future.",
+        color: "danger",
+      });
+      return;
+    }
+
     const selectedLedger = (
       Array.isArray(paymentLedgerList) ? paymentLedgerList : []
     ).find((ledger) => Number(ledger?.id) === Number(releaseBankLedgerId));
@@ -523,19 +554,17 @@ const ProcurementPaymentRequest = () => {
 
       paymentDate: releasePaymentDate,
 
+      invoiceNumber: String(releaseInvoiceNumber || "").trim(),
+      invoiceDate: releaseInvoiceDate,
+
       paymentProof: releasePaymentProof,
       proofAttachmentUrls: releasePaymentProof ? [releasePaymentProof] : [],
 
       tdsActive: releaseTdsActive ? true : false,
       tdsPercentage: releaseTdsActive ? Number(releaseTdsPercentage) : null,
-      // tdsAmount: releaseTdsActive ? releaseTdsAmount : 0,
 
-      // Existing payload field remains unchanged. Its value is calculated
-      // from the custom paying amount after deducting TDS.
       bankPaymentAmount: releaseCustomPayableAmount,
 
-      // Used only when the backend response already provides this ledger ID.
-      // Otherwise the backend should resolve its system TDS Payable ledger.
       tdsPayableLedgerId: releaseTdsActive
         ? Number(rowItem?.tdsPayableLedgerId || rowItem?.tdsLedgerId || 0) ||
           null
@@ -1204,6 +1233,22 @@ const ProcurementPaymentRequest = () => {
                   label="Payment Date"
                   value={releasePaymentDate}
                   onValueChange={setReleasePaymentDate}
+                  max={dayjs().format("YYYY-MM-DD")}
+                  isRequired
+                />
+                <Input
+                  label="Invoice Number"
+                  placeholder="Enter invoice number"
+                  value={releaseInvoiceNumber}
+                  onValueChange={setReleaseInvoiceNumber}
+                  isRequired
+                />
+
+                <Input
+                  type="date"
+                  label="Invoice Date"
+                  value={releaseInvoiceDate}
+                  onValueChange={setReleaseInvoiceDate}
                   max={dayjs().format("YYYY-MM-DD")}
                   isRequired
                 />
