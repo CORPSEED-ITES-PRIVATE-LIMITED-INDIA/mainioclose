@@ -157,6 +157,12 @@ const formatText = (value) => {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
+const formatDate = (value) => {
+  if (!value) return "-";
+  const parsedDate = dayjs(value);
+  return parsedDate.isValid() ? parsedDate.format("DD MMM YYYY") : "-";
+};
+
 const formatDateTime = (value) => {
   if (!value) return "-";
 
@@ -1221,31 +1227,6 @@ const Expense = () => {
                   Government Fee Payment Decision
                 </DropdownItem>
               </DropdownMenu>
-              <DropdownMenu
-                aria-label="Expense accounts actions"
-                disabledKeys={[
-                  ...(canTakeAccountsDecision
-                    ? []
-                    : ["update-accounts-decision"]),
-                  ...(canFundTransfer ? [] : ["fund-transfer"]),
-                ]}
-                onAction={(key) => {
-                  if (
-                    key === "update-accounts-decision" &&
-                    canTakeAccountsDecision
-                  ) {
-                    openDecisionModal(expense);
-                  }
-                  if (key === "fund-transfer" && canFundTransfer) {
-                    openFundTransferModal(expense);
-                  }
-                }}
-              >
-                <DropdownItem key="update-accounts-decision">
-                  Update Status
-                </DropdownItem>
-                <DropdownItem key="fund-transfer">Fund Transfer</DropdownItem>
-              </DropdownMenu>
             </Dropdown>
           );
         }
@@ -1909,6 +1890,7 @@ const Expense = () => {
                 <span className="text-base font-semibold">
                   Government Fee Payment Decision
                 </span>
+
                 <span className="text-xs font-normal text-default-500">
                   Expense #{govFeeExpense?.expenseId || "-"} ·{" "}
                   {govFeeExpense?.projectName || "-"}
@@ -1916,6 +1898,77 @@ const Expense = () => {
               </ModalHeader>
 
               <ModalBody className="gap-4">
+                {/* Submitted payment proof — read-only summary */}
+                <div className="rounded-xl border border-default-200 bg-default-50/70 p-3">
+                  <p className="mb-3 text-xs font-semibold text-default-600">
+                    Payment Proof
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-default-500">Payment Mode</p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {formatText(govFeeExpense?.governmentPaymentMode)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">Payment Amount</p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {formatCurrency(
+                          govFeeExpense?.governmentPaymentAmount,
+                          govFeeExpense?.currencyCode,
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">Payment Date</p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {formatDate(govFeeExpense?.governmentPaymentDate)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-default-500">
+                        Payment Reference
+                      </p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {govFeeExpense?.governmentPaymentReference || "-"}
+                      </p>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-default-500">
+                        Payment Receipt
+                      </p>
+
+                      {govFeeExpense?.governmentPaymentReceiptUrl ? (
+                        <a
+                          href={govFeeExpense.governmentPaymentReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 inline-block text-sm font-medium text-primary hover:underline"
+                        >
+                          View Receipt
+                        </a>
+                      ) : (
+                        <p className="mt-0.5 text-sm font-medium">-</p>
+                      )}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-default-500">
+                        Technical Remark
+                      </p>
+                      <p className="mt-0.5 text-sm font-medium">
+                        {govFeeExpense?.governmentPaymentRemark || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Accounts decision */}
                 <Select
                   label="Status"
                   placeholder="Select government fee payment decision"
@@ -1930,7 +1983,11 @@ const Expense = () => {
                   onSelectionChange={(keys) => {
                     const status = String(Array.from(keys)[0] || "");
 
-                    setGovFeeForm((previous) => ({ ...previous, status }));
+                    setGovFeeForm((previous) => ({
+                      ...previous,
+                      status,
+                    }));
+
                     setGovFeeErrors((previous) => ({
                       ...previous,
                       status: "",
@@ -1957,6 +2014,7 @@ const Expense = () => {
                       ...previous,
                       remark: value,
                     }));
+
                     setGovFeeErrors((previous) => ({
                       ...previous,
                       remark: "",
@@ -1969,10 +2027,7 @@ const Expense = () => {
                 <Button
                   variant="light"
                   isDisabled={isGovFeeSubmitting}
-                  onPress={() => {
-                    resetGovFeeModal();
-                    modalClose();
-                  }}
+                  onPress={modalClose}
                 >
                   Cancel
                 </Button>
