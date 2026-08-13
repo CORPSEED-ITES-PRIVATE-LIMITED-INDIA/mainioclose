@@ -1826,7 +1826,7 @@ const Unbill = () => {
               <ModalBody className="max-h-[75vh] overflow-auto">
                 <UnbilledView
                   invoiceData={invoiceDetail}
-                  heading={isAdvanceInvoice ? "Tax Invoice" : "Unbill"}
+                  heading={isAdvanceInvoice ? "Tax Invoice" : "Unbilled"}
                 />
               </ModalBody>
               <ModalFooter>

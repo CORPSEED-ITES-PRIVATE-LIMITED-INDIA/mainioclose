@@ -254,8 +254,8 @@ const ProjectActivities = () => {
       }
 
       addToast({
-        title: resp?.payload?.status || "Unable to add expense",
-        description: resp?.payload?.message,
+        title: resp?.payload || "Unable to add expense",
+        description: resp?.payload,
         color: "danger",
       });
     } catch (error) {

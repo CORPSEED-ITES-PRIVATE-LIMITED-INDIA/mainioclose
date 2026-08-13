@@ -804,7 +804,7 @@ Corpseed Team`,
                   {buyer.stateCode || "-"}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {buyer.contactName || ""}
+                  E-mail : {buyer.contactEmail || ""}
                 </div>
               </div>
 
@@ -824,7 +824,7 @@ Corpseed Team`,
                   {buyer.stateCode || "-"}
                 </div>
                 <div className="text-[11px]">
-                  E-mail : {buyer.contactName || ""}
+                  E-mail : {buyer.contactEmail || ""}
                 </div>
               </div>
             </div>

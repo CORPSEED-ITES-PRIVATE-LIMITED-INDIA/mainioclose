@@ -84,7 +84,8 @@ const Login = () => {
                       department === "liaisoning" ||
                       department === "crt test" ||
                       department === "operations" ||
-                      department === "liasoning test"
+                      department === "liasoning test" ||
+                      department === "filing"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/operation/projects`);

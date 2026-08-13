@@ -33,7 +33,8 @@ import NotificationBell from "../components/NotificationBell";
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
 
-  const trimmed = department?.trim()?.toLowerCase();
+  const trimmed = department?.department?.trim()?.toLowerCase();
+  const isManager = department?.isManager;
 
   const items = {
     sales: salesNavItems,
@@ -46,6 +47,7 @@ const getNavItemsByDepartment = (department, admin) => {
     legal: legalNavItems,
     technical: operationNavItems,
     liaisoning: operationNavItems,
+    filing: operationNavItems,
 
     operations: operationEmpItems,
     "liasoning test": operationEmpItems,
@@ -64,15 +66,8 @@ const Layoutpage = () => {
   const { userId } = useParams();
 
   const adminRole = userRole.includes("ADMIN");
-  const department = useSelector(
-    (state) => state?.auth?.getDepartmentDetail?.department,
-  );
+  const department = useSelector((state) => state?.auth?.getDepartmentDetail);
 
-  const departmentsdfgsd = useSelector(
-    (state) => state?.auth?.getDepartmentDetail,
-  );
-
-  console.log("departmentsdfgsd ----->    ", departmentsdfgsd);
   const pathname = location.pathname;
   const segments = pathname.split("/");
   const userIndex = segments.indexOf("erp");
@@ -127,7 +122,10 @@ const Layoutpage = () => {
               </Button>
               <Breadcrumbs isDisabled size="sm" className="min-w-0">
                 {afterUserId?.map((item) => (
-                  <BreadcrumbItem key={item} className="capitalize text-[12.5px]">
+                  <BreadcrumbItem
+                    key={item}
+                    className="capitalize text-[12.5px]"
+                  >
                     {item}
                   </BreadcrumbItem>
                 ))}

@@ -221,6 +221,7 @@ const Department = () => {
 
     dispatch(createDesiginationByDepartment(values))
       .then((resp) => {
+        console.log("respvcnbbvncvbngf", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           dispatch(createDesiginationByDepartmentId(values))
             .then((response) => {
@@ -274,7 +275,7 @@ const Department = () => {
         } else {
           addToast({
             title: "ERROR",
-            description: resp?.payload,
+            description: resp?.payload?.message,
             color: "danger",
           });
         }

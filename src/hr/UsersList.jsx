@@ -145,7 +145,7 @@ const formSchema = (flags) =>
         .string()
         .length(12, "Aadhar card number must contain 12 digits"),
       panNumber: z.string().length(10, "PAN number must contain 10 characters"),
-      managerId: z.string().optional(),
+      managerId: z.string().min(1, "Please select a manager name"),
       managerFlag: z.boolean().optional(),
       lockerSize: z.string().optional(),
       expInYear: z.string().min(1, "Please enter experience in years"),
@@ -175,15 +175,6 @@ const formSchema = (flags) =>
       emergencyNumber: z.string().optional(),
       permanentAddress: z.string().min(1, "Please enter permanent address"),
       residentialAddress: z.string().optional(),
-    })
-    .superRefine((values, ctx) => {
-      if (values.managerFlag && !values.managerId?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["managerId"],
-          message: "Please select a manager name",
-        });
-      }
     });
 
 const defaultValues = {
@@ -314,18 +305,6 @@ const UsersList = () => {
     reset(getValues());
   }, [formFlags]);
 
-  const isManagerFlagEnabled = Boolean(watch("managerFlag"));
-
-  useEffect(() => {
-    if (!isManagerFlagEnabled) {
-      setValue("managerId", "", {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
-      clearErrors("managerId");
-    }
-  }, [isManagerFlagEnabled, setValue, clearErrors]);
-
   const handleEdit = useCallback(
     (data) => {
       dispatch(getAllRoles());
@@ -384,10 +363,9 @@ const UsersList = () => {
 
   const onSubmit = async (formValues) => {
     const managerFlag = Boolean(formValues?.managerFlag);
-    const managerId =
-      managerFlag && formValues?.managerId
-        ? Number(formValues.managerId)
-        : null;
+    const managerId = formValues?.managerId
+      ? Number(formValues.managerId)
+      : null;
 
     const values = {
       ...formValues,
@@ -530,9 +508,7 @@ const UsersList = () => {
             designationId: values.designationId,
             departmentIds: [values.departmentId],
             roleIds: authUser?.role?.map((role) => role.id) || [],
-            managerId: values.managerFlag
-              ? createdUser?.managers?.id || values.managerId
-              : null,
+            managerId: createdUser?.managers?.id || values.managerId,
             managerFlag: values.managerFlag,
             bucketSize: Number(values.lockerSize),
             lockerSize: Number(values.lockerSize),
@@ -735,8 +711,8 @@ const UsersList = () => {
               <DropdownItem key={"edit"} onPress={() => handleEdit(rowData)}>
                 Edit
               </DropdownItem>
-              <DropdownItem key={"approved"}>Approved</DropdownItem>
-              <DropdownItem key={"disapproved"}>Disapproved</DropdownItem>
+              {/* <DropdownItem key={"approved"}>Approved</DropdownItem>
+              <DropdownItem key={"disapproved"}>Disapproved</DropdownItem> */}
             </DropdownMenu>
           </Dropdown>
         );
@@ -1259,13 +1235,7 @@ const UsersList = () => {
                             onSelectionChange={(keys) => {
                               const value = Array.from(keys)[0];
                               if (value !== undefined) {
-                                const managerFlag = value === "true";
-                                field.onChange(managerFlag);
-
-                                if (!managerFlag) {
-                                  setValue("managerId", "");
-                                  clearErrors("managerId");
-                                }
+                                field.onChange(value === "true");
                               }
                             }}
                           >
@@ -1285,8 +1255,7 @@ const UsersList = () => {
                         render={({ field }) => (
                           <Select
                             label="Manager name"
-                            isRequired={isManagerFlagEnabled}
-                            isDisabled={!isManagerFlagEnabled}
+                            isRequired
                             selectedKeys={field.value ? [field.value] : []}
                             onSelectionChange={(keys) => {
                               const value = Array.from(keys)[0];

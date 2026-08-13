@@ -507,7 +507,7 @@ const ProjectDetails = () => {
   const vendorDrawer = useDisclosure();
   const activityDrawer = useDisclosure();
   const reopenModal = useDisclosure();
-                
+
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
   );
@@ -576,6 +576,9 @@ const ProjectDetails = () => {
   const adminRole = userRole?.includes("ADMIN");
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
+  );
+  const isManager = useSelector(
+    (state) => state.auth.getDepartmentDetail?.isManager,
   );
   const companyDocumentsList = useSelector(
     (state) => state.operation.compnyDocumentListByCompanyIdAndUnitId || [],
@@ -3039,7 +3042,7 @@ const ProjectDetails = () => {
         )}
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          {adminRole && (
+          {(adminRole || isManager) && (
             <aside className="lg:col-span-3">
               <div className="sticky top-0 max-h-[calc(100vh-150px)] overflow-y-auto border-r border-default-200 pr-3">
                 <div className="mb-3">
