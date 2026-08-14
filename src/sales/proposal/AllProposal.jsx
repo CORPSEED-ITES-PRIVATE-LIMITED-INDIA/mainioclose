@@ -376,6 +376,9 @@ const AllProposal = () => {
     defaultValues,
   });
 
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const adminRole = userRole.includes("ADMIN");
+
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
@@ -735,13 +738,15 @@ const AllProposal = () => {
                     <DropdownItem key="REJECTED">REJECTED</DropdownItem>
                   ) : null}
 
-                  {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                  {isDiscountApprovalPendingStatus(rowData?.status) &&
+                  adminRole ? (
                     <DropdownItem key="APPROVE_DISCOUNT">
                       Approve Discount
                     </DropdownItem>
                   ) : null}
 
-                  {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                  {isDiscountApprovalPendingStatus(rowData?.status) &&
+                  adminRole ? (
                     <DropdownItem
                       key="REJECT_DISCOUNT"
                       color="danger"
