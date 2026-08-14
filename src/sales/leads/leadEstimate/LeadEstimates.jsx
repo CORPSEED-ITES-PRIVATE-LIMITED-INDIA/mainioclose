@@ -1148,6 +1148,16 @@ const LeadEstimates = () => {
                     />
                   </Form.Item>
                 </Form>
+
+                <Form>
+                  <Form.Item
+                    label="Client PO Number"
+                    name="clientPoNumber"
+                    className="mb-0"
+                  >
+                    <AntInput placeholder="Client PO Number" />
+                  </Form.Item>
+                </Form>
               </div>
 
               <div>

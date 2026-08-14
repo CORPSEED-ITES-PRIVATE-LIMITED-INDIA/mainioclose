@@ -28,6 +28,7 @@ import {
   getApprovalQueueDashboard,
   getBillingOverview,
   getBillingVsCollection,
+  getDashboardUsersByHeirarchy,
   getInvoiceStatusOverviewDashboard,
   getAccountSummary,
   getTopOutstandingCompanies,
@@ -35,6 +36,7 @@ import {
 } from "../../toolkit/slices/dashboardSlice";
 import { useParams } from "react-router-dom";
 import { getTDSCollectionSummary } from "../../toolkit/slices/accountSlice";
+import NewSelect from "../../components/NewSelect";
 
 const getInvoiceStatusMeta = (status) => {
   const value = String(status || "").toLowerCase();
@@ -444,16 +446,21 @@ function DashboardToolbar({
   onToDateChange,
   onRefresh,
   loading,
+  userSelector,
 }) {
   return (
     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="text-lg font-bold leading-6 text-slate-950">
-          Accounts Dashboard
-        </h1>
-        <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          Billing, payments, GST, TDS, outstanding and approvals overview.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-lg font-bold leading-6 text-slate-950">
+            Accounts Dashboard
+          </h1>
+          <p className="mt-0.5 text-xs leading-5 text-slate-500">
+            Billing, payments, GST, TDS, outstanding and approvals overview.
+          </p>
+        </div>
+
+        {userSelector && <div className="w-full sm:w-56">{userSelector}</div>}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -1392,15 +1399,29 @@ export default function AccountsDashboard() {
     topOutstandingCompanies,
     clientGST,
     tdsCollectionSummary,
+    dashboardUsers = [],
   } = useSelector((state) => state.dashboard);
 
   const [period, setPeriod] = useState("MONTH");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const userId = useMemo(() => {
+  const loggedInUserId = useMemo(() => {
     return Number(params?.userId || params?.id || getLoggedInUserId());
   }, [params?.userId, params?.id]);
+
+  const [userId, setUserId] = useState(loggedInUserId);
+
+  // Reset the selected user whenever the logged-in user (route) changes.
+  useEffect(() => {
+    setUserId(loggedInUserId);
+  }, [loggedInUserId]);
+
+  // Fetch the hierarchy (team) of the logged-in user for the "select user" dropdown.
+  useEffect(() => {
+    if (!loggedInUserId) return;
+    dispatch(getDashboardUsersByHeirarchy(loggedInUserId));
+  }, [dispatch, loggedInUserId]);
 
   const loadDashboardData = useCallback(() => {
     if (!userId) return;
@@ -1494,6 +1515,18 @@ export default function AccountsDashboard() {
           onFromDateChange={setFromDate}
           onToDateChange={setToDate}
           onRefresh={loadDashboardData}
+          userSelector={
+            <NewSelect
+              label="Viewing dashboard for"
+              labelPlacement="outside"
+              placeholder="Select user"
+              data={dashboardUsers}
+              labelKey="name"
+              valueKey="id"
+              value={userId}
+              onChange={(value) => value && setUserId(Number(value))}
+            />
+          }
         />
 
         {(billingOverviewError ||

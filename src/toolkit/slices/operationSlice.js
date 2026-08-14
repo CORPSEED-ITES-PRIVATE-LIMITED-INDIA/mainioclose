@@ -844,6 +844,28 @@ export const getProcurementOrderByPurchaseId = createAsyncThunk(
   },
 );
 
+export const getAllProcurementPurchaseOrders = createAsyncThunk(
+  "getAllProcurementPurchaseOrders",
+  async ({ userId, page = 1, size = 10 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        "/operationService/api/purchase-orders/all",
+        {
+          params: { userId: Number(userId), page: page - 1, size },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to fetch purchase orders",
+      );
+    }
+  },
+);
+
 export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
   "getAllLegalSupportRequestsForFilter",
   async ({ userId, page = 1, size = 10, status } = {}, { rejectWithValue }) => {
@@ -1757,6 +1779,9 @@ export const OperationSlice = createSlice({
     procurementOrderByPurchaseIdList: [],
     procurementOrderByPurchaseIdLoading: false,
     procurementOrderByPurchaseIdError: null,
+    allProcurementPurchaseOrdersList: {},
+    allProcurementPurchaseOrdersLoading: false,
+    allProcurementPurchaseOrdersError: null,
     paymentRequestByPoId: {},
     compnyDocumentListByCompanyIdAndUnitId: [],
     departmentUsers: [],
@@ -2110,6 +2135,25 @@ export const OperationSlice = createSlice({
         state.procurementOrderByPurchaseIdLoading = false;
         state.procurementOrderByPurchaseIdError = action.payload;
         state.procurementOrderByPurchaseIdList = [];
+      },
+    );
+
+    builder.addCase(getAllProcurementPurchaseOrders.pending, (state) => {
+      state.allProcurementPurchaseOrdersLoading = true;
+      state.allProcurementPurchaseOrdersError = null;
+    });
+    builder.addCase(
+      getAllProcurementPurchaseOrders.fulfilled,
+      (state, action) => {
+        state.allProcurementPurchaseOrdersLoading = false;
+        state.allProcurementPurchaseOrdersList = action.payload;
+      },
+    );
+    builder.addCase(
+      getAllProcurementPurchaseOrders.rejected,
+      (state, action) => {
+        state.allProcurementPurchaseOrdersLoading = false;
+        state.allProcurementPurchaseOrdersError = action.payload;
       },
     );
 

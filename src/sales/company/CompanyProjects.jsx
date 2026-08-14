@@ -7,6 +7,7 @@ import {
   DropdownTrigger,
   Input,
   Pagination,
+  Progress,
   Table,
   TableBody,
   TableCell,
@@ -18,20 +19,23 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import {
-  getAllCompanyProjects,
-  getCompanyProjectAction,
-  getLeadsByCompanyId,
-} from "../../toolkit/slices/companySlice";
+import dayjs from "dayjs";
+import { getProjectsByUnitId } from "../../toolkit/slices/companySlice";
+import { inrCurrency } from "../../common";
 
 const columns = [
-  { name: "ID", uid: "projectId" },
+  { name: "ID", uid: "id" },
+  { name: "PROJECT NO.", uid: "projectNo" },
+  { name: "SERVICE NAME", uid: "name" },
   { name: "COMPANY NAME", uid: "companyName", sortable: true },
-  { name: "PROJECT NAME", uid: "projectName" },
-  { name: "CLIENT", uid: "client" },
-  { name: "ASSIGNEE", uid: "assignee" },
-  { name: "PRIMARY ADDRESS", uid: "address" },
-  { name: "SECONDARY ADDRESS", uid: "secAddress" },
+  { name: "CONTACT", uid: "contactName" },
+  { name: "SALES PERSON", uid: "salesPersonName" },
+  { name: "UNBILL NO.", uid: "unbilledNumber" },
+  { name: "ESTIMATE NO.", uid: "estimateNumber" },
+  { name: "DATE", uid: "date" },
+  { name: "AMOUNT", uid: "amount" },
+  { name: "MILESTONE", uid: "mileStone" },
+  { name: "STATUS", uid: "status" },
 ];
 
 function capitalize(s) {
@@ -39,18 +43,23 @@ function capitalize(s) {
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "leadId",
+  "id",
+  "projectNo",
+  "name",
   "companyName",
-  "projectName",
-  "client",
-  "assignee",
-  "address",
-  "secAddress",
+  "contactName",
+  "salesPersonName",
+  "unbilledNumber",
+  "estimateNumber",
+  "date",
+  "amount",
+  "mileStone",
+  "status",
 ];
 
 const CompanyProjects = () => {
-  const { userId, companyId, unitId } = useParams();
-  console.log("unitId", unitId);
+  const { userId, companyId, unitId, companyUnitId } = useParams();
+  const effectiveUnitId = unitId || companyUnitId;
   const dispatch = useDispatch();
   const count = useSelector(
     (state) => state.company.companyProjectList?.length,
@@ -73,13 +82,12 @@ const CompanyProjects = () => {
     type: "all",
     rating: "all",
   });
-  console.log("dskjhgsdkjhgsdkj", data);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    console.log("Unit Id", unitId);
-    dispatch(getAllCompanyProjects({ companyId, unitId }));
-  }, [dispatch, companyId, unitId]);
+    if (!effectiveUnitId) return;
+    dispatch(getProjectsByUnitId(effectiveUnitId));
+  }, [dispatch, effectiveUnitId]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -125,65 +133,101 @@ const CompanyProjects = () => {
     }
   }, [sortDescriptor, items]);
 
-  const renderCell = useCallback((rowData, columnKey) => {
-    switch (columnKey) {
-      case "leadName":
-        return (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col">
-              <Link className="font-normal">{rowData?.leadName || "-"}</Link>
+  const renderCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "projectNo":
+          return (
+            <div className="flex flex-col gap-0.5">
+              <Link
+                className="text-[12.5px] font-medium"
+                to={`/erp/${userId}/operation/projects/${rowData?.id}/projectDetail`}
+              >
+                {rowData?.projectNo || "-"}
+              </Link>
             </div>
-          </div>
-        );
+          );
+        case "name":
+          return <p className="text-[12.5px]">{rowData?.name || "-"}</p>;
+        case "companyName":
+          return (
+            <p className="text-[12.5px]">{rowData?.companyName || "-"}</p>
+          );
+        case "contactName":
+          return (
+            <p className="text-[12.5px]">{rowData?.contactName || "-"}</p>
+          );
+        case "salesPersonName":
+          return (
+            <p className="text-[12.5px]">{rowData?.salesPersonName || "-"}</p>
+          );
+        case "unbilledNumber":
+          return (
+            <p className="text-[12.5px]">{rowData?.unbilledNumber || "-"}</p>
+          );
+        case "estimateNumber":
+          return (
+            <p className="text-[12.5px]">{rowData?.estimateNumber || "-"}</p>
+          );
+        case "date":
+          return (
+            <p className="text-[12.5px]">
+              {rowData?.date ? dayjs(rowData.date).format("DD MMM YYYY") : "-"}
+            </p>
+          );
+        case "amount":
+          return (
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[12.5px] font-bold">
+                {inrCurrency(rowData?.totalAmount)}
+              </p>
+              <p className="text-[11.5px] text-default-500">
+                Due: {inrCurrency(rowData?.dueAmount)}
+              </p>
+            </div>
+          );
+        case "mileStone":
+          return (
+            <Progress
+              aria-label="Milestone completion"
+              className="max-w-md"
+              color="success"
+              showValueLabel={true}
+              size="sm"
+              value={rowData?.milestoneCompletionPercentage || 0}
+            />
+          );
+        case "status":
+          return (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={
+                rowData?.statusName === "COMPLETED"
+                  ? "success"
+                  : rowData?.statusName === "REJECTED"
+                    ? "danger"
+                    : rowData?.statusName === "ON_HOLD"
+                      ? "warning"
+                      : rowData?.statusName === "OPEN"
+                        ? "primary"
+                        : rowData?.statusName === "IN_PROGRESS"
+                          ? "warning"
+                          : rowData?.statusName === "REOPEN"
+                            ? "primary"
+                            : "default"
+              }
+            >
+              {rowData?.statusName || "-"}
+            </Chip>
+          );
 
-      case "client":
-        return (
-          <div className="flex flex-col">
-            <span className="text-sm">{rowData?.client?.name || "-"}</span>
-            <span className="text-tiny text-gray-400">
-              {rowData?.client?.emails || ""},{rowData?.client?.contactNo || ""}
-            </span>
-          </div>
-        );
-      case "assignee":
-        return (
-          <div className="flex flex-col">
-            <span className="font-semibold">
-              {rowData?.assignee?.fullName || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData?.assignee?.email || ""}
-            </span>
-          </div>
-        );
-
-      case "address":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData.pAddress || "-"},{rowData.pPinCode || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.city || ""},{rowData?.pState},{rowData?.pCountry}
-            </span>
-          </div>
-        );
-      case "secAddress":
-        return (
-          <div className="flex flex-col">
-            <span className="font-normal">
-              {rowData.secAddress || "-"},{rowData.sPinCode || "-"}
-            </span>
-            <span className="text-sm text-gray-400">
-              {rowData.sCity || ""},{rowData?.sState},{rowData?.sCountry}
-            </span>
-          </div>
-        );
-
-      default:
-        return rowData[columnKey] || "-";
-    }
-  }, []);
+        default:
+          return rowData[columnKey] || "-";
+      }
+    },
+    [userId],
+  );
 
   const onNextPage = useCallback(() => {
     if (companyFilteration?.page < pages) {
@@ -302,9 +346,6 @@ const CompanyProjects = () => {
           total={pages}
           onChange={(e) => {
             setCompanyFilteration((prev) => ({ ...prev, page: e }));
-            if (e > companyFilteration?.page) {
-              dispatch(getAllNewCompanies({ ...companyFilteration, page: e }));
-            }
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
@@ -328,8 +369,6 @@ const CompanyProjects = () => {
       </div>
     );
   }, [selectedKeys, count, companyFilteration, pages, hasSearchFilter]);
-
-  console.log("hgfdhgfhgf", items);
 
   return (
     <>
@@ -366,7 +405,7 @@ const CompanyProjects = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems || []}>
           {(item) => (
-            <TableRow key={item.projectId}>
+            <TableRow key={item.id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

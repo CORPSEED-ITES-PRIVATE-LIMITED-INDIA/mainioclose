@@ -15,6 +15,10 @@ const VendorPaymentHistory = lazy(
 const ProjectDetails = lazy(
   () => import("../operation/projects/ProjectDetails"),
 );
+const ProjectPR = lazy(() => import("../operation/projects/ProjectPR"));
+const ProcurementPurchaseOrder = lazy(
+  () => import("../procurement/ProcurementPurchaseOrder"),
+);
 const ProjectActivities = lazy(
   () => import("../operation/projects/ProjectActivities"),
 );
@@ -83,6 +87,14 @@ const ProcurementRouting = () => {
       <Route
         path="procurement/projects/:projectId/projectDetail/activities"
         element={<ProjectActivities />}
+      />
+      <Route
+        path="procurement/purchaseOrders"
+        element={<ProcurementPurchaseOrder />}
+      />
+      <Route
+        path="procurement/purchaseOrders/:poId/procurementPaymentRequest"
+        element={<ProjectPR />}
       />
     </>
   );

@@ -629,6 +629,20 @@ export const getAllCompanyProjects = createAsyncThunk(
   },
 );
 
+export const getProjectsByUnitId = createAsyncThunk(
+  "getProjectsByUnitId",
+  async (unitId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/unit/${unitId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const linkCompanyAndUnitsWithLead = createAsyncThunk(
   "linkCompanyAndUnitsWithLead",
   async (data, { rejectWithValue }) => {
@@ -1031,6 +1045,18 @@ const CompanySlice = createSlice({
       state.loading = "success";
     });
     builder.addCase(getAllCompanyProjects.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyProjectList = [];
+    });
+
+    builder.addCase(getProjectsByUnitId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getProjectsByUnitId.fulfilled, (state, action) => {
+      state.companyProjectList = action.payload;
+      state.loading = "success";
+    });
+    builder.addCase(getProjectsByUnitId.rejected, (state) => {
       state.loading = "rejected";
       state.companyProjectList = [];
     });

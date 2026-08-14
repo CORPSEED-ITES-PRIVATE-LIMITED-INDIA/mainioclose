@@ -1460,7 +1460,8 @@ const LeadInfo = () => {
                 <CardBody className="flex flex-col gap-3 p-3">
                   <NewSelect
                     placeholder="Select comment..."
-                    data={[{ name: "Other" }, ...allComments]}
+                    // data={[{ name: "Other" }, ...allComments]}
+                    data={[...allComments]}
                     valueKey={"name"}
                     labelKey={"name"}
                     label={"Comments"}
@@ -1537,9 +1538,9 @@ const LeadInfo = () => {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <User
-                            description={dayjs(
-                              remark?.latestUpdated,
-                            )?.format("DD-MM-YYYY, HH:mm A")}
+                            description={dayjs(remark?.latestUpdated)?.format(
+                              "DD-MM-YYYY, HH:mm A",
+                            )}
                             name={remark?.updatedBy?.fullName}
                           />
                           <div className="flex items-center gap-1">

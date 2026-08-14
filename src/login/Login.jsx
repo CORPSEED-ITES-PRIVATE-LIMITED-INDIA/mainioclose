@@ -88,7 +88,12 @@ const Login = () => {
                       department === "filing"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
-                      navigate(`/erp/${resp?.payload?.id}/operation/projects`);
+                      navigate(`/erp/${resp?.payload?.id}/operation/dashboard`);
+                      window.open(
+                        `/erp/${resp?.payload?.id}/operation/projects`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
                       return;
                     }
                   }

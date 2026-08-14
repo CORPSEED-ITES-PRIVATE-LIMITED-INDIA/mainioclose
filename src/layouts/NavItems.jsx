@@ -416,6 +416,11 @@ export const navItems = [
         url: "procurement/vendors-payments",
         key: "vendors-payments",
       },
+      {
+        title: "Purchase Orders",
+        url: "procurement/purchaseOrders",
+        key: "purchaseOrders",
+      },
       // {
       //   title: "Estimate",
       //   url: "procurement/vendors-estimates",
@@ -843,6 +848,12 @@ export const procurementItems = [
     url: "procurement/vendors-payments",
     key: "vendors-payments",
   },
+  {
+    title: "Purchase Orders",
+    icon: "ReceiptText",
+    url: "procurement/purchaseOrders",
+    key: "purchaseOrders",
+  },
   // {
   //   title: "Estimate",
   //   icon: "FileText",
@@ -863,6 +874,12 @@ export const hrItems = [
 ];
 
 export const operationNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "operation/dashboard",
+    key: "dashboard",
+  },
   {
     title: "Projects",
     icon: "GitCommitHorizontal",

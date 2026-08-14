@@ -27,35 +27,35 @@ import NewSelect from "../../components/NewSelect";
 import { getGovernmentFeeDebitNotes } from "../../toolkit/slices/accountSlice";
 
 // This list is backed by the government-fee journal-voucher API
-// (GET /accountService/api/v1/internal/project-expenses/government-fee) —
-// each posted government-fee expense creates a voucher, shown here as a
-// "Debit Note" against the project it was paid for. The endpoint only
-// takes `page`/`size` today, so the search box and status filter below
-// only narrow the currently-loaded page; once the backend accepts a
-// search/status query param, wire it into the dispatch below instead.
+// (GET /accountService/api/v1/internal/project-expenses/government-fee/vouchers) —
+// each posted government-fee expense creates one or more vouchers (fund
+// transfer, accrual, payment), shown here as "Debit Notes" against the
+// project they were raised for. The endpoint only takes `page`/`size`
+// today, so the search box and status filter below only narrow the
+// currently-loaded page; once the backend accepts a search/status query
+// param, wire it into the dispatch below instead.
 export const columns = [
   { name: "ID", uid: "operationExpenseId" },
   { name: "VOUCHER NO.", uid: "voucherNumber" },
+  { name: "VOUCHER TYPE", uid: "voucherType" },
   { name: "VOUCHER DATE", uid: "voucherDate" },
   { name: "PROJECT", uid: "project" },
+  { name: "SOURCE", uid: "sourceType" },
   { name: "AMOUNT", uid: "amount" },
   { name: "STATUS", uid: "status" },
-  { name: "FUND TRANSFER", uid: "fundTransferPosted" },
-  // { name: "PAYMENT", uid: "paymentPosted" },
-  { name: "POSTED AT", uid: "postedAt" },
+  { name: "CREATED AT", uid: "createdAt" },
   { name: "NARRATION", uid: "narration" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const INITIAL_VISIBLE_COLUMNS = [
   "voucherNumber",
+  "voucherType",
   "voucherDate",
   "project",
+  "sourceType",
   "amount",
   "status",
-  "fundTransferPosted",
-  "paymentPosted",
-  "postedAt",
   "actions",
 ];
 
@@ -88,6 +88,32 @@ const getStatusColor = (status) => {
 const parseProjectNoFromNarration = (narration) => {
   const match = String(narration || "").match(/PRJ-[\w-]+/i);
   return match ? match[0] : "";
+};
+
+// "PROJECT_EXPENSE_GOVT_FEE_PAYMENT" -> "Project expense govt fee payment"
+const humanize = (value) => {
+  if (!value) return "-";
+
+  const words = String(value).toLowerCase().split("_");
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const getVoucherTypeColor = (voucherType) => {
+  switch (String(voucherType || "").toUpperCase()) {
+    case "PAYMENT":
+      return "success";
+
+    case "JOURNAL":
+      return "primary";
+
+    case "CONTRA":
+      return "secondary";
+
+    default:
+      return "default";
+  }
 };
 
 const DebitNotes = () => {
@@ -213,6 +239,25 @@ const DebitNotes = () => {
       case "project":
         return <span className="text-[12.5px]">{rowData?.project || "-"}</span>;
 
+      case "voucherType":
+        return (
+          <Chip
+            size="sm"
+            className="capitalize"
+            variant="flat"
+            color={getVoucherTypeColor(rowData?.voucherType)}
+          >
+            {rowData?.voucherType || "-"}
+          </Chip>
+        );
+
+      case "sourceType":
+        return (
+          <span className="text-[12.5px]" title={rowData?.sourceType}>
+            {humanize(rowData?.sourceType)}
+          </span>
+        );
+
       case "amount":
         return (
           <span className="font-semibold text-[12.5px]">
@@ -232,33 +277,11 @@ const DebitNotes = () => {
           </Chip>
         );
 
-      case "fundTransferPosted":
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={rowData?.fundTransferPosted ? "success" : "default"}
-          >
-            {rowData?.fundTransferPosted ? "Posted" : "Pending"}
-          </Chip>
-        );
-
-      case "paymentPosted":
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={rowData?.paymentPosted ? "success" : "default"}
-          >
-            {rowData?.paymentPosted ? "Posted" : "Pending"}
-          </Chip>
-        );
-
-      case "postedAt":
+      case "createdAt":
         return (
           <span className="whitespace-nowrap text-[12.5px]">
-            {rowData?.postedAt
-              ? dayjs(rowData.postedAt).format("DD-MM-YYYY hh:mm A")
+            {rowData?.createdAt
+              ? dayjs(rowData.createdAt).format("DD-MM-YYYY hh:mm A")
               : "-"}
           </span>
         );
@@ -518,24 +541,24 @@ const DebitNotes = () => {
                   isReadOnly
                 />
                 <Input
-                  label="Posted At"
+                  label="Voucher Type"
+                  value={selectedNote?.voucherType || ""}
+                  isReadOnly
+                />
+                <Input
+                  label="Source"
+                  value={humanize(selectedNote?.sourceType)}
+                  isReadOnly
+                />
+                <Input
+                  label="Created At"
                   value={
-                    selectedNote?.postedAt
-                      ? dayjs(selectedNote.postedAt).format(
+                    selectedNote?.createdAt
+                      ? dayjs(selectedNote.createdAt).format(
                           "DD-MM-YYYY hh:mm A",
                         )
-                      : ""
+                      : "-"
                   }
-                  isReadOnly
-                />
-                <Input
-                  label="Fund Transfer Voucher ID"
-                  value={String(selectedNote?.fundTransferVoucherId ?? "-")}
-                  isReadOnly
-                />
-                <Input
-                  label="Payment Voucher ID"
-                  value={String(selectedNote?.paymentVoucherId ?? "-")}
                   isReadOnly
                 />
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -21,9 +21,11 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
+  getDashboardUsersByHeirarchy,
   getProjectOverviewCards,
   getUserProjectDashboard,
 } from "../../toolkit/slices/dashboardSlice.js";
+import NewSelect from "../../components/NewSelect";
 import {
   AlertTriangle,
   BarChart3,
@@ -39,7 +41,6 @@ import {
   Layers3,
   PackageCheck,
   ShieldCheck,
-  Users,
   Workflow,
 } from "lucide-react";
 
@@ -1253,7 +1254,7 @@ export default function OperationsDashboard() {
   const routeParams = useParams();
   const rawUserId = routeParams.userId ?? routeParams.id;
   const parsedUserId = Number(rawUserId);
-  const userId =
+  const loggedInUserId =
     rawUserId !== undefined &&
     rawUserId !== null &&
     rawUserId !== "" &&
@@ -1262,7 +1263,15 @@ export default function OperationsDashboard() {
       ? parsedUserId
       : null;
 
+  const [userId, setUserId] = useState(loggedInUserId);
+
+  // Reset the selected user whenever the logged-in user (route) changes.
+  useEffect(() => {
+    setUserId(loggedInUserId);
+  }, [loggedInUserId]);
+
   const {
+    dashboardUsers = [],
     projectOverviewData = null,
     projectOverviewCards = [],
     projectOverviewLoading = "idle",
@@ -1271,6 +1280,12 @@ export default function OperationsDashboard() {
     userProjectDashboardLoading = "idle",
     userProjectDashboardError = null,
   } = useSelector((state) => state.dashboard || {});
+
+  // Fetch the hierarchy (team) of the logged-in user for the "select user" dropdown.
+  useEffect(() => {
+    if (!loggedInUserId) return;
+    dispatch(getDashboardUsersByHeirarchy(loggedInUserId));
+  }, [dispatch, loggedInUserId]);
 
   const topCards = useMemo(
     () => buildTopCards(userProjectDashboard),
@@ -1334,14 +1349,18 @@ export default function OperationsDashboard() {
               Current Month
             </Button>
 
-            <Button
-              size="sm"
-              variant="bordered"
-              className="h-8 rounded-lg border-slate-200 text-xs"
-              startContent={<Users size={14} />}
-            >
-              User ID: {userId || "Not found"}
-            </Button>
+            <div className="w-full sm:w-56">
+              <NewSelect
+                label="Viewing dashboard for"
+                labelPlacement="outside"
+                placeholder="Select user"
+                data={dashboardUsers}
+                labelKey="name"
+                valueKey="id"
+                value={userId}
+                onChange={(value) => value && setUserId(Number(value))}
+              />
+            </div>
 
             <Button
               size="sm"

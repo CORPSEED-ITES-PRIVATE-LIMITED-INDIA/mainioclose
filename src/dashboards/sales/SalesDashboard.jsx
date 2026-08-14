@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import {
   getDashboardSummaryCards,
+  getDashboardUsersByHeirarchy,
   getLeadsBySolution,
   getLeadsFunnel,
   getPaymentSummaryDashboard,
@@ -52,6 +53,7 @@ import TopSellingServices from "./TopSellingService";
 import TopConvertedLeads from "./TopConvertedLeads";
 import TopCompanies from "./TopCompanies";
 import RevenueByService from "./RevenueByService";
+import NewSelect from "../../components/NewSelect";
 
 const formatDateForInput = (date) => {
   const year = date.getFullYear();
@@ -1193,12 +1195,13 @@ function DateRangeFilter({
   onFromDateChange,
   onToDateChange,
   onRefresh,
+  userSelector,
 }) {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardBody className="p-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
+          <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50">
                 <Filter size={17} className="text-blue-600" />
@@ -1214,6 +1217,10 @@ function DateRangeFilter({
                 </p>
               </div>
             </div>
+
+            {userSelector && (
+              <div className="w-full sm:w-56">{userSelector}</div>
+            )}
           </div>
 
           <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] lg:max-w-[620px]">
@@ -1460,7 +1467,8 @@ export default function SalesDashboard() {
   const dispatch = useDispatch();
   const { userId } = useParams();
 
-  const selectedUserId = useMemo(() => userId || getLoggedInUserId(), [userId]);
+  const loggedInUserId = useMemo(() => userId || getLoggedInUserId(), [userId]);
+  const [selectedUserId, setSelectedUserId] = useState(loggedInUserId);
   const currentPeriod = useMemo(() => getCurrentMonthName(), []);
 
   const [fromDate, setFromDate] = useState(getMonthStartDate());
@@ -1489,7 +1497,19 @@ export default function SalesDashboard() {
     revenueCardsLoading = "",
     paymentSummaryData = null,
     paymentSummaryLoading = "",
+    dashboardUsers = [],
   } = useSelector((state) => state.dashboard || {});
+
+  // Reset the selected user whenever the logged-in user (route) changes.
+  useEffect(() => {
+    setSelectedUserId(loggedInUserId);
+  }, [loggedInUserId]);
+
+  // Fetch the hierarchy (team) of the logged-in user for the "select user" dropdown.
+  useEffect(() => {
+    if (!loggedInUserId) return;
+    dispatch(getDashboardUsersByHeirarchy(loggedInUserId));
+  }, [dispatch, loggedInUserId]);
 
   const isSummaryLoading = summaryCardsLoading === "pending";
   const error = dateError || summaryCardsError;
@@ -1647,7 +1667,9 @@ export default function SalesDashboard() {
         period: currentPeriod,
       }),
     );
-  }, []);
+    // Re-run whenever the selected user changes so the whole dashboard reloads for them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, selectedUserId]);
 
   const handleFromDateChange = (value) => {
     setFromDate(value);
@@ -1832,6 +1854,18 @@ export default function SalesDashboard() {
           onFromDateChange={handleFromDateChange}
           onToDateChange={handleToDateChange}
           onRefresh={fetchDashboardSummary}
+          userSelector={
+            <NewSelect
+              label="Viewing dashboard for"
+              labelPlacement="outside"
+              placeholder="Select user"
+              data={dashboardUsers}
+              labelKey="name"
+              valueKey="id"
+              value={selectedUserId}
+              onChange={(value) => value && setSelectedUserId(value)}
+            />
+          }
         />
 
         {/* Top Stats */}

@@ -481,7 +481,7 @@ export const getGovernmentFeeDebitNotes = createAsyncThunk(
   async ({ page = 1, size = 20 } = {}, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/accountService/api/v1/internal/project-expenses/government-fee?page=${page - 1}&size=${size}`,
+        `/accountService/api/v1/internal/project-expenses/government-fee/vouchers?page=${page - 1}&size=${size}`,
       );
       return response.data;
     } catch (error) {
