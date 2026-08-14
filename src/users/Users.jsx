@@ -101,8 +101,8 @@ const Users = () => {
     userId: "",
     fromEmail: "",
     fromName: "",
-    smtpHost: "",
-    smtpPort: "",
+    smtpHost: "smtppro.zoho.in",
+    smtpPort: 465,
     smtpUsername: "",
     smtpPassword: "",
     authEnabled: true,
@@ -198,8 +198,8 @@ const Users = () => {
       userId: rowData?.id || "",
       fromEmail: rowData?.email || "",
       fromName: rowData?.fullName || "",
-      smtpHost: "",
-      smtpPort: "",
+      smtpHost: "smtppro.zoho.in",
+      smtpPort: 465,
       smtpUsername: rowData?.email || "",
       smtpPassword: "",
       authEnabled: true,
@@ -417,9 +417,7 @@ const Users = () => {
             <Button
               size="sm"
               variant="flat"
-              onPress={() =>
-                navigate(`/erp/${userId}/users/deactiveUsersList`)
-              }
+              onPress={() => navigate(`/erp/${userId}/users/deactiveUsersList`)}
             >
               Deactive users list
             </Button>
