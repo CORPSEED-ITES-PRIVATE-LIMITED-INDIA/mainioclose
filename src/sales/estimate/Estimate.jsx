@@ -56,6 +56,7 @@ import {
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
+import TaxInvoice from "../../components/TaxInvoice";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 
 const bankRequiredPaymentModes = ["UPI", "ONLINE", "BANK_TRANSFER"];
@@ -1294,10 +1295,26 @@ const Estimate = () => {
           {(onClose) => (
             <>
               <ModalBody className="max-h-[70vh] overflow-auto">
-                <NewEstimatePreview
-                  details={estimateDetail}
-                  viewType={viewType}
-                />
+                {viewType === "PI" ? (
+                  // PI is previewed on the same Tax Invoice shell used across
+                  // the app (see TaxInvoice.jsx) — the estimate already
+                  // carries the same organization/company-unit/lineItems
+                  // fields that component expects, we only need to map the
+                  // PI-specific number/date onto the invoice fields it reads.
+                  <TaxInvoice
+                    invoiceData={{
+                      ...estimateDetail,
+                      invoiceNumber: estimateDetail?.performanceInvoiceNumber,
+                      invoiceDate: estimateDetail?.estimateDate,
+                    }}
+                    heading="PROFORMA INVOICE"
+                  />
+                ) : (
+                  <NewEstimatePreview
+                    details={estimateDetail}
+                    viewType={viewType}
+                  />
+                )}
               </ModalBody>
               <ModalFooter className="flex justify-end">
                 <Button onPress={onClose}>Cancel</Button>

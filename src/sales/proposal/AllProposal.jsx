@@ -48,6 +48,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { inrCurrency } from "../../common";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -309,6 +310,299 @@ const HtmlPreviewBlock = ({ title, subtitle, html, emptyText }) => {
             <p className="mt-2 text-sm font-semibold text-gray-700">
               {emptyText}
             </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const toNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const getLineItemAmounts = (item) => {
+  const quantity = toNumber(item?.quantity);
+  const rate = toNumber(item?.unitPriceExGst);
+  const taxableValue = quantity * rate;
+  const gstRate = toNumber(item?.gstRate);
+  const gstAmount = (taxableValue * gstRate) / 100;
+  const isIgst = item?.igstFlag === true || item?.igstFlag === "true";
+
+  return {
+    quantity,
+    rate,
+    taxableValue,
+    gstRate,
+    gstAmount,
+    isIgst,
+    cgstAmount: isIgst ? 0 : gstAmount / 2,
+    sgstAmount: isIgst ? 0 : gstAmount / 2,
+    igstAmount: isIgst ? gstAmount : 0,
+    lineTotal: taxableValue + gstAmount,
+  };
+};
+
+const ProposalPricingCard = ({ proposal }) => {
+  const lineItems = Array.isArray(proposal?.lineItems)
+    ? proposal.lineItems
+    : [];
+
+  const totals = useMemo(
+    () =>
+      lineItems.reduce(
+        (acc, item) => {
+          const amounts = getLineItemAmounts(item);
+
+          acc.taxableValue += amounts.taxableValue;
+          acc.cgstAmount += amounts.cgstAmount;
+          acc.sgstAmount += amounts.sgstAmount;
+          acc.igstAmount += amounts.igstAmount;
+          acc.gstAmount += amounts.gstAmount;
+          acc.grandTotal += amounts.lineTotal;
+
+          return acc;
+        },
+        {
+          taxableValue: 0,
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
+          gstAmount: 0,
+          grandTotal: 0,
+        },
+      ),
+    [lineItems],
+  );
+
+  const hasDiscount =
+    toNumber(proposal?.discountPercentage) > 0 ||
+    toNumber(proposal?.discountAmount) !== 0 ||
+    Boolean(proposal?.discountReason) ||
+    Boolean(proposal?.discountApprovalStatus);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
+        <h3 className="text-base font-semibold text-gray-900">Pricing</h3>
+
+        <p className="mt-1 text-xs text-gray-500">
+          Line items, taxes and any approved discount for this proposal.
+        </p>
+      </div>
+
+      <div className="p-4 md:p-5">
+        {lineItems.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+            <p className="text-sm font-semibold text-gray-700">
+              No pricing details found for this proposal.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border text-xs shadow-sm rounded-lg overflow-hidden">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="border p-1.5">#</th>
+                  <th className="border p-1.5 text-left">
+                    Item &amp; Description
+                  </th>
+                  <th className="border p-1.5">HSN/SAC</th>
+                  <th className="border p-1.5">Qty</th>
+                  <th className="border p-1.5">Rate</th>
+                  <th className="border p-1.5">GST %</th>
+                  <th className="border p-1.5">GST Amount</th>
+                  <th className="border p-1.5">Amount (incl. GST)</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {lineItems.map((item, index) => {
+                  const amounts = getLineItemAmounts(item);
+
+                  return (
+                    <tr key={item?.id ?? index}>
+                      <td className="border p-1.5 text-center">
+                        {index + 1}
+                      </td>
+                      <td className="border p-1.5">
+                        <div className="font-medium">
+                          {item?.itemName || "NA"}
+                        </div>
+
+                        {item?.description && (
+                          <div className="text-[11px] text-gray-500">
+                            {item.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="border p-1.5 text-center">
+                        {item?.hsnSacCode || "-"}
+                      </td>
+                      <td className="border p-1.5 text-center">
+                        {amounts.quantity} {item?.unit || ""}
+                      </td>
+                      <td className="border p-1.5 text-center">
+                        {inrCurrency(amounts.rate)}
+                      </td>
+                      <td className="border p-1.5 text-center">
+                        {amounts.gstRate > 0 ? `${amounts.gstRate}%` : "-"}
+                      </td>
+                      <td className="border p-1.5 text-center">
+                        {inrCurrency(amounts.gstAmount)}
+                      </td>
+                      <td className="border p-1.5 text-center font-semibold">
+                        {inrCurrency(amounts.lineTotal)}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                <tr className="bg-gray-50 font-semibold">
+                  <td colSpan={6} className="border p-1.5 text-right">
+                    Subtotal (Taxable Value)
+                  </td>
+                  <td colSpan={2} className="border p-1.5 text-center">
+                    {inrCurrency(totals.taxableValue)}
+                  </td>
+                </tr>
+
+                {totals.cgstAmount > 0 && (
+                  <tr>
+                    <td colSpan={6} className="border p-1.5 text-right">
+                      CGST
+                    </td>
+                    <td colSpan={2} className="border p-1.5 text-center">
+                      {inrCurrency(totals.cgstAmount)}
+                    </td>
+                  </tr>
+                )}
+
+                {totals.sgstAmount > 0 && (
+                  <tr>
+                    <td colSpan={6} className="border p-1.5 text-right">
+                      SGST
+                    </td>
+                    <td colSpan={2} className="border p-1.5 text-center">
+                      {inrCurrency(totals.sgstAmount)}
+                    </td>
+                  </tr>
+                )}
+
+                {totals.igstAmount > 0 && (
+                  <tr>
+                    <td colSpan={6} className="border p-1.5 text-right">
+                      IGST
+                    </td>
+                    <td colSpan={2} className="border p-1.5 text-center">
+                      {inrCurrency(totals.igstAmount)}
+                    </td>
+                  </tr>
+                )}
+
+                <tr className="bg-gray-100 font-semibold">
+                  <td colSpan={6} className="border p-1.5 text-right">
+                    Grand Total
+                  </td>
+                  <td colSpan={2} className="border p-1.5 text-center">
+                    {inrCurrency(totals.grandTotal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase text-gray-400">
+              Payment Term
+            </p>
+            <p className="mt-1 text-sm font-semibold text-gray-900">
+              {proposal?.paymentTerm || "-"}
+            </p>
+
+            {proposal?.paymentTermDescription && (
+              <p className="mt-1 text-xs text-gray-500">
+                {proposal.paymentTermDescription}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase text-gray-400">
+              Professional Fee
+            </p>
+            <p className="mt-1 text-sm font-semibold text-gray-900">
+              {inrCurrency(
+                proposal?.discountedProfessionalFee ?? totals.taxableValue,
+              )}
+            </p>
+          </div>
+        </div>
+
+        {hasDiscount && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <p className="text-sm font-semibold text-amber-900">Discount</p>
+
+            <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+              <p>
+                <span className="font-semibold">Discount %:</span>{" "}
+                {toNumber(proposal?.discountPercentage)}%
+              </p>
+
+              <p>
+                <span className="font-semibold">Discount Amount:</span>{" "}
+                {inrCurrency(Math.abs(toNumber(proposal?.discountAmount)))}
+              </p>
+
+              <p>
+                <span className="font-semibold">Reason:</span>{" "}
+                {proposal?.discountReason || "-"}
+              </p>
+
+              <p>
+                <span className="font-semibold">Status:</span>{" "}
+                {proposal?.discountApprovalStatus || "-"}
+              </p>
+
+              {proposal?.discountApprovedByName && (
+                <p>
+                  <span className="font-semibold">Approved By:</span>{" "}
+                  {proposal.discountApprovedByName}
+                </p>
+              )}
+
+              {proposal?.discountApprovedAt && (
+                <p>
+                  <span className="font-semibold">Approved At:</span>{" "}
+                  {dayjs(proposal.discountApprovedAt).format(
+                    "YYYY-MM-DD HH:mm",
+                  )}
+                </p>
+              )}
+
+              {proposal?.discountAdminRemarks && (
+                <p className="md:col-span-2">
+                  <span className="font-semibold">Admin Remarks:</span>{" "}
+                  {proposal.discountAdminRemarks}
+                </p>
+              )}
+
+              {proposal?.discountReasonAttachment && (
+                <p className="md:col-span-2">
+                  <a
+                    href={proposal.discountReasonAttachment}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-indigo-700 underline"
+                  >
+                    View discount reason attachment
+                  </a>
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1157,6 +1451,8 @@ const AllProposal = () => {
                         </p>
                       </div>
                     </div>
+
+                    <ProposalPricingCard proposal={selectedProposalDetail} />
 
                     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
                       <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">

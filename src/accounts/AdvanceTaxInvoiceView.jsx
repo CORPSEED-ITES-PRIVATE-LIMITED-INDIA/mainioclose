@@ -734,7 +734,9 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Buyer's Order No.
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inv?.clientPoNumber || <>&nbsp;</>}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 border-b border-gray-300">

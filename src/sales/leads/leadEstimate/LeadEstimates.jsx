@@ -41,6 +41,7 @@ import FormSelect from "../../../components/FormSelect";
 import ProductFormFieldsDetails from "./ProductFormFieldsDetails";
 import ServiceFormFieldsDetail from "./ServiceFormFieldsDetail";
 import NewEstimatePreview from "./NewEstimatePreview";
+import TaxInvoice from "../../../components/TaxInvoice";
 
 import { getAllBusinessArrangementBySolutionId } from "../../../toolkit/slices/productSlice";
 import {
@@ -1447,10 +1448,26 @@ const LeadEstimates = () => {
             </div>
 
             <div className="h-[calc(92vh-3rem)] overflow-auto">
-              <NewEstimatePreview
-                details={selectedEstimate}
-                viewType={viewType}
-              />
+              {viewType === "PI" ? (
+                // PI is previewed on the same Tax Invoice shell used across
+                // the app (see TaxInvoice.jsx) — the estimate already carries
+                // the same organization/company-unit/lineItems fields that
+                // component expects, we only need to map the PI-specific
+                // number/date onto the invoice fields it reads.
+                <TaxInvoice
+                  invoiceData={{
+                    ...selectedEstimate,
+                    invoiceNumber: selectedEstimate?.performanceInvoiceNumber,
+                    invoiceDate: selectedEstimate?.estimateDate,
+                  }}
+                  heading="PROFORMA INVOICE"
+                />
+              ) : (
+                <NewEstimatePreview
+                  details={selectedEstimate}
+                  viewType={viewType}
+                />
+              )}
             </div>
           </div>
         </div>
