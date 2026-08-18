@@ -1753,6 +1753,57 @@ export const getAllPOByStatus = createAsyncThunk(
   },
 );
 
+export const getAllCompanyDocs = createAsyncThunk(
+  "getAllCompanyDocs",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        "/operationService/api/v1/my-company-documents");
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable get Company Documents",
+        },
+      );
+    }
+  },
+);
+export const getCompanyDocById = createAsyncThunk(
+  "getCompanyDocById",
+  async (_,{ requiredDocumentId}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/v1/my-company-documents/${requiredDocumentId}`);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable get Company Document",
+        },
+      );
+    }
+  },
+);
+export const addCompanyDocument = createAsyncThunk(
+  "addCompanyDocument",
+  async ({ currentUserId,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/v1/my-company-documents?currentUserId=${currentUserId}`,data);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message: "Unable get Company Document",
+        },
+      );
+    }
+  },
+);
 
 export const OperationSlice = createSlice({
   name: "operation",
@@ -1795,6 +1846,8 @@ export const OperationSlice = createSlice({
     accountsDecisionLoading: false,
     accountsDecisionError: null,
     procurementOrderByStatus:[],
+    companyDocs:[],
+    companyDoc:{},
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2217,6 +2270,40 @@ export const OperationSlice = createSlice({
       getAllVendorQuotationLegalRequests.rejected,
       (state, action) => {
         state.loading = "rejected";
+      },
+    );
+    builder.addCase(getAllCompanyDocs.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllCompanyDocs.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.companyDocs = action.payload;
+      },
+    );
+    builder.addCase(
+      getAllCompanyDocs.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.companyDocs = [];
+      },
+    );
+    builder.addCase(getCompanyDocById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getCompanyDocById.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.companyDoc = action.payload;
+      },
+    );
+    builder.addCase(
+      getCompanyDocById.rejected,
+      (state, action) => {
+        state.loading = "rejected";
+        state.companyDoc = {};
       },
     );
     builder.addCase(getAllPOByStatus.pending, (state) => {

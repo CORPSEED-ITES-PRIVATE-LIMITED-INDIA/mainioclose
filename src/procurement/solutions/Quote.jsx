@@ -215,9 +215,6 @@ const quotationDefaultValues = {
       quantity: "",
       unit: "",
       unitRate: "",
-      taxPercent: "",
-      gstActive: false,
-      gstPercentage: "",
       remarks: "",
     },
   ],
@@ -234,30 +231,15 @@ const quotationSchema = z.object({
   documents: z.array(z.any()).optional(),
   items: z
     .array(
-      z
-        .object({
-          itemType: z.string().min(1, "Item type is required"),
-          itemName: z.string().min(1, "Item name is required"),
-          description: z.string().optional(),
-          quantity: z.string().min(1, "Quantity is required"),
-          unit: z.string().min(1, "Unit is required"),
-          unitRate: z.string().min(1, "Unit rate is required"),
-          gstActive: z.boolean({
-            required_error: "Please select whether GST is applicable",
-            invalid_type_error: "Please select whether GST is applicable",
-          }),
-          gstPercentage: z.string().optional(),
-          remarks: z.string().optional(),
-        })
-        .superRefine((item, ctx) => {
-          if (item.gstActive && !item.gstPercentage) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: ["gstPercentage"],
-              message: "GST rate is required when GST is applicable",
-            });
-          }
-        }),
+      z.object({
+        itemType: z.string().min(1, "Item type is required"),
+        itemName: z.string().min(1, "Item name is required"),
+        description: z.string().optional(),
+        quantity: z.string().min(1, "Quantity is required"),
+        unit: z.string().min(1, "Unit is required"),
+        unitRate: z.string().min(1, "Unit rate is required"),
+        remarks: z.string().optional(),
+      }),
     )
     .min(1, "At least one item is required"),
 });
@@ -1228,8 +1210,8 @@ const Quote = () => {
         quantity: Number(item.quantity),
         unit: item.unit,
         unitRate: Number(item.unitRate),
-        gstActive: Number(item.gstActive || 0),
-        gstPercentage: Number(item.gstPercentage || 0),
+        gstActive: null,
+        gstPercentage: null,
         remarks: item.remarks || "",
       })),
     };
@@ -3273,9 +3255,6 @@ const Quote = () => {
                             quantity: "",
                             unit: "",
                             unitRate: "",
-                            taxPercent: "",
-                            gstActive: false,
-                            gstPercentage: "",
                             remarks: "",
                           })
                         }
@@ -3441,64 +3420,6 @@ const Quote = () => {
                                 />
                               )}
                             /> */}
-                            <Controller
-                              // name="gstActive"
-                              name={`items.${index}.gstActive`}
-                              control={quotationControl}
-                              render={({ field, fieldState: { error } }) => (
-                                <Select
-                                  label="GST Applicable"
-                                  isRequired
-                                  selectedKeys={
-                                    new Set([field.value ? "true" : "false"])
-                                  }
-                                  onSelectionChange={(keys) => {
-                                    field.onChange(
-                                      Array.from(keys)?.[0] === "true",
-                                    );
-                                  }}
-                                  isInvalid={Boolean(error)}
-                                  errorMessage={error?.message}
-                                >
-                                  <SelectItem key="true">Yes</SelectItem>
-                                  <SelectItem key="false">No</SelectItem>
-                                </Select>
-                              )}
-                            />
-
-                            {watchQuotationForm(`items.${index}.gstActive`) && (
-                              <Controller
-                                // name="gstPercentage"
-                                name={`items.${index}.gstPercentage`}
-                                control={quotationControl}
-                                render={({ field, fieldState: { error } }) => (
-                                  <Select
-                                    label="GST Rate"
-                                    isRequired
-                                    selectedKeys={
-                                      field.value
-                                        ? new Set([String(field.value)])
-                                        : new Set([])
-                                    }
-                                    onSelectionChange={(keys) => {
-                                      field.onChange(
-                                        Array.from(keys)?.[0] || "",
-                                      );
-                                    }}
-                                    isInvalid={Boolean(error)}
-                                    errorMessage={error?.message}
-                                  >
-                                    <SelectItem key="0">0%</SelectItem>
-                                    <SelectItem key="1.5">1.5%</SelectItem>
-                                    <SelectItem key="3">3%</SelectItem>
-                                    <SelectItem key="5">5%</SelectItem>
-                                    <SelectItem key="12">12%</SelectItem>
-                                    <SelectItem key="18">18%</SelectItem>
-                                    <SelectItem key="28">28%</SelectItem>
-                                  </Select>
-                                )}
-                              />
-                            )}
 
                             <div className="md:col-span-3">
                               <Controller

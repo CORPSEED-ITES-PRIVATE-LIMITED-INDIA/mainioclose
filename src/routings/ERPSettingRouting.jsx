@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import React from "react";
 import { Route } from "react-router-dom";
+import CompanyDocuments from "../setting/company/CompanyDocuments";
 const LeadStatus = lazy(() => import("../setting/status/LeadStatus"));
 const LeadComments = lazy(() => import("../setting/comments/LeadComments"));
 const IpAddress = lazy(() => import("../setting/ipaddress/IpAddress"));
@@ -99,6 +100,7 @@ const ERPSettingRouting = () => {
       <Route path="settings/ipAddress" element={<IpAddress />} />
       <Route path="settings/slug" element={<Slug />} />
       <Route path="settings/country" element={<CountryData />} />
+      <Route path="settings/companyDocs" element={<CompanyDocuments />} />
       <Route
         path="settings/country/state/:countryName"
         element={<StateData />}

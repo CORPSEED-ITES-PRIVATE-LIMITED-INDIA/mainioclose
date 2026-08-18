@@ -454,6 +454,12 @@ export const navItems = [
         key: "country",
       },
       {
+        title: "Company Documents",
+        icon: "",
+        url: "settings/companyDocs",
+        key: "companyDocs",
+      },
+      {
         title: "IP",
         icon: "",
         url: "settings/ipAddress",
