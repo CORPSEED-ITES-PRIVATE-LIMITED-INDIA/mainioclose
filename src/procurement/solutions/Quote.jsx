@@ -2031,82 +2031,82 @@ const Quote = () => {
     },
     [getLegalRequestForQuotation, resetVendorAgreementForm, sendAgreementModal],
   );
-  const handleOpenLegalRequest = (quotation) => {
-    if (!quotation?.id) {
-      addToast({
-        title: "ERROR",
-        description: "Vendor quotation ID is missing.",
-        color: "danger",
-      });
-      return;
-    }
+  // const handleOpenLegalRequest = (quotation) => {
+  //   if (!quotation?.id) {
+  //     addToast({
+  //       title: "ERROR",
+  //       description: "Vendor quotation ID is missing.",
+  //       color: "danger",
+  //     });
+  //     return;
+  //   }
 
-    const existingLegalRequest = getLegalRequestForQuotation(quotation);
+  //   const existingLegalRequest = getLegalRequestForQuotation(quotation);
 
-    /*
-     * FIX: only block if there's an active (non-disagreed) legal request.
-     * If the previous request was DISAGREED, the backend now allows a
-     * fresh request to be raised — match that here instead of blocking
-     * unconditionally.
-     */
-    if (
-      existingLegalRequest?.id &&
-      !isLegalAgreementDisagreed(existingLegalRequest)
-    ) {
-      addToast({
-        title: "Legal request already sent",
-        description: `Service agreement request already exists with status ${existingLegalRequest.status || "-"}.`,
-        color: "warning",
-      });
-      return;
-    }
+  //   /*
+  //    * FIX: only block if there's an active (non-disagreed) legal request.
+  //    * If the previous request was DISAGREED, the backend now allows a
+  //    * fresh request to be raised — match that here instead of blocking
+  //    * unconditionally.
+  //    */
+  //   if (
+  //     existingLegalRequest?.id &&
+  //     !isLegalAgreementDisagreed(existingLegalRequest)
+  //   ) {
+  //     addToast({
+  //       title: "Legal request already sent",
+  //       description: `Service agreement request already exists with status ${existingLegalRequest.status || "-"}.`,
+  //       color: "warning",
+  //     });
+  //     return;
+  //   }
 
-    const finalization = getFinalizationForQuotation(quotation);
+  //   const finalization = getFinalizationForQuotation(quotation);
 
-    if (!finalization?.id) {
-      addToast({
-        title: "ERROR",
-        description: "Please finalize vendor before sending legal request.",
-        color: "danger",
-      });
-      return;
-    }
+  //   if (!finalization?.id) {
+  //     addToast({
+  //       title: "ERROR",
+  //       description: "Please finalize vendor before sending legal request.",
+  //       color: "danger",
+  //     });
+  //     return;
+  //   }
 
-    /*
-     * FIX: an already-ACTIVE vendor skips onboarding entirely (backend
-     * fix #5), so it will never reach ONBOARDING_STARTED. Allow the
-     * legal request gate to pass for active vendors directly off
-     * FINALIZED status instead of requiring ONBOARDING_STARTED.
-     */
-    const activeVendorShortcut = isVendorActive(finalization, quotation);
+  //   /*
+  //    * FIX: an already-ACTIVE vendor skips onboarding entirely (backend
+  //    * fix #5), so it will never reach ONBOARDING_STARTED. Allow the
+  //    * legal request gate to pass for active vendors directly off
+  //    * FINALIZED status instead of requiring ONBOARDING_STARTED.
+  //    */
+  //   const activeVendorShortcut = isVendorActive(finalization, quotation);
 
-    if (
-      !activeVendorShortcut &&
-      finalization?.status !== "ONBOARDING_STARTED"
-    ) {
-      addToast({
-        title: "ERROR",
-        description:
-          "Please start onboarding before sending service agreement request to legal team.",
-        color: "danger",
-      });
-      return;
-    }
+  //   if (
+  //     !activeVendorShortcut &&
+  //     finalization?.status !== "ONBOARDING_STARTED"
+  //   ) {
+  //     addToast({
+  //       title: "ERROR",
+  //       description:
+  //         "Please start onboarding before sending service agreement request to legal team.",
+  //       color: "danger",
+  //     });
+  //     return;
+  //   }
 
-    setSelectedVendorFinalization(finalization);
-    setSelectedQuotation(quotation);
-    resetLegalRequestForm({
-      legalRequestTitle: "Service Agreement Preparation Request",
-      notes:
-        finalization?.description ||
-        quotation?.items?.[0]?.description ||
-        quotation?.remarks ||
-        "Please prepare service agreement for finalized vendor.",
-      statusReason: "Service agreement required after onboarding started.",
-      assignedToLegal: "",
-    });
-    legalRequestModal.onOpen();
-  };
+  //   setSelectedVendorFinalization(finalization);
+  //   setSelectedQuotation(quotation);
+  //   resetLegalRequestForm({
+  //     legalRequestTitle: "Service Agreement Preparation Request",
+  //     notes:
+  //       finalization?.description ||
+  //       quotation?.items?.[0]?.description ||
+  //       quotation?.remarks ||
+  //       "Please prepare service agreement for finalized vendor.",
+  //     statusReason: "Service agreement required after onboarding started.",
+  //     assignedToLegal: "",
+  //   });
+  //   legalRequestModal.onOpen();
+  // };
 
   const onSubmitSendAgreementToVendor = (values) => {
     const resolvedUserId =

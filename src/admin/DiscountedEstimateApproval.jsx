@@ -21,44 +21,29 @@ import {
   ModalHeader,
   addToast,
   Chip,
-  Textarea,
-  Select,
-  SelectItem,
 } from "@heroui/react";
+import { Table as AntTable } from "antd";
 import { EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
-import TaxInvoice from "../components/TaxInvoice";
 import { inrCurrency } from "../common";
 import { useParams } from "react-router-dom";
 import {
-  getVendorPaymentCountInAdmin,
-  getVendorPaymentRegisterInAdmin,
-} from "../toolkit/slices/vendorsSlice";
-import { updateVendorPaymentStatus } from "../toolkit/slices/accountSlice";
-import {
-  approveEstimateApproval,
-  disApproveEstimateApproval,
-  getAllEstimateForApproval,
+  approveDiscount,
+  rejectDiscount,
+  getAllProposalByUserIdForManager,
 } from "../toolkit/slices/leadSlice";
 import EstimateApprovalHistoryTable from "./EstimateApprovalHistoryTable";
 import NewSelect from "../components/NewSelect";
 
-const statusOptions = [
-  { label: "All", value: "all" },
-  { label: "Initiated", value: "initiated" },
-  { label: "Approved", value: "approved" },
-  { label: "Disapproved", value: "disapproved" },
-];
-
 export const columns = [
   { name: "DATE", uid: "date" },
-  { name: "ESTIMATE NO.", uid: "estimateNo" },
-  { name: "SERVICE", uid: "service" },
+  { name: "PROPOSAL NO.", uid: "proposalNo" },
+  { name: "SOLUTION", uid: "service" },
   { name: "STATUS", uid: "status" },
   { name: "COMPANY", uid: "company" },
   { name: "AMOUNT", uid: "amount" },
-  { name: "ADDED BY", uid: "addedBy" },
+  { name: "REQUESTED BY", uid: "addedBy" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -68,7 +53,7 @@ export function capitalize(s) {
 
 const INITIAL_VISIBLE_COLUMNS = [
   "date",
-  "estimateNo",
+  "proposalNo",
   "service",
   "status",
   "company",
@@ -77,14 +62,28 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+const normalizeStatus = (status = "") =>
+  String(status || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+
+const isDiscountApprovalPendingStatus = (status) =>
+  normalizeStatus(status) === "DISCOUNT_APPROVAL_PENDING";
+
+const getDiscountApprovalToken = (proposal) =>
+  proposal?.discountApprovalToken ||
+  proposal?.discountToken ||
+  proposal?.approvalToken ||
+  proposal?.token ||
+  "";
+
 const DiscountedEstimateApproval = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const invoiceModal = useDisclosure();
-  const data = useSelector((state) => state.leads.estimateApprovalList);
-  const count = useSelector(
-    (state) => state.leads.estimateApprovalList?.length,
-  );
+  const data = useSelector((state) => state.leads.proposalList);
+  const count = useSelector((state) => state.leads.proposalList?.length);
   const estimateHistoryList = useSelector(
     (state) => state.leads.estimateHistoryList,
   );
@@ -95,21 +94,33 @@ const DiscountedEstimateApproval = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "estimateNo",
+    column: "proposalNo",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
-  const [status, setStatus] = useState("all");
   const [rowItem, setRowItem] = useState(null);
-  const [actionStatus, setActionStatus] = useState({
-    type: "",
-    comment: "",
+  const [loading, setLoading] = useState("");
+  const [discountActionModal, setDiscountActionModal] = useState({
+    isOpen: false,
+    action: null,
+    rowData: null,
+    remarks: "",
   });
 
+  const refreshList = () =>
+    dispatch(
+      getAllProposalByUserIdForManager({
+        id: userId,
+        page,
+        size: rowsPerPage,
+        status: "DISCOUNT_APPROVAL_PENDING",
+      }),
+    );
+
   useEffect(() => {
-    dispatch(getAllEstimateForApproval(status));
-  }, [dispatch, page, rowsPerPage, status]);
+    refreshList();
+  }, [dispatch, userId, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -145,62 +156,96 @@ const DiscountedEstimateApproval = () => {
     });
   }, [sortDescriptor, filteredItems]);
 
-  const handleFinish = () => {
-    if (actionStatus?.type === "approved") {
-      dispatch(
-        approveEstimateApproval({
-          ...actionStatus,
-          estimateFormId: rowItem?.id,
-          userId: userId,
-        }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Estimate disapproved successfully !.",
-              color: "success",
-            });
-            setRowItem(null);
-            setActionStatus({
-              type: "",
-              comment: "",
-            });
-            dispatch(getAllEstimateForApproval());
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
-    } else {
-      dispatch(
-        disApproveEstimateApproval({
-          ...actionStatus,
-          estimateFormId: rowItem?.id,
-          userId: userId,
-        }),
-      )
-        .then((resp) => {
-          if (resp.meta.requestStatus === "fulfilled") {
-            addToast({
-              title: "Estimate disapproved successfully !.",
-              color: "success",
-            });
-            setRowItem(null);
-            setActionStatus({
-              type: "",
-              comment: "",
-            });
-            dispatch(getAllEstimateForApproval());
-          } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
-          }
-        })
-        .catch(() =>
-          addToast({ title: "Something went wrong !.", color: "danger" }),
-        );
+  // Opens the read-only invoice/history view
+  const handleView = (rowData) => {
+    setRowItem(rowData);
+    invoiceModal.onOpen();
+  };
+
+  // Opens the approve/reject confirm modal for a discount
+  const handleDiscountAction = (action, rowData) => {
+    setDiscountActionModal({
+      isOpen: true,
+      action,
+      rowData,
+      remarks: "",
+    });
+  };
+
+  const handleDiscountActionSubmit = () => {
+    const selectedProposal = discountActionModal?.rowData;
+    const action = discountActionModal?.action;
+    const token = getDiscountApprovalToken(selectedProposal);
+
+    if (!token) {
+      addToast({
+        title: "Missing token",
+        description: "Discount approval token is missing for this proposal.",
+        color: "danger",
+      });
+      return;
     }
+
+    if (action === "REJECT_DISCOUNT" && !discountActionModal?.remarks?.trim()) {
+      addToast({
+        title: "Remarks required",
+        description: "Please enter remarks for discount rejection.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setLoading("pending");
+
+    const apiCall =
+      action === "APPROVE_DISCOUNT"
+        ? approveDiscount({ token, adminUserId: userId })
+        : rejectDiscount({
+            token,
+            adminUserId: userId,
+            remarks: discountActionModal.remarks.trim(),
+          });
+
+    dispatch(apiCall)
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Success",
+            description:
+              action === "APPROVE_DISCOUNT"
+                ? "Discount approved successfully."
+                : "Discount rejected successfully.",
+            color: "success",
+          });
+
+          setDiscountActionModal({
+            isOpen: false,
+            action: null,
+            rowData: null,
+            remarks: "",
+          });
+
+          refreshList();
+          setLoading("success");
+        } else {
+          setLoading("error");
+          addToast({
+            title: "Something went wrong",
+            description:
+              resp?.payload?.data?.message ||
+              "Unable to update discount approval status.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        setLoading("error");
+        addToast({
+          title: "Something went wrong",
+          description: "Unable to update discount approval status.",
+          color: "danger",
+        });
+      });
   };
 
   const renderCell = React.useCallback((rowData, columnKey) => {
@@ -209,15 +254,17 @@ const DiscountedEstimateApproval = () => {
       case "date":
         return (
           <p className="text-sm capitalize">
-            {dayjs(rowData?.date).format("DD-MM-YYYY")}
+            {rowData?.createDate
+              ? dayjs(rowData.createDate).format("DD-MM-YYYY")
+              : "-"}
           </p>
         );
-      case "estimateNo":
-        return <p className="text-sm capitalize">{rowData?.estimateNo}</p>;
+      case "proposalNo":
+        return <p className="text-sm capitalize">{rowData?.proposalNumber}</p>;
       case "service":
-        return <p className="text-sm capitalize">{rowData?.serviceName}</p>;
+        return <p className="text-sm capitalize">{rowData?.solution?.name}</p>;
       case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
+        return <p className="text-sm capitalize">{rowData?.companyName}</p>;
       case "status":
         return (
           <div className="flex flex-col gap-2">
@@ -225,9 +272,9 @@ const DiscountedEstimateApproval = () => {
               className="text-sm capitalize"
               size="sm"
               color={
-                rowData?.status === "approved"
+                rowData?.discountApprovalStatus === "APPROVED"
                   ? "success"
-                  : rowData?.status === "disapproved"
+                  : rowData?.discountApprovalStatus === "REJECTED"
                     ? "danger"
                     : "default"
               }
@@ -240,18 +287,19 @@ const DiscountedEstimateApproval = () => {
         return (
           <div className="flex flex-col">
             <p className="text-sm capitalize">
-              Paid : {inrCurrency(rowData?.totalPaidAmount)}
+              Discount : {inrCurrency(rowData?.discountAmount)}
             </p>
             <p className="text-sm capitalize">
-              Due : {inrCurrency(rowData?.totalDueAmount)}
-            </p>
-            <p className="text-sm capitalize">
-              Total : {inrCurrency(rowData?.totalAmount)}
+              Discounted fee : {inrCurrency(rowData?.discountedProfessionalFee)}
             </p>
           </div>
         );
       case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
+        return (
+          <p className="text-sm capitalize">
+            {rowData?.discountRequestedByName}
+          </p>
+        );
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -261,24 +309,35 @@ const DiscountedEstimateApproval = () => {
                   <EllipsisVertical className="text-default-300" />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem key="view" onPress={invoiceModal.onOpen}>
-                  View
-                </DropdownItem>
-                <DropdownItem
-                  key="approved"
-                  onPress={() => {
-                    handleActionPayments("approved", rowData);
-                  }}
-                >
-                  Approved
-                </DropdownItem>
-                <DropdownItem
-                  key="disapproved"
-                  onPress={() => handleActionPayments("disapproved", rowData)}
-                >
-                  Disapproved
-                </DropdownItem>
+              <DropdownMenu
+                onAction={(key) => {
+                  if (key === "view") {
+                    handleView(rowData);
+                  } else if (
+                    key === "APPROVE_DISCOUNT" ||
+                    key === "REJECT_DISCOUNT"
+                  ) {
+                    handleDiscountAction(key, rowData);
+                  }
+                }}
+              >
+                <DropdownItem key="view">View</DropdownItem>
+
+                {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                  <DropdownItem key="APPROVE_DISCOUNT">
+                    Approve Discount
+                  </DropdownItem>
+                ) : null}
+
+                {isDiscountApprovalPendingStatus(rowData?.status) ? (
+                  <DropdownItem
+                    key="REJECT_DISCOUNT"
+                    color="danger"
+                    className="text-danger"
+                  >
+                    Reject Discount
+                  </DropdownItem>
+                ) : null}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -328,7 +387,7 @@ const DiscountedEstimateApproval = () => {
             size="sm"
             className="w-full sm:max-w-[280px]"
             classNames={{ inputWrapper: "h-8 min-h-8" }}
-            placeholder="Search estimates..."
+            placeholder="Search proposals..."
             startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
@@ -336,23 +395,6 @@ const DiscountedEstimateApproval = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={statusOptions}
-                labelKey="label"
-                valueKey="value"
-                label="Status"
-                value={status}
-                onChange={(value) => {
-                  if (value) {
-                    setStatus(value);
-                  }
-                }}
-              />
-            </div>
-
             <div className="w-[160px]">
               <NewSelect
                 size="sm"
@@ -376,7 +418,7 @@ const DiscountedEstimateApproval = () => {
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-[12.5px]">
-            Total {count} estimate
+            Total {count} proposal
           </span>
 
           <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
@@ -402,7 +444,6 @@ const DiscountedEstimateApproval = () => {
     count,
     onSearchChange,
     hasSearchFilter,
-    status,
     rowsPerPage,
   ]);
 
@@ -445,12 +486,12 @@ const DiscountedEstimateApproval = () => {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-        Discounted estimates
+        Discounted Estimates
       </h1>
       <Table
         isHeaderSticky
         removeWrapper={false}
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Discounted estimates table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -481,7 +522,7 @@ const DiscountedEstimateApproval = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={`${item.estimateId}unbill`}>
+            <TableRow key={`${item.id}proposal`}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -489,6 +530,8 @@ const DiscountedEstimateApproval = () => {
           )}
         </TableBody>
       </Table>
+
+      {/* View-only: tax invoice / history */}
       <Modal
         isOpen={invoiceModal.isOpen}
         onOpenChange={invoiceModal.onOpenChange}
@@ -503,10 +546,10 @@ const DiscountedEstimateApproval = () => {
                 Tax invoice
               </ModalHeader>
               <ModalBody>
-                <Table
+                <AntTable
                   dataSource={estimateHistoryList?.history}
                   columns={
-                    estimateData?.type === "Product"
+                    rowItem?.type === "Product"
                       ? [
                           { title: "Id", dataIndex: "id", width: 50 },
                           { title: "Price/kg", dataIndex: "actualPrice" },
@@ -536,7 +579,7 @@ const DiscountedEstimateApproval = () => {
 
                 <EstimateApprovalHistoryTable
                   columns={
-                    estimateData?.type === "Product"
+                    rowItem?.type === "Product"
                       ? [
                           { title: "Id", dataIndex: "id", width: 50 },
                           { title: "Price/kg", dataIndex: "actualPrice" },
@@ -561,40 +604,112 @@ const DiscountedEstimateApproval = () => {
                   }
                   data={estimateHistoryList?.history}
                 />
-                <Select
-                  className="max-w-xs"
-                  items={[
-                    { key: "approved", label: "Approved" },
-                    { key: "disapproved", label: "Disapproved" },
-                  ]}
-                  label="Select action status."
-                  selectedKeys={[actionStatus?.type]}
-                  onSelectionChange={(e) => {
-                    let key = Array.from(e)[0];
-                    setActionStatus((prev) => ({ ...prev, type: key }));
-                  }}
-                >
-                  {(item) => (
-                    <SelectItem key={item?.key}>{item?.label}</SelectItem>
-                  )}
-                </Select>
-                <Textarea
-                  label="Comment"
-                  value={actionStatus?.comment}
-                  onChange={(e) =>
-                    setActionStatus((prev) => ({
-                      ...prev,
-                      comment: e.target.value,
-                    }))
-                  }
-                />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="primary" onPress={handleFinish}>
-                  Submit
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Discount approve / reject confirm modal */}
+      <Modal
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={discountActionModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDiscountActionModal({
+              isOpen: false,
+              action: null,
+              rowData: null,
+              remarks: "",
+            });
+          }
+        }}
+        placement="top-center"
+      >
+        <ModalContent>
+          {(onCloseModal) => (
+            <>
+              <ModalHeader>
+                {discountActionModal.action === "APPROVE_DISCOUNT"
+                  ? "Approve Discount"
+                  : "Reject Discount"}
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-default-600">
+                    {discountActionModal.action === "APPROVE_DISCOUNT"
+                      ? "Are you sure you want to approve this discount?"
+                      : "Are you sure you want to reject this discount?"}
+                  </p>
+
+                  <div className="rounded-lg border border-default-200 bg-default-50 p-3 text-xs text-default-600">
+                    <p>
+                      <span className="font-semibold">Proposal No:</span>{" "}
+                      {discountActionModal?.rowData?.proposalNumber || "-"}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold">Service:</span>{" "}
+                      {discountActionModal?.rowData?.solution?.name || "-"}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold">Requested By:</span>{" "}
+                      {discountActionModal?.rowData?.discountRequestedByName ||
+                        "-"}
+                    </p>
+                  </div>
+
+                  {discountActionModal.action === "REJECT_DISCOUNT" ? (
+                    <Input
+                      label="Remarks"
+                      isRequired
+                      value={discountActionModal.remarks}
+                      onChange={(e) =>
+                        setDiscountActionModal((prev) => ({
+                          ...prev,
+                          remarks: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter rejection remarks"
+                    />
+                  ) : null}
+                </div>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setDiscountActionModal({
+                      isOpen: false,
+                      action: null,
+                      rowData: null,
+                      remarks: "",
+                    });
+                    onCloseModal();
+                  }}
+                >
+                  No, Cancel
+                </Button>
+
+                <Button
+                  color={
+                    discountActionModal.action === "APPROVE_DISCOUNT"
+                      ? "primary"
+                      : "danger"
+                  }
+                  isLoading={loading === "pending"}
+                  onPress={handleDiscountActionSubmit}
+                >
+                  {discountActionModal.action === "APPROVE_DISCOUNT"
+                    ? "Yes, Approve"
+                    : "Yes, Reject"}
                 </Button>
               </ModalFooter>
             </>
