@@ -25,9 +25,6 @@ const ManagerApprovals = lazy(
   () => import("../operation/approval/ManagerApprovals"),
 );
 const Expenses = lazy(() => import("../operation/expenses/Expenses"));
-const ForceCloserAndReopen = lazy(
-  () => import("../operation/projects/ForceCloserAndReopen"),
-);
 
 const OperationModuleRouting = () => {
   return (
@@ -51,10 +48,6 @@ const OperationModuleRouting = () => {
       />
       <Route path="operation/legalRequests" element={<LegalRequests />} />
       <Route path="operation/approvals" element={<ManagerApprovals />} />
-      <Route
-        path="operation/reopenCloseApprovals"
-        element={<ForceCloserAndReopen />}
-      />
       <Route path="operation/expenses" element={<Expenses />} />
       <Route path="operation/settings" element={<OperationsSettings />}>
         <Route index element={<Navigate to="userMap" replace />} />

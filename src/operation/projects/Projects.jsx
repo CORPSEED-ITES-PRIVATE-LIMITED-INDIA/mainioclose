@@ -1167,7 +1167,7 @@ const Projects = () => {
                     }));
                   }}
                 >
-                  <SelectItem key="FORCE_CLOSED">Force Closed</SelectItem>
+                  <SelectItem key="FORCE_CLOSE">Force Closed</SelectItem>
                   <SelectItem key="REOPEN">Reopen</SelectItem>
                 </Select>
 

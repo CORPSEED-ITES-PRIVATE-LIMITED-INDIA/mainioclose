@@ -1590,18 +1590,10 @@ const Expenses = () => {
                       field.onChange(nextValue);
 
                       if (nextValue !== "CLIENT_TO_COMPANY") {
-                        setDecisionValue("clientPaymentMode", "", {
-                          shouldValidate: true,
-                        });
-                        setDecisionValue("clientPaymentBankLedgerId", "", {
-                          shouldValidate: true,
-                        });
-                        setDecisionValue("clientPaymentReference", "", {
-                          shouldValidate: true,
-                        });
-                        setDecisionValue("clientPaymentProofUrl", "", {
-                          shouldValidate: true,
-                        });
+                        setDecisionValue("clientPaymentMode", "");
+                        setDecisionValue("clientPaymentBankLedgerId", "");
+                        setDecisionValue("clientPaymentReference", "");
+                        setDecisionValue("clientPaymentProofUrl", "");
                       }
                     }}
                   >
@@ -1658,9 +1650,7 @@ const Expenses = () => {
                           const value = Array.from(keys)[0];
 
                           field.onChange(value ? String(value) : "");
-                          setDecisionValue("clientPaymentBankLedgerId", "", {
-                            shouldValidate: true,
-                          });
+                          setDecisionValue("clientPaymentBankLedgerId", "");
                         }}
                       >
                         <SelectItem key="CASH">Cash</SelectItem>
@@ -1877,9 +1867,7 @@ const Expenses = () => {
                         const value = Array.from(keys)[0];
 
                         field.onChange(value ? String(value) : "");
-                        setGovernmentFeeValue("bankLedgerId", "", {
-                          shouldValidate: true,
-                        });
+                        setGovernmentFeeValue("bankLedgerId", "");
                       }}
                     >
                       <SelectItem key="UPI">UPI</SelectItem>

@@ -264,6 +264,12 @@ export const navItems = [
         url: "admin/poApproval",
         key: "poApproval",
       },
+      {
+        title: "Project Reopen and Close Approval",
+        icon: "",
+        url: "admin/reopenCloseApproval",
+        key: "reopenCloseApproval",
+      },
     ],
   },
   {
@@ -341,12 +347,6 @@ export const navItems = [
         icon: "",
         url: "operation/approvals",
         key: "approvals",
-      },
-      {
-        title: "Reopen & Close Approval",
-        icon: "",
-        url: "operation/reopenCloseApprovals",
-        key: "reopenCloseApprovals",
       },
       {
         title: "Expenses",
@@ -892,6 +892,18 @@ export const operationNavItems = [
     url: "operation/projects",
     key: "projects",
   },
+  {
+    title: "Legal request",
+    icon: "Scale",
+    url: "operation/legalRequests",
+    key: "legalRequests",
+  },
+  {
+    title: "Expenses",
+    icon: "FileText",
+    url: "operation/expenses",
+    key: "expenses",
+  },
   // {
   //   title: "Settings",
   //   icon: "Settings",
@@ -924,12 +936,6 @@ export const operationEmpItems = [
     icon: "FileText",
     url: "operation/approvals",
     key: "approvals",
-  },
-  {
-    title: "Reopen & Close Approval",
-    icon: "FileText",
-    url: "operation/reopenCloseApprovals",
-    key: "reopenCloseApprovals",
   },
   {
     title: "Expenses",
