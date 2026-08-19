@@ -834,6 +834,25 @@ export const getEstimatePaymentHistory =
     }
   },
 );
+export const getAllAdvanceInvoice = createAsyncThunk(
+  "getAllAdvanceInvoice",
+  async ({ invoiceId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/advance-tax-invoice-requests/by-invoice/${invoiceId}?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message:
+            error?.message || "Failed to fetch advance tax invoice request",
+        },
+      );
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -843,6 +862,7 @@ const AccountSlice = createSlice({
     paymentApprovalList: [],
     estimatePaymentList: [],
     vendorsPaymentList: [],
+    allAdvanceTaxInvoices:[],
     vendorsPaymentCount: 0,
     vendorsPaymentListForAccount: [],
     vendorsPaymentCountForAccount: 0,
@@ -1370,6 +1390,17 @@ const AccountSlice = createSlice({
   })
   builder.addCase(rejectAdvanceTaxInvoiceRequest.rejected, (state) => {
     state.advanceTaxInvoiceRequestRejecting = false;
+  });
+    builder
+  .addCase(getAllAdvanceInvoice.pending, (state) => {
+    state.loading = true;
+  })
+  builder.addCase(getAllAdvanceInvoice.fulfilled, (state,action) => {
+    state.loading = false;
+    state.allAdvanceTaxInvoices = action.payload;
+  })
+  builder.addCase(getAllAdvanceInvoice.rejected, (state) => {
+    state.loading = false;
   });
   },
 });

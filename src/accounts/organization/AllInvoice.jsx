@@ -38,6 +38,7 @@ import { inrCurrency } from "../../common";
 import {
   getInvoiceDetailById,
   confirmEInvoice,
+  getAllAdvanceInvoice,
 } from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
@@ -81,11 +82,20 @@ const AllInvoice = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const viewModal = useDisclosure();
   const confirmEInvoiceModal = useDisclosure();
+  const advanceTaxInvoiceModal = useDisclosure();
 
   const data = useSelector((state) => state.organization.allInvoiceList);
+
   const count = useSelector(
     (state) => state.organization.allInvoiceList?.length,
   );
+
+  // NEW: Get all advance tax invoices from Redux
+  const allAdvanceTaxInvoices = useSelector(
+    (state) => state.account.allAdvanceTaxInvoices || [],
+  );
+
+  const accountLoading = useSelector((state) => state.account.loading);
 
   const [isConfirmEInvoiceSubmitting, setIsConfirmEInvoiceSubmitting] =
     useState(false);
@@ -97,17 +107,22 @@ const AllInvoice = () => {
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
+
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "age",
     direction: "ascending",
   });
+
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
+
   const [status, setStatus] = useState("GENERATED");
+
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
     type: "invoiceNumber",
   });
+
   const [estimateDetail, setEstimateDetail] = useState(null);
   const [viewType, setViewType] = useState("ESTIMATE");
 
@@ -123,8 +138,21 @@ const AllInvoice = () => {
   });
 
   useEffect(() => {
-    dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
-    dispatch(getAllInvoiceCount({ userId, status }));
+    dispatch(
+      getAllInvoice({
+        userId,
+        page,
+        size: rowsPerPage,
+        status,
+      }),
+    );
+
+    dispatch(
+      getAllInvoiceCount({
+        userId,
+        status,
+      }),
+    );
   }, [dispatch, userId, page, rowsPerPage, status]);
 
   const handleConfirmFormChange = (field, value) => {
@@ -215,8 +243,21 @@ const AllInvoice = () => {
       setSelectedInvoice(null);
       setIsAttachmentUploading(false);
 
-      dispatch(getAllInvoice({ userId, page, size: rowsPerPage, status }));
-      dispatch(getAllInvoiceCount({ userId, status }));
+      dispatch(
+        getAllInvoice({
+          userId,
+          page,
+          size: rowsPerPage,
+          status,
+        }),
+      );
+
+      dispatch(
+        getAllInvoiceCount({
+          userId,
+          status,
+        }),
+      );
     } catch (error) {
       addToast({
         title: "ERROR",
@@ -225,6 +266,41 @@ const AllInvoice = () => {
       });
     } finally {
       setIsConfirmEInvoiceSubmitting(false);
+    }
+  };
+
+  /*
+   * NEW
+   * Fetch all advance tax invoices against selected invoice
+   */
+  const handleShowAdvanceTaxInvoice = async (rowData) => {
+    if (!rowData?.id) {
+      addToast({
+        title: "ERROR",
+        description: "Invoice not selected",
+        color: "danger",
+      });
+      return;
+    }
+
+    // Open modal immediately so spinner can be shown
+    advanceTaxInvoiceModal.onOpen();
+
+    try {
+      await dispatch(
+        getAllAdvanceInvoice({
+          invoiceId: rowData.id,
+          userId,
+        }),
+      ).unwrap();
+    } catch (error) {
+      advanceTaxInvoiceModal.onClose();
+
+      addToast({
+        title: "ERROR",
+        description: error?.message || "Failed to fetch Advance Tax Invoice",
+        color: "danger",
+      });
     }
   };
 
@@ -256,6 +332,7 @@ const AllInvoice = () => {
     return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
+
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
@@ -263,7 +340,12 @@ const AllInvoice = () => {
   }, [sortDescriptor, filteredItems]);
 
   const handleViewTaxInvoice = (value) => {
-    dispatch(getInvoiceDetailById({ id: value?.id, userId }))
+    dispatch(
+      getInvoiceDetailById({
+        id: value?.id,
+        userId,
+      }),
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           let tempData = resp?.payload;
@@ -275,6 +357,7 @@ const AllInvoice = () => {
             description: "There is Some Issue in Invoice",
             color: "danger",
           });
+
           onOpen();
         }
       })
@@ -289,8 +372,12 @@ const AllInvoice = () => {
 
   const handleViewEstimate = (rowData, type) => {
     setViewType(type);
+
     dispatch(
-      getEstimateByEstimateId({ estimateId: rowData?.estimateId, userId }),
+      getEstimateByEstimateId({
+        estimateId: rowData?.estimateId,
+        userId,
+      }),
     )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
@@ -371,9 +458,12 @@ const AllInvoice = () => {
               <p className="text-[12.5px] capitalize">
                 {inrCurrency(rowData?.grandTotal)}
               </p>
+
               <div className="flex gap-1.5">
                 <span className="text-default-500 text-[11.5px]">GST</span>
+
                 <span className="text-default-500 text-[11.5px]">:</span>
+
                 <span className="text-default-500 text-[11.5px]">
                   {inrCurrency(rowData?.totalGstAmount)}
                 </span>
@@ -399,7 +489,7 @@ const AllInvoice = () => {
                 <DropdownMenu
                   selectionMode="single"
                   onSelectionChange={(e) => {
-                    let key = Array.from(e)[0];
+                    const key = Array.from(e)[0];
 
                     if (key === "viewTaxInvoice") {
                       handleViewTaxInvoice(rowData);
@@ -409,13 +499,22 @@ const AllInvoice = () => {
                       handleViewEstimate(rowData, "ESTIMATE");
                     }
 
+                    if (key === "showAdvanceTaxInvoice") {
+                      handleShowAdvanceTaxInvoice(rowData);
+                    }
+
                     if (key === "confirmEInvoice") {
                       openConfirmEInvoiceModal(rowData);
                     }
                   }}
                 >
                   <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
-                  {/* <DropdownItem key="viewEstimate">Estimate</DropdownItem> */}
+
+                  {/* NEW */}
+                  <DropdownItem key="showAdvanceTaxInvoice">
+                    Show Advance Tax Invoice
+                  </DropdownItem>
+
                   {!(
                     rowData?.status?.toLowerCase() === "e_invoice_confirmed" ||
                     rowData?.gstRegistrationType?.toLowerCase() ===
@@ -481,8 +580,21 @@ const AllInvoice = () => {
         setFilterValue("");
         setPage(1);
 
-        dispatch(getAllInvoice({ userId, page: 1, size: rowsPerPage, status }));
-        dispatch(getAllInvoiceCount({ userId, status }));
+        dispatch(
+          getAllInvoice({
+            userId,
+            page: 1,
+            size: rowsPerPage,
+            status,
+          }),
+        );
+
+        dispatch(
+          getAllInvoiceCount({
+            userId,
+            status,
+          }),
+        );
       }
     },
     [dispatch, searchFilters, rowsPerPage, userId, status],
@@ -492,8 +604,21 @@ const AllInvoice = () => {
     setFilterValue("");
     setPage(1);
 
-    dispatch(getAllInvoice({ userId, page: 1, size: rowsPerPage, status }));
-    dispatch(getAllInvoiceCount({ userId, status }));
+    dispatch(
+      getAllInvoice({
+        userId,
+        page: 1,
+        size: rowsPerPage,
+        status,
+      }),
+    );
+
+    dispatch(
+      getAllInvoiceCount({
+        userId,
+        status,
+      }),
+    );
   }, [dispatch, userId, rowsPerPage, status]);
 
   const topContent = React.useMemo(() => {
@@ -508,18 +633,25 @@ const AllInvoice = () => {
               selectedKeys={[searchFilters?.type]}
               onSelectionChange={(e) => {
                 let key = Array.from(e)[0];
-                setSearchFilters((preview) => ({ ...preview, type: key }));
+
+                setSearchFilters((preview) => ({
+                  ...preview,
+                  type: key,
+                }));
               }}
             >
-              <SelectItem key={"invoiceNumber"}>Invoice number</SelectItem>
-              <SelectItem key={"companyName"}>Company name</SelectItem>
+              <SelectItem key="invoiceNumber">Invoice number</SelectItem>
+
+              <SelectItem key="companyName">Company name</SelectItem>
             </Select>
 
             <Input
               isClearable
               size="sm"
               className="w-full"
-              classNames={{ inputWrapper: "h-8 min-h-8" }}
+              classNames={{
+                inputWrapper: "h-8 min-h-8",
+              }}
               placeholder="Search ..."
               startContent={<Search className="w-4 h-4 text-default-400" />}
               value={filterValue}
@@ -548,21 +680,31 @@ const AllInvoice = () => {
                 variant="flat"
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
+
                   setStatus(key);
                   setPage(1);
                 }}
               >
                 <DropdownItem key="GENERATED">GENERATED</DropdownItem>
+
                 <DropdownItem key="SENT_TO_CLIENT">SENT TO CLIENT</DropdownItem>
+
                 <DropdownItem key="VIEWED">VIEWED</DropdownItem>
+
                 <DropdownItem key="PAID">PAID</DropdownItem>
+
                 <DropdownItem key="UNPAID">UNPAID</DropdownItem>
+
                 <DropdownItem key="PARTIALLY_PAID">PARTIALLY_PAID</DropdownItem>
+
                 <DropdownItem key="FINALIZED_WITHOUT_E_INVOICE">
                   FINALIZED WITHOUT E INVOICE
                 </DropdownItem>
+
                 <DropdownItem key="CANCELLED">CANCELLED</DropdownItem>
+
                 <DropdownItem key="CREDIT_NOTED">CREDIT NOTED</DropdownItem>
+
                 <DropdownItem key="E_INVOICE_CONFIRMED">
                   E_INVOICE_CONFIRMED
                 </DropdownItem>
@@ -685,6 +827,7 @@ const AllInvoice = () => {
               <p className="text-base font-semibold text-foreground">
                 Confirming E-Invoice
               </p>
+
               <p className="mt-1 text-sm text-default-500">
                 Please do not refresh or close this page.
               </p>
@@ -741,6 +884,7 @@ const AllInvoice = () => {
         </TableBody>
       </Table>
 
+      {/* TAX INVOICE MODAL */}
       <Modal
         size="full"
         isDismissable={false}
@@ -751,12 +895,14 @@ const AllInvoice = () => {
       >
         <ModalContent>
           <ModalHeader>Tax Invoice</ModalHeader>
+
           <ModalBody className="max-h-[90vh] overflow-auto">
             <TaxInvoice invoiceData={invoiceDetail} />
           </ModalBody>
         </ModalContent>
       </Modal>
 
+      {/* ESTIMATE MODAL */}
       <Modal
         size="4xl"
         isDismissable={false}
@@ -783,6 +929,270 @@ const AllInvoice = () => {
         </ModalContent>
       </Modal>
 
+      {/* ADVANCE TAX INVOICE MODAL */}
+      <Modal
+        size="5xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={advanceTaxInvoiceModal.isOpen}
+        onOpenChange={advanceTaxInvoiceModal.onOpenChange}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Advance Tax Invoices</ModalHeader>
+
+              <ModalBody>
+                {accountLoading ? (
+                  <div className="flex justify-center items-center py-20">
+                    <Spinner size="lg" color="primary" />
+                  </div>
+                ) : allAdvanceTaxInvoices.length === 0 ? (
+                  <div className="flex justify-center items-center py-20">
+                    <p className="text-default-500">
+                      No Advance Tax Invoice found for this invoice.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {allAdvanceTaxInvoices.map((item) => (
+                      <div
+                        key={item.requestId}
+                        className="rounded-lg border border-default-200 p-4"
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <p className="text-base font-semibold">
+                              Request #{item.requestId}
+                            </p>
+
+                            <p className="text-xs text-default-500">
+                              {item.invoiceNumber || "NA"}
+                            </p>
+                          </div>
+
+                          <span className="px-2.5 py-1 rounded-md bg-default-100 text-xs font-medium">
+                            {item.requestStatus || "NA"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Input
+                            label="Invoice Number"
+                            value={item.invoiceNumber || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Estimate Number"
+                            value={item.estimateNumber || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Client PO Number"
+                            value={item.clientPoNumber || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Requested Amount"
+                            value={inrCurrency(item.requestedAmount || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Approved Amount"
+                            value={inrCurrency(item.approvedAmount || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Invoice Grand Total"
+                            value={inrCurrency(item.invoiceGrandTotal || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Client"
+                            value={item.contactName || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Company"
+                            value={item.companyName || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Service"
+                            value={item.solutionName || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Requested By"
+                            value={item.requestedByName || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Reviewed By"
+                            value={item.reviewedByName || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Invoice Status"
+                            value={item.invoiceStatus || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Payment Status"
+                            value={item.invoicePaymentStatus || "NA"}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Received Amount"
+                            value={inrCurrency(item.receivedAmount || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Outstanding Amount"
+                            value={inrCurrency(item.outstandingAmount || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="GST Amount"
+                            value={inrCurrency(item.totalGstAmount || 0)}
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Created At"
+                            value={
+                              item.createdAt
+                                ? dayjs(item.createdAt).format(
+                                    "DD-MM-YYYY HH:mm",
+                                  )
+                                : "NA"
+                            }
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Reviewed At"
+                            value={
+                              item.reviewedAt
+                                ? dayjs(item.reviewedAt).format(
+                                    "DD-MM-YYYY HH:mm",
+                                  )
+                                : "NA"
+                            }
+                            isReadOnly
+                          />
+
+                          <Input
+                            label="Request Remarks"
+                            value={item.requestRemarks || "NA"}
+                            isReadOnly
+                            className="md:col-span-3"
+                          />
+
+                          <Input
+                            label="Review Remarks"
+                            value={item.reviewRemarks || "NA"}
+                            isReadOnly
+                            className="md:col-span-3"
+                          />
+                        </div>
+
+                        {/* LINE ITEMS */}
+                        {item.lineItems?.length > 0 && (
+                          <div className="mt-5">
+                            <p className="text-sm font-semibold mb-2">
+                              Line Items
+                            </p>
+
+                            <Table
+                              aria-label="Advance tax invoice line items"
+                              removeWrapper
+                            >
+                              <TableHeader>
+                                <TableColumn>ITEM</TableColumn>
+
+                                <TableColumn>HSN/SAC</TableColumn>
+
+                                <TableColumn>QTY</TableColumn>
+
+                                <TableColumn>UNIT PRICE</TableColumn>
+
+                                <TableColumn>GST</TableColumn>
+
+                                <TableColumn>TOTAL</TableColumn>
+                              </TableHeader>
+
+                              <TableBody>
+                                {item.lineItems.map((lineItem) => (
+                                  <TableRow key={lineItem.id}>
+                                    <TableCell>
+                                      {lineItem.itemName || "NA"}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      {lineItem.hsnSacCode || "NA"}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      {lineItem.quantity ?? 0}{" "}
+                                      {lineItem.unit || ""}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      {inrCurrency(
+                                        lineItem.unitPriceExGst || 0,
+                                      )}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      {inrCurrency(lineItem.gstAmount || 0)}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      {inrCurrency(
+                                        lineItem.lineTotalWithGst || 0,
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* CONFIRM E-INVOICE MODAL */}
       <Modal
         size="2xl"
         isDismissable={false}
