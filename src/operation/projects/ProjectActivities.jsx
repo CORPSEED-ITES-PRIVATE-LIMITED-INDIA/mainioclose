@@ -77,7 +77,7 @@ const ProjectActivities = () => {
   const [replyParentId, setReplyParentId] = useState(null);
   const [commentText, setCommentText] = useState("");
   const [noteText, setNoteText] = useState("");
-  const [page, setPage] = useState(1); // HeroUI is 1-based
+  const [page, setPage] = useState(0); // HeroUI is 1-based
   const size = 50;
   const [dateFilter, setDateFilter] = useState({
     toDate: null,
@@ -240,12 +240,12 @@ const ProjectActivities = () => {
 
         expenseModal.onClose();
         setActivityType("ALL");
-        setPage(1);
+        setPage(0);
 
         dispatch(
           getActivitiesByProjectId({
             projectId,
-            page: 1,
+            page: 0,
             size,
           }),
         );
@@ -366,15 +366,13 @@ const ProjectActivities = () => {
 
       {/* ACTIVITY LIST */}
       <div className="max-h-[55vh] flex-1 overflow-y-auto p-4 space-y-4">
-        {activities
-          .filter((activity) => activity?.details)
-          .map((activity) => (
-            <ActivityItem
-              key={activity.activityId}
-              activity={activity}
-              onReply={handleReply}
-            />
-          ))}
+        {activities.map((activity) => (
+          <ActivityItem
+            key={activity.activityId}
+            activity={activity}
+            onReply={handleReply}
+          />
+        ))}
       </div>
       <div className="flex justify-between items-center gap-3 py-4">
         <p className="text-xs text-gray-500">

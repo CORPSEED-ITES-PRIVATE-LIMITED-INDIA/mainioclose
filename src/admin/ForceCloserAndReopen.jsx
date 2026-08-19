@@ -31,7 +31,7 @@ import { useParams } from "react-router-dom";
 import {
   decideProjectLifecycleRequest,
   getPendingProjectLifecycleRequests,
-} from "../../toolkit/slices/operationSlice";
+} from "../toolkit/slices/operationSlice";
 
 const columns = [
   { name: "ID", uid: "id" },
@@ -526,7 +526,7 @@ const ForceCloserAndReopen = () => {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-        Reopen & Close Approval
+        Project Reopen and Close Approval
       </h1>
 
       <Table

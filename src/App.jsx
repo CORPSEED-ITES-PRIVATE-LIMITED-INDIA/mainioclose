@@ -84,6 +84,9 @@ const PaymentVerification = lazy(() => import("./legal/PaymentVerification"));
 const AdminVendorRestrictionApproval = lazy(
   () => import("./admin/AdminVendorRestrictionApproval"),
 );
+const ForceCloserAndReopen = lazy(
+  () => import("./admin/ForceCloserAndReopen"),
+);
 
 function App() {
   const dispatch = useDispatch();
@@ -146,6 +149,10 @@ function App() {
                 element={<AdminVendorRestrictionApproval />}
               />
               <Route path="admin/poApproval" element={<AdminPoApproval />} />
+              <Route
+                path="admin/reopenCloseApproval"
+                element={<ForceCloserAndReopen />}
+              />
 
               {ProcurementRouting()}
               {ERPSettingRouting()}

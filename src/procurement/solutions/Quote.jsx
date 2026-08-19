@@ -194,7 +194,7 @@ const quotationStatusOptions = [
 ];
 
 const quotationStatusSelectOptions = quotationStatusOptions.map((status) => ({
-  label: status === "ALL" ? "All Status" : status,
+  label: status,
   value: status,
 }));
 
@@ -2726,45 +2726,65 @@ const Quote = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[170px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={quotationStatusSelectOptions}
-                labelKey="label"
-                valueKey="value"
-                label="Status"
-                value={statusFilter}
-                onChange={(value) => {
-                  if (value) {
-                    setStatusFilter(value);
-                    setFilteration((prev) => ({
-                      ...prev,
-                      page: 1,
-                    }));
-                  }
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                  className="capitaize"
+                >
+                  {statusFilter}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[statusFilter]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatusFilter(key);
+                  setFilteration((prev) => ({
+                    ...prev,
+                    page: 1,
+                  }));
                 }}
-              />
-            </div>
+              >
+                {quotationStatusSelectOptions?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
             <Button
               color="primary"

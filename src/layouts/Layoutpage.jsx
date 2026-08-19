@@ -43,15 +43,15 @@ const getNavItemsByDepartment = (department, admin) => {
     procurement: procurementItems,
     "human resource": hrItems,
 
-    crt: operationNavItems,
+    crt: isManager ? operationEmpItems : operationNavItems,
     legal: legalNavItems,
-    technical: operationNavItems,
-    liaisoning: operationNavItems,
-    filing: operationNavItems,
+    technical: isManager ? operationEmpItems : operationNavItems,
+    liaisoning: isManager ? operationEmpItems : operationNavItems,
+    filing: isManager ? operationEmpItems : operationNavItems,
 
-    operations: operationEmpItems,
-    "liasoning test": operationEmpItems,
-    "crt test": operationEmpItems,
+    operations: isManager ? operationEmpItems : operationNavItems,
+    "liasoning test": isManager ? operationEmpItems : operationNavItems,
+    "crt test": isManager ? operationEmpItems : operationNavItems,
   };
 
   return items[trimmed];

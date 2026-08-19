@@ -62,18 +62,30 @@ import {
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  Activity,
+  ArrowRight,
+  ArrowRightLeft,
   BookText,
   Building,
+  Building2,
   Calendar,
+  ChevronDown,
   EllipsisVertical,
+  ExternalLink,
+  Flag,
   GitFork,
   IndianRupee,
+  Landmark,
   Mail,
   MapPin,
+  MessageSquare,
   Pencil,
   Phone,
   Plus,
+  Receipt,
+  StickyNote,
   Trash2,
+  UserCog,
   User2,
   X,
 } from "lucide-react";
@@ -135,6 +147,20 @@ const getStatusColor = (status) => {
       return "primary";
   }
 };
+
+// Full literal class strings (not template-interpolated) so Tailwind's
+// scanner can find and generate every variant at build time.
+const STATUS_BADGE_CLASSES = {
+  primary: "bg-primary-100 text-primary-600",
+  secondary: "bg-secondary-100 text-secondary-600",
+  success: "bg-success-100 text-success-600",
+  warning: "bg-warning-100 text-warning-600",
+  danger: "bg-danger-100 text-danger-600",
+  default: "bg-default-200 text-default-600",
+};
+
+const getStatusBadgeClass = (colorKey) =>
+  STATUS_BADGE_CLASSES[colorKey] || STATUS_BADGE_CLASSES.default;
 
 const getInitials = (name = "") => {
   return name
@@ -348,31 +374,442 @@ const CommentThread = ({ comment, level = 0, onReply }) => {
   );
 };
 
+// ----------------------------------------------------------------------------
+// Activity feed helpers (used by ActivityItem below)
+// ----------------------------------------------------------------------------
+
+const formatEnumLabel = (value) => {
+  if (!value) return "-";
+
+  return String(value)
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const formatMoney = (amount, currencyCode = "INR") => {
+  if (amount === null || amount === undefined || amount === "") return "-";
+
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) return "-";
+
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: currencyCode || "INR",
+      maximumFractionDigits: 2,
+    }).format(numericAmount);
+  } catch {
+    return `${currencyCode || "INR"} ${numericAmount.toFixed(2)}`;
+  }
+};
+
+const getApprovalChipColor = (status) => {
+  switch (status) {
+    case "APPROVED":
+      return "success";
+    case "REJECTED":
+    case "CANCELLED":
+      return "danger";
+    case "PENDING":
+    case "PROCESSING":
+      return "warning";
+    case "ON_HOLD":
+      return "secondary";
+    default:
+      return "default";
+  }
+};
+
+const getPaymentChipColor = (status) => {
+  switch (status) {
+    case "PAID":
+      return "success";
+    case "PENDING":
+    case "PROCESSING":
+      return "warning";
+    case "PARTIALLY_PAID":
+      return "secondary";
+    case "FAILED":
+    case "CANCELLED":
+    case "REVERSED":
+      return "danger";
+    default:
+      return "default";
+  }
+};
+
+const ACTIVITY_TYPE_META = {
+  COMMENT: { icon: MessageSquare, accent: "text-primary bg-primary-50" },
+  NOTE: { icon: StickyNote, accent: "text-warning-600 bg-warning-50" },
+  EXPENSE: { icon: Receipt, accent: "text-success-600 bg-success-50" },
+};
+
+const MiniDetail = ({ label, value }) => {
+  if (value === null || value === undefined || value === "" || value === "-") {
+    return null;
+  }
+
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-default-400">
+        {label}
+      </p>
+      <p
+        className="mt-0.5 truncate text-xs font-semibold text-foreground"
+        title={typeof value === "string" ? value : undefined}
+      >
+        {value}
+      </p>
+    </div>
+  );
+};
+
+const AmountTile = ({ label, value, emphasize }) => (
+  <div
+    className={`rounded-lg border px-3 py-2 ${
+      emphasize
+        ? "border-primary-200 bg-primary-50"
+        : "border-default-200 bg-content1"
+    }`}
+  >
+    <p className="text-[10px] font-medium uppercase tracking-wide text-default-400">
+      {label}
+    </p>
+    <p
+      className={`mt-0.5 text-sm font-bold ${emphasize ? "text-primary" : "text-foreground"}`}
+    >
+      {value}
+    </p>
+  </div>
+);
+
+const ProofLink = ({ href, label }) => {
+  if (!href) return null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+    >
+      {label} <ExternalLink className="h-3 w-3" />
+    </a>
+  );
+};
+
+// Renders the full structured breakdown for an EXPENSE activity's `details`
+// payload (requested/approved/paid amounts, approval + payment statuses,
+// and the client / government-fee / fund-transfer payment legs, whichever
+// of those apply to this particular expense).
+const ExpenseActivityDetails = ({ details }) => {
+  const currency = details?.currencyCode || "INR";
+
+  const hasClientPayment = Boolean(
+    details?.clientPaymentMode ||
+      details?.clientPaymentBankName ||
+      details?.clientPaymentReference ||
+      details?.clientPaymentProofUrl,
+  );
+
+  const hasGovernmentPayment = Boolean(
+    details?.governmentPaymentMode ||
+      details?.governmentPaymentAmount ||
+      details?.governmentPaymentReference,
+  );
+
+  const hasFundTransfer = Boolean(
+    details?.fundTransferFromBankName ||
+      details?.fundTransferToBankName ||
+      details?.fundTransferReference,
+  );
+
+  return (
+    <div className="mt-3 space-y-3 rounded-xl border border-default-200 bg-default-50/60 p-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <AmountTile
+          label="Requested"
+          value={formatMoney(details?.requestedAmount, currency)}
+        />
+        <AmountTile
+          label="Approved"
+          value={formatMoney(details?.approvedAmount, currency)}
+        />
+        <AmountTile
+          label="Paid"
+          value={formatMoney(details?.paidAmount, currency)}
+          emphasize
+        />
+        <AmountTile
+          label="Outstanding"
+          value={formatMoney(details?.outstandingAmount, currency)}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {details?.approvalStage && (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getApprovalChipColor(details.approvalStage)}
+          >
+            Stage: {formatEnumLabel(details.approvalStage)}
+          </Chip>
+        )}
+        {details?.crtApprovalStatus && (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getApprovalChipColor(details.crtApprovalStatus)}
+          >
+            CRT: {formatEnumLabel(details.crtApprovalStatus)}
+          </Chip>
+        )}
+        {details?.accountsApprovalStatus && (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getApprovalChipColor(details.accountsApprovalStatus)}
+          >
+            Accounts: {formatEnumLabel(details.accountsApprovalStatus)}
+          </Chip>
+        )}
+        {details?.paymentStatus && (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getPaymentChipColor(details.paymentStatus)}
+          >
+            Payment: {formatEnumLabel(details.paymentStatus)}
+          </Chip>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+        <MiniDetail
+          label="Category"
+          value={formatEnumLabel(details?.expenseCategory)}
+        />
+        <MiniDetail label="Department" value={details?.raisedDepartmentName} />
+        <MiniDetail
+          label="Paid By"
+          value={formatEnumLabel(details?.expensePaidBy)}
+        />
+        <MiniDetail
+          label="Expense Date"
+          value={formatDateTime(details?.expenseDate)}
+        />
+        <MiniDetail label="Reference" value={details?.externalReference} />
+        <MiniDetail label="Unbilled No." value={details?.unbilledNumber} />
+      </div>
+
+      {(details?.remark ||
+        details?.crtDecisionRemark ||
+        details?.accountsDecisionRemark) && (
+        <div className="space-y-1 border-t border-default-200 pt-2">
+          {details?.remark && (
+            <p className="text-[11px] text-default-600">
+              <span className="font-medium text-default-500">Remark: </span>
+              {details.remark}
+            </p>
+          )}
+          {details?.crtDecisionRemark && (
+            <p className="text-[11px] text-default-600">
+              <span className="font-medium text-default-500">CRT remark: </span>
+              {details.crtDecisionRemark}
+            </p>
+          )}
+          {details?.accountsDecisionRemark && (
+            <p className="text-[11px] text-default-600">
+              <span className="font-medium text-default-500">
+                Accounts remark:{" "}
+              </span>
+              {details.accountsDecisionRemark}
+            </p>
+          )}
+        </div>
+      )}
+
+      {hasClientPayment && (
+        <div className="rounded-lg border border-default-200 bg-content1 p-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-default-600">
+            <Landmark className="h-3.5 w-3.5" /> Client Payment
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+            <MiniDetail
+              label="Mode"
+              value={formatEnumLabel(details?.clientPaymentMode)}
+            />
+            <MiniDetail label="Bank" value={details?.clientPaymentBankName} />
+            <MiniDetail
+              label="Date"
+              value={formatDateTime(details?.clientPaymentDate)}
+            />
+            <MiniDetail
+              label="Reference"
+              value={details?.clientPaymentReference}
+            />
+          </div>
+
+          <ProofLink href={details?.clientPaymentProofUrl} label="View proof" />
+        </div>
+      )}
+
+      {hasGovernmentPayment && (
+        <div className="rounded-lg border border-default-200 bg-content1 p-2.5">
+          <div className="mb-1.5 flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-default-600">
+              <Building2 className="h-3.5 w-3.5" /> Government Fee Payment
+            </div>
+
+            {details?.governmentPaymentVerificationStatus && (
+              <Chip
+                size="sm"
+                variant="flat"
+                color={getApprovalChipColor(
+                  details.governmentPaymentVerificationStatus,
+                )}
+              >
+                {formatEnumLabel(details.governmentPaymentVerificationStatus)}
+              </Chip>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+            <MiniDetail
+              label="Mode"
+              value={formatEnumLabel(details?.governmentPaymentMode)}
+            />
+            <MiniDetail
+              label="Amount"
+              value={formatMoney(details?.governmentPaymentAmount, currency)}
+            />
+            <MiniDetail
+              label="Date"
+              value={formatDateTime(details?.governmentPaymentDate)}
+            />
+            <MiniDetail
+              label="Reference"
+              value={details?.governmentPaymentReference}
+            />
+            <MiniDetail label="Bank" value={details?.paymentBankName} />
+          </div>
+
+          {details?.governmentPaymentRemark && (
+            <p className="mt-1.5 text-[11px] text-default-600">
+              <span className="font-medium text-default-500">Remark: </span>
+              {details.governmentPaymentRemark}
+            </p>
+          )}
+          {details?.governmentPaymentVerificationRemark && (
+            <p className="mt-1 text-[11px] text-default-600">
+              <span className="font-medium text-default-500">
+                Verification remark:{" "}
+              </span>
+              {details.governmentPaymentVerificationRemark}
+            </p>
+          )}
+
+          <ProofLink
+            href={details?.governmentPaymentReceiptUrl}
+            label="View receipt"
+          />
+        </div>
+      )}
+
+      {hasFundTransfer && (
+        <div className="rounded-lg border border-default-200 bg-content1 p-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-default-600">
+            <ArrowRightLeft className="h-3.5 w-3.5" /> Fund Transfer
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-foreground">
+            <span>{details?.fundTransferFromBankName || "-"}</span>
+            <ArrowRightLeft className="h-3 w-3 shrink-0 text-default-400" />
+            <span>{details?.fundTransferToBankName || "-"}</span>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+            <MiniDetail
+              label="Amount"
+              value={formatMoney(details?.fundTransferAmount, currency)}
+            />
+            <MiniDetail
+              label="Date"
+              value={formatDateTime(details?.fundTransferDate)}
+            />
+            <MiniDetail
+              label="Reference"
+              value={details?.fundTransferReference}
+            />
+          </div>
+
+          <ProofLink href={details?.fundTransferProofUrl} label="View proof" />
+        </div>
+      )}
+
+      {(details?.attachmentUrl ||
+        details?.accountVoucherNumber ||
+        details?.fundTransferVoucherNumber ||
+        details?.governmentPaymentVoucherNumber) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-default-200 pt-2">
+          <ProofLink href={details?.attachmentUrl} label="View attachment" />
+
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-default-400">
+            {details?.accountVoucherNumber && (
+              <span>Voucher: {details.accountVoucherNumber}</span>
+            )}
+            {details?.fundTransferVoucherNumber && (
+              <span>Transfer voucher: {details.fundTransferVoucherNumber}</span>
+            )}
+            {details?.governmentPaymentVoucherNumber && (
+              <span>
+                Payment voucher: {details.governmentPaymentVoucherNumber}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ActivityItem = ({ activity, onReply }) => {
+  const [showExpenseDetails, setShowExpenseDetails] = useState(false);
+  const details = activity?.details;
+
+  const typeMeta = ACTIVITY_TYPE_META[activity?.activityType] || {
+    icon: Activity,
+    accent: "text-default-500 bg-default-100",
+  };
+  const TypeIcon = typeMeta.icon;
+
   const renderContent = () => {
     switch (activity.activityType) {
       case "COMMENT":
         return (
           <div className="group">
             <p className="mt-1 whitespace-pre-wrap break-words text-sm text-default-700">
-              {activity.details?.commentText || "-"}
+              {details?.commentText || activity.summary || "-"}
             </p>
 
             <button
               type="button"
-              onClick={() => onReply(activity.details?.id)}
+              onClick={() => onReply(details?.id)}
               className="mt-1 text-xs font-medium text-primary opacity-80 hover:opacity-100"
             >
               Reply
             </button>
 
-            {activity.details?.children?.length > 0 && (
+            {details?.children?.length > 0 && (
               <div className="mt-3 border-l border-default-200 pl-3">
                 <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-default-400">
                   Replies
                 </p>
 
-                {activity.details.children.map((child) => (
+                {details.children.map((child) => (
                   <CommentThread
                     key={child.id}
                     comment={child}
@@ -387,48 +824,76 @@ export const ActivityItem = ({ activity, onReply }) => {
       case "NOTE":
         return (
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-default-700">
-            {activity.details?.noteText || "-"}
+            {details?.noteText || activity.summary || "-"}
           </p>
         );
 
       case "EXPENSE":
         return (
-          <div className="mt-1 text-sm text-default-700">
-            <p className="font-medium text-foreground">
-              {activity.details?.expenseType || "Expense"}{" "}
-              {inrCurrency(activity.details?.amount)}
+          <div className="mt-1">
+            <p className="text-sm text-default-700">
+              {activity.summary || "-"}
             </p>
 
-            {activity.details?.description && (
-              <p className="mt-1 whitespace-pre-wrap break-words text-xs text-default-500">
-                {activity.details.description}
-              </p>
+            {details && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowExpenseDetails((previous) => !previous)}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-80 hover:opacity-100"
+                >
+                  {showExpenseDetails ? "Hide details" : "View details"}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${
+                      showExpenseDetails ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {showExpenseDetails && (
+                  <ExpenseActivityDetails details={details} />
+                )}
+              </>
             )}
           </div>
         );
 
       default:
-        return null;
+        return activity.summary ? (
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-default-700">
+            {activity.summary}
+          </p>
+        ) : null;
     }
   };
 
   return (
     <div className="relative flex gap-3 border-b border-default-100 py-3 text-xs last:border-b-0">
-      <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+      <div
+        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${typeMeta.accent}`}
+      >
+        <TypeIcon className="h-3.5 w-3.5" />
+      </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-default-500">
-          <span className="font-semibold text-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-semibold text-foreground">
+            {activity.title || formatEnumLabel(activity.activityType)}
+          </span>
+          <span className="rounded-full bg-default-100 px-2 py-0.5 text-[10px] font-medium text-default-600">
+            {formatEnumLabel(activity.activityType)}
+          </span>
+        </div>
+
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-default-500">
+          <span className="font-medium text-default-600">
             {activity.createdByUserName || "-"}
           </span>
           <span>•</span>
           <span>
             {activity.activityDate
-              ? dayjs(activity.activityDate).format("DD/MM/YYYY, HH:mm")
+              ? dayjs(activity.activityDate).format("DD MMM YYYY, hh:mm A")
               : "-"}
-          </span>
-          <span className="rounded-full bg-default-100 px-2 py-0.5 text-[10px] font-medium text-default-600">
-            {activity.activityType}
           </span>
         </div>
 
@@ -571,6 +1036,32 @@ const ProjectDetails = () => {
     selectedVendor?.id ||
     vendorDetail?.selectedVendorId ||
     null;
+
+  // Assignment History: system re-checks a "skip non-mandatory" milestone
+  // every few seconds while it's pending, so most assignmentEvents are just
+  // that automatic re-check noise. Drop those and merge in the (always
+  // meaningful) statusChangeEvents so the timeline reads as a real history.
+  const milestoneTimeline = useMemo(() => {
+    const isNoiseReason = (reason) =>
+      String(reason || "")
+        .trim()
+        .toLowerCase()
+        .replace(/-/g, " ") === "skipped non mandatory";
+
+    const assignmentEntries = (
+      mileStoneHistoryDetail?.assignmentEvents || []
+    )
+      .filter((event) => !isNoiseReason(event?.reason))
+      .map((event) => ({ kind: "assignment", ...event }));
+
+    const statusEntries = (mileStoneHistoryDetail?.statusChangeEvents || []).map(
+      (event) => ({ kind: "status", ...event }),
+    );
+
+    return [...assignmentEntries, ...statusEntries].sort(
+      (a, b) => new Date(a.date) - new Date(b.date),
+    );
+  }, [mileStoneHistoryDetail]);
 
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
@@ -1126,7 +1617,20 @@ const ProjectDetails = () => {
             color: "success",
           });
           assigneeModal.onClose();
-          dispatch(getOperationProjectDetailById({ projectId, userId }));
+
+          dispatch(getOperationProjectDetailById({ projectId, userId })).then(
+            (res) => {
+              const updatedMilestone = res?.payload?.milestones?.find(
+                (mile) => Number(mile.id) === Number(selectedMilestone?.id),
+              );
+
+              if (updatedMilestone) {
+                setSelectedMilestone(updatedMilestone);
+                fetchMilestoneHistory(updatedMilestone, true);
+              }
+            },
+          );
+
           setAssigneeObj({
             assignmentId: null,
             newUserId: null,
@@ -1984,13 +2488,13 @@ const ProjectDetails = () => {
 
   const handleFilterChange = (value) => {
     if (value === "ALL") {
-      dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+      dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
     } else {
       dispatch(
         getActivitiesByTypeAndProjectId({
           projectId,
           type: value,
-          page: 1,
+          page: 0,
           size: 50,
         }),
       );
@@ -2020,7 +2524,7 @@ const ProjectDetails = () => {
           setCommentText("");
           setReplyParentId(null);
           setActivityType("ALL");
-          dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+          dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
         } else {
           addToast({
             title: resp?.payload?.status,
@@ -2055,7 +2559,7 @@ const ProjectDetails = () => {
           noteModal.onClose();
           setNoteText("");
           setActivityType("ALL");
-          dispatch(getActivitiesByProjectId({ projectId, page: 1, size: 50 }));
+          dispatch(getActivitiesByProjectId({ projectId, page: 0, size: 50 }));
         } else {
           addToast({
             title: "ERROR",
@@ -2138,7 +2642,7 @@ const ProjectDetails = () => {
         dispatch(
           getActivitiesByProjectId({
             projectId,
-            page: 1,
+            page: 0,
             size: 50,
           }),
         );
@@ -2754,13 +3258,13 @@ const ProjectDetails = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-80px)] w-full overflow-y-auto overflow-x-hidden bg-background px-3 py-3">
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-3 pb-6">
-        <section className="border-b border-default-200 bg-background pb-3">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+    <div className="h-[calc(100vh-80px)] w-full overflow-y-auto overflow-x-hidden bg-background px-3 py-2">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-2.5 pb-4">
+        <section className="border-b border-default-200 bg-background pb-2.5">
+          <div className="flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <Chip size="sm" color="primary" variant="flat">
+              <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                <Chip size="sm" color="primary" variant="flat" className="h-5 text-[10.5px]">
                   Project Detail
                 </Chip>
 
@@ -2769,18 +3273,19 @@ const ProjectDetails = () => {
                     size="sm"
                     color={statusColors[selectedMilestone?.status] || "default"}
                     variant="flat"
+                    className="h-5 text-[10.5px]"
                   >
                     {selectedMilestone?.status}
                   </Chip>
                 )}
               </div>
 
-              <div className="flex flex-col gap-1 lg:flex-row lg:items-end lg:gap-3">
-                <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+              <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:gap-3">
+                <h1 className="font-sans text-base font-semibold shrink-0">
                   {detailedData?.projectDetails?.name || "Project"}
                 </h1>
 
-                <p className="text-xs font-medium text-default-500">
+                <p className="text-[11px] font-medium text-default-500">
                   {detailedData?.projectDetails?.projectNo || "-"}
                   {(detailedData?.projectDetails?.createdDate ||
                     detailedData?.projectDetails?.date) &&
@@ -2791,9 +3296,9 @@ const ProjectDetails = () => {
                 </p>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <div className="flex items-center gap-2 text-default-600">
-                  <Building className="h-4 w-4 text-default-400" />
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-xs">
+                <div className="flex items-center gap-1.5 text-default-600">
+                  <Building className="h-3.5 w-3.5 text-default-400" />
                   <span className="text-default-400">Company:</span>
 
                   <span className="font-medium text-foreground">
@@ -2811,8 +3316,8 @@ const ProjectDetails = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-default-600">
-                  <Building className="h-4 w-4 text-default-400" />
+                <div className="flex items-center gap-1.5 text-default-600">
+                  <Building className="h-3.5 w-3.5 text-default-400" />
                   <span className="text-default-400">Company unit:</span>
 
                   <span className="font-medium text-foreground">
@@ -2830,8 +3335,8 @@ const ProjectDetails = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-default-600">
-                  <Calendar className="h-4 w-4 text-default-400" />
+                <div className="flex items-center gap-1.5 text-default-600">
+                  <Calendar className="h-3.5 w-3.5 text-default-400" />
                   <span className="text-default-400">Updated:</span>
                   <span className="font-medium text-foreground">
                     {detailedData?.projectDetails?.updatedDate
@@ -2842,16 +3347,16 @@ const ProjectDetails = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-default-600">
-                  <GitFork className="h-4 w-4 text-default-400" />
+                <div className="flex items-center gap-1.5 text-default-600">
+                  <GitFork className="h-3.5 w-3.5 text-default-400" />
                   <span className="text-default-400">Milestones:</span>
                   <span className="font-medium text-foreground">
                     {detailedData?.milestones?.length || 0}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-default-600">
-                  <User2 className="h-4 w-4 text-default-400" />
+                <div className="flex items-center gap-1.5 text-default-600">
+                  <User2 className="h-3.5 w-3.5 text-default-400" />
                   <span className="text-default-400">Assignee:</span>
                   <span className="font-medium text-foreground">
                     {selectedMilestone?.assignedUser?.fullName || "Unassigned"}
@@ -2860,8 +3365,8 @@ const ProjectDetails = () => {
               </div>
 
               {detailedData?.projectDetails?.address && (
-                <div className="mt-2 flex items-start gap-2 text-sm text-default-600">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-default-400" />
+                <div className="mt-1.5 flex items-start gap-1.5 text-xs text-default-600">
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-default-400" />
                   <span className="break-words">
                     {[
                       detailedData?.projectDetails?.address,
@@ -2877,7 +3382,7 @@ const ProjectDetails = () => {
 
               {(department === "CRT" || adminRole) &&
                 detailedData?.projectDetails?.contacts?.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 border-t border-default-100 pt-3 text-sm">
+                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-default-100 pt-2 text-xs">
                     {detailedData?.projectDetails?.contacts?.map(
                       (contact, index) => (
                         <div
@@ -2891,17 +3396,17 @@ const ProjectDetails = () => {
                               className="bg-primary-100 text-primary"
                             />
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold capitalize text-foreground">
+                              <p className="truncate text-[12.5px] font-semibold capitalize text-foreground">
                                 {`${contact?.title || ""} ${contact?.name || ""}`.trim() ||
                                   "N/A"}
                               </p>
-                              <p className="truncate text-xs text-default-500">
+                              <p className="truncate text-[11px] text-default-500">
                                 {contact?.designation || "Client Contact"}
                               </p>
                             </div>
                           </div>
 
-                          <div className="ml-8 flex flex-wrap gap-x-5 gap-y-1 text-xs text-default-600">
+                          <div className="ml-8 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-default-600">
                             <span className="inline-flex min-w-0 items-center gap-1.5">
                               <Phone className="h-3.5 w-3.5 shrink-0" />
                               {contact?.contactNo || "N/A"}
@@ -3041,16 +3546,16 @@ const ProjectDetails = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
           {(adminRole || isManager) && (
             <aside className="lg:col-span-3">
-              <div className="sticky top-0 max-h-[calc(100vh-150px)] overflow-y-auto border-r border-default-200 pr-3">
-                <div className="mb-3">
-                  <p className="text-base font-semibold text-foreground">
+              <div className="sticky top-0 max-h-[calc(100vh-150px)] overflow-y-auto border-r border-default-200 pr-2.5">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold text-foreground">
                     Milestones
                   </p>
-                  <p className="text-xs text-default-500">
-                    Select a milestone to view assignment history
+                  <p className="text-[11px] text-default-500">
+                    Select a milestone to view its history
                   </p>
                 </div>
 
@@ -3068,18 +3573,18 @@ const ProjectDetails = () => {
                             setSelectedMilestone(mile);
                             fetchMilestoneHistory(mile);
                           }}
-                          className={`w-full px-2 py-3 text-left transition-colors ${
+                          className={`w-full px-2 py-2 text-left transition-colors ${
                             isActive
                               ? "bg-primary-50 text-primary"
                               : "hover:bg-default-50"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center justify-between gap-2.5">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold">
+                              <p className="truncate text-[12.5px] font-semibold">
                                 {mile?.milestoneName || "Milestone"}
                               </p>
-                              <p className="mt-0.5 truncate text-xs text-default-500">
+                              <p className="mt-0.5 truncate text-[11px] text-default-500">
                                 {mile?.assignedUser?.fullName
                                   ? `Assigned to ${mile.assignedUser.fullName}`
                                   : "Unassigned"}
@@ -3090,7 +3595,7 @@ const ProjectDetails = () => {
                               size="sm"
                               color={statusColors[mile?.status] || "default"}
                               variant="flat"
-                              className="shrink-0"
+                              className="h-5 shrink-0 text-[10.5px]"
                             >
                               {mile?.status || "-"}
                             </Chip>
@@ -3099,7 +3604,7 @@ const ProjectDetails = () => {
                       );
                     })
                   ) : (
-                    <p className="py-6 text-center text-sm text-default-500">
+                    <p className="py-5 text-center text-xs text-default-500">
                       No milestones found
                     </p>
                   )}
@@ -3111,21 +3616,21 @@ const ProjectDetails = () => {
           <main className={adminRole ? "lg:col-span-9" : "lg:col-span-12"}>
             {selectedMilestone ? (
               <section className="overflow-hidden rounded-xl border border-default-200 bg-content1">
-                <div className="border-b border-default-200 bg-primary-50/60 px-4 py-3">
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="border-b border-default-200 bg-primary-50/60 px-3.5 py-2.5">
+                  <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
                     <div className="min-w-0">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <Chip color="primary" variant="flat" size="sm">
+                      <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                        <Chip color="primary" variant="flat" size="sm" className="h-5 text-[10.5px]">
                           Active Milestone
                         </Chip>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Chip
                             size="sm"
+                            className="h-5 cursor-pointer text-[10.5px]"
                             color={
                               statusColors[selectedMilestone?.status] ||
                               "default"
                             }
-                            className="cursor-pointer"
                             onClick={() => {
                               statusModal.onOpen();
 
@@ -3161,16 +3666,16 @@ const ProjectDetails = () => {
                         </div>
                       </div>
 
-                      <h2 className="truncate text-lg font-semibold text-foreground">
+                      <h2 className="truncate text-[15px] font-semibold text-foreground">
                         {selectedMilestone?.milestoneName || "Milestone"}
                       </h2>
-                      <p className="mt-0.5 text-xs text-default-500">
+                      <p className="mt-0.5 text-[11px] text-default-500">
                         Assignment ID: {selectedMilestone?.id || "-"}
                       </p>
                     </div>
                     {!isCertificationMilestone && (
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex min-w-[220px] items-center justify-between gap-3 rounded-lg bg-content1 px-3 py-2 shadow-sm ring-1 ring-default-200">
+                        <div className="flex min-w-[210px] items-center justify-between gap-2.5 rounded-lg bg-content1 px-2.5 py-1.5 shadow-sm ring-1 ring-default-200">
                           <div className="flex min-w-0 items-center gap-2">
                             <Avatar
                               size="sm"
@@ -3181,11 +3686,11 @@ const ProjectDetails = () => {
                               className="bg-primary-100 text-primary"
                             />
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-foreground">
+                              <p className="truncate text-[12.5px] font-semibold text-foreground">
                                 {selectedMilestone?.assignedUser?.fullName ||
                                   "Select Assignee"}
                               </p>
-                              <p className="truncate text-xs text-default-500">
+                              <p className="truncate text-[11px] text-default-500">
                                 {selectedMilestone?.assignedUser?.email ||
                                   "No assignee selected"}
                               </p>
@@ -3213,7 +3718,7 @@ const ProjectDetails = () => {
                               }));
                             }}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </div>
 
@@ -3237,108 +3742,160 @@ const ProjectDetails = () => {
                     )}
                   </div>
                 </div>
-                <div className="p-4">
-                  <dl className="grid grid-cols-1 gap-x-8 gap-y-3 border-b border-default-100 pb-4 text-sm md:grid-cols-3">
+                <div className="p-3.5">
+                  <dl className="grid grid-cols-1 gap-x-6 gap-y-2 border-b border-default-100 pb-3 text-xs md:grid-cols-3">
                     <div>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-default-400">
                         Department
                       </dt>
-                      <dd className="mt-0.5 font-semibold text-foreground">
+                      <dd className="mt-0.5 text-[13px] font-semibold text-foreground">
                         {selectedMilestone?.departmentName || "-"}
                       </dd>
                     </div>
 
                     <div>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-default-400">
                         Assigned To
                       </dt>
-                      <dd className="mt-0.5 font-semibold text-foreground">
+                      <dd className="mt-0.5 text-[13px] font-semibold text-foreground">
                         {selectedMilestone?.assignedUser?.fullName ||
                           "Unassigned"}
                       </dd>
                     </div>
 
                     <div>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-default-400">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-default-400">
                         Milestone Status
                       </dt>
-                      <dd className="mt-0.5 font-semibold text-foreground">
+                      <dd className="mt-0.5 text-[13px] font-semibold text-foreground">
                         {selectedMilestone?.status || "-"}
                       </dd>
                     </div>
                   </dl>
 
-                  <div className="pt-4">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className="pt-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-base font-semibold text-foreground">
-                          Assignment History
+                        <p className="text-sm font-semibold text-foreground">
+                          History
                         </p>
-                        <p className="text-xs text-default-500">
-                          Latest updates for selected milestone
+                        <p className="text-[11px] text-default-500">
+                          Assignment changes and status updates for this
+                          milestone
                         </p>
                       </div>
 
-                      <span className="text-xs font-medium text-default-500">
-                        {mileStoneHistoryDetail?.assignmentEvents?.length || 0}{" "}
-                        Updates
+                      <span className="text-[11px] font-medium text-default-500">
+                        {milestoneTimeline.length} update
+                        {milestoneTimeline.length === 1 ? "" : "s"}
                       </span>
                     </div>
 
-                    {mileStoneHistoryDetail?.assignmentEvents?.length > 0 ? (
-                      <div className="relative space-y-0 before:absolute before:left-[5px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-default-200">
-                        {mileStoneHistoryDetail?.assignmentEvents?.map(
-                          (history, index) => (
-                            <div
-                              key={`${history?.date || index}`}
-                              className="relative flex gap-3 border-b border-default-100 py-3 last:border-b-0"
-                            >
-                              <div className="z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-warning" />
+                    {milestoneTimeline.length > 0 ? (
+                      <div className="relative space-y-0 before:absolute before:left-3 before:top-1 before:h-[calc(100%-8px)] before:w-px before:bg-default-200">
+                        {milestoneTimeline.map((event, index) => {
+                          if (event.kind === "status") {
+                            const color = statusColors[event.newStatus] || "default";
 
-                              <div className="min-w-0 flex-1">
+                            return (
+                              <div
+                                key={`status-${event.date}-${index}`}
+                                className="relative flex gap-2.5 py-2"
+                              >
+                                <div
+                                  className={`z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${getStatusBadgeClass(color)}`}
+                                >
+                                  <Flag className="h-3 w-3" />
+                                </div>
+
+                                <div className="min-w-0 flex-1 pb-0.5">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-[11.5px] font-medium text-default-500">
+                                        {formatEnumLabel(event.previousStatus)}
+                                      </span>
+                                      <ArrowRight className="h-3 w-3 text-default-400" />
+                                      <Chip
+                                        size="sm"
+                                        variant="flat"
+                                        color={color}
+                                        className="h-5 px-1.5 text-[10.5px]"
+                                      >
+                                        {formatEnumLabel(event.newStatus)}
+                                      </Chip>
+                                    </div>
+
+                                    <span className="text-[10.5px] font-medium text-default-400">
+                                      {event.date
+                                        ? dayjs(event.date).format(
+                                            "DD MMM YYYY, hh:mm A",
+                                          )
+                                        : "-"}
+                                    </span>
+                                  </div>
+
+                                  <p className="mt-1 text-[11px] text-default-600">
+                                    by{" "}
+                                    <span className="font-medium text-foreground">
+                                      {event.changedByName || "-"}
+                                    </span>
+                                    {event.reason?.trim() && (
+                                      <span className="text-default-500">
+                                        {" "}
+                                        · "{event.reason.trim()}"
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={`assignment-${event.date}-${index}`}
+                              className="relative flex gap-2.5 py-2"
+                            >
+                              <div className="z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary">
+                                <UserCog className="h-3 w-3" />
+                              </div>
+
+                              <div className="min-w-0 flex-1 pb-0.5">
                                 <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <p className="break-words text-sm font-semibold text-primary">
-                                    {history?.reason || "N/A"}
+                                  <p className="break-words text-[11.5px] font-semibold text-foreground">
+                                    {event.reason?.trim() || "Reassigned"}
                                   </p>
 
-                                  <span className="text-xs font-medium text-default-400">
-                                    {history?.date
-                                      ? dayjs(history?.date).format(
+                                  <span className="text-[10.5px] font-medium text-default-400">
+                                    {event.date
+                                      ? dayjs(event.date).format(
                                           "DD MMM YYYY, hh:mm A",
                                         )
                                       : "-"}
                                   </span>
                                 </div>
 
-                                <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs text-default-600">
-                                  <p>
-                                    <span className="text-default-400">
-                                      Assigned to:
-                                    </span>{" "}
-                                    <span className="font-medium text-foreground">
-                                      {history?.assignedToName || "Unassigned"}
-                                    </span>
-                                  </p>
-                                  <p>
-                                    <span className="text-default-400">
-                                      Assigned by:
-                                    </span>{" "}
-                                    <span className="font-medium text-foreground">
-                                      {history?.assignedByName || "-"}
-                                    </span>
-                                  </p>
-                                </div>
+                                <p className="mt-1 text-[11px] text-default-600">
+                                  Assigned to{" "}
+                                  <span className="font-medium text-foreground">
+                                    {event.assignedToName || "Unassigned"}
+                                  </span>{" "}
+                                  by{" "}
+                                  <span className="font-medium text-foreground">
+                                    {event.assignedByName || "-"}
+                                  </span>
+                                </p>
                               </div>
                             </div>
-                          ),
-                        )}
+                          );
+                        })}
                       </div>
                     ) : (
-                      <div className="py-10 text-center">
-                        <p className="text-base font-semibold text-foreground">
-                          No assignment history found
+                      <div className="py-8 text-center">
+                        <p className="text-sm font-semibold text-foreground">
+                          No history found
                         </p>
-                        <p className="mt-1 text-sm text-default-500">
+                        <p className="mt-1 text-[11px] text-default-500">
                           History will appear here once this milestone is
                           updated.
                         </p>
@@ -3444,7 +4001,7 @@ const ProjectDetails = () => {
                     <div className="divide-y divide-default-100">
                       {activities.map(
                         (activity) =>
-                          activity?.details && (
+                          activity && (
                             <ActivityItem
                               key={activity.activityId}
                               activity={activity}

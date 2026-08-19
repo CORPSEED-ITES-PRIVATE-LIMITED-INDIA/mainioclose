@@ -1,28 +1,26 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Building2 } from "lucide-react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { useDispatch, useSelector } from "react-redux";
+import { Image } from "@heroui/react";
+import logo from "../assets/CORPSEED.webp";
+import signature from "../assets/signature.png";
 import { inrCurrency } from "../common";
 import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
 
 /**
  * DebitNoteView
- * -------------
- * Document renderer for a "Debit Note" raised by Corpseed AGAINST a vendor
- * (e.g. to claw back an amount already invoiced — a short delivery, a
- * price correction, a rejected line item). This is the mirror image of
- * PurchaseInvoiceView.jsx: there, the vendor is the seller and Corpseed is
- * the buyer; here, Corpseed is the ISSUER (top-left, with its own org
- * detail via getOrganizationByName) and the vendor is the party being
- * debited (right-hand "To" block, from the row's vendor* fields).
- *
- * The line-item GST math (getLineTaxBreakup / buildTaxSummaryRows),
- * amount-in-words and the print/PDF/copy-URL/share-email toolbar are copied
- * faithfully from TaxInvoice.jsx / PurchaseInvoiceView.jsx so debit notes
- * stay numerically consistent with the rest of the invoicing suite.
+ * --------------------
+ * Document renderer for a "Debit Note" (government-fee voucher) — same paper
+ * layout, toolbar (Copy URL / Print / Share Email / Download PDF) and A4
+ * sizing as TaxInvoice.jsx / PurchaseInvoiceView.jsx, so all three documents
+ * read as one consistent family. Debit notes don't carry line items or GST
+ * (they're internal government-fee vouchers), so the items table + tax
+ * summary from TaxInvoice are replaced with a single voucher-details row
+ * built entirely from the fields already present in the debit note API
+ * response (see getGovernmentFeeDebitNotes) — no extra fetch is required.
  */
 
 /** -------------------------
@@ -58,130 +56,28 @@ const amountToWordsINR = (value) => {
   return `${r} RUPEES ONLY`;
 };
 
-const percentStr = (v) => {
-  const n = toNumber(v);
-  if (!Number.isFinite(n) || n <= 0) return "";
-  return n % 1 === 0 ? `${n}%` : `${n.toFixed(2)}%`;
+// Narration comes as free text, e.g. "Government fee approved for project
+// PRJ-20260806-122606-0146, expense ID 22. KIKUI" — pull the project number
+// out of it since the API doesn't expose it as its own field.
+const parseProjectNoFromNarration = (narration) => {
+  const match = String(narration || "").match(/PRJ-[\w-]+/i);
+  return match ? match[0] : "";
 };
 
-const getHalfGstRatesLabel = (items = []) => {
-  const unique = Array.from(
-    new Set(
-      (items || [])
-        .map((x) => toNumber(x?.gstRate))
-        .filter((r) => Number.isFinite(r) && r > 0),
-    ),
-  ).sort((a, b) => a - b);
+// "PROJECT_EXPENSE_GOVT_FEE_PAYMENT" -> "Project expense govt fee payment"
+const humanize = (value) => {
+  if (!value) return "-";
 
-  if (unique.length === 0) return "";
-  return unique.map((r) => percentStr(r / 2)).join(" / ");
-};
-
-const getFullGstRatesLabel = (items = []) => {
-  const unique = Array.from(
-    new Set(
-      (items || [])
-        .map((x) => toNumber(x?.gstRate))
-        .filter((r) => Number.isFinite(r) && r > 0),
-    ),
-  ).sort((a, b) => a - b);
-
-  if (unique.length === 0) return "";
-  return unique.map((r) => percentStr(r)).join(" / ");
-};
-
-const isIgstLineItem = (item) =>
-  item?.igstFlag === true || item?.igstFlag === "true";
-
-const roundMoney = (value) =>
-  Math.round((toNumber(value) + Number.EPSILON) * 100) / 100;
-
-const getLineTaxBreakup = (item = {}) => {
-  const taxableValue = toNumber(item?.lineTotalExGst);
-  const gstRate = toNumber(item?.gstRate);
-  const calculatedGst = roundMoney((taxableValue * gstRate) / 100);
-
-  const suppliedTotalGst = toNumber(item?.gstAmount);
-  const totalGst = suppliedTotalGst > 0 ? suppliedTotalGst : calculatedGst;
-
-  if (isIgstLineItem(item)) {
-    const suppliedIgst = toNumber(item?.igstAmount);
-
-    return {
-      taxableValue,
-      gstRate,
-      cgstRate: 0,
-      cgstAmount: 0,
-      sgstRate: 0,
-      sgstAmount: 0,
-      igstRate: gstRate,
-      igstAmount: suppliedIgst > 0 ? suppliedIgst : totalGst,
-      totalTax: suppliedIgst > 0 ? suppliedIgst : totalGst,
-      taxType: "IGST",
-    };
-  }
-
-  const suppliedCgst = toNumber(item?.cgstAmount);
-  const suppliedSgst = toNumber(item?.sgstAmount);
-  const halfTax = roundMoney(totalGst / 2);
-
-  const cgstAmount = suppliedCgst > 0 ? suppliedCgst : halfTax;
-  const sgstAmount = suppliedSgst > 0 ? suppliedSgst : halfTax;
-
-  return {
-    taxableValue,
-    gstRate,
-    cgstRate: gstRate > 0 ? gstRate / 2 : 0,
-    cgstAmount,
-    sgstRate: gstRate > 0 ? gstRate / 2 : 0,
-    sgstAmount,
-    igstRate: 0,
-    igstAmount: 0,
-    totalTax: roundMoney(cgstAmount + sgstAmount),
-    taxType: "CGST_SGST",
-  };
-};
-
-const buildTaxSummaryRows = (lineItems = []) => {
-  const map = new Map();
-
-  for (const item of lineItems) {
-    const hsn = item?.hsnSacCode || "";
-    const breakup = getLineTaxBreakup(item);
-
-    const key = `${hsn}__${breakup.gstRate}__${breakup.taxType}`;
-
-    if (!map.has(key)) {
-      map.set(key, {
-        hsn,
-        taxType: breakup.taxType,
-        taxableValue: 0,
-        cgstRate: breakup.cgstRate,
-        cgstAmount: 0,
-        sgstRate: breakup.sgstRate,
-        sgstAmount: 0,
-        igstRate: breakup.igstRate,
-        igstAmount: 0,
-        totalTax: 0,
-      });
-    }
-
-    const row = map.get(key);
-
-    row.taxableValue = roundMoney(row.taxableValue + breakup.taxableValue);
-    row.cgstAmount = roundMoney(row.cgstAmount + breakup.cgstAmount);
-    row.sgstAmount = roundMoney(row.sgstAmount + breakup.sgstAmount);
-    row.igstAmount = roundMoney(row.igstAmount + breakup.igstAmount);
-    row.totalTax = roundMoney(row.totalTax + breakup.totalTax);
-  }
-
-  return Array.from(map.values());
+  const words = String(value).toLowerCase().split("_");
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 /** -------------------------
  * Component
  * ------------------------- */
-const DebitNoteView = ({ debitNoteData, heading }) => {
+const DebitNoteView = ({ invoiceData, heading }) => {
   const dispatch = useDispatch();
   const printRef = useRef(null);
   const [copyText, setCopyText] = useState("Copy URL");
@@ -190,30 +86,36 @@ const DebitNoteView = ({ debitNoteData, heading }) => {
     (state) => state.organization.organizationDetail,
   );
 
-  // Corpseed is the ISSUER on a debit note — fetch its own organization
-  // detail so we don't have to hardcode it here.
+  // Corpseed itself is the issuer of the debit note — fetch its own
+  // organization detail so we don't have to hardcode it here.
   useEffect(() => {
     dispatch(getOrganizationByName());
   }, [dispatch]);
 
-  // debitNoteData can be object OR JSON string
+  // invoiceData can be object OR JSON string
   const inv = useMemo(() => {
-    if (!debitNoteData) return {};
+    if (!invoiceData) return {};
 
-    if (typeof debitNoteData === "string") {
+    if (typeof invoiceData === "string") {
       try {
-        return JSON.parse(debitNoteData);
+        return JSON.parse(invoiceData);
       } catch (error) {
-        console.error("Invalid debitNoteData JSON string:", error);
+        console.error("Invalid invoiceData JSON string:", error);
         return {};
       }
     }
 
-    return debitNoteData;
-  }, [debitNoteData]);
+    return invoiceData;
+  }, [invoiceData]);
 
-  // Issuer (Corpseed itself) — sourced from redux organization state.
-  const issuer = useMemo(() => {
+  const projectNo = useMemo(
+    () => inv?.project || parseProjectNoFromNarration(inv?.narration),
+    [inv],
+  );
+
+  // Issuer (Corpseed) — sourced from redux organization state, same shape
+  // PurchaseInvoiceView.jsx uses for the buyer side.
+  const org = useMemo(() => {
     const addressParts = [
       organizationDetail?.addressLine1,
       organizationDetail?.city,
@@ -237,151 +139,15 @@ const DebitNoteView = ({ debitNoteData, heading }) => {
       phone: organizationDetail?.phone || "",
       panNo: organizationDetail?.panNo || "",
       cinNumber: organizationDetail?.cinNumber || "",
+      logoUrl: organizationDetail?.logoUrl || "",
       bankName: organizationDetail?.bankName || "",
       accountNo: organizationDetail?.accountNo || "",
       ifscCode: organizationDetail?.ifscCode || "",
+      branchName: organizationDetail?.branchName || "",
     };
   }, [organizationDetail]);
 
-  // Recipient (the VENDOR being debited) — sourced purely from the row's
-  // vendor* fields, no API call needed.
-  const vendor = useMemo(() => {
-    const addressParts = [
-      inv?.vendorAddressLine1,
-      inv?.vendorCity,
-      inv?.vendorState,
-      inv?.vendorCountry,
-    ].filter(Boolean);
-
-    const address = addressParts.join(", ");
-    const pinCode = inv?.vendorPinCode ? ` - ${inv.vendorPinCode}` : "";
-    const gstin = inv?.vendorGstin || "";
-
-    return {
-      name: inv?.vendorName || "",
-      addressLine1: `${address}${pinCode}`,
-      gstin,
-      stateName: inv?.vendorState || "",
-      stateCode: gstin.slice(0, 2),
-      panNo: inv?.vendorPanNo || "",
-    };
-  }, [inv]);
-
-  // lineItems safe + sort
-  const items = useMemo(() => {
-    const arr = Array.isArray(inv?.lineItems) ? inv.lineItems : [];
-
-    return [...arr].sort(
-      (a, b) => toNumber(a?.displayOrder) - toNumber(b?.displayOrder),
-    );
-  }, [inv]);
-
-  const taxSummaryRows = useMemo(() => buildTaxSummaryRows(items), [items]);
-
-  const calculatedTotals = useMemo(() => {
-    return items.reduce(
-      (totals, item) => {
-        const breakup = getLineTaxBreakup(item);
-
-        totals.subTotalExGst = roundMoney(
-          totals.subTotalExGst + breakup.taxableValue,
-        );
-        totals.cgstAmount = roundMoney(totals.cgstAmount + breakup.cgstAmount);
-        totals.sgstAmount = roundMoney(totals.sgstAmount + breakup.sgstAmount);
-        totals.igstAmount = roundMoney(totals.igstAmount + breakup.igstAmount);
-        totals.totalGstAmount = roundMoney(
-          totals.totalGstAmount + breakup.totalTax,
-        );
-
-        return totals;
-      },
-      {
-        subTotalExGst: 0,
-        cgstAmount: 0,
-        sgstAmount: 0,
-        igstAmount: 0,
-        totalGstAmount: 0,
-      },
-    );
-  }, [items]);
-
-  const hasLineItems = items.length > 0;
-
-  const subTotalExGst = hasLineItems
-    ? calculatedTotals.subTotalExGst
-    : toNumber(inv?.amount);
-
-  const cgstAmount = hasLineItems
-    ? calculatedTotals.cgstAmount
-    : toNumber(inv?.cgstAmount);
-
-  const sgstAmount = hasLineItems
-    ? calculatedTotals.sgstAmount
-    : toNumber(inv?.sgstAmount);
-
-  const igstAmount = hasLineItems
-    ? calculatedTotals.igstAmount
-    : toNumber(inv?.igstAmount);
-
-  const totalGstAmount = hasLineItems
-    ? calculatedTotals.totalGstAmount
-    : toNumber(inv?.totalGstAmount);
-
-  const grandTotal =
-    toNumber(inv?.debitAmount) || roundMoney(subTotalExGst + totalGstAmount);
-
-  const intraStateItems = useMemo(
-    () => items.filter((item) => !isIgstLineItem(item)),
-    [items],
-  );
-
-  const interStateItems = useMemo(
-    () => items.filter((item) => isIgstLineItem(item)),
-    [items],
-  );
-
-  const halfRatesLabel = useMemo(
-    () => getHalfGstRatesLabel(intraStateItems),
-    [intraStateItems],
-  );
-
-  const fullRatesLabel = useMemo(
-    () => getFullGstRatesLabel(interStateItems),
-    [interStateItems],
-  );
-
-  const hasCgstSgst = cgstAmount > 0 || sgstAmount > 0;
-  const hasIgst = igstAmount > 0;
-
-  const gstDisplayRows = useMemo(() => {
-    const rows = [];
-
-    if (cgstAmount > 0) {
-      rows.push({
-        label: "CGST",
-        rateLabel: halfRatesLabel,
-        amount: cgstAmount,
-      });
-    }
-
-    if (sgstAmount > 0) {
-      rows.push({
-        label: "SGST",
-        rateLabel: halfRatesLabel,
-        amount: sgstAmount,
-      });
-    }
-
-    if (igstAmount > 0) {
-      rows.push({
-        label: "IGST",
-        rateLabel: fullRatesLabel,
-        amount: igstAmount,
-      });
-    }
-
-    return rows;
-  }, [cgstAmount, sgstAmount, igstAmount, halfRatesLabel, fullRatesLabel]);
+  const grandTotal = toNumber(inv?.amount);
 
   const getShareUrl = () => window.location.href;
 
@@ -421,7 +187,7 @@ const DebitNoteView = ({ debitNoteData, heading }) => {
     printWindow.document.write(`
     <html>
       <head>
-        <title>${heading || "Debit Note"} - ${inv?.debitNoteNo || ""}</title>
+        <title>${heading || "Debit Note"} - ${inv?.voucherNumber || ""}</title>
 
         <style>
           * { box-sizing: border-box; }
@@ -494,10 +260,10 @@ const DebitNoteView = ({ debitNoteData, heading }) => {
   };
 
   const handleShareViaEmail = () => {
-    const debitNoteNo = inv?.debitNoteNo || "Debit Note";
+    const voucherNo = inv?.voucherNumber || "Debit Note";
 
     const subject = encodeURIComponent(
-      `${heading || "Debit Note"} - ${debitNoteNo}`,
+      `${heading || "Debit Note"} - ${voucherNo}`,
     );
 
     const body = encodeURIComponent(
@@ -505,11 +271,10 @@ const DebitNoteView = ({ debitNoteData, heading }) => {
 
 Please find the ${heading || "Debit Note"} details below:
 
-Debit Note No.: ${debitNoteNo}
-Debit Note Date: ${
-        inv?.debitNoteDate ? dayjs(inv.debitNoteDate).format("DD-MM-YYYY") : "NA"
+Voucher No.: ${voucherNo}
+Voucher Date: ${
+        inv?.voucherDate ? dayjs(inv.voucherDate).format("DD-MM-YYYY") : "NA"
       }
-Against Invoice No.: ${inv?.invoiceNo || "NA"}
 Amount: ${inrCurrency(grandTotal)}
 URL: ${getShareUrl()}
 
@@ -557,7 +322,7 @@ Corpseed Team`,
     const y = (pageH - imgH) / 2;
     pdf.addImage(imgData, "PNG", x, y, imgW, imgH, undefined, "FAST");
 
-    pdf.save(`${inv?.debitNoteNo || "debit-note"}.pdf`);
+    pdf.save(`${inv?.voucherNumber || "debit-note"}.pdf`);
   };
 
   const TableTh = ({ children, className = "", ...props }) => (
@@ -632,7 +397,7 @@ Corpseed Team`,
             margin: "0 auto",
           }}
         >
-          {/* Heading */}
+          {/* Debit Note Heading */}
           <div className="border border-gray-300">
             <div className="border-b border-gray-300 py-2 text-center">
               <div className="text-[16px] font-extrabold tracking-wide">
@@ -644,29 +409,36 @@ Corpseed Team`,
             <div className="grid grid-cols-[1.2fr_1fr] border-b border-gray-300">
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
-                  <div className="flex h-10 w-[120px] items-center justify-start">
-                    <Building2 className="h-8 w-8 text-gray-400" />
-                  </div>
+                  <Image
+                    src={org.logoUrl || logo}
+                    alt={org.name || "Organization logo"}
+                    className="h-10 max-w-[120px] object-contain"
+                    crossOrigin="anonymous"
+                  />
                 </div>
 
                 <div className="mb-0.5 text-[12px] font-bold">
-                  {issuer.name || "NA"}
+                  {org.name || "NA"}
                 </div>
                 <div className="text-[11px] leading-snug">
-                  {issuer.addressLine1}
+                  {org.addressLine1}
                 </div>
-                {issuer.gstin ? (
-                  <div className="mt-1 text-[11px]">
-                    GSTIN/UIN : {issuer.gstin}
-                  </div>
+                {org.gstin ? (
+                  <div className="mt-1 text-[11px]">GSTIN/UIN : {org.gstin}</div>
                 ) : null}
-                {issuer.stateName ? (
+                {org.stateName ? (
                   <div className="text-[11px]">
-                    State name : {issuer.stateName} , code : {issuer.stateCode}
+                    State name : {org.stateName} , code : {org.stateCode}
                   </div>
                 ) : null}
-                {issuer.email ? (
-                  <div className="text-[11px]">E-mail : {issuer.email}</div>
+                {org.email ? (
+                  <div className="text-[11px]">E-mail : {org.email}</div>
+                ) : null}
+                {org.panNo ? (
+                  <div className="text-[11px]">PAN : {org.panNo}</div>
+                ) : null}
+                {org.cinNumber ? (
+                  <div className="text-[11px]">CIN : {org.cinNumber}</div>
                 ) : null}
               </div>
 
@@ -674,17 +446,17 @@ Corpseed Team`,
                 <div className="grid grid-cols-2 border-b border-gray-300">
                   <div className="border-r border-gray-300 p-2.5">
                     <div className="text-[10px] text-gray-500">
-                      Debit note no.
+                      Voucher no.
                     </div>
                     <div className="text-[11px] font-bold">
-                      {inv?.debitNoteNo || "NA"}
+                      {inv?.voucherNumber || "NA"}
                     </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">Dated</div>
                     <div className="text-[11px] font-bold">
-                      {inv?.debitNoteDate
-                        ? dayjs(inv.debitNoteDate).format("DD-MM-YYYY")
+                      {inv?.voucherDate
+                        ? dayjs(inv.voucherDate).format("DD-MM-YYYY")
                         : "NA"}
                     </div>
                   </div>
@@ -693,137 +465,90 @@ Corpseed Team`,
                 <div className="grid grid-cols-2 border-b border-gray-300">
                   <div className="border-r border-gray-300 p-2.5">
                     <div className="text-[10px] text-gray-500">
-                      Against Invoice No.
+                      Voucher Type
                     </div>
                     <div className="text-[11px] font-bold">
-                      {inv?.invoiceNo || "NA"}
+                      {inv?.voucherType || "NA"}
                     </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
-                      Buyer's Order No.
+                      References No. &amp; Date.
                     </div>
                     <div className="text-[11px] font-bold">
-                      {inv?.poNumber || "NA"}
+                      {inv?.operationExpenseId
+                        ? `Expense ID ${inv.operationExpenseId}`
+                        : "NA"}
+                      {inv?.createdAt
+                        ? ` / ${dayjs(inv.createdAt).format("DD-MM-YYYY")}`
+                        : ""}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 border-b border-gray-300">
+                  <div className="border-r border-gray-300 p-2.5">
+                    <div className="text-[10px] text-gray-500">
+                      Project No.
+                    </div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {projectNo || <>&nbsp;</>}
+                    </div>
+                  </div>
+                  <div className="p-2.5">
+                    <div className="text-[10px] text-gray-500">Source</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {humanize(inv?.sourceType)}
                     </div>
                   </div>
                 </div>
 
                 <div className="p-2.5">
-                  <div className="text-[10px] text-gray-500">
-                    Reason for Debit Note
-                  </div>
-                  <div className="text-[11px] font-bold">
-                    {inv?.reason || "NA"}
+                  <div className="text-[10px] text-gray-500">Status</div>
+                  <div className="h-4 text-[11px] font-bold">
+                    {inv?.status || <>&nbsp;</>}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Recipient (the vendor being debited) */}
-            <div className="grid grid-cols-2 border-b border-gray-300">
-              <div className="border-r border-gray-300 p-2.5">
-                <div className="mb-1 text-[11px] font-bold">
-                  To (Vendor being debited)
-                </div>
-                <div className="text-[11px]">{vendor.name || "NA"}</div>
-                <div className="text-[11px]">
-                  GSTIN/UIN : {vendor.gstin || ""}
-                </div>
-                <div className="text-[11px]">
-                  Address : {vendor.addressLine1}
-                </div>
-                <div className="text-[11px]">
-                  State name : {vendor.stateName} , code : {vendor.stateCode}
-                </div>
-              </div>
-
-              <div className="p-2.5">
-                <div className="mb-1 text-[11px] font-bold">
-                  Related Project
-                </div>
-                <div className="text-[11px]">{inv?.projectName || "NA"}</div>
-                <div className="text-[11px]">
-                  Project No. : {inv?.projectNo || "NA"}
-                </div>
-              </div>
-            </div>
-
-            {/* Items table */}
+            {/* Voucher details table (mirrors the items table on Tax Invoice /
+                Purchase Invoice, but debit notes carry no line items or GST —
+                just the single narration + amount already in the response). */}
             <table className="w-full border-collapse">
               <thead>
                 <tr>
                   <TableTh className="w-[50px] text-center">S.No</TableTh>
                   <TableTh>Particulars</TableTh>
-                  <TableTh className="w-[90px] text-center">HSN/SAC</TableTh>
-                  <TableTh className="w-[80px] text-center">Quantity</TableTh>
-                  <TableTh className="w-[90px] text-center">Rate</TableTh>
-                  <TableTh className="w-[70px] text-center">Per</TableTh>
+                  <TableTh className="w-[150px] text-center">Voucher Type</TableTh>
                   <TableTh className="w-[110px] text-right">Amount (₹)</TableTh>
                 </tr>
               </thead>
 
               <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <TableTd className="text-center text-gray-500" colSpan={7}>
-                      No line items found
-                    </TableTd>
-                  </tr>
-                ) : (
-                  items.map((it, idx) => (
-                    <tr key={it?.id ?? idx}>
-                      <TableTd className="text-center">{idx + 1}</TableTd>
-                      <TableTd>
-                        <div className="font-semibold">
-                          {it?.itemName || "NA"}
-                        </div>
-                        {it?.description ? (
-                          <div className="mt-0.5 text-[10px] text-gray-500">
-                            {it.description}
-                          </div>
-                        ) : null}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {it?.hsnSacCode || ""}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {toNumber(it?.quantity)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(it?.unitPriceExGst)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {it?.unit || "NOS"}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(it?.lineTotalExGst)}
-                      </TableTd>
-                    </tr>
-                  ))
-                )}
-
-                {gstDisplayRows.map((taxRow, index) => (
-                  <tr key={taxRow.label}>
-                    <TableTd className="text-center">
-                      {items.length + index + 1}
-                    </TableTd>
-                    <TableTd>{taxRow.label}</TableTd>
-                    <TableTd />
-                    <TableTd />
-                    <TableTd className="text-right font-semibold">
-                      {taxRow.rateLabel}
-                    </TableTd>
-                    <TableTd className="text-center">%</TableTd>
-                    <TableTd className="text-right">
-                      {inrCurrency(taxRow.amount)}
-                    </TableTd>
-                  </tr>
-                ))}
+                <tr>
+                  <TableTd className="text-center">1</TableTd>
+                  <TableTd>
+                    <div className="font-semibold">
+                      {humanize(inv?.sourceType)}
+                    </div>
+                    {inv?.narration ? (
+                      <div className="mt-0.5 text-[10px] text-gray-500">
+                        {inv.narration}
+                      </div>
+                    ) : null}
+                  </TableTd>
+                  <TableTd className="text-center">
+                    {inv?.voucherType || "NA"}
+                  </TableTd>
+                  <TableTd className="text-right">
+                    {inrCurrency(grandTotal)}
+                  </TableTd>
+                </tr>
 
                 <tr>
                   <TableTd />
-                  <TableTd className="text-right font-bold" colSpan={5}>
+                  <TableTd className="text-right font-bold" colSpan={2}>
                     Total
                   </TableTd>
                   <TableTd className="text-right font-bold">
@@ -843,235 +568,39 @@ Corpseed Team`,
               </div>
             </div>
 
-            {/* Tax summary table */}
-            {hasIgst && !hasCgstSgst ? (
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <TableTh className="text-center" rowSpan={2}>
-                      HSN/SAC
-                    </TableTh>
-                    <TableTh className="text-center" rowSpan={2}>
-                      Taxable Value (₹)
-                    </TableTh>
-                    <TableTh className="text-center" colSpan={2}>
-                      IGST
-                    </TableTh>
-                    <TableTh className="text-center" rowSpan={2}>
-                      Total Tax Amount (₹)
-                    </TableTh>
-                  </tr>
-                  <tr>
-                    <TableTh className="text-center">Rate (%)</TableTh>
-                    <TableTh className="text-center">Amount (₹)</TableTh>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {taxSummaryRows.map((row, index) => (
-                    <tr key={`${row.hsn}-${row.igstRate}-${index}`}>
-                      <TableTd className="text-center">{row.hsn}</TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.taxableValue)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {toNumber(row.igstRate).toFixed(2)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.igstAmount)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.totalTax)}
-                      </TableTd>
-                    </tr>
-                  ))}
-
-                  <tr>
-                    <TableTd className="font-bold">Total</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(subTotalExGst)}
-                    </TableTd>
-                    <TableTd className="text-center">-</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(igstAmount)}
-                    </TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(totalGstAmount)}
-                    </TableTd>
-                  </tr>
-                </tbody>
-              </table>
-            ) : hasCgstSgst && !hasIgst ? (
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <TableTh className="text-center" rowSpan={2}>
-                      HSN/SAC
-                    </TableTh>
-                    <TableTh className="text-center" rowSpan={2}>
-                      Taxable Value (₹)
-                    </TableTh>
-                    <TableTh className="text-center" colSpan={2}>
-                      CGST
-                    </TableTh>
-                    <TableTh className="text-center" colSpan={2}>
-                      SGST
-                    </TableTh>
-                    <TableTh className="text-center" rowSpan={2}>
-                      Total Tax Amount (₹)
-                    </TableTh>
-                  </tr>
-                  <tr>
-                    <TableTh className="text-center">Rate (%)</TableTh>
-                    <TableTh className="text-center">Amount (₹)</TableTh>
-                    <TableTh className="text-center">Rate (%)</TableTh>
-                    <TableTh className="text-center">Amount (₹)</TableTh>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {taxSummaryRows.map((row, index) => (
-                    <tr key={`${row.hsn}-${row.cgstRate}-${index}`}>
-                      <TableTd className="text-center">{row.hsn}</TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.taxableValue)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {toNumber(row.cgstRate).toFixed(2)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.cgstAmount)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {toNumber(row.sgstRate).toFixed(2)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.sgstAmount)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.totalTax)}
-                      </TableTd>
-                    </tr>
-                  ))}
-
-                  <tr>
-                    <TableTd className="font-bold">Total</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(subTotalExGst)}
-                    </TableTd>
-                    <TableTd className="text-center">-</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(cgstAmount)}
-                    </TableTd>
-                    <TableTd className="text-center">-</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(sgstAmount)}
-                    </TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(totalGstAmount)}
-                    </TableTd>
-                  </tr>
-                </tbody>
-              </table>
-            ) : hasIgst && hasCgstSgst ? (
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <TableTh className="text-center">HSN/SAC</TableTh>
-                    <TableTh className="text-center">Taxable Value (₹)</TableTh>
-                    <TableTh className="text-center">Tax Type</TableTh>
-                    <TableTh className="text-center">Rate (%)</TableTh>
-                    <TableTh className="text-center">CGST (₹)</TableTh>
-                    <TableTh className="text-center">SGST (₹)</TableTh>
-                    <TableTh className="text-center">IGST (₹)</TableTh>
-                    <TableTh className="text-center">Total Tax (₹)</TableTh>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {taxSummaryRows.map((row, index) => (
-                    <tr key={`${row.hsn}-${row.taxType}-${index}`}>
-                      <TableTd className="text-center">{row.hsn}</TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.taxableValue)}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {row.taxType === "IGST" ? "IGST" : "CGST + SGST"}
-                      </TableTd>
-                      <TableTd className="text-center">
-                        {row.taxType === "IGST"
-                          ? toNumber(row.igstRate).toFixed(2)
-                          : `${toNumber(row.cgstRate).toFixed(2)} + ${toNumber(
-                              row.sgstRate,
-                            ).toFixed(2)}`}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.cgstAmount)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.sgstAmount)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.igstAmount)}
-                      </TableTd>
-                      <TableTd className="text-right">
-                        {inrCurrency(row.totalTax)}
-                      </TableTd>
-                    </tr>
-                  ))}
-
-                  <tr>
-                    <TableTd className="font-bold">Total</TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(subTotalExGst)}
-                    </TableTd>
-                    <TableTd />
-                    <TableTd />
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(cgstAmount)}
-                    </TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(sgstAmount)}
-                    </TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(igstAmount)}
-                    </TableTd>
-                    <TableTd className="text-right font-bold">
-                      {inrCurrency(totalGstAmount)}
-                    </TableTd>
-                  </tr>
-                </tbody>
-              </table>
-            ) : null}
-
-            <div className="px-2.5 py-2 text-[11px] text-gray-700">
-              Tax amount (in words) : <b>{amountToWordsINR(totalGstAmount)}</b>
-            </div>
-
-            {/* Footer — bank details belong to Corpseed here, since
-                Corpseed is the one issuing the debit note. */}
+            {/* Footer */}
             <div className="grid grid-cols-2 gap-3 border-t border-gray-300 p-2.5">
               <div className="text-[11px]">
-                <b>Remark :</b> {inv?.reason || ""}
+                <b>Remark :</b> {inv?.narration || ""}
               </div>
 
               <div className="text-[11px]">
                 <div className="mb-1 text-gray-500">Company bank detail</div>
                 <div>
-                  Bank name : <b>{issuer.bankName || "NA"}</b>
+                  Bank name : <b>{org.bankName || "NA"}</b>
                 </div>
                 <div>
-                  A/C No. : <b>{issuer.accountNo || "NA"}</b>
+                  A/C No. : <b>{org.accountNo || "NA"}</b>
                 </div>
                 <div>
-                  IFSC Code : <b>{issuer.ifscCode || "NA"}</b>
+                  Branch &amp; IFSC Code :{" "}
+                  <b>
+                    {org.branchName || "NA"} & {org.ifscCode || "NA"}
+                  </b>
                 </div>
               </div>
             </div>
 
+            {/* Authorised signatory */}
             <div className="px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {(issuer.name || "").toLowerCase()}</div>
-              <div className="mt-1 h-14" />
+              <div>for {(org.name || "").toLowerCase()}</div>
+              <div className="mt-1 flex justify-end">
+                <img
+                  src={signature}
+                  alt="signature"
+                  className="h-14 w-auto object-contain"
+                />
+              </div>
               <div className="text-gray-500">(Authorised Signatory)</div>
             </div>
           </div>

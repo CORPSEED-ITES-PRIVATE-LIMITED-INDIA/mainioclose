@@ -97,21 +97,21 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const PAYMENT_STATUS_OPTIONS = [
-  { label: "All Payment Statuses", value: "ALL" },
-  { label: "Not Initiated", value: "NOT_INITIATED" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Processing", value: "PROCESSING" },
-  { label: "Partially Paid", value: "PARTIALLY_PAID" },
-  { label: "Paid", value: "PAID" },
-  { label: "Failed", value: "FAILED" },
-  { label: "Reversed", value: "REVERSED" },
-  { label: "Cancelled", value: "CANCELLED" },
+  { label: "ALL", value: "ALL" },
+  { label: "NOT_INITIATED", value: "NOT_INITIATED" },
+  { label: "PENDING", value: "PENDING" },
+  { label: "PROCESSING", value: "PROCESSING" },
+  { label: "PARTIALLY_PAID", value: "PARTIALLY_PAID" },
+  { label: "PAID", value: "PAID" },
+  { label: "FAILED", value: "FAILED" },
+  { label: "REVERSED", value: "REVERSED" },
+  { label: "CANCELLED", value: "CANCELLED" },
 ];
 
 const ACCOUNT_DECISION_OPTIONS = [
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
-  { label: "On Hold", value: "ON_HOLD" },
+  { label: "APPROVED", value: "APPROVED" },
+  { label: "REJECTED", value: "REJECTED" },
+  { label: "ON_HOLD", value: "ON_HOLD" },
 ];
 
 const INITIAL_DECISION_FORM = {
@@ -1261,25 +1261,36 @@ const Expense = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[180px]">
-              <Select
-                size="sm"
-                selectedKeys={new Set([paymentStatus])}
-                onSelectionChange={(keys) => {
-                  const selectedValue = Array.from(keys)[0];
-                  if (!selectedValue) return;
-
-                  setPaymentStatus(String(selectedValue));
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                  className="capitalize"
+                >
+                  {paymentStatus}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[paymentStatus]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setPaymentStatus(key);
                   setPage(1);
                 }}
               >
-                {PAYMENT_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} textValue={option.label}>
-                    {option.label}
-                  </SelectItem>
+                {PAYMENT_STATUS_OPTIONS?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
                 ))}
-              </Select>
-            </div>
+              </DropdownMenu>
+            </Dropdown>
 
             <Dropdown>
               <DropdownTrigger>
