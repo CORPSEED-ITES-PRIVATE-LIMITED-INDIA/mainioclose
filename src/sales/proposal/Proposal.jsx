@@ -48,7 +48,10 @@ import {
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 import NewTextEditor from "../../components/NewTextEditor";
-import { getProductMileStonesListByProductId } from "../../toolkit/slices/operationSlice";
+import {
+  getProductMileStonesListByProductId,
+  getAllCompanyDocs,
+} from "../../toolkit/slices/operationSlice";
 
 const defaultValues = {
   mailTo: [],
@@ -62,6 +65,7 @@ const defaultValues = {
   emailBody: "<p></p>",
   scopeOfWork: "<p></p>",
   discountApplied: false,
+  attachmentDocumentIds: [],
 };
 
 const PAYMENT_TERM_OPTIONS = [
@@ -216,6 +220,7 @@ const Proposal = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
 
+  const companyDocs = useSelector((state) => state.operation.companyDocs || []);
   const templateList = useSelector((state) => state.leads.templateList);
   const brochureList = useSelector((state) => state.leads.brochureList);
   const allProposal = useSelector((state) => state.leads.proposalListByLeadId);
@@ -249,6 +254,13 @@ const Proposal = () => {
   const [lockedMailTo, setLockedMailTo] = useState([]);
   const [pendingSubmitValues, setPendingSubmitValues] = useState(null);
   const [solutionId, setSolutionId] = useState(null);
+
+  const selectedAttachmentIds =
+    Form.useWatch("attachmentDocumentIds", proposalAntForm) || [];
+
+  const selectedAttachmentDocs = useMemo(() => {
+    return companyDocs.filter((doc) => selectedAttachmentIds.includes(doc.id));
+  }, [companyDocs, selectedAttachmentIds]);
 
   const templateModal = useDisclosure();
   const brochureModal = useDisclosure();
@@ -325,13 +337,6 @@ const Proposal = () => {
 
   const isProposalAlreadyClosed = (status) =>
     ["CANCELLED", "INITIATED"].includes(status?.toUpperCase());
-
-  useEffect(() => {
-    dispatch(getAllPaymentTermList());
-    dispatch(getAllProposalByLeadId(leadId));
-    dispatch(getAllSolutionList(userId));
-    dispatch(getEstimatesByLeadId(leadId));
-  }, [dispatch, leadId, userId]);
 
   useEffect(() => {
     setTemplates(templateList);
@@ -419,6 +424,14 @@ const Proposal = () => {
     });
   }, [serviceBrouchersDetail, proposalAntForm]);
 
+  useEffect(() => {
+    dispatch(getAllPaymentTermList());
+    dispatch(getAllProposalByLeadId(leadId));
+    dispatch(getAllSolutionList(userId));
+    dispatch(getEstimatesByLeadId(leadId));
+    dispatch(getAllCompanyDocs());
+  }, [dispatch, leadId, userId]);
+
   const loadProposalInForm = (proposal) => {
     const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
 
@@ -450,6 +463,7 @@ const Proposal = () => {
       scopeOfWork: finalScopeOfWork,
       discountReasonAttachment: proposal?.discountReasonAttachment || "",
       discountApplied: Boolean(proposal?.discountApplied),
+      attachmentDocumentIds: (proposal?.attachments || []).map((doc) => doc.id),
     });
   };
 
@@ -550,6 +564,7 @@ const Proposal = () => {
       discountApplied: false,
       discountReason: "",
       discountReasonAttachment: "",
+      attachmentDocumentIds: [],
     });
 
     proposalAntForm.setFields([
@@ -875,6 +890,10 @@ const Proposal = () => {
       mailTo: Array.isArray(values?.mailTo) ? values.mailTo : [],
       mailCc: Array.isArray(values?.mailCc) ? values.mailCc : [],
       mailBcc: Array.isArray(values?.mailBcc) ? values.mailBcc : [],
+
+      attachmentDocumentIds: Array.isArray(antValues?.attachmentDocumentIds)
+        ? antValues.attachmentDocumentIds
+        : [],
 
       lineItems:
         antValues?.lineItems?.map((item) => ({
@@ -1637,6 +1656,36 @@ const Proposal = () => {
           }}
         />
       </Form.Item>
+
+      <Form.Item label="Attach Company Documents" name="attachmentDocumentIds">
+        <Select
+          mode="multiple"
+          size="large"
+          placeholder="Select documents to attach (PAN, GST, etc.)"
+          allowClear
+          options={companyDocs.map((doc) => ({
+            label: `${doc.documentType} — ${doc.fileName}`,
+            value: doc.id,
+          }))}
+        />
+      </Form.Item>
+
+      {selectedAttachmentDocs.length > 0 && (
+        <div className="-mt-2 mb-2 flex flex-wrap gap-2">
+          {selectedAttachmentDocs.map((doc) => (
+            <a
+              key={doc.id}
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+            >
+              {doc.documentType}
+              <ExternalLink size={12} />
+            </a>
+          ))}
+        </div>
+      )}
 
       <Form.Item name="paymentTermDescription" hidden>
         <AntInput />

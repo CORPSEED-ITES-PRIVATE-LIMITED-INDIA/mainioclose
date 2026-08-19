@@ -1753,53 +1753,62 @@ export const getAllPOByStatus = createAsyncThunk(
   },
 );
 
+
 export const getAllCompanyDocs = createAsyncThunk(
   "getAllCompanyDocs",
-  async (_, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const response = await api.get(
-        "/operationService/api/v1/my-company-documents");
+      const response = await api.get("/operationService/api/company-documents");
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || {
-          message: "Unable get Company Documents",
-        },
-      );
-    }
-  },
-);
-export const getCompanyDocById = createAsyncThunk(
-  "getCompanyDocById",
-  async (_,{ requiredDocumentId}, { rejectWithValue }) => {
-    try {
-      const response = await api.get(
-        `/operationService/api/v1/my-company-documents/${requiredDocumentId}`);
-
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error?.response?.data || {
-          message: "Unable get Company Document",
-        },
+        error?.response?.data || "Failed to fetch company docs",
       );
     }
   },
 );
 export const addCompanyDocument = createAsyncThunk(
   "addCompanyDocument",
-  async ({ currentUserId,data}, { rejectWithValue }) => {
+  async ({userId,data}, { rejectWithValue }) => {
     try {
-      const response = await api.post(
-        `/operationService/api/v1/my-company-documents?currentUserId=${currentUserId}`,data);
 
+      const response = await api.post(`/operationService/api/company-documents?userId=${userId}`,data);
       return response.data;
+
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || {
-          message: "Unable get Company Document",
-        },
+        error?.response?.data || "Failed to Add company doc",
+      );
+    }
+  },
+);
+export const updateCompanyDocument = createAsyncThunk(
+  "updateCompanyDocument",
+  async ({userId,id,data}, { rejectWithValue }) => {
+    try {
+
+      const response = await api.put(`/operationService/api/company-documents/${id}?userId=${userId}`,data);
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to Update company doc",
+      );
+    }
+  },
+);
+export const removeCompanyDocument = createAsyncThunk(
+  "removeCompanyDocument",
+  async ({id}, { rejectWithValue }) => {
+    try {
+
+      const response = await api.delete(`/operationService/api/company-documents/${id}`);
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to remove company doc",
       );
     }
   },
@@ -2272,40 +2281,6 @@ export const OperationSlice = createSlice({
         state.loading = "rejected";
       },
     );
-    builder.addCase(getAllCompanyDocs.pending, (state) => {
-      state.loading = "pending";
-    });
-    builder.addCase(
-      getAllCompanyDocs.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.companyDocs = action.payload;
-      },
-    );
-    builder.addCase(
-      getAllCompanyDocs.rejected,
-      (state, action) => {
-        state.loading = "rejected";
-        state.companyDocs = [];
-      },
-    );
-    builder.addCase(getCompanyDocById.pending, (state) => {
-      state.loading = "pending";
-    });
-    builder.addCase(
-      getCompanyDocById.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.companyDoc = action.payload;
-      },
-    );
-    builder.addCase(
-      getCompanyDocById.rejected,
-      (state, action) => {
-        state.loading = "rejected";
-        state.companyDoc = {};
-      },
-    );
     builder.addCase(getAllPOByStatus.pending, (state) => {
       state.loading = "pending";
     });
@@ -2402,6 +2377,23 @@ export const OperationSlice = createSlice({
       state.accountsDecisionError =
         action.payload || "Failed to update accounts expense decision";
     });
+
+
+    builder.addCase(getAllCompanyDocs.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllCompanyDocs.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.companyDocs = action?.payload;
+      },
+    );
+    builder.addCase(getAllCompanyDocs.rejected, (state) => {
+      state.loading = "rejected";
+      state.companyDocs = [];
+    });
+
   },
 });
 

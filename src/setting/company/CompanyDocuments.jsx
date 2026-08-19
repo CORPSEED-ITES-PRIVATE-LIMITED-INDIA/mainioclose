@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   addToast,
   Button,
-  Chip,
   Input,
   Modal,
   ModalBody,
@@ -15,30 +14,16 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
-import { FileText, UploadCloud } from "lucide-react";
+import { FileText, Pencil, Trash2, UploadCloud } from "lucide-react";
 import dayjs from "dayjs";
 
 import FileUploader from "../../components/FileUploader";
 import {
   getAllCompanyDocs,
   addCompanyDocument,
+  updateCompanyDocument,
+  removeCompanyDocument,
 } from "../../toolkit/slices/operationSlice";
-
-/*
- * PLACEHOLDER: this should come from a ProductRequiredDocuments catalog
- * endpoint (GET /api/v1/required-documents or similar) so new document
- * types can be added without a frontend deploy. Hardcoded here only
- * because that endpoint isn't wired up yet — replace with a real fetch
- * (e.g. via a getAllRequiredDocuments thunk) and swap these ids for the
- * actual catalog ids as soon as it's available.
- */
-const REQUIRED_DOCUMENT_TYPES = [
-  { id: 1, name: "PAN Card", type: "IDENTITY" },
-  { id: 2, name: "Aadhar Card", type: "IDENTITY" },
-  { id: 3, name: "GST Certificate", type: "TAX" },
-  { id: 4, name: "Cancelled Cheque", type: "BANKING" },
-  { id: 5, name: "Vendor Setup Form", type: "ONBOARDING" },
-];
 
 const handleFormValidationError = (errors) => {
   const firstError = Object.values(errors || {})[0];
@@ -50,13 +35,15 @@ const handleFormValidationError = (errors) => {
   });
 };
 
-const uploadDocumentDefaultValues = {
+const documentDefaultValues = {
+  documentType: "",
   fileUrl: "",
   documentNumber: "",
   remarks: "",
 };
 
-const uploadDocumentSchema = z.object({
+const documentSchema = z.object({
+  documentType: z.string().min(1, { message: "Document type is required" }),
   fileUrl: z.any().refine((value) => Boolean(value), {
     message: "Please upload a file",
   }),
@@ -75,6 +62,11 @@ const getUploadedFileValue = (value) => {
   );
 };
 
+const getUploadedFileSizeKb = (value) => {
+  const bytes = value?.size || value?.fileSize;
+  return typeof bytes === "number" ? Math.round(bytes / 1024) : undefined;
+};
+
 const getFileNameFromUrl = (url = "") => {
   try {
     const cleanUrl = String(url).split("?")[0];
@@ -88,6 +80,7 @@ const getFileNameFromUrl = (url = "") => {
 
 const getFileFormatFromUrl = (url = "") => {
   const extension = String(url).split("?")[0].split(".").pop()?.toLowerCase();
+
   return extension || "";
 };
 
@@ -97,20 +90,18 @@ const CompanyDocuments = () => {
   const currentUser = useSelector((state) => state.auth.currentUser);
   const companyDocs = useSelector((state) => state.operation.companyDocs || []);
   const loading = useSelector((state) => state.operation.loading);
-  const submitLoading = useSelector((state) => state.operation.submitLoading);
 
   const uploadModal = useDisclosure();
+  const deleteModal = useDisclosure();
 
-  const [activeDocumentType, setActiveDocumentType] = React.useState(null);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [docPendingDelete, setDocPendingDelete] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(uploadDocumentSchema),
-    defaultValues: uploadDocumentDefaultValues,
+  const { control, handleSubmit, reset } = useForm({
+    resolver: zodResolver(documentSchema),
+    defaultValues: documentDefaultValues,
   });
 
   const resolvedCurrentUserId =
@@ -133,49 +124,68 @@ const CompanyDocuments = () => {
     fetchCompanyDocs();
   }, [fetchCompanyDocs]);
 
-  // Merge the catalog with whatever's already uploaded, so every
-  // required document type shows a card — "Uploaded" or "Not uploaded".
-  const documentCards = useMemo(() => {
-    return REQUIRED_DOCUMENT_TYPES.map((docType) => {
-      const uploaded = (companyDocs || []).find(
-        (doc) => doc.requiredDocumentId === docType.id,
-      );
+  const handleOpenAdd = () => {
+    setEditingDoc(null);
+    reset(documentDefaultValues);
+    uploadModal.onOpen();
+  };
 
-      return {
-        ...docType,
-        uploaded: uploaded || null,
-      };
-    });
-  }, [companyDocs]);
-
-  const handleOpenUpload = (docType) => {
-    setActiveDocumentType(docType);
+  const handleOpenEdit = (doc) => {
+    setEditingDoc(doc);
 
     reset({
-      fileUrl: "",
-      documentNumber: docType?.uploaded?.documentNumber || "",
-      remarks: docType?.uploaded?.remarks || "",
+      documentType: doc.documentType || "",
+      fileUrl: doc.fileUrl || "",
+      documentNumber: doc.documentNumber || "",
+      remarks: doc.remarks || "",
     });
 
     uploadModal.onOpen();
   };
 
-  const onSubmitUpload = (values) => {
-    if (!activeDocumentType?.id) {
-      addToast({
-        title: "ERROR",
-        description: "Document type is missing. Please try again.",
-        color: "danger",
-      });
-      return;
-    }
+  const handleOpenDelete = (doc) => {
+    setDocPendingDelete(doc);
+    deleteModal.onOpen();
+  };
 
+  const confirmDelete = () => {
+    if (!docPendingDelete?.id) return;
+
+    setIsDeleting(true);
+
+    dispatch(removeCompanyDocument({ id: docPendingDelete.id })).then(
+      (resp) => {
+        setIsDeleting(false);
+
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: `${docPendingDelete.documentType} removed.`,
+            color: "success",
+          });
+
+          fetchCompanyDocs();
+          deleteModal.onClose();
+          setDocPendingDelete(null);
+        } else {
+          addToast({
+            title: "ERROR",
+            description: resp?.payload?.message || "Failed to remove document.",
+            color: "danger",
+          });
+        }
+      },
+    );
+  };
+
+  const onSubmitDocument = (values) => {
     if (!resolvedCurrentUserId) {
       addToast({
         title: "ERROR",
         description: "User is missing. Please login again.",
         color: "danger",
       });
+
       return;
     }
 
@@ -187,38 +197,55 @@ const CompanyDocuments = () => {
         description: "Please upload a file.",
         color: "danger",
       });
+
       return;
     }
 
     const payload = {
-      requiredDocumentId: activeDocumentType.id,
+      documentType: values.documentType,
       fileName: getFileNameFromUrl(fileUrl),
       fileUrl,
+      fileSizeKb: getUploadedFileSizeKb(values.fileUrl),
       fileFormat: getFileFormatFromUrl(fileUrl),
       documentNumber: values.documentNumber || "",
       remarks: values.remarks || "",
     };
 
-    dispatch(
-      addCompanyDocument({
-        currentUserId: resolvedCurrentUserId,
-        data: payload,
-      }),
-    ).then((resp) => {
+    setIsSubmitting(true);
+
+    const action = editingDoc
+      ? updateCompanyDocument({
+          userId: resolvedCurrentUserId,
+          id: editingDoc.id,
+          data: payload,
+        })
+      : addCompanyDocument({
+          userId: resolvedCurrentUserId,
+          data: payload,
+        });
+
+    dispatch(action).then((resp) => {
+      setIsSubmitting(false);
+
       if (resp.meta.requestStatus === "fulfilled") {
         addToast({
           title: "SUCCESS",
-          description: `${activeDocumentType.name} uploaded successfully.`,
+          description: `${payload.documentType} ${
+            editingDoc ? "updated" : "uploaded"
+          } successfully.`,
           color: "success",
         });
 
+        fetchCompanyDocs();
         uploadModal.onClose();
-        reset(uploadDocumentDefaultValues);
-        setActiveDocumentType(null);
+        reset(documentDefaultValues);
+        setEditingDoc(null);
       } else {
         addToast({
           title: "ERROR",
-          description: resp?.payload?.message || "Failed to upload document.",
+          description:
+            resp?.payload?.message ||
+            `Failed to ${editingDoc ? "update" : "upload"} document.`,
           color: "danger",
         });
       }
@@ -227,78 +254,93 @@ const CompanyDocuments = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-sans text-lg font-semibold">Company Documents</h1>
-        <p className="text-xs text-default-500">
-          Upload and manage your company's documents like PAN, Aadhar, and
-          Cancelled Cheque.
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="font-sans text-lg font-semibold">Company Documents</h1>
+
+          <p className="text-xs text-default-500">
+            Upload and manage your company's documents like PAN, Aadhar, and
+            Cancelled Cheque.
+          </p>
+        </div>
+
+        <Button
+          color="primary"
+          size="sm"
+          startContent={<UploadCloud size={15} />}
+          onPress={handleOpenAdd}
+        >
+          Add Document
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {loading === "pending" && companyDocs.length === 0 ? (
           <p className="text-sm text-default-500">Loading documents...</p>
+        ) : companyDocs.length === 0 ? (
+          <p className="text-sm text-default-400">
+            No documents uploaded yet. Click "Add Document" to get started.
+          </p>
         ) : (
-          documentCards.map((docType) => (
+          companyDocs.map((doc) => (
             <div
-              key={docType.id}
+              key={doc.id}
               className="rounded-2xl border bg-white p-4 shadow-sm"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {docType.name}
-                  </p>
-                  <Chip size="sm" variant="flat" className="mt-1">
-                    {docType.type}
-                  </Chip>
-                </div>
+                <p className="text-sm font-semibold text-gray-900">
+                  {doc.documentType}
+                </p>
 
                 <FileText size={18} className="text-default-400" />
               </div>
 
-              {docType.uploaded ? (
-                <div className="space-y-1 text-xs text-default-500">
-                  <a
-                    href={docType.uploaded.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="line-clamp-1 font-medium text-primary hover:underline"
-                  >
-                    {docType.uploaded.fileName}
-                  </a>
+              <div className="space-y-1 text-xs text-default-500">
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="line-clamp-1 font-medium text-primary hover:underline"
+                >
+                  {doc.fileName}
+                </a>
 
-                  {docType.uploaded.documentNumber && (
-                    <p>Number: {docType.uploaded.documentNumber}</p>
-                  )}
+                {doc.documentNumber && <p>Number: {doc.documentNumber}</p>}
 
-                  <p>
-                    Uploaded:{" "}
-                    {docType.uploaded.uploadTime
-                      ? dayjs(docType.uploaded.uploadTime).format(
-                          "DD MMM YYYY, hh:mm A",
-                        )
-                      : "-"}
-                  </p>
+                <p>
+                  Uploaded:{" "}
+                  {doc.uploadTime
+                    ? dayjs(doc.uploadTime).format("DD MMM YYYY, hh:mm A")
+                    : "-"}
+                </p>
 
-                  {docType.uploaded.uploadedByName && (
-                    <p>By: {docType.uploaded.uploadedByName}</p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-default-400">Not uploaded yet</p>
-              )}
+                {doc.uploadedByName && <p>By: {doc.uploadedByName}</p>}
 
-              <Button
-                className="mt-3 w-full"
-                size="sm"
-                color="primary"
-                variant={docType.uploaded ? "flat" : "solid"}
-                startContent={<UploadCloud size={15} />}
-                onPress={() => handleOpenUpload(docType)}
-              >
-                {docType.uploaded ? "Replace" : "Upload"}
-              </Button>
+                {doc.remarks && <p>Remarks: {doc.remarks}</p>}
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <Button
+                  className="flex-1"
+                  size="sm"
+                  variant="flat"
+                  startContent={<Pencil size={14} />}
+                  onPress={() => handleOpenEdit(doc)}
+                >
+                  Edit
+                </Button>
+
+                <Button
+                  className="flex-1"
+                  size="sm"
+                  color="danger"
+                  variant="flat"
+                  startContent={<Trash2 size={14} />}
+                  onPress={() => handleOpenDelete(doc)}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           ))
         )}
@@ -315,21 +357,40 @@ const CompanyDocuments = () => {
             <ModalHeader className="border-b">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {activeDocumentType?.uploaded ? "Replace" : "Upload"}{" "}
-                  {activeDocumentType?.name}
+                  {editingDoc ? "Edit Document" : "Add Document"}
                 </h2>
+
                 <p className="mt-1 text-xs font-normal text-default-500">
-                  {activeDocumentType?.uploaded
-                    ? "Uploading a new file will replace the existing one."
-                    : "Upload this document for your company."}
+                  {editingDoc
+                    ? "Update the details or replace the file below."
+                    : "Add a new document for your company."}
                 </p>
               </div>
             </ModalHeader>
 
             <form
-              onSubmit={handleSubmit(onSubmitUpload, handleFormValidationError)}
+              onSubmit={handleSubmit(
+                onSubmitDocument,
+                handleFormValidationError,
+              )}
             >
               <ModalBody className="space-y-4 py-5">
+                <Controller
+                  name="documentType"
+                  control={control}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Document Type"
+                      placeholder="e.g. PAN Card, Aadhar Card, GST Certificate"
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      errorMessage={error?.message}
+                      isInvalid={!!error}
+                    />
+                  )}
+                />
+
                 <Controller
                   name="fileUrl"
                   control={control}
@@ -377,18 +438,60 @@ const CompanyDocuments = () => {
                   type="button"
                   onPress={() => {
                     uploadModal.onClose();
-                    reset(uploadDocumentDefaultValues);
-                    setActiveDocumentType(null);
+                    reset(documentDefaultValues);
+                    setEditingDoc(null);
                   }}
                 >
                   Cancel
                 </Button>
 
-                <Button color="primary" type="submit" isLoading={submitLoading}>
-                  {activeDocumentType?.uploaded ? "Replace" : "Upload"}
+                <Button color="primary" type="submit" isLoading={isSubmitting}>
+                  {editingDoc ? "Save Changes" : "Upload"}
                 </Button>
               </ModalFooter>
             </form>
+          </>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+        size="sm"
+      >
+        <ModalContent>
+          <>
+            <ModalHeader className="border-b">Remove Document</ModalHeader>
+
+            <ModalBody className="py-5">
+              <p className="text-sm text-default-600">
+                Are you sure you want to remove{" "}
+                <span className="font-semibold">
+                  {docPendingDelete?.documentType}
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </ModalBody>
+
+            <ModalFooter className="border-t">
+              <Button
+                variant="flat"
+                onPress={() => {
+                  deleteModal.onClose();
+                  setDocPendingDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                color="danger"
+                isLoading={isDeleting}
+                onPress={confirmDelete}
+              >
+                Remove
+              </Button>
+            </ModalFooter>
           </>
         </ModalContent>
       </Modal>
