@@ -943,6 +943,12 @@ export const operationEmpItems = [
     url: "operation/expenses",
     key: "expenses",
   },
+  {
+    title: "Settings",
+    icon: "Settings",
+    url: "operation/settings",
+    key: "settings",
+  },
 ];
 
 export const legalNavItems = [
