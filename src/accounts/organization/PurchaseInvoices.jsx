@@ -17,8 +17,12 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  DropdownTrigger,
+  Dropdown,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import dayjs from "dayjs";
 import { inrCurrency } from "../../common";
 import NewSelect from "../../components/NewSelect";
@@ -73,12 +77,12 @@ const SEARCH_TYPE_OPTIONS = [
 ];
 
 const STATUS_FILTER_OPTIONS = [
-  { label: "All statuses", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Approved", value: "APPROVED" },
-  { label: "Paid", value: "PAID" },
-  { label: "Partially paid", value: "PARTIALLY_PAID" },
-  { label: "Rejected", value: "REJECTED" },
+  { label: "ALL", value: "ALL" },
+  { label: "PENDING", value: "PENDING" },
+  { label: "APPROVED", value: "APPROVED" },
+  { label: "PAID", value: "PAID" },
+  { label: "PARTIALLY_PAID", value: "PARTIALLY_PAID" },
+  { label: "REJECTED", value: "REJECTED" },
 ];
 
 const getStatusColor = (status) => {
@@ -402,7 +406,8 @@ const DUMMY_PURCHASE_INVOICES = [
   },
 ];
 
-const round2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+const round2 = (value) =>
+  Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 // Derive coherent top-level row fields (amount/gstPercentage/totals/payable)
 // from each row's own lineItems, instead of hand-typing unrelated numbers.
@@ -603,21 +608,27 @@ const PurchaseInvoices = () => {
       case "cgstAmount":
         return (
           <span className="font-normal text-[12.5px]">
-            {rowData?.gstType === "IGST" ? "-" : inrCurrency(rowData?.cgstAmount)}
+            {rowData?.gstType === "IGST"
+              ? "-"
+              : inrCurrency(rowData?.cgstAmount)}
           </span>
         );
 
       case "sgstAmount":
         return (
           <span className="font-normal text-[12.5px]">
-            {rowData?.gstType === "IGST" ? "-" : inrCurrency(rowData?.sgstAmount)}
+            {rowData?.gstType === "IGST"
+              ? "-"
+              : inrCurrency(rowData?.sgstAmount)}
           </span>
         );
 
       case "igstAmount":
         return (
           <span className="font-normal text-[12.5px]">
-            {rowData?.gstType === "IGST" ? inrCurrency(rowData?.igstAmount) : "-"}
+            {rowData?.gstType === "IGST"
+              ? inrCurrency(rowData?.igstAmount)
+              : "-"}
           </span>
         );
 
@@ -739,42 +750,61 @@ const PurchaseInvoices = () => {
           </div>
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={STATUS_FILTER_OPTIONS}
-                labelKey="label"
-                valueKey="value"
-                label="Status"
-                value={statusFilter}
-                onChange={(value) => {
-                  if (value) {
-                    setStatusFilter(value);
-                    setPage(1);
-                  }
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  {statusFilter}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[statusFilter]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let key = Array.from(e)[0];
+                  setStatusFilter(key);
+                  setPage(1);
                 }}
-              />
-            </div>
+              >
+                {STATUS_FILTER_OPTIONS?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 
@@ -885,7 +915,10 @@ const PurchaseInvoices = () => {
           )}
         </TableHeader>
 
-        <TableBody emptyContent={"No purchase invoices found"} items={paginatedItems}>
+        <TableBody
+          emptyContent={"No purchase invoices found"}
+          items={paginatedItems}
+        >
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (

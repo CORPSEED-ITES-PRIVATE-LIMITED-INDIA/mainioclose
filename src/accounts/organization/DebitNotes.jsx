@@ -6,7 +6,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   Pagination,
   Select,
@@ -18,12 +17,17 @@ import {
   TableHeader,
   TableRow,
   useDisclosure,
+  DropdownTrigger,
+  Dropdown,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { inrCurrency } from "../../common";
 import NewSelect from "../../components/NewSelect";
+import DebitNoteView from "../../components/DebitNoteView";
 import { getGovernmentFeeDebitNotes } from "../../toolkit/slices/accountSlice";
 
 // This list is backed by the government-fee journal-voucher API
@@ -339,7 +343,7 @@ const DebitNotes = () => {
               size="sm"
               className="w-full"
               classNames={{ inputWrapper: "h-8 min-h-8" }}
-              placeholder="Search this page..."
+              placeholder="Search ..."
               startContent={<Search className="w-4 h-4 text-default-400" />}
               value={filterValue}
               onClear={onClear}
@@ -348,24 +352,31 @@ const DebitNotes = () => {
           </div>
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 
@@ -494,90 +505,18 @@ const DebitNotes = () => {
       </Table>
 
       <Modal
-        size="2xl"
+        size="full"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
         isOpen={viewModal.isOpen}
         onOpenChange={viewModal.onOpenChange}
         placement="top-center"
       >
         <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Debit Note — {selectedNote?.voucherNumber || "-"}
-                <span className="text-xs font-normal text-default-500">
-                  Government fee expense ID:{" "}
-                  {selectedNote?.operationExpenseId ?? "-"}
-                </span>
-              </ModalHeader>
-
-              <ModalBody className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Input
-                  label="Voucher No."
-                  value={selectedNote?.voucherNumber || ""}
-                  isReadOnly
-                />
-                <Input
-                  label="Voucher Date"
-                  value={
-                    selectedNote?.voucherDate
-                      ? dayjs(selectedNote.voucherDate).format("DD-MM-YYYY")
-                      : ""
-                  }
-                  isReadOnly
-                />
-                <Input
-                  label="Project No."
-                  value={parseProjectNoFromNarration(selectedNote?.narration)}
-                  isReadOnly
-                />
-                <Input
-                  label="Amount"
-                  value={inrCurrency(selectedNote?.amount || 0)}
-                  isReadOnly
-                />
-                <Input
-                  label="Status"
-                  value={selectedNote?.status || ""}
-                  isReadOnly
-                />
-                <Input
-                  label="Voucher Type"
-                  value={selectedNote?.voucherType || ""}
-                  isReadOnly
-                />
-                <Input
-                  label="Source"
-                  value={humanize(selectedNote?.sourceType)}
-                  isReadOnly
-                />
-                <Input
-                  label="Created At"
-                  value={
-                    selectedNote?.createdAt
-                      ? dayjs(selectedNote.createdAt).format(
-                          "DD-MM-YYYY hh:mm A",
-                        )
-                      : "-"
-                  }
-                  isReadOnly
-                />
-
-                <div className="md:col-span-2">
-                  <Input
-                    label="Narration"
-                    value={selectedNote?.narration || ""}
-                    isReadOnly
-                  />
-                </div>
-              </ModalBody>
-
-              <ModalFooter>
-                <Button variant="flat" onPress={onClose}>
-                  Close
-                </Button>
-              </ModalFooter>
-            </>
-          )}
+          <ModalHeader>Debit Note</ModalHeader>
+          <ModalBody className="max-h-[90vh] overflow-auto">
+            <DebitNoteView invoiceData={selectedNote} />
+          </ModalBody>
         </ModalContent>
       </Modal>
     </div>

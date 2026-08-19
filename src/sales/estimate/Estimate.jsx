@@ -138,6 +138,9 @@ const Estimate = () => {
   const count = useSelector((state) => state.leads.totalEstimateCount);
   const data = useSelector((state) => state.leads.estimateList);
   const statusList = useSelector((state) => state?.setting?.statusList);
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const department = useSelector((state) => state.auth.getDepartmentDetail);
+  const adminRole = userRole.includes("ADMIN");
 
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
@@ -1119,9 +1122,15 @@ const Estimate = () => {
                 </div>
               </PopoverContent>
             </Popover>
-            <Button color="primary" variant="flat" onPress={reportModal.onOpen}>
-              Fetch Report
-            </Button>
+            {adminRole && (
+              <Button
+                color="primary"
+                variant="flat"
+                onPress={reportModal.onOpen}
+              >
+                Fetch Report
+              </Button>
+            )}
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button

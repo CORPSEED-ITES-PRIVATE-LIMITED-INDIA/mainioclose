@@ -32,6 +32,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
 
 import {
   getExpenseApprovalQueueList,
@@ -116,6 +119,114 @@ const governmentFeeDecisionOptions = [
   { label: "Approved", value: "APPROVED" },
   { label: "Rejected", value: "REJECTED" },
 ];
+
+// ----------------------------------------------------------------------------
+// react-hook-form schemas
+// ----------------------------------------------------------------------------
+
+const CRT_DECISION_DEFAULT_VALUES = {
+  status: "",
+  expensePaidBy: "",
+  clientPaymentDate: "",
+  clientPaymentMode: "",
+  clientPaymentBankLedgerId: "",
+  clientPaymentReference: "",
+  clientPaymentProofUrl: "",
+  remark: "",
+};
+
+const crtDecisionSchema = z
+  .object({
+    status: z.string().min(1, "Status is required"),
+    expensePaidBy: z.string().min(1, "Expense paid by is required"),
+    clientPaymentDate: z.string().optional(),
+    clientPaymentMode: z.string().optional(),
+    clientPaymentBankLedgerId: z.string().optional(),
+    clientPaymentReference: z.string().optional(),
+    clientPaymentProofUrl: z.string().optional(),
+    remark: z.string().trim().min(1, "Remark is required"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.expensePaidBy !== "CLIENT_TO_COMPANY") {
+      return;
+    }
+
+    if (!data.clientPaymentDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clientPaymentDate"],
+        message: "Payment date is required",
+      });
+    }
+
+    if (!data.clientPaymentMode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clientPaymentMode"],
+        message: "Payment mode is required",
+      });
+    }
+
+    if (!data.clientPaymentBankLedgerId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clientPaymentBankLedgerId"],
+        message: "Bank/Cash ledger is required",
+      });
+    }
+
+    if (!data.clientPaymentReference?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clientPaymentReference"],
+        message: "Transaction reference number is required",
+      });
+    }
+
+    if (!data.clientPaymentProofUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clientPaymentProofUrl"],
+        message: "Payment attachment is required",
+      });
+    }
+  });
+
+const GOVERNMENT_FEE_DEFAULT_VALUES = {
+  amount: "",
+  paymentDate: "",
+  paymentReference: "",
+  paymentReceiptUrl: "",
+  paymentMode: "",
+  bankLedgerId: "",
+  remark: "",
+};
+
+const governmentFeeSchema = z.object({
+  amount: z
+    .string()
+    .refine(
+      (value) =>
+        value !== "" && Number.isFinite(Number(value)) && Number(value) > 0,
+      "Valid amount is required",
+    ),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  paymentReference: z.string().trim().min(1, "Payment reference is required"),
+  paymentReceiptUrl: z.string().trim().min(1, "Payment receipt is required"),
+  paymentMode: z.string().min(1, "Payment mode is required"),
+  bankLedgerId: z.string().min(1, "Bank/Cash ledger is required"),
+  remark: z.string().trim().min(1, "Remark is required"),
+});
+
+const GOVERNMENT_FEE_DECISION_DEFAULT_VALUES = {
+  status: "",
+  remark: "",
+};
+
+const governmentFeeDecisionSchema = z.object({
+  status: z.string().min(1, "Status is required"),
+  remark: z.string().trim().min(1, "Remark is required"),
+});
 
 const formatText = (value) => {
   if (!value) return "-";
@@ -257,33 +368,8 @@ const Expenses = () => {
 
   const [isGovernmentFeeModalOpen, setIsGovernmentFeeModalOpen] =
     useState(false);
-
   const [governmentFeeExpense, setGovernmentFeeExpense] = useState(null);
   const [isPayingGovernmentFee, setIsPayingGovernmentFee] = useState(false);
-
-  const [governmentFeeForm, setGovernmentFeeForm] = useState({
-    amount: "",
-    paymentDate: "",
-    paymentReference: "",
-    paymentReceiptUrl: "",
-    paymentMode: "",
-    bankLedgerId: "",
-    remark: "",
-  });
-  const [governmentFeeErrors, setGovernmentFeeErrors] = useState({});
-
-  const [decisionForm, setDecisionForm] = useState({
-    status: "",
-    expensePaidBy: "",
-    paymentMode: "",
-    bankLedgerId: "",
-    transactionReference: "",
-    paymentProof: "",
-    clientPaymentDate: "",
-    remark: "",
-  });
-
-  const [decisionErrors, setDecisionErrors] = useState({});
 
   const [
     isGovernmentFeeDecisionModalOpen,
@@ -296,19 +382,49 @@ const Expenses = () => {
     setIsSubmittingGovernmentFeeDecision,
   ] = useState(false);
 
-  const [governmentFeeDecisionForm, setGovernmentFeeDecisionForm] = useState({
-    status: "",
-    remark: "",
+  // CRT status decision form
+  const {
+    control: decisionControl,
+    handleSubmit: handleDecisionSubmit,
+    watch: watchDecision,
+    reset: resetDecisionForm,
+    setValue: setDecisionValue,
+  } = useForm({
+    resolver: zodResolver(crtDecisionSchema),
+    defaultValues: CRT_DECISION_DEFAULT_VALUES,
   });
-  const [governmentFeeDecisionErrors, setGovernmentFeeDecisionErrors] =
-    useState({});
+
+  // Government fee payment form
+  const {
+    control: governmentFeeControl,
+    handleSubmit: handleGovernmentFeeSubmit,
+    watch: watchGovernmentFee,
+    reset: resetGovernmentFeeForm,
+    setValue: setGovernmentFeeValue,
+  } = useForm({
+    resolver: zodResolver(governmentFeeSchema),
+    defaultValues: GOVERNMENT_FEE_DEFAULT_VALUES,
+  });
+
+  // Government fee decision form
+  const {
+    control: governmentFeeDecisionControl,
+    handleSubmit: handleGovernmentFeeDecisionSubmit,
+    reset: resetGovernmentFeeDecisionForm,
+  } = useForm({
+    resolver: zodResolver(governmentFeeDecisionSchema),
+    defaultValues: GOVERNMENT_FEE_DECISION_DEFAULT_VALUES,
+  });
 
   useEffect(() => {
     dispatch(getActivePaymentLedgerForPaymentRegister());
   }, [dispatch]);
 
-  const isCompanyPaidExpense = decisionForm.expensePaidBy === "COMPANY";
-  const isCashPaymentMode = decisionForm.paymentMode === "CASH";
+  const decisionExpensePaidBy = watchDecision("expensePaidBy");
+  const decisionClientPaymentMode = watchDecision("clientPaymentMode");
+
+  const isCompanyPaidExpense = decisionExpensePaidBy === "CLIENT_TO_COMPANY";
+  const isCashPaymentMode = decisionClientPaymentMode === "CASH";
 
   const isCashLedger = useCallback((ledger) => {
     const ledgerName = String(ledger?.ledgerName || "")
@@ -323,7 +439,7 @@ const Expenses = () => {
   }, []);
 
   const filteredPaymentLedgerList = useMemo(() => {
-    if (!decisionForm.paymentMode) {
+    if (!decisionClientPaymentMode) {
       return [];
     }
 
@@ -331,17 +447,17 @@ const Expenses = () => {
       ? (paymentLedgerList || []).filter(isCashLedger)
       : (paymentLedgerList || []).filter((ledger) => !isCashLedger(ledger));
   }, [
-    decisionForm.paymentMode,
+    decisionClientPaymentMode,
     isCashPaymentMode,
     isCashLedger,
     paymentLedgerList,
   ]);
 
-  const isGovernmentFeeCashPaymentMode =
-    governmentFeeForm.paymentMode === "CASH";
+  const governmentFeePaymentMode = watchGovernmentFee("paymentMode");
+  const isGovernmentFeeCashPaymentMode = governmentFeePaymentMode === "CASH";
 
   const filteredGovernmentFeeLedgerList = useMemo(() => {
-    if (!governmentFeeForm.paymentMode) {
+    if (!governmentFeePaymentMode) {
       return [];
     }
 
@@ -349,7 +465,7 @@ const Expenses = () => {
       ? (paymentLedgerList || []).filter(isCashLedger)
       : (paymentLedgerList || []).filter((ledger) => !isCashLedger(ledger));
   }, [
-    governmentFeeForm.paymentMode,
+    governmentFeePaymentMode,
     isGovernmentFeeCashPaymentMode,
     isCashLedger,
     paymentLedgerList,
@@ -397,106 +513,89 @@ const Expenses = () => {
 
     setIsGovernmentFeeDecisionModalOpen(false);
     setGovernmentFeeDecisionExpense(null);
-    setGovernmentFeeDecisionForm({ status: "", remark: "" });
-    setGovernmentFeeDecisionErrors({});
-  }, [isSubmittingGovernmentFeeDecision]);
+    resetGovernmentFeeDecisionForm(GOVERNMENT_FEE_DECISION_DEFAULT_VALUES);
+  }, [isSubmittingGovernmentFeeDecision, resetGovernmentFeeDecisionForm]);
 
-  const openGovernmentFeeDecisionModal = useCallback((expense) => {
-    setGovernmentFeeDecisionExpense(expense);
-    setGovernmentFeeDecisionForm({ status: "", remark: "" });
-    setGovernmentFeeDecisionErrors({});
-    setIsGovernmentFeeDecisionModalOpen(true);
-  }, []);
+  const openGovernmentFeeDecisionModal = useCallback(
+    (expense) => {
+      setGovernmentFeeDecisionExpense(expense);
+      resetGovernmentFeeDecisionForm(GOVERNMENT_FEE_DECISION_DEFAULT_VALUES);
+      setIsGovernmentFeeDecisionModalOpen(true);
+    },
+    [resetGovernmentFeeDecisionForm],
+  );
 
-  const validateGovernmentFeeDecisionForm = useCallback(() => {
-    const errors = {};
+  const onGovernmentFeeDecisionSubmit = useCallback(
+    async (values) => {
+      if (!resolvedUserId) {
+        addToast({
+          title: "User not found",
+          description: "User ID is required to submit this decision.",
+          color: "danger",
+        });
 
-    if (!governmentFeeDecisionForm.status) {
-      errors.status = "Status is required";
-    }
+        return;
+      }
 
-    if (!governmentFeeDecisionForm.remark.trim()) {
-      errors.remark = "Remark is required";
-    }
+      if (
+        !governmentFeeDecisionExpense?.projectId ||
+        !governmentFeeDecisionExpense?.expenseId
+      ) {
+        addToast({
+          title: "Expense details missing",
+          description: "Project ID and expense ID are required.",
+          color: "danger",
+        });
 
-    setGovernmentFeeDecisionErrors(errors);
+        return;
+      }
 
-    return Object.keys(errors).length === 0;
-  }, [governmentFeeDecisionForm]);
+      setIsSubmittingGovernmentFeeDecision(true);
 
-  const handleGovernmentFeeDecision = useCallback(async () => {
-    if (!validateGovernmentFeeDecisionForm()) {
-      return;
-    }
+      try {
+        await dispatch(
+          accountsApproveGovernmentFee({
+            expenseId: governmentFeeDecisionExpense.expenseId,
+            projectId: governmentFeeDecisionExpense.projectId,
+            userId: resolvedUserId,
+            data: {
+              status: values.status,
+              remark: values.remark.trim(),
+            },
+          }),
+        ).unwrap();
 
-    if (!resolvedUserId) {
-      addToast({
-        title: "User not found",
-        description: "User ID is required to submit this decision.",
-        color: "danger",
-      });
+        addToast({
+          title: "Decision submitted",
+          description:
+            "The government fee decision was submitted successfully.",
+          color: "success",
+        });
 
-      return;
-    }
-
-    if (
-      !governmentFeeDecisionExpense?.projectId ||
-      !governmentFeeDecisionExpense?.expenseId
-    ) {
-      addToast({
-        title: "Expense details missing",
-        description: "Project ID and expense ID are required.",
-        color: "danger",
-      });
-
-      return;
-    }
-
-    setIsSubmittingGovernmentFeeDecision(true);
-
-    try {
-      await dispatch(
-        accountsApproveGovernmentFee({
-          expenseId: governmentFeeDecisionExpense.expenseId,
-          projectId: governmentFeeDecisionExpense.projectId,
-          userId: resolvedUserId,
-          data: {
-            status: governmentFeeDecisionForm.status,
-            remark: governmentFeeDecisionForm.remark.trim(),
-          },
-        }),
-      ).unwrap();
-
-      addToast({
-        title: "Decision submitted",
-        description: "The government fee decision was submitted successfully.",
-        color: "success",
-      });
-
-      closeGovernmentFeeDecisionModal();
-      fetchExpenseApprovalQueue();
-    } catch (error) {
-      addToast({
-        title: "Failed to submit decision",
-        description:
-          error?.message ||
-          error?.errorMessage ||
-          error ||
-          "Unable to submit the government fee decision.",
-        color: "danger",
-      });
-    } finally {
-      setIsSubmittingGovernmentFeeDecision(false);
-    }
-  }, [
-    closeGovernmentFeeDecisionModal,
-    dispatch,
-    fetchExpenseApprovalQueue,
-    governmentFeeDecisionExpense,
-    governmentFeeDecisionForm,
-    resolvedUserId,
-    validateGovernmentFeeDecisionForm,
-  ]);
+        closeGovernmentFeeDecisionModal();
+        fetchExpenseApprovalQueue();
+      } catch (error) {
+        addToast({
+          title: "Failed to submit decision",
+          description:
+            error?.message ||
+            error?.errorMessage ||
+            error ||
+            "Unable to submit the government fee decision.",
+          color: "danger",
+        });
+      } finally {
+        setIsSubmittingGovernmentFeeDecision(false);
+      }
+    },
+    [
+      closeGovernmentFeeDecisionModal,
+      dispatch,
+      fetchExpenseApprovalQueue,
+      governmentFeeDecisionExpense,
+      resolvedUserId,
+    ],
+  );
 
   const expenseRows = useMemo(() => {
     return Array.isArray(expenseApprovalQueueList)
@@ -587,177 +686,106 @@ const Expenses = () => {
 
     setIsStatusModalOpen(false);
     setSelectedExpense(null);
+    resetDecisionForm(CRT_DECISION_DEFAULT_VALUES);
+  }, [isUpdatingStatus, resetDecisionForm]);
 
-    setDecisionForm({
-      status: "",
-      expensePaidBy: "",
-      paymentMode: "",
-      bankLedgerId: "",
-      transactionReference: "",
-      paymentProof: "",
-      remark: "",
-      clientPaymentDate: "",
-    });
+  const openStatusModal = useCallback(
+    (expense) => {
+      setSelectedExpense(expense);
+      resetDecisionForm(CRT_DECISION_DEFAULT_VALUES);
+      setIsStatusModalOpen(true);
+    },
+    [resetDecisionForm],
+  );
 
-    setDecisionErrors({});
-  }, [isUpdatingStatus]);
+  const onDecisionSubmit = useCallback(
+    async (values) => {
+      if (!resolvedUserId) {
+        addToast({
+          title: "User not found",
+          description: "User ID is required to update the expense status.",
+          color: "danger",
+        });
 
-  const openStatusModal = useCallback((expense) => {
-    setSelectedExpense(expense);
-
-    setDecisionForm({
-      status: "",
-      expensePaidBy: "",
-      paymentMode: "",
-      bankLedgerId: "",
-      transactionReference: "",
-      paymentProof: "",
-      remark: "",
-      clientPaymentDate: "",
-    });
-
-    setDecisionErrors({});
-    setIsStatusModalOpen(true);
-  }, []);
-
-  const validateDecisionForm = useCallback(() => {
-    const errors = {};
-
-    if (!decisionForm.status) {
-      errors.status = "Status is required";
-    }
-
-    if (!decisionForm.expensePaidBy) {
-      errors.expensePaidBy = "Expense paid by is required";
-    }
-
-    if (decisionForm.expensePaidBy === "COMPANY") {
-      if (!decisionForm.paymentMode) {
-        errors.paymentMode = "Payment mode is required";
+        return;
       }
 
-      if (!decisionForm.bankLedgerId) {
-        errors.bankLedgerId = "Bank/Cash ledger is required";
+      if (!selectedExpense?.projectId || !selectedExpense?.expenseId) {
+        addToast({
+          title: "Expense details missing",
+          description: "Project ID and expense ID are required.",
+          color: "danger",
+        });
+
+        return;
       }
 
-      if (!decisionForm.transactionReference.trim()) {
-        errors.transactionReference =
-          "Transaction reference number is required";
+      const isApprovedByCompany = values.expensePaidBy === "CLIENT_TO_COMPANY";
+
+      setIsUpdatingStatus(true);
+
+      try {
+        await dispatch(
+          updateCrtExpenseDecision({
+            projectId: selectedExpense.projectId,
+            expenseId: selectedExpense.expenseId,
+            userId: resolvedUserId,
+            data: {
+              status: values.status,
+              remark: values.remark.trim(),
+              expensePaidBy: values.expensePaidBy || null,
+              clientPaymentMode: isApprovedByCompany
+                ? values.clientPaymentMode
+                : null,
+              clientPaymentDate: isApprovedByCompany
+                ? values.clientPaymentDate
+                : null,
+              clientPaymentBankLedgerId: isApprovedByCompany
+                ? Number(values.clientPaymentBankLedgerId)
+                : null,
+              clientPaymentReference: isApprovedByCompany
+                ? values.clientPaymentReference.trim()
+                : null,
+              clientPaymentProofUrl: isApprovedByCompany
+                ? values.clientPaymentProofUrl
+                : null,
+            },
+          }),
+        ).unwrap();
+
+        addToast({
+          title: "Status updated",
+          description: "The CRT expense decision was updated successfully.",
+          color: "success",
+        });
+
+        setIsStatusModalOpen(false);
+        setSelectedExpense(null);
+        resetDecisionForm(CRT_DECISION_DEFAULT_VALUES);
+
+        fetchExpenseApprovalQueue();
+      } catch (error) {
+        addToast({
+          title: "Failed to update status",
+          description:
+            error?.message ||
+            error?.errorMessage ||
+            error ||
+            "Unable to update the CRT expense decision.",
+          color: "danger",
+        });
+      } finally {
+        setIsUpdatingStatus(false);
       }
-
-      if (!decisionForm.paymentProof) {
-        errors.paymentProof = "Payment attachment is required";
-      }
-    }
-
-    if (!decisionForm.remark.trim()) {
-      errors.remark = "Remark is required";
-    }
-
-    setDecisionErrors(errors);
-
-    return Object.keys(errors).length === 0;
-  }, [decisionForm]);
-
-  const handleStatusUpdate = useCallback(async () => {
-    if (!validateDecisionForm()) {
-      return;
-    }
-
-    if (!resolvedUserId) {
-      addToast({
-        title: "User not found",
-        description: "User ID is required to update the expense status.",
-        color: "danger",
-      });
-
-      return;
-    }
-
-    if (!selectedExpense?.projectId || !selectedExpense?.expenseId) {
-      addToast({
-        title: "Expense details missing",
-        description: "Project ID and expense ID are required.",
-        color: "danger",
-      });
-
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-
-    try {
-      await dispatch(
-        updateCrtExpenseDecision({
-          projectId: selectedExpense.projectId,
-          expenseId: selectedExpense.expenseId,
-          userId: resolvedUserId,
-          data: {
-            status: decisionForm.status,
-            remark: decisionForm.remark.trim(),
-            expensePaidBy: decisionForm.expensePaidBy || null,
-            paymentMode: isCompanyPaidExpense ? decisionForm.paymentMode : null,
-            clientPaymentDate: isCompanyPaidExpense
-              ? decisionForm.clientPaymentDate
-              : null,
-            bankLedgerId: isCompanyPaidExpense
-              ? Number(decisionForm.bankLedgerId)
-              : null,
-            transactionReference: isCompanyPaidExpense
-              ? decisionForm.transactionReference.trim()
-              : null,
-            paymentProof: isCompanyPaidExpense
-              ? decisionForm.paymentProof
-              : null,
-          },
-        }),
-      ).unwrap();
-
-      addToast({
-        title: "Status updated",
-        description: "The CRT expense decision was updated successfully.",
-        color: "success",
-      });
-
-      setIsStatusModalOpen(false);
-      setSelectedExpense(null);
-
-      setDecisionForm({
-        status: "",
-        expensePaidBy: "",
-        paymentMode: "",
-        bankLedgerId: "",
-        transactionReference: "",
-        paymentProof: "",
-        remark: "",
-        clientPaymentDate: "",
-      });
-
-      setDecisionErrors({});
-
-      fetchExpenseApprovalQueue();
-    } catch (error) {
-      addToast({
-        title: "Failed to update status",
-        description:
-          error?.message ||
-          error?.errorMessage ||
-          error ||
-          "Unable to update the CRT expense decision.",
-        color: "danger",
-      });
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  }, [
-    decisionForm,
-    dispatch,
-    fetchExpenseApprovalQueue,
-    isCompanyPaidExpense,
-    resolvedUserId,
-    selectedExpense,
-    validateDecisionForm,
-  ]);
+    },
+    [
+      dispatch,
+      fetchExpenseApprovalQueue,
+      resetDecisionForm,
+      resolvedUserId,
+      selectedExpense,
+    ],
+  );
 
   const closeGovernmentFeeModal = useCallback(() => {
     if (isPayingGovernmentFee) {
@@ -766,160 +794,116 @@ const Expenses = () => {
 
     setIsGovernmentFeeModalOpen(false);
     setGovernmentFeeExpense(null);
+    resetGovernmentFeeForm(GOVERNMENT_FEE_DEFAULT_VALUES);
+  }, [isPayingGovernmentFee, resetGovernmentFeeForm]);
 
-    setGovernmentFeeForm({
-      amount: "",
-      paymentDate: "",
-      paymentReference: "",
-      paymentReceiptUrl: "",
-      paymentMode: "",
-      bankLedgerId: "",
-      remark: "",
-    });
+  const openGovernmentFeeModal = useCallback(
+    (expense) => {
+      setGovernmentFeeExpense(expense);
 
-    setGovernmentFeeErrors({});
-  }, [isPayingGovernmentFee]);
+      resetGovernmentFeeForm({
+        amount:
+          expense?.governmentPaymentAmount !== null &&
+          expense?.governmentPaymentAmount !== undefined
+            ? String(expense.governmentPaymentAmount)
+            : expense?.requestedAmount !== null &&
+                expense?.requestedAmount !== undefined
+              ? String(expense.requestedAmount)
+              : "",
 
-  const openGovernmentFeeModal = useCallback((expense) => {
-    setGovernmentFeeExpense(expense);
+        paymentDate: expense?.governmentPaymentDate
+          ? dayjs(expense.governmentPaymentDate).format("YYYY-MM-DD")
+          : dayjs().format("YYYY-MM-DD"),
 
-    setGovernmentFeeForm({
-      amount:
-        expense?.governmentPaymentAmount !== null &&
-        expense?.governmentPaymentAmount !== undefined
-          ? String(expense.governmentPaymentAmount)
-          : expense?.requestedAmount !== null &&
-              expense?.requestedAmount !== undefined
-            ? String(expense.requestedAmount)
-            : "",
-
-      paymentDate: expense?.governmentPaymentDate
-        ? dayjs(expense.governmentPaymentDate).format("YYYY-MM-DD")
-        : dayjs().format("YYYY-MM-DD"),
-
-      paymentReference: expense?.governmentPaymentReference || "",
-      paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
-      paymentMode: expense?.governmentPaymentMode || "",
-      bankLedgerId: expense?.governmentPaymentBankLedgerId
-        ? String(expense.governmentPaymentBankLedgerId)
-        : "",
-      remark: expense?.governmentPaymentRemark || "",
-    });
-
-    setGovernmentFeeErrors({});
-    setIsGovernmentFeeModalOpen(true);
-  }, []);
-
-  const validateGovernmentFeeForm = useCallback(() => {
-    const errors = {};
-    const amount = Number(governmentFeeForm.amount);
-
-    if (!governmentFeeForm.amount || Number.isNaN(amount) || amount <= 0) {
-      errors.amount = "Valid amount is required";
-    }
-
-    if (!governmentFeeForm.paymentDate) {
-      errors.paymentDate = "Payment date is required";
-    }
-
-    if (!governmentFeeForm.paymentReference.trim()) {
-      errors.paymentReference = "Payment reference is required";
-    }
-
-    if (!governmentFeeForm.paymentReceiptUrl.trim()) {
-      errors.paymentReceiptUrl = "Payment receipt is required";
-    }
-
-    if (!governmentFeeForm.remark.trim()) {
-      errors.remark = "Remark is required";
-    }
-    if (!governmentFeeForm.paymentMode) {
-      errors.paymentMode = "Payment mode is required";
-    }
-    if (!governmentFeeForm.bankLedgerId) {
-      errors.bankLedgerId = "Bank/Cash ledger is required";
-    }
-
-    setGovernmentFeeErrors(errors);
-
-    return Object.keys(errors).length === 0;
-  }, [governmentFeeForm]);
-
-  const handleGovernmentFeePayment = useCallback(async () => {
-    if (!validateGovernmentFeeForm()) {
-      return;
-    }
-
-    if (!resolvedUserId) {
-      addToast({
-        title: "User not found",
-        description: "User ID is required to submit government fee payment.",
-        color: "danger",
+        paymentReference: expense?.governmentPaymentReference || "",
+        paymentReceiptUrl: expense?.governmentPaymentReceiptUrl || "",
+        paymentMode: expense?.governmentPaymentMode || "",
+        bankLedgerId: expense?.governmentPaymentBankLedgerId
+          ? String(expense.governmentPaymentBankLedgerId)
+          : "",
+        remark: expense?.governmentPaymentRemark || "",
       });
 
-      return;
-    }
+      setIsGovernmentFeeModalOpen(true);
+    },
+    [resetGovernmentFeeForm],
+  );
 
-    if (!governmentFeeExpense?.projectId || !governmentFeeExpense?.expenseId) {
-      addToast({
-        title: "Expense details missing",
-        description: "Project ID and expense ID are required.",
-        color: "danger",
-      });
+  const onGovernmentFeeSubmit = useCallback(
+    async (values) => {
+      if (!resolvedUserId) {
+        addToast({
+          title: "User not found",
+          description: "User ID is required to submit government fee payment.",
+          color: "danger",
+        });
 
-      return;
-    }
+        return;
+      }
 
-    setIsPayingGovernmentFee(true);
+      if (
+        !governmentFeeExpense?.projectId ||
+        !governmentFeeExpense?.expenseId
+      ) {
+        addToast({
+          title: "Expense details missing",
+          description: "Project ID and expense ID are required.",
+          color: "danger",
+        });
 
-    try {
-      await dispatch(
-        payGovernmentPortalFee({
-          expenseId: governmentFeeExpense.expenseId,
-          projectId: governmentFeeExpense.projectId,
-          userId: resolvedUserId,
-          data: {
-            amount: Number(governmentFeeForm.amount),
-            paymentDate: governmentFeeForm.paymentDate,
-            paymentReference: governmentFeeForm.paymentReference.trim(),
-            paymentReceiptUrl: governmentFeeForm.paymentReceiptUrl.trim(),
-            paymentMode: governmentFeeForm.paymentMode,
-            paymentBankLedgerId: Number(governmentFeeForm.bankLedgerId),
-            remark: governmentFeeForm.remark.trim(),
-          },
-        }),
-      ).unwrap();
+        return;
+      }
 
-      addToast({
-        title: "Government fee updated",
-        description: "Government fee payment was submitted successfully.",
-        color: "success",
-      });
+      setIsPayingGovernmentFee(true);
 
-      closeGovernmentFeeModal();
-      fetchExpenseApprovalQueue();
-    } catch (error) {
-      addToast({
-        title: "Failed to update government fee",
-        description:
-          error?.message ||
-          error?.errorMessage ||
-          error ||
-          "Unable to submit government fee payment.",
-        color: "danger",
-      });
-    } finally {
-      setIsPayingGovernmentFee(false);
-    }
-  }, [
-    closeGovernmentFeeModal,
-    dispatch,
-    fetchExpenseApprovalQueue,
-    governmentFeeExpense,
-    governmentFeeForm,
-    resolvedUserId,
-    validateGovernmentFeeForm,
-  ]);
+      try {
+        await dispatch(
+          payGovernmentPortalFee({
+            expenseId: governmentFeeExpense.expenseId,
+            projectId: governmentFeeExpense.projectId,
+            userId: resolvedUserId,
+            data: {
+              amount: Number(values.amount),
+              paymentDate: values.paymentDate,
+              paymentReference: values.paymentReference.trim(),
+              paymentReceiptUrl: values.paymentReceiptUrl.trim(),
+              paymentMode: values.paymentMode,
+              paymentBankLedgerId: Number(values.bankLedgerId),
+              remark: values.remark.trim(),
+            },
+          }),
+        ).unwrap();
+
+        addToast({
+          title: "Government fee updated",
+          description: "Government fee payment was submitted successfully.",
+          color: "success",
+        });
+
+        closeGovernmentFeeModal();
+        fetchExpenseApprovalQueue();
+      } catch (error) {
+        addToast({
+          title: "Failed to update government fee",
+          description:
+            error?.message ||
+            error?.errorMessage ||
+            error ||
+            "Unable to submit government fee payment.",
+          color: "danger",
+        });
+      } finally {
+        setIsPayingGovernmentFee(false);
+      }
+    },
+    [
+      closeGovernmentFeeModal,
+      dispatch,
+      fetchExpenseApprovalQueue,
+      governmentFeeExpense,
+      resolvedUserId,
+    ],
+  );
 
   const renderCell = useCallback(
     (expense, columnKey) => {
@@ -1262,7 +1246,7 @@ const Expenses = () => {
           return expense?.[columnKey] ?? "-";
       }
     },
-    [openGovernmentFeeModal, openStatusModal],
+    [openGovernmentFeeDecisionModal, openGovernmentFeeModal, openStatusModal],
   );
 
   const topContent = useMemo(() => {
@@ -1555,249 +1539,207 @@ const Expenses = () => {
               </div>
             </div>
 
-            <Select
-              isRequired
-              label="Status"
-              placeholder="Select status"
-              selectedKeys={
-                decisionForm.status
-                  ? new Set([decisionForm.status])
-                  : new Set([])
-              }
-              isInvalid={Boolean(decisionErrors.status)}
-              errorMessage={decisionErrors.status}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0];
-
-                setDecisionForm((previous) => ({
-                  ...previous,
-                  status: value ? String(value) : "",
-                }));
-
-                if (value) {
-                  setDecisionErrors((previous) => ({
-                    ...previous,
-                    status: undefined,
-                  }));
-                }
-              }}
+            <form
+              id="crt-decision-form"
+              className="flex flex-col gap-4"
+              onSubmit={handleDecisionSubmit(onDecisionSubmit)}
             >
-              {crtDecisionOptions.map((option) => (
-                <SelectItem key={option.value} textValue={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
-
-            <Select
-              isRequired
-              label="Expense Paid By"
-              placeholder="Select payer"
-              selectedKeys={
-                decisionForm.expensePaidBy
-                  ? new Set([decisionForm.expensePaidBy])
-                  : new Set([])
-              }
-              isInvalid={Boolean(decisionErrors.expensePaidBy)}
-              errorMessage={decisionErrors.expensePaidBy}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0];
-
-                setDecisionForm((previous) => ({
-                  ...previous,
-                  expensePaidBy: value ? String(value) : "",
-                  ...(String(value) !== "COMPANY"
-                    ? {
-                        paymentMode: "",
-                        bankLedgerId: "",
-                        transactionReference: "",
-                        paymentProof: "",
-                      }
-                    : {}),
-                }));
-
-                if (value) {
-                  setDecisionErrors((previous) => ({
-                    ...previous,
-                    expensePaidBy: undefined,
-                  }));
-                }
-              }}
-            >
-              <SelectItem key="CLIENT" textValue="Client">
-                Client
-              </SelectItem>
-
-              <SelectItem key="COMPANY" textValue="Company">
-                Company
-              </SelectItem>
-            </Select>
-
-            {isCompanyPaidExpense && (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <DatePicker
-                  isRequired
-                  label="Payment Date"
-                  showMonthAndYearPickers
-                  maxValue={today(getLocalTimeZone())}
-                  isInvalid={Boolean(decisionErrors.clientPaymentDate)}
-                  errorMessage={decisionErrors.clientPaymentDate}
-                  value={
-                    decisionForm.clientPaymentDate &&
-                    /^\d{4}-\d{2}-\d{2}$/.test(decisionForm.clientPaymentDate)
-                      ? parseDate(decisionForm.clientPaymentDate)
-                      : null
-                  }
-                  onChange={(value) => {
-                    const iso = value ? value.toString() : "";
-
-                    setDecisionForm((previous) => ({
-                      ...previous,
-                      clientPaymentDate: iso,
-                    }));
-                  }}
-                />
-
-                <Select
-                  isRequired
-                  label="Payment Mode"
-                  placeholder="Select payment mode"
-                  selectedKeys={
-                    decisionForm.paymentMode
-                      ? new Set([decisionForm.paymentMode])
-                      : new Set([])
-                  }
-                  isInvalid={Boolean(decisionErrors.paymentMode)}
-                  errorMessage={decisionErrors.paymentMode}
-                  onSelectionChange={(keys) => {
-                    const value = Array.from(keys)[0];
-
-                    setDecisionForm((previous) => ({
-                      ...previous,
-                      paymentMode: value ? String(value) : "",
-                      bankLedgerId: "",
-                    }));
-
-                    setDecisionErrors((previous) => ({
-                      ...previous,
-                      paymentMode: undefined,
-                      bankLedgerId: undefined,
-                    }));
-                  }}
-                >
-                  <SelectItem key="CASH">Cash</SelectItem>
-                  <SelectItem key="UPI">UPI</SelectItem>
-                  {/* <SelectItem key="CARD">Card</SelectItem>   */}
-                  <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
-                  <SelectItem key="CHEQUE">Cheque</SelectItem>
-                </Select>
-
-                <div>
-                  <NewSelect
+              <Controller
+                name="status"
+                control={decisionControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Select
                     isRequired
-                    label="Select Bank/Cash Ledger"
-                    data={filteredPaymentLedgerList}
-                    labelKey="ledgerName"
-                    valueKey="id"
-                    value={decisionForm.bankLedgerId}
-                    onChange={(value) => {
-                      setDecisionForm((previous) => ({
-                        ...previous,
-                        bankLedgerId: value || "",
-                      }));
-
-                      if (value) {
-                        setDecisionErrors((previous) => ({
-                          ...previous,
-                          bankLedgerId: undefined,
-                        }));
-                      }
-                    }}
-                  />
-
-                  {decisionErrors.bankLedgerId && (
-                    <p className="mt-1 text-xs text-danger">
-                      {decisionErrors.bankLedgerId}
-                    </p>
-                  )}
-                </div>
-
-                <Input
-                  isRequired
-                  label="Transaction Reference Number / UTR Number"
-                  placeholder="Enter transaction reference number"
-                  value={decisionForm.transactionReference}
-                  isInvalid={Boolean(decisionErrors.transactionReference)}
-                  errorMessage={decisionErrors.transactionReference}
-                  onValueChange={(value) => {
-                    setDecisionForm((previous) => ({
-                      ...previous,
-                      transactionReference: value,
-                    }));
-
-                    if (value.trim()) {
-                      setDecisionErrors((previous) => ({
-                        ...previous,
-                        transactionReference: undefined,
-                      }));
+                    label="Status"
+                    placeholder="Select status"
+                    selectedKeys={
+                      field.value ? new Set([field.value]) : new Set([])
                     }
-                  }}
-                />
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0];
+                      field.onChange(value ? String(value) : "");
+                    }}
+                  >
+                    {crtDecisionOptions.map((option) => (
+                      <SelectItem key={option.value} textValue={option.label}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
 
-                <div>
-                  <SingleFileUploader
-                    label="Payment Attachment"
-                    value={decisionForm.paymentProof}
-                    onChange={(value) => {
-                      setDecisionForm((previous) => ({
-                        ...previous,
-                        paymentProof: value || "",
-                      }));
+              <Controller
+                name="expensePaidBy"
+                control={decisionControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Select
+                    isRequired
+                    label="Expense Paid By"
+                    selectedKeys={
+                      field.value ? new Set([field.value]) : new Set([])
+                    }
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0];
+                      const nextValue = value ? String(value) : "";
 
-                      if (value) {
-                        setDecisionErrors((previous) => ({
-                          ...previous,
-                          paymentProof: undefined,
-                        }));
+                      field.onChange(nextValue);
+
+                      if (nextValue !== "CLIENT_TO_COMPANY") {
+                        setDecisionValue("clientPaymentMode", "", {
+                          shouldValidate: true,
+                        });
+                        setDecisionValue("clientPaymentBankLedgerId", "", {
+                          shouldValidate: true,
+                        });
+                        setDecisionValue("clientPaymentReference", "", {
+                          shouldValidate: true,
+                        });
+                        setDecisionValue("clientPaymentProofUrl", "", {
+                          shouldValidate: true,
+                        });
                       }
                     }}
-                    isRequired={true}
-                    isInvalid={Boolean(decisionErrors.paymentProof)}
-                    errorMessage={decisionErrors.paymentProof}
+                  >
+                    <SelectItem key="CLIENT_DIRECT" textValue="Client">
+                      Client
+                    </SelectItem>
+
+                    <SelectItem key="CLIENT_TO_COMPANY" textValue="Company">
+                      Company
+                    </SelectItem>
+                  </Select>
+                )}
+              />
+
+              {isCompanyPaidExpense && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Controller
+                    name="clientPaymentDate"
+                    control={decisionControl}
+                    render={({ field, fieldState: { error } }) => (
+                      <DatePicker
+                        isRequired
+                        label="Payment Date"
+                        showMonthAndYearPickers
+                        maxValue={today(getLocalTimeZone())}
+                        isInvalid={!!error}
+                        errorMessage={error?.message}
+                        value={
+                          field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                            ? parseDate(field.value)
+                            : null
+                        }
+                        onChange={(value) => {
+                          field.onChange(value ? value.toString() : "");
+                        }}
+                      />
+                    )}
                   />
 
-                  {decisionErrors.paymentProof && (
-                    <p className="mt-1 text-xs text-danger">
-                      {decisionErrors.paymentProof}
-                    </p>
-                  )}
+                  <Controller
+                    name="clientPaymentMode"
+                    control={decisionControl}
+                    render={({ field, fieldState: { error } }) => (
+                      <Select
+                        isRequired
+                        label="Payment Mode"
+                        placeholder="Select payment mode"
+                        selectedKeys={
+                          field.value ? new Set([field.value]) : new Set([])
+                        }
+                        isInvalid={!!error}
+                        errorMessage={error?.message}
+                        onSelectionChange={(keys) => {
+                          const value = Array.from(keys)[0];
+
+                          field.onChange(value ? String(value) : "");
+                          setDecisionValue("clientPaymentBankLedgerId", "", {
+                            shouldValidate: true,
+                          });
+                        }}
+                      >
+                        <SelectItem key="CASH">Cash</SelectItem>
+                        <SelectItem key="UPI">UPI</SelectItem>
+                        {/* <SelectItem key="CARD">Card</SelectItem>   */}
+                        <SelectItem key="BANK_TRANSFER">
+                          Bank Transfer
+                        </SelectItem>
+                        <SelectItem key="CHEQUE">Cheque</SelectItem>
+                      </Select>
+                    )}
+                  />
+
+                  <Controller
+                    name="clientPaymentBankLedgerId"
+                    control={decisionControl}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        isRequired
+                        label="Select Bank/Cash Ledger"
+                        data={filteredPaymentLedgerList}
+                        labelKey="ledgerName"
+                        valueKey="id"
+                        value={field.value}
+                        isInvalid={!!error}
+                        errorMessage={error?.message}
+                        onChange={(value) => field.onChange(value || "")}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="clientPaymentReference"
+                    control={decisionControl}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="Transaction Reference Number / UTR Number"
+                        placeholder="Enter transaction reference number"
+                        {...field}
+                        isInvalid={!!error}
+                        errorMessage={error?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="clientPaymentProofUrl"
+                    control={decisionControl}
+                    render={({ field, fieldState: { error } }) => (
+                      <SingleFileUploader
+                        isRequired
+                        label="Payment Attachment"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value || "")}
+                        errorMessage={error?.message}
+                      />
+                    )}
+                  />
                 </div>
-              </div>
-            )}
+              )}
 
-            <Textarea
-              isRequired
-              label="Remark"
-              placeholder="Enter decision remark"
-              minRows={4}
-              maxRows={7}
-              value={decisionForm.remark}
-              isInvalid={Boolean(decisionErrors.remark)}
-              errorMessage={decisionErrors.remark}
-              onValueChange={(value) => {
-                setDecisionForm((previous) => ({
-                  ...previous,
-                  remark: value,
-                }));
-
-                if (value.trim()) {
-                  setDecisionErrors((previous) => ({
-                    ...previous,
-                    remark: undefined,
-                  }));
-                }
-              }}
-            />
+              <Controller
+                name="remark"
+                control={decisionControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Textarea
+                    isRequired
+                    label="Remark"
+                    placeholder="Enter decision remark"
+                    minRows={4}
+                    maxRows={7}
+                    {...field}
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                  />
+                )}
+              />
+            </form>
           </ModalBody>
 
           <ModalFooter>
@@ -1810,9 +1752,10 @@ const Expenses = () => {
             </Button>
 
             <Button
+              type="submit"
+              form="crt-decision-form"
               color="primary"
               isLoading={isUpdatingStatus}
-              onPress={handleStatusUpdate}
             >
               Update Status
             </Button>
@@ -1857,193 +1800,149 @@ const Expenses = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input
-                isRequired
-                type="number"
-                label="Government Fee Amount"
-                placeholder="Enter government fee amount"
-                value={governmentFeeForm.amount}
-                isInvalid={Boolean(governmentFeeErrors.amount)}
-                errorMessage={governmentFeeErrors.amount}
-                onValueChange={(value) => {
-                  setGovernmentFeeForm((previous) => ({
-                    ...previous,
-                    amount: value,
-                  }));
-
-                  if (value && Number(value) > 0) {
-                    setGovernmentFeeErrors((previous) => ({
-                      ...previous,
-                      amount: undefined,
-                    }));
-                  }
-                }}
-              />
-
-              <DatePicker
-                isRequired
-                label="Payment Date"
-                showMonthAndYearPickers
-                maxValue={today(getLocalTimeZone())}
-                value={
-                  governmentFeeForm.paymentDate &&
-                  /^\d{4}-\d{2}-\d{2}$/.test(governmentFeeForm.paymentDate)
-                    ? parseDate(governmentFeeForm.paymentDate)
-                    : null
-                }
-                isInvalid={Boolean(governmentFeeErrors.paymentDate)}
-                errorMessage={governmentFeeErrors.paymentDate}
-                onChange={(value) => {
-                  const iso = value ? value.toString() : "";
-
-                  setGovernmentFeeForm((previous) => ({
-                    ...previous,
-                    paymentDate: iso,
-                  }));
-
-                  if (iso) {
-                    setGovernmentFeeErrors((previous) => ({
-                      ...previous,
-                      paymentDate: undefined,
-                    }));
-                  }
-                }}
-              />
-
-              <Input
-                isRequired
-                label="Payment Reference"
-                placeholder="Enter payment reference"
-                value={governmentFeeForm.paymentReference}
-                isInvalid={Boolean(governmentFeeErrors.paymentReference)}
-                errorMessage={governmentFeeErrors.paymentReference}
-                onValueChange={(value) => {
-                  setGovernmentFeeForm((previous) => ({
-                    ...previous,
-                    paymentReference: value,
-                  }));
-
-                  if (value.trim()) {
-                    setGovernmentFeeErrors((previous) => ({
-                      ...previous,
-                      paymentReference: undefined,
-                    }));
-                  }
-                }}
-              />
-              <Select
-                isRequired
-                label="Payment Mode"
-                placeholder="Select payment mode"
-                selectedKeys={
-                  governmentFeeForm.paymentMode
-                    ? new Set([governmentFeeForm.paymentMode])
-                    : new Set([])
-                }
-                isInvalid={Boolean(governmentFeeErrors.paymentMode)}
-                errorMessage={governmentFeeErrors.paymentMode}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0];
-
-                  setGovernmentFeeForm((previous) => ({
-                    ...previous,
-                    paymentMode: value ? String(value) : "",
-                    bankLedgerId: "",
-                  }));
-
-                  setGovernmentFeeErrors((previous) => ({
-                    ...previous,
-                    paymentMode: undefined,
-                    bankLedgerId: undefined,
-                  }));
-                }}
-              >
-                <SelectItem key="UPI">UPI</SelectItem>
-                <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
-                <SelectItem key="CHEQUE">Cheque</SelectItem>
-              </Select>
-
-              <div>
-                <NewSelect
-                  isRequired
-                  label="Select Bank Ledger"
-                  data={filteredGovernmentFeeLedgerList}
-                  labelKey="ledgerName"
-                  valueKey="id"
-                  value={governmentFeeForm.bankLedgerId}
-                  onChange={(value) => {
-                    setGovernmentFeeForm((previous) => ({
-                      ...previous,
-                      bankLedgerId: value || "",
-                    }));
-
-                    if (value) {
-                      setGovernmentFeeErrors((previous) => ({
-                        ...previous,
-                        bankLedgerId: undefined,
-                      }));
-                    }
-                  }}
+            <form
+              id="government-fee-form"
+              className="flex flex-col gap-4"
+              onSubmit={handleGovernmentFeeSubmit(onGovernmentFeeSubmit)}
+            >
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="amount"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      type="number"
+                      label="Government Fee Amount"
+                      placeholder="Enter government fee amount"
+                      {...field}
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                    />
+                  )}
                 />
 
-                {governmentFeeErrors.bankLedgerId && (
-                  <p className="mt-1 text-xs text-danger">
-                    {governmentFeeErrors.bankLedgerId}
-                  </p>
-                )}
-              </div>
+                <Controller
+                  name="paymentDate"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <DatePicker
+                      isRequired
+                      label="Payment Date"
+                      showMonthAndYearPickers
+                      maxValue={today(getLocalTimeZone())}
+                      value={
+                        field.value && /^\d{4}-\d{2}-\d{2}$/.test(field.value)
+                          ? parseDate(field.value)
+                          : null
+                      }
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                      onChange={(value) => {
+                        field.onChange(value ? value.toString() : "");
+                      }}
+                    />
+                  )}
+                />
 
-              {/* CHANGED:
+                <Controller
+                  name="paymentReference"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <Input
+                      isRequired
+                      label="Payment Reference"
+                      placeholder="Enter payment reference"
+                      {...field}
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="paymentMode"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired
+                      label="Payment Mode"
+                      placeholder="Select payment mode"
+                      selectedKeys={
+                        field.value ? new Set([field.value]) : new Set([])
+                      }
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+
+                        field.onChange(value ? String(value) : "");
+                        setGovernmentFeeValue("bankLedgerId", "", {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      <SelectItem key="UPI">UPI</SelectItem>
+                      <SelectItem key="BANK_TRANSFER">Bank Transfer</SelectItem>
+                      <SelectItem key="CHEQUE">Cheque</SelectItem>
+                    </Select>
+                  )}
+                />
+
+                <Controller
+                  name="bankLedgerId"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <NewSelect
+                      isRequired
+                      label="Select Bank Ledger"
+                      data={filteredGovernmentFeeLedgerList}
+                      labelKey="ledgerName"
+                      valueKey="id"
+                      value={field.value}
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                      onChange={(value) => field.onChange(value || "")}
+                    />
+                  )}
+                />
+
+                {/* CHANGED:
                   Payment Receipt URL Input -> FileUploader */}
-              <div>
-                <FileUploader
-                  label="Payment Receipt"
-                  placeholder="Drag & drop receipt, paste, or choose file"
-                  value={governmentFeeForm.paymentReceiptUrl}
-                  onChange={(value) => {
-                    setGovernmentFeeForm((previous) => ({
-                      ...previous,
-                      paymentReceiptUrl: value || "",
-                    }));
-
-                    if (value) {
-                      setGovernmentFeeErrors((previous) => ({
-                        ...previous,
-                        paymentReceiptUrl: undefined,
-                      }));
-                    }
-                  }}
-                  isRequired
-                  errorMessage={governmentFeeErrors.paymentReceiptUrl}
-                  uploadingType="single"
+                <Controller
+                  name="paymentReceiptUrl"
+                  control={governmentFeeControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <FileUploader
+                      isRequired
+                      label="Payment Receipt"
+                      placeholder="Drag & drop receipt, paste, or choose file"
+                      value={field.value}
+                      onChange={(value) => field.onChange(value || "")}
+                      errorMessage={error?.message}
+                      uploadingType="single"
+                    />
+                  )}
                 />
               </div>
-            </div>
 
-            <Textarea
-              isRequired
-              label="Remark"
-              placeholder="Enter government fee payment remark"
-              minRows={4}
-              maxRows={7}
-              value={governmentFeeForm.remark}
-              isInvalid={Boolean(governmentFeeErrors.remark)}
-              errorMessage={governmentFeeErrors.remark}
-              onValueChange={(value) => {
-                setGovernmentFeeForm((previous) => ({
-                  ...previous,
-                  remark: value,
-                }));
-
-                if (value.trim()) {
-                  setGovernmentFeeErrors((previous) => ({
-                    ...previous,
-                    remark: undefined,
-                  }));
-                }
-              }}
-            />
+              <Controller
+                name="remark"
+                control={governmentFeeControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Textarea
+                    isRequired
+                    label="Remark"
+                    placeholder="Enter government fee payment remark"
+                    minRows={4}
+                    maxRows={7}
+                    {...field}
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                  />
+                )}
+              />
+            </form>
           </ModalBody>
 
           <ModalFooter>
@@ -2056,9 +1955,10 @@ const Expenses = () => {
             </Button>
 
             <Button
+              type="submit"
+              form="government-fee-form"
               color="primary"
               isLoading={isPayingGovernmentFee}
-              onPress={handleGovernmentFeePayment}
             >
               Submit Government Fee
             </Button>
@@ -2101,63 +2001,57 @@ const Expenses = () => {
               </div>
             </div>
 
-            <Select
-              isRequired
-              label="Status"
-              placeholder="Select status"
-              selectedKeys={
-                governmentFeeDecisionForm.status
-                  ? new Set([governmentFeeDecisionForm.status])
-                  : new Set([])
-              }
-              isInvalid={Boolean(governmentFeeDecisionErrors.status)}
-              errorMessage={governmentFeeDecisionErrors.status}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0];
-
-                setGovernmentFeeDecisionForm((previous) => ({
-                  ...previous,
-                  status: value ? String(value) : "",
-                }));
-
-                if (value) {
-                  setGovernmentFeeDecisionErrors((previous) => ({
-                    ...previous,
-                    status: undefined,
-                  }));
-                }
-              }}
+            <form
+              id="government-fee-decision-form"
+              className="flex flex-col gap-4"
+              onSubmit={handleGovernmentFeeDecisionSubmit(
+                onGovernmentFeeDecisionSubmit,
+              )}
             >
-              {governmentFeeDecisionOptions.map((option) => (
-                <SelectItem key={option.value} textValue={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
+              <Controller
+                name="status"
+                control={governmentFeeDecisionControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Select
+                    isRequired
+                    label="Status"
+                    placeholder="Select status"
+                    selectedKeys={
+                      field.value ? new Set([field.value]) : new Set([])
+                    }
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                    onSelectionChange={(keys) => {
+                      const value = Array.from(keys)[0];
+                      field.onChange(value ? String(value) : "");
+                    }}
+                  >
+                    {governmentFeeDecisionOptions.map((option) => (
+                      <SelectItem key={option.value} textValue={option.label}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
 
-            <Textarea
-              isRequired
-              label="Remark"
-              placeholder="Enter decision remark"
-              minRows={4}
-              maxRows={7}
-              value={governmentFeeDecisionForm.remark}
-              isInvalid={Boolean(governmentFeeDecisionErrors.remark)}
-              errorMessage={governmentFeeDecisionErrors.remark}
-              onValueChange={(value) => {
-                setGovernmentFeeDecisionForm((previous) => ({
-                  ...previous,
-                  remark: value,
-                }));
-
-                if (value.trim()) {
-                  setGovernmentFeeDecisionErrors((previous) => ({
-                    ...previous,
-                    remark: undefined,
-                  }));
-                }
-              }}
-            />
+              <Controller
+                name="remark"
+                control={governmentFeeDecisionControl}
+                render={({ field, fieldState: { error } }) => (
+                  <Textarea
+                    isRequired
+                    label="Remark"
+                    placeholder="Enter decision remark"
+                    minRows={4}
+                    maxRows={7}
+                    {...field}
+                    isInvalid={!!error}
+                    errorMessage={error?.message}
+                  />
+                )}
+              />
+            </form>
           </ModalBody>
 
           <ModalFooter>
@@ -2170,9 +2064,10 @@ const Expenses = () => {
             </Button>
 
             <Button
+              type="submit"
+              form="government-fee-decision-form"
               color="primary"
               isLoading={isSubmittingGovernmentFeeDecision}
-              onPress={handleGovernmentFeeDecision}
             >
               Submit Decision
             </Button>
