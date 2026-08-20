@@ -1085,7 +1085,8 @@ Corpseed Team`,
                     <TableTh className="text-center">Amount (₹)</TableTh>
                   </tr>
                 </thead>
-
+ 
+ 
                 <tbody>
                   {taxSummaryRows.map((row, index) => (
                     <tr key={`${row.hsn}-${row.cgstRate}-${index}`}>

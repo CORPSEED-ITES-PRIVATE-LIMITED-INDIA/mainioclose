@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
+import InvoiceFeed from "../accounts/InvoiceFeed";
 const CompanyApprovals = lazy(() => import("../accounts/CompanyApprovals"));
 const PaymentApprovals = lazy(() => import("../accounts/PaymentApprovals"));
 const CompanyForm = lazy(() => import("../accounts/CompanyForm"));
@@ -60,9 +61,7 @@ const CompanyUnitsInAccount = lazy(
 const Expense = lazy(() => import("../accounts/Expense"));
 const Taxation = lazy(() => import("../accounts/organization/Taxation"));
 const CreditNote = lazy(() => import("../accounts/CreditNote"));
-const DebitNotes = lazy(
-  () => import("../accounts/organization/DebitNotes"),
-);
+const DebitNotes = lazy(() => import("../accounts/organization/DebitNotes"));
 const ProcurementPaymentRequest = lazy(
   () => import("../accounts/ProcurementPaymentRequest"),
 );
@@ -98,10 +97,8 @@ export const AccountsModuleRouting = () => {
       <Route path="accounts/bankStatement" element={<BankStatement />} />
       <Route path="accounts/paymentRegister" element={<PaymentRegister />} />
       <Route path="accounts/allInvoice" element={<AllInvoice />} />
-      <Route
-        path="accounts/purchaseInvoices"
-        element={<PurchaseInvoices />}
-      />
+      <Route path="accounts/invoiceFeed" element={<InvoiceFeed />} />
+      <Route path="accounts/purchaseInvoices" element={<PurchaseInvoices />} />
       <Route path="accounts/advanceInvoices" element={<AdvanceInvoices />} />
       <Route path="accounts/unbilled" element={<Unbill />} />
       <Route

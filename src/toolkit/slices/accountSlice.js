@@ -854,6 +854,37 @@ export const getAllAdvanceInvoice = createAsyncThunk(
   },
 );
 
+export const getAllInvoiceFeed = createAsyncThunk(
+  "getAllInvoiceFeed",
+  async (
+    { userId, filter = "ALL", page = 0, size = 10 },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        "/accountService/api/v1/invoices/feed",
+        {
+          params: {
+            userId,
+            filter,
+            page,
+            size,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch advance tax invoice requests",
+      );
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {
@@ -874,6 +905,7 @@ const AccountSlice = createSlice({
     estimateReport: [],
     estimateList: [],
     creditNoteList: [],
+    invoiceFeed:[],
     tdsDetail: {},
     procurementPurchaseOrderList: [],
     procurementPaymentRequestList: [],
@@ -1401,6 +1433,18 @@ const AccountSlice = createSlice({
   })
   builder.addCase(getAllAdvanceInvoice.rejected, (state) => {
     state.loading = false;
+  });
+
+  builder.addCase(getAllInvoiceFeed.pending, (state) => {
+    state.loading = true;
+  })
+  builder.addCase(getAllInvoiceFeed.fulfilled, (state,action) => {
+    state.loading = false;
+    state.invoiceFeed = action.payload;
+  })
+  builder.addCase(getAllInvoiceFeed.rejected, (state) => {
+    state.loading = false;
+    state.invoiceFeed = [];
   });
   },
 });

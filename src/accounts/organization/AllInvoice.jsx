@@ -511,9 +511,9 @@ const AllInvoice = () => {
                   <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
 
                   {/* NEW */}
-                  <DropdownItem key="showAdvanceTaxInvoice">
+                  {/* <DropdownItem key="showAdvanceTaxInvoice">
                     Show Advance Tax Invoice
-                  </DropdownItem>
+                  </DropdownItem> */}
 
                   {!(
                     rowData?.status?.toLowerCase() === "e_invoice_confirmed" ||

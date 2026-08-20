@@ -127,6 +127,11 @@ export const navItems = [
         key: "allInvoice",
       },
       {
+        title: "Invoice Feed",
+        url: "accounts/invoiceFeed",
+        key: "invoiceFeed",
+      },
+      {
         title: "Purchase invoices",
         url: "accounts/purchaseInvoices",
         key: "purchaseInvoices",
@@ -571,6 +576,11 @@ export const accountNavItems = [
     url: "accounts/allInvoice",
     key: "allInvoice",
     icon: "FileText",
+  },
+  {
+    title: "Invoice Feed",
+    url: "accounts/invoiceFeed",
+    key: "invoiceFeed",
   },
   {
     title: "Purchase invoices",
