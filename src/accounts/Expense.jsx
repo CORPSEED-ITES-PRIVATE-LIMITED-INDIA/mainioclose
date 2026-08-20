@@ -52,6 +52,7 @@ import NewSelect from "../components/NewSelect";
 const columns = [
   { name: "EXPENSE ID", uid: "expenseId" },
   { name: "PROJECT", uid: "project" },
+  { name: "UNIT NAME", uid: "unitName" },
   { name: "UNBILLED NO.", uid: "unbilledNumber" },
   { name: "PRODUCT", uid: "productName" },
   { name: "CATEGORY", uid: "expenseCategory" },
@@ -77,6 +78,7 @@ const columns = [
 const INITIAL_VISIBLE_COLUMNS = [
   "expenseId",
   "project",
+  "unitName",
   "unbilledNumber",
   "productName",
   "expenseCategory",
@@ -941,6 +943,11 @@ const Expense = () => {
                   `Project ID: ${expense?.projectId || "-"}`}
               </span>
             </div>
+          );
+
+        case "unitName":
+          return (
+            <span className="text-[12.5px]">{expense?.unitName || "-"}</span>
           );
 
         case "unbilledNumber":
