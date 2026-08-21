@@ -120,62 +120,61 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const formSchema = (flags) =>
-  z
-    .object({
-      employeeId: z.string().min(1, "Please enter employee id"),
-      userName: z.string().min(1, "Please enter username"),
-      email: z
-        .string()
-        .trim()
-        .min(1, "Please enter email")
-        .email("Please enter a valid email"),
-      personalEmail: z
-        .union([
-          z.literal(""),
-          z.string().email("Please enter a valid personal email"),
-        ])
-        .optional(),
-      contactNo: z.string().length(10, "Contact number must contain 10 digits"),
-      companyMobile: z.string().optional(),
-      role: z.array(z.string()).min(1, "Please select at least one role"),
-      departmentId: z.string().min(1, "Please select a department"),
-      designationId: z.string().min(1, "Please select a designation"),
-      epfNo: z.string().optional(),
-      aadharCard: z
-        .string()
-        .length(12, "Aadhar card number must contain 12 digits"),
-      panNumber: z.string().length(10, "PAN number must contain 10 characters"),
-      managerId: z.string().min(1, "Please select a manager name"),
-      managerFlag: z.boolean().optional(),
-      lockerSize: z.string().optional(),
-      expInYear: z.string().min(1, "Please enter experience in years"),
-      expInMonth: z.string().min(1, "Please enter experience in months"),
-      dateOfJoining: z.string().min(1, "please select date of joining."),
-      type: z.string().min(1, "please select the gender."),
-      maritalStatus: z.string().min(1, "please select the status."),
-      ...(flags?.maritalStatus === "Married"
-        ? {
-            spouseName: z.string().min(1, "Please enter spouse name"),
-            spouseContactNo: z.string().optional(),
-          }
-        : {}),
-      fatherName: z.string().min(1, "Please enter father's name"),
-      fatherOccupation: z.string().optional(),
-      fatherContactNo: z.string().optional(),
-      motherName: z.string().min(1, "Please enter mother's name"),
-      motherContactNo: z.string().optional(),
-      nationality: z.string().optional(),
-      language: z.string().optional(),
-      ...(flags?.master
-        ? {
-            master: z.boolean().optional(),
-            backupTeam: z.boolean().optional(),
-          }
-        : {}),
-      emergencyNumber: z.string().optional(),
-      permanentAddress: z.string().min(1, "Please enter permanent address"),
-      residentialAddress: z.string().optional(),
-    });
+  z.object({
+    employeeId: z.string().min(1, "Please enter employee id"),
+    userName: z.string().min(1, "Please enter username"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Please enter email")
+      .email("Please enter a valid email"),
+    personalEmail: z
+      .union([
+        z.literal(""),
+        z.string().email("Please enter a valid personal email"),
+      ])
+      .optional(),
+    contactNo: z.string().length(10, "Contact number must contain 10 digits"),
+    companyMobile: z.string().optional(),
+    role: z.array(z.string()).min(1, "Please select at least one role"),
+    departmentId: z.string().min(1, "Please select a department"),
+    designationId: z.string().min(1, "Please select a designation"),
+    epfNo: z.string().optional(),
+    aadharCard: z
+      .string()
+      .length(12, "Aadhar card number must contain 12 digits"),
+    panNumber: z.string().length(10, "PAN number must contain 10 characters"),
+    managerId: z.string().min(1, "Please select a manager name"),
+    managerFlag: z.boolean().optional(),
+    lockerSize: z.string().optional(),
+    expInYear: z.string().min(1, "Please enter experience in years"),
+    expInMonth: z.string().min(1, "Please enter experience in months"),
+    dateOfJoining: z.string().min(1, "please select date of joining."),
+    type: z.string().min(1, "please select the gender."),
+    maritalStatus: z.string().min(1, "please select the status."),
+    ...(flags?.maritalStatus === "Married"
+      ? {
+          spouseName: z.string().min(1, "Please enter spouse name"),
+          spouseContactNo: z.string().optional(),
+        }
+      : {}),
+    fatherName: z.string().min(1, "Please enter father's name"),
+    fatherOccupation: z.string().optional(),
+    fatherContactNo: z.string().optional(),
+    motherName: z.string().min(1, "Please enter mother's name"),
+    motherContactNo: z.string().optional(),
+    nationality: z.string().optional(),
+    language: z.string().optional(),
+    ...(flags?.master
+      ? {
+          master: z.boolean().optional(),
+          backupTeam: z.boolean().optional(),
+        }
+      : {}),
+    emergencyNumber: z.string().optional(),
+    permanentAddress: z.string().min(1, "Please enter permanent address"),
+    residentialAddress: z.string().optional(),
+  });
 
 const defaultValues = {
   employeeId: "",
@@ -1222,34 +1221,6 @@ const UsersList = () => {
                       />
 
                       <Controller
-                        name="managerFlag"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Manager Flag"
-                            selectedKeys={
-                              field.value !== undefined
-                                ? [field.value.toString()]
-                                : []
-                            }
-                            onSelectionChange={(keys) => {
-                              const value = Array.from(keys)[0];
-                              if (value !== undefined) {
-                                field.onChange(value === "true");
-                              }
-                            }}
-                          >
-                            <SelectItem key="true" value="true">
-                              True
-                            </SelectItem>
-                            <SelectItem key="false" value="false">
-                              False
-                            </SelectItem>
-                          </Select>
-                        )}
-                      />
-
-                      <Controller
                         name="managerId"
                         control={control}
                         render={({ field }) => (
@@ -1259,9 +1230,12 @@ const UsersList = () => {
                             selectedKeys={field.value ? [field.value] : []}
                             onSelectionChange={(keys) => {
                               const value = Array.from(keys)[0];
-                              field.onChange(
-                                value !== undefined ? String(value) : "",
-                              );
+                              const managerIdValue =
+                                value !== undefined ? String(value) : "";
+                              field.onChange(managerIdValue);
+                              // Auto-set managerFlag true whenever a manager is selected
+                              setValue("managerFlag", !!managerIdValue);
+                              clearErrors("managerFlag");
                             }}
                             isInvalid={!!errors.managerId}
                             errorMessage={errors.managerId?.message}
