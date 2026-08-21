@@ -31,7 +31,7 @@ import { useDispatch, useSelector } from "react-redux";
 //   getAllSolutionsByType,
 //   searchSolutionsByName,
 // } from "../../toolkit/slices/settingSlice";
-import { EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
   getAllSolutionCountByType,
@@ -229,44 +229,63 @@ const ProcurementSolutions = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={statusOptions}
-                labelKey="name"
-                valueKey="uid"
-                label="Type"
-                value={initialFilteration?.type}
-                onChange={(value) => {
-                  if (value) {
-                    setInitialFilteration((prev) => ({
-                      ...prev,
-                      type: value,
-                    }));
-                  }
-                }}
-              />
-            </div>
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  className="capitalize"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  variant="flat"
+                >
+                  {initialFilteration?.type}
+                </Button>
+              </DropdownTrigger>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
-                selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Single selection example"
+                selectedKeys={[initialFilteration?.type]}
+                selectionMode="single"
+                onSelectionChange={(event) => {
+                  const [status] = [...event];
+                  setInitialFilteration((prev) => ({
+                    ...prev,
+                    type: status,
+                  }));
                 }}
-              />
-            </div>
+              >
+                {statusOptions.map((status) => (
+                  <DropdownItem key={status.uid} className="capitalize">
+                    {capitalize(status.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
+                selectionMode="multiple"
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 

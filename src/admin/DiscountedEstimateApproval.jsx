@@ -23,7 +23,7 @@ import {
   Chip,
 } from "@heroui/react";
 import { Table as AntTable } from "antd";
-import { EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { inrCurrency } from "../common";
@@ -395,24 +395,31 @@ const DiscountedEstimateApproval = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 

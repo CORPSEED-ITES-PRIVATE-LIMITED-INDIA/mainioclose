@@ -22,7 +22,7 @@ import {
   addToast,
   Chip,
 } from "@heroui/react";
-import { EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import TaxInvoice from "../components/TaxInvoice";
@@ -293,41 +293,63 @@ const VendorPaymentApproval = () => {
             onValueChange={onSearchChange}
           />
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={statusFilterOptions}
-                labelKey="label"
-                valueKey="uid"
-                label="Status"
-                value={status}
-                onChange={(value) => {
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  variant="flat"
+                  className="capitalize"
+                >
+                  {status}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[status]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let value = Array.from(e)[0];
                   if (value) {
                     setStatus(value);
                   }
                 }}
-              />
-            </div>
+              >
+                {statusFilterOptions.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.label)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
         <div className="flex justify-between items-center">

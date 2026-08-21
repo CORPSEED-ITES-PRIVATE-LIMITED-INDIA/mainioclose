@@ -18,9 +18,13 @@ import {
   Tooltip,
   addToast,
   useDisclosure,
+  DropdownTrigger,
+  Dropdown,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/react";
 
-import { Check, ExternalLink, Search, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, Search, X } from "lucide-react";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -33,6 +37,10 @@ import {
   getAllAdminRestrictionRequests,
 } from "../toolkit/slices/vendorsSlice";
 import NewSelect from "../components/NewSelect";
+
+export function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
 
 const columns = [
   {
@@ -80,15 +88,15 @@ const columns = [
 const statusOptions = [
   {
     key: "PENDING_ADMIN",
-    label: "Pending Admin",
+    label: "PENDING_ADMIN",
   },
   {
     key: "ADMIN_REJECTED",
-    label: "Admin Rejected",
+    label: "ADMIN_REJECTED",
   },
   {
     key: "FINAL_APPROVED",
-    label: "Final Approved",
+    label: "FINAL_APPROVED",
   },
 ];
 
@@ -608,22 +616,37 @@ function AdminVendorRestrictionApproval() {
         />
 
         <div className="flex gap-1.5 flex-wrap">
-          <div className="w-[190px]">
-            <NewSelect
-              size="sm"
-              isSearchable={false}
-              data={statusOptions}
-              labelKey="label"
-              valueKey="key"
-              label="Filter by status"
-              value={status}
-              onChange={(value) => {
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                size="sm"
+                endContent={<ChevronDown className="w-4 h-4" />}
+                variant="flat"
+                className="capitalize"
+              >
+                {status}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Table Columns"
+              closeOnSelect={false}
+              selectedKeys={[status]}
+              selectionMode="single"
+              onSelectionChange={(e) => {
+                let value = Array.from(e)[0];
                 if (value) {
                   handleStatusChange(new Set([value]));
                 }
               }}
-            />
-          </div>
+            >
+              {statusOptions.map((column) => (
+                <DropdownItem key={column.key} className="capitalize">
+                  {capitalize(column.label)}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
         </div>
       </div>
 
