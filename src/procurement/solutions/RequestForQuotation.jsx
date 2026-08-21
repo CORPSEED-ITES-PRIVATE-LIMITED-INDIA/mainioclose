@@ -65,6 +65,7 @@ import NewSelect from "../../components/NewSelect";
 import { parseDate } from "@internationalized/date";
 
 const RFQ_VENDOR_STATUSES = [
+  "ALL",
   "DRAFT",
   "SENT",
   "UNDER_COMPARISON",
@@ -499,7 +500,7 @@ const RequestForQuotation = () => {
   const [sendVendorLoading, setSendVendorLoading] = useState(false);
   const [lockedSendBcc, setLockedSendBcc] = useState([]);
   const [sendMessageBody, setSendMessageBody] = useState("<p></p>");
-  const [status, setStatus] = useState("DRAFT");
+  const [status, setStatus] = useState("ALL");
 
   const {
     control: sendVendorControl,
@@ -1879,7 +1880,7 @@ const RequestForQuotation = () => {
                             <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
                               <div>
                                 <label className="block text-sm font-semibold text-gray-900">
-                                  Message{" "}
+                                  Mail Body{" "}
                                   <span className="text-red-500">*</span>
                                 </label>
                                 <p className="mt-1 text-xs leading-5 text-gray-500">
@@ -2045,6 +2046,60 @@ const RequestForQuotation = () => {
                           value={selectedRfqDetail?.contactPersonMobile}
                         />
                       </div>
+                    </div>
+
+                    {/* ADD THIS BLOCK — Mapped Vendors */}
+                    <div className="rounded-xl border bg-white p-4 shadow-sm">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          Vendors
+                        </h3>
+                        <Chip size="sm" variant="flat">
+                          {getRfqVendors(selectedRfqDetail).length} vendor
+                          {getRfqVendors(selectedRfqDetail).length === 1
+                            ? ""
+                            : "s"}
+                        </Chip>
+                      </div>
+
+                      {getRfqVendors(selectedRfqDetail).length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          {getRfqVendors(selectedRfqDetail).map((vendor) => (
+                            <div
+                              key={vendor?.rfqVendorId}
+                              className="rounded-lg border bg-gray-50 p-3"
+                            >
+                              <div className="mb-2 flex items-start justify-between gap-2">
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {vendor?.vendorName || "-"}
+                                </p>
+                                <Chip
+                                  size="sm"
+                                  color={getStatusColor(vendor?.vendorStatus)}
+                                  variant="flat"
+                                >
+                                  {vendor?.vendorStatus || "-"}
+                                </Chip>
+                              </div>
+
+                              <div className="space-y-1 text-xs text-default-600">
+                                <p>Email: {vendor?.vendorEmail || "-"}</p>
+                                <p>Mobile: {vendor?.vendorMobile || "-"}</p>
+                                <p>GST: {vendor?.gstNumber || "-"}</p>
+                                <p>PAN: {vendor?.panNumber || "-"}</p>
+                                <p className="text-default-400">
+                                  RFQ Vendor ID: {vendor?.rfqVendorId || "-"} •
+                                  Vendor ID: {vendor?.vendorId || "-"}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed bg-gray-50 py-6 text-center text-sm text-default-500">
+                          No vendors mapped to this RFQ.
+                        </div>
+                      )}
                     </div>
 
                     <HtmlPreviewCard
