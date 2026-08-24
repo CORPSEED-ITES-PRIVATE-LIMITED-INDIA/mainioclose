@@ -795,6 +795,24 @@ export const approveAdminRestrictionRequest = createAsyncThunk(
   },
 );
 
+export const getVendorsByProductId = createAsyncThunk(
+  "getVendorsByProductId",
+  async ({productId,userId,page=0,size=10}) => {
+    const params = {
+        userId,
+        page,
+        size,
+      };
+    const response = await api.get(
+      `/operationService/api/vendors/product/${productId}`,
+      {
+        params
+      }
+    );
+    return response.data;
+  },
+);
+
 
 
 const VendorsSlice = createSlice({
@@ -1092,6 +1110,18 @@ vendorDetails:{}
     builder.addCase(getVendorById.rejected, (state, action) => {
       state.loading = "rejected";
       state.vendorDetails = {};
+    });
+    builder.addCase(getVendorsByProductId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorsByProductId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.prodVendors =  action.payload || [];
+    });
+
+    builder.addCase(getVendorsByProductId.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.prodVendors = [];
     });
 
     builder.addCase(getVendorById.pending, (state) => {
