@@ -486,6 +486,9 @@ const RequestForQuotation = () => {
   const navigate = useNavigate();
   const { solutionId, userId } = useParams();
 
+  const currentUser = useSelector((state) => state.auth.currentUser);
+  console.log("Current User:", currentUser);
+
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
 
   const rfqModal = useDisclosure();
@@ -610,6 +613,14 @@ const RequestForQuotation = () => {
 
     return filtered;
   }, [rfqList, filterValue]);
+
+  const getResolvedContactName = (user) => {
+    return user?.fullName || user?.username || user?.employeeName || "";
+  };
+
+  const getResolvedContactEmail = (user) => {
+    return user?.email || user?.userEmail || "";
+  };
 
   const fetchProductVendors = useCallback(() => {
     if (!solutionId || !userId) return;
@@ -738,7 +749,13 @@ const RequestForQuotation = () => {
   const handleOpenCreateModal = () => {
     setSelectedRfq(null);
     setMailBody("<p></p>");
-    resetRfqForm(defaultValues);
+
+    resetRfqForm({
+      ...defaultValues,
+      contactPersonName: getResolvedContactName(currentUser),
+      contactPersonEmail: getResolvedContactEmail(currentUser),
+    });
+
     rfqModal.onOpen();
   };
 
@@ -773,6 +790,8 @@ const RequestForQuotation = () => {
       contactPersonName: rowData?.contactPersonName || "",
       contactPersonEmail: rowData?.contactPersonEmail || "",
       contactPersonMobile: rowData?.contactPersonMobile || "",
+      contactPersonName: rowData?.contactPersonName || "",
+      contactPersonEmail: rowData?.contactPersonEmail || "",
       attachmentUrl: rowData?.attachmentUrl || "",
       vendorIds: getRfqVendors(rowData)
         .filter((vendor) => !isVendorRestricted(vendor))

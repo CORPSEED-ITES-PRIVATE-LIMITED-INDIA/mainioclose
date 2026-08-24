@@ -1813,6 +1813,36 @@ export const removeCompanyDocument = createAsyncThunk(
     }
   },
 );
+export const getMilestoneOnHoldReqs = createAsyncThunk(
+  "getMilestoneOnHoldReqs",
+  async ({managerId,page=0,size=10,status="PENDING"}, { rejectWithValue }) => {
+    try {
+
+      const response = await api.get(`/operationService/api/milestone-on-hold-requests/manager/${managerId}?page=${page}&size=${size}&status=${status}`,);
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to fetch On Hold Requests",
+      );
+    }
+  },
+);
+export const approveMilestoneOnHoldReqs = createAsyncThunk(
+  "approveMilestoneOnHoldReqs",
+  async ({requestId,data}, { rejectWithValue }) => {
+    try {
+
+      const response = await api.put(`/operationService/api/milestone-on-hold-requests/${requestId}/decision`,data);
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to Approve/Disapprove On Hold Requests",
+      );
+    }
+  },
+);
 
 export const OperationSlice = createSlice({
   name: "operation",
@@ -1855,6 +1885,7 @@ export const OperationSlice = createSlice({
     accountsDecisionLoading: false,
     accountsDecisionError: null,
     procurementOrderByStatus:[],
+    milestoneOnHoldReqs:[],
     companyDocs:[],
     companyDoc:{},
   },
@@ -2392,6 +2423,20 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllCompanyDocs.rejected, (state) => {
       state.loading = "rejected";
       state.companyDocs = [];
+    });
+    builder.addCase(getMilestoneOnHoldReqs.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getMilestoneOnHoldReqs.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.milestoneOnHoldReqs = action?.payload;
+      },
+    );
+    builder.addCase(getMilestoneOnHoldReqs.rejected, (state) => {
+      state.loading = "rejected";
+      state.milestoneOnHoldReqs = [];
     });
 
   },

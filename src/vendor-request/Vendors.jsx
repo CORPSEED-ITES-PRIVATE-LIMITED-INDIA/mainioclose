@@ -51,6 +51,7 @@ const columns = [
   { name: "VENDOR NAME", uid: "name", sortable: true },
   { name: "CONTACT", uid: "contact" },
   { name: "GST / PAN", uid: "taxDetail" },
+  { name: "SERVICES", uid: "mappedProducts" }, // NEW
   { name: "STATUS", uid: "status" },
   // { name: "VERIFIED", uid: "verified" },
   { name: "ACTIONS", uid: "actions" },
@@ -740,6 +741,70 @@ const Vendors = () => {
             </span>
           </div>
         );
+
+      case "mappedProducts": {
+        const products = Array.isArray(rowData?.mappedProducts)
+          ? rowData.mappedProducts
+          : [];
+
+        if (!products.length) {
+          return <span className="text-xs text-default-400">No Services</span>;
+        }
+
+        const primaryProduct = products[0];
+        const extraCount = products.length - 1;
+
+        return (
+          <Tooltip
+            placement="left"
+            className="max-w-[280px]"
+            content={
+              <div className="py-1">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-default-500">
+                  Mapped Services ({products.length})
+                </p>
+
+                <div className="flex flex-col gap-1.5">
+                  {products.map((product) => {
+                    const isLive =
+                      product?.mappingActive && product?.productActive;
+
+                    return (
+                      <div
+                        key={product?.productId}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <span className="truncate text-xs text-foreground">
+                          {product?.productName || "-"}
+                        </span>
+
+                        <span
+                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                            isLive ? "bg-success" : "bg-default-300"
+                          }`}
+                          title={isLive ? "Active mapping" : "Inactive mapping"}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            }
+          >
+            <div className="flex w-fit max-w-[180px] cursor-default items-center gap-1.5 rounded-full border border-default-200 bg-default-50 px-2.5 py-1">
+              <span className="truncate text-xs font-medium text-foreground">
+                {primaryProduct?.productName || "-"}
+              </span>
+
+              {extraCount > 0 && (
+                <span className="shrink-0 text-[10px] font-semibold text-default-500">
+                  +{extraCount}
+                </span>
+              )}
+            </div>
+          </Tooltip>
+        );
+      }
 
       case "status":
         return (

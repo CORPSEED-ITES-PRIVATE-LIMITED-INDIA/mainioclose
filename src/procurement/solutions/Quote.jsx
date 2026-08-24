@@ -302,7 +302,9 @@ const onboardingSchema = z.object({
   vendorRegistrationForm: z.any().refine((value) => Boolean(value), {
     message: "Please upload vendor registration form",
   }),
-  signedNda: z.any().optional(),
+  signedNda: z.any().refine((value) => Boolean(value), {
+    message: "Please upload signed NDA",
+  }),
 });
 
 const legalRequestDefaultValues = {
@@ -3448,6 +3450,7 @@ const Quote = () => {
                           <Input
                             label="Currency"
                             isRequired
+                            readOnly
                             value={field.value}
                             onChange={(e) => field.onChange(e.target.value)}
                             isInvalid={!!quotationErrors.currency}
@@ -4746,7 +4749,7 @@ const Quote = () => {
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
                                 isRequired
-                                label="Vendor Setup Form"
+                                label="Vendor Registration Form"
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}
@@ -5104,6 +5107,7 @@ const Quote = () => {
                         control={onboardingControl}
                         render={({ field, fieldState: { error } }) => (
                           <FileUploader
+                            isRequired
                             label="NDA Copy"
                             value={field.value}
                             onChange={(value) => field.onChange(value)}

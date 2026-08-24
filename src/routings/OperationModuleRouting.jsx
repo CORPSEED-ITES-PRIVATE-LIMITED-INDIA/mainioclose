@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { Navigate, Route } from "react-router-dom";
+import ManagerOnHoldApproval from "../operation/approval/ManagerOnHoldApproval";
 const OperationsSettings = lazy(
   () => import("../operation/Settings/OperationsSettings"),
 );
@@ -48,6 +49,10 @@ const OperationModuleRouting = () => {
       />
       <Route path="operation/legalRequests" element={<LegalRequests />} />
       <Route path="operation/approvals" element={<ManagerApprovals />} />
+      <Route
+        path="operation/onHoldApprovals"
+        element={<ManagerOnHoldApproval />}
+      />
       <Route path="operation/expenses" element={<Expenses />} />
       <Route path="operation/settings" element={<OperationsSettings />}>
         <Route index element={<Navigate to="userMap" replace />} />
