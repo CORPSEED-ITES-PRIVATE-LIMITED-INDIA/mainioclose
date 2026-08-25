@@ -358,6 +358,11 @@ const vendorAgreementSchema = z.object({
   remarks: z.string().min(1, "Please enter remarks"),
 });
 
+const GST_MANDATORY_REGISTRATION_TYPES = ["REGISTERED", "SEZ"];
+
+const isGstMandatoryRegistrationType = (registrationType) =>
+  GST_MANDATORY_REGISTRATION_TYPES.includes(registrationType);
+
 const sendToAccountsDefaultValues = {
   authorizedSignatoryName: "",
   authorizedSignatoryNumber: "",
@@ -426,9 +431,7 @@ const sendToAccountsSchema = z
 
     branchAddress: z.string().min(1, "Please enter branch address"),
 
-    gstDetailsUrl: z.any().refine((value) => Boolean(value), {
-      message: "Please upload GST details",
-    }),
+    gstDetailsUrl: z.any().optional(),
 
     vendorSetupFormUrl: z.any().refine((value) => Boolean(value), {
       message: "Please upload vendor setup form",
@@ -467,18 +470,27 @@ const sendToAccountsSchema = z
 
     const gstNumber = values.gstNumber?.trim().toUpperCase() || "";
 
-    const gstNumberRequired = ["REGISTERED", "SEZ"].includes(
+    const gstMandatory = isGstMandatoryRegistrationType(
       values.gstRegistrationType,
     );
 
     /*
      * REGISTERED / SEZ:
-     * GST is mandatory and must be valid.
+     * GST number and the GST details attachment are both mandatory,
+     * and the number must be valid.
      *
      * UNREGISTERED / INTERNATIONAL:
-     * GST is optional, but when entered it must be valid.
+     * both are optional, but a number that IS entered must still be valid.
      */
-    if (gstNumberRequired || gstNumber) {
+    if (gstMandatory && !values.gstDetailsUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["gstDetailsUrl"],
+        message: "Please upload GST details",
+      });
+    }
+
+    if (gstMandatory || gstNumber) {
       try {
         await validateGST(null, gstNumber);
       } catch (error) {
@@ -747,10 +759,9 @@ const Quote = () => {
     "gstRegistrationType",
   );
 
-  const isGstNumberRequired = ["REGISTERED", "SEZ"].includes(
+  const isGstMandatory = isGstMandatoryRegistrationType(
     selectedGstRegistrationType,
   );
-
   const watchedAccountNumber = watchSendToAccounts("accountNumber") || "";
 
   const watchedConfirmAccountNumber =
@@ -4523,11 +4534,11 @@ const Quote = () => {
                                 size="sm"
                                 label="GST Number"
                                 placeholder={
-                                  isGstNumberRequired
+                                  isGstMandatory
                                     ? "Enter GST number"
                                     : "GST number is optional"
                                 }
-                                isRequired={isGstNumberRequired}
+                                isRequired={isGstMandatory}
                                 value={field.value || ""}
                                 maxLength={15}
                                 onValueChange={(value) => {
@@ -4796,12 +4807,13 @@ const Quote = () => {
                               KYC Documents
                             </h3>
                             <p className="text-xs text-default-500">
-                              GST, vendor setup form, cancel cheque and PAN are
-                              required.
+                              {isGstMandatory
+                                ? "GST, vendor setup form, cancel cheque and PAN are required."
+                                : "Vendor setup form, cancel cheque and PAN are required."}
                             </p>
                           </div>
                           <Chip size="sm" color="danger" variant="flat">
-                            4 Required
+                            {isGstMandatory ? "4 Required" : "3 Required"}
                           </Chip>
                         </div>
 
@@ -4811,8 +4823,12 @@ const Quote = () => {
                             control={sendToAccountsControl}
                             render={({ field, fieldState: { error } }) => (
                               <FileUploader
-                                isRequired
-                                label="GST Details"
+                                isRequired={isGstMandatory}
+                                label={
+                                  isGstMandatory
+                                    ? "GST Details"
+                                    : "GST Details (Optional)"
+                                }
                                 value={field.value}
                                 onChange={(value) => field.onChange(value)}
                                 errorMessage={error?.message}
