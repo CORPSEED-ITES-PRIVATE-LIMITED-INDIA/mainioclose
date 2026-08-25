@@ -1844,6 +1844,23 @@ export const approveMilestoneOnHoldReqs = createAsyncThunk(
   },
 );
 
+
+export const getQuoteByRFQAndVendorId = createAsyncThunk(
+  "getQuoteByRFQAndVendorId",
+  async ({rfqId,vendorId}, { rejectWithValue }) => {
+    try {
+
+      const response = await api.get(`/operationService/api/quotation/rfq/${rfqId}/vendor/${vendorId}`,);
+      return response.data;
+
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "Failed to fetch Quotes",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -1888,6 +1905,7 @@ export const OperationSlice = createSlice({
     milestoneOnHoldReqs:[],
     companyDocs:[],
     companyDoc:{},
+    quoteByRFQAndVendor:[],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2437,6 +2455,20 @@ export const OperationSlice = createSlice({
     builder.addCase(getMilestoneOnHoldReqs.rejected, (state) => {
       state.loading = "rejected";
       state.milestoneOnHoldReqs = [];
+    });
+    builder.addCase(getQuoteByRFQAndVendorId.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getQuoteByRFQAndVendorId.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.quoteByRFQAndVendor = action?.payload;
+      },
+    );
+    builder.addCase(getQuoteByRFQAndVendorId.rejected, (state) => {
+      state.loading = "rejected";
+      state.quoteByRFQAndVendor = [];
     });
 
   },

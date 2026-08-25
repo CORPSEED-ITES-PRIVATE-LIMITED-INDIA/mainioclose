@@ -845,23 +845,27 @@ const Vendors = () => {
               </DropdownTrigger>
 
               <DropdownMenu aria-label="Vendor actions">
-                <DropdownItem
-                  key="edit"
-                  startContent={<Pencil className="h-4 w-4" />}
-                  onPress={() => openEditModal(rowData)}
-                >
-                  Edit Vendor
-                </DropdownItem>
+                {rowData?.status?.toUpperCase() !== "ACTIVE" ? (
+                  <DropdownItem
+                    key="edit"
+                    startContent={<Pencil className="h-4 w-4" />}
+                    onPress={() => openEditModal(rowData)}
+                  >
+                    Edit Vendor
+                  </DropdownItem>
+                ) : null}
 
-                <DropdownItem
-                  key="delete"
-                  className="text-danger"
-                  color="danger"
-                  startContent={<Trash2 className="h-4 w-4" />}
-                  onPress={() => openDeleteModal(rowData)}
-                >
-                  Delete Vendor
-                </DropdownItem>
+                {rowData?.status?.toUpperCase() !== "ACTIVE" ? (
+                  <DropdownItem
+                    key="delete"
+                    className="text-danger"
+                    color="danger"
+                    startContent={<Trash2 className="h-4 w-4" />}
+                    onPress={() => openDeleteModal(rowData)}
+                  >
+                    Delete Vendor
+                  </DropdownItem>
+                ) : null}
               </DropdownMenu>
             </Dropdown>
           </div>

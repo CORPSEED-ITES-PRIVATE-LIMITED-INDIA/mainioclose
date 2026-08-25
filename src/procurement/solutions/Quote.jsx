@@ -78,6 +78,7 @@ import {
   getOperationChatMessages,
   closeOperationChat,
   reopenOperationChat,
+  getQuoteByRFQAndVendorId,
 } from "../../toolkit/slices/operationSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
 import { allowOnlyNumbers, validateGST } from "../../common";
@@ -932,27 +933,37 @@ const Quote = () => {
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
-    if (!rfqId) return;
+    if (!rfqId || !routeVendorId) return;
 
     setLoading(true);
 
-    dispatch(getAllQuotations(rfqId)).then((resp) => {
+    dispatch(
+      getQuoteByRFQAndVendorId({
+        rfqId: Number(rfqId),
+        vendorId: Number(routeVendorId),
+      }),
+    ).then((resp) => {
       setLoading(false);
 
       if (resp.meta.requestStatus === "fulfilled") {
-        setQuotationResponse(resp.payload);
+        // API returns a single quotation object; wrap it so the existing
+        // normalizePageContent/table logic (built for lists) keeps working.
+        const quotation = resp.payload;
+        setQuotationResponse(quotation ? [quotation] : []);
       } else {
+        setQuotationResponse([]);
+
         addToast({
           title: "ERROR",
           description:
             resp?.payload?.message ||
             resp?.payload ||
-            "Failed to fetch quotations.",
+            "Failed to fetch quotation.",
           color: "danger",
         });
       }
     });
-  }, [dispatch, rfqId]);
+  }, [dispatch, rfqId, routeVendorId]);
 
   const fetchRFQDetails = useCallback(() => {
     if (!rfqId) return;
