@@ -1999,15 +1999,15 @@ const Quote = () => {
       return;
     }
 
-    if (finalization?.status !== "ONBOARDING_STARTED") {
-      addToast({
-        title: "ERROR",
-        description:
-          "Please start onboarding before sending service agreement request to legal team.",
-        color: "danger",
-      });
-      return;
-    }
+    // if (finalization?.status !== "ONBOARDING_STARTED") {
+    //   addToast({
+    //     title: "ERROR",
+    //     description:
+    //       "Please start onboarding before sending service agreement request to legal team.",
+    //     color: "danger",
+    //   });
+    //   return;
+    // }
 
     setSelectedVendorFinalization(finalization);
     setSelectedQuotation(quotation);
