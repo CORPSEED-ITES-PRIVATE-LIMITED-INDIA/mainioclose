@@ -274,9 +274,7 @@ function VendorsData() {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-        Vendors Mapped To Product
-      </h1>
+      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">Vendors</h1>
 
       <Table
         isHeaderSticky

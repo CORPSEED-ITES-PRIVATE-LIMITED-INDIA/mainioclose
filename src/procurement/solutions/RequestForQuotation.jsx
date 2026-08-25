@@ -790,7 +790,6 @@ const RequestForQuotation = () => {
       contactPersonName: rowData?.contactPersonName || "",
       contactPersonEmail: rowData?.contactPersonEmail || "",
       contactPersonMobile: rowData?.contactPersonMobile || "",
-      contactPersonName: rowData?.contactPersonName || "",
       contactPersonEmail: rowData?.contactPersonEmail || "",
       attachmentUrl: rowData?.attachmentUrl || "",
       vendorIds: getRfqVendors(rowData)
@@ -1247,13 +1246,15 @@ const RequestForQuotation = () => {
                     View Details
                   </DropdownItem>
 
-                  <DropdownItem
-                    key="edit"
-                    startContent={<Pencil size={15} />}
-                    onPress={() => handleOpenEditRfq(rowData)}
-                  >
-                    Edit RFQ
-                  </DropdownItem>
+                  {isDraft && (
+                    <DropdownItem
+                      key="edit"
+                      startContent={<Pencil size={15} />}
+                      onPress={() => handleOpenEditRfq(rowData)}
+                    >
+                      Edit RFQ
+                    </DropdownItem>
+                  )}
 
                   {/* Show Send To Vendor ONLY for DRAFT */}
                   {isDraft && (
