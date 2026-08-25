@@ -326,7 +326,7 @@ const RFQVendors = () => {
                       })
                     }
                   >
-                    Add Quote
+                    View Quote
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>

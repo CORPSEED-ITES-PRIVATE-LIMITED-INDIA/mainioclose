@@ -64,6 +64,7 @@ import {
   getVendorFinalizationByRfqId,
   sendVendorOnboardingForm,
   createLegalRequest,
+  getVendorById,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -652,6 +653,7 @@ const Quote = () => {
     handleSubmit: handleQuotationFormSubmit,
     reset: resetQuotationForm,
     formState: { errors: quotationErrors },
+
     watch: watchQuotationForm,
   } = useForm({
     resolver: zodResolver(quotationSchema),
@@ -711,6 +713,7 @@ const Quote = () => {
     control: sendToAccountsControl,
     handleSubmit: handleSendToAccountsSubmit,
     reset: resetSendToAccountsForm,
+    setValue: setSendToAccountsValue,
     watch: watchSendToAccounts,
     formState: { errors: sendToAccountsErrors },
   } = useForm({
@@ -781,6 +784,8 @@ const Quote = () => {
   const [chatClosed, setChatClosed] = useState(false);
   const [chatAttachmentUploading, setChatAttachmentUploading] = useState(false);
   const [chatUploaderKey, setChatUploaderKey] = useState(0);
+
+  const [vendorAccountDetails, setVendorAccountDetails] = useState(null);
 
   const chatBodyRef = useRef(null);
   const chatMessagesEndRef = useRef(null);
@@ -979,6 +984,47 @@ const Quote = () => {
       }
     });
   }, [dispatch, rfqId]);
+
+  const fetchVendorAccountDetails = useCallback(
+    (vendorId) => {
+      if (!vendorId) return;
+
+      dispatch(getVendorById({ vendorId })).then((resp) => {
+        if (resp.meta.requestStatus !== "fulfilled") return;
+
+        const vendor = resp.payload || {};
+        setVendorAccountDetails(vendor);
+        if (vendor?.gstNumber) {
+          setSendToAccountsValue(
+            "gstNumber",
+            String(vendor.gstNumber).toUpperCase(),
+            { shouldValidate: true },
+          );
+        }
+
+        if (vendor?.gstRegistrationType) {
+          setSendToAccountsValue(
+            "gstRegistrationType",
+            vendor.gstRegistrationType,
+            { shouldValidate: true },
+          );
+        }
+
+        if (vendor?.name) {
+          setSendToAccountsValue("authorizedSignatoryName", vendor.name);
+        }
+
+        if (vendor?.mobile) {
+          setSendToAccountsValue("authorizedSignatoryNumber", vendor.mobile);
+        }
+
+        if (vendor?.email) {
+          setSendToAccountsValue("authorizedSignatoryEmail", vendor.email);
+        }
+      });
+    },
+    [dispatch, setSendToAccountsValue],
+  );
 
   const fetchVendorLegalRequests = useCallback(() => {
     dispatch(getAllVendorQuotationLegalRequests());
@@ -2306,6 +2352,10 @@ const Quote = () => {
         authorizedSignatoryAadhar: "",
         accountHolderName: vendorBaseDetails.name,
       });
+      fetchVendorAccountDetails(
+        // <-- add this
+        finalization?.vendorId || quotation?.vendorId,
+      );
       sendToAccountsModal.onOpen();
     },
     [
@@ -4268,6 +4318,7 @@ const Quote = () => {
           if (!open) {
             resetSendToAccountsForm(sendToAccountsDefaultValues);
             setSelectedVendorFinalization(null);
+            setVendorAccountDetails(null);
           }
         }}
         size="5xl"
