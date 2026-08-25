@@ -1206,6 +1206,8 @@ const ProjectDetails = () => {
   //   dispatch(getApplicantTypeList({ page: 1, size: 1000 }));
   // }, [projectId]);
 
+  const todayDate = dayjs().toISOString();
+
   const {
     control: expenseControl,
     handleSubmit: handleExpenseSubmit,
@@ -1217,7 +1219,7 @@ const ProjectDetails = () => {
       expenseCategory: "",
       amount: "",
       remark: "",
-      expenseDate: "",
+      expenseDate: todayDate,
       attachmentUrl: "",
       externalReference: "",
       currencyCode: "INR",
@@ -6064,7 +6066,7 @@ const ProjectDetails = () => {
                   render={({ field }) => (
                     <div className="md:col-span-2">
                       <SingleFileUploader
-                        label="Payment Proof"
+                        label="Expense Proof"
                         value={field.value}
                         onChange={(value) => {
                           field.onChange(value || "");
