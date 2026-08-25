@@ -587,6 +587,7 @@ export const accountNavItems = [
     title: "Invoice Feed",
     url: "accounts/invoiceFeed",
     key: "invoiceFeed",
+    icon: "FileText",
   },
   {
     title: "Purchase invoices",

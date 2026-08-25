@@ -1166,59 +1166,73 @@ const Vendors = () => {
                       }
                     />
 
-                    <AntSelect
-                      showSearch
-                      allowClear={
-                        vendorForm.gstRegistrationType === "INTERNATIONAL"
-                      }
-                      className="w-full"
-                      placeholder="Select Country"
-                      value={vendorForm.country || undefined}
-                      options={
-                        vendorForm.gstRegistrationType === "INTERNATIONAL"
-                          ? countryList.filter(
-                              (country) =>
-                                country?.name?.toLowerCase() !== "india",
-                            )
-                          : countryList
-                      }
-                      fieldNames={{ label: "name", value: "name" }}
-                      optionFilterProp="name"
-                      disabled={
-                        Boolean(vendorForm.gstRegistrationType) &&
-                        vendorForm.gstRegistrationType !== "INTERNATIONAL"
-                      }
-                      onChange={handleCountryChange}
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-default-700">
+                        Country <span className="text-danger">*</span>
+                      </label>
+                      <AntSelect
+                        showSearch
+                        allowClear={
+                          vendorForm.gstRegistrationType === "INTERNATIONAL"
+                        }
+                        className="w-full"
+                        placeholder="Select Country"
+                        value={vendorForm.country || undefined}
+                        options={
+                          vendorForm.gstRegistrationType === "INTERNATIONAL"
+                            ? countryList.filter(
+                                (country) =>
+                                  country?.name?.toLowerCase() !== "india",
+                              )
+                            : countryList
+                        }
+                        fieldNames={{ label: "name", value: "name" }}
+                        optionFilterProp="name"
+                        disabled={
+                          Boolean(vendorForm.gstRegistrationType) &&
+                          vendorForm.gstRegistrationType !== "INTERNATIONAL"
+                        }
+                        onChange={handleCountryChange}
+                      />
+                    </div>
 
-                    <AntSelect
-                      showSearch
-                      allowClear
-                      className="w-full"
-                      placeholder="Select State"
-                      value={vendorForm.state || undefined}
-                      options={statesList}
-                      fieldNames={{ label: "name", value: "name" }}
-                      optionFilterProp="name"
-                      disabled={!vendorForm.country}
-                      onChange={handleStateChange}
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-default-700">
+                        State <span className="text-danger">*</span>
+                      </label>
+                      <AntSelect
+                        showSearch
+                        allowClear
+                        className="w-full"
+                        placeholder="Select State"
+                        value={vendorForm.state || undefined}
+                        options={statesList}
+                        fieldNames={{ label: "name", value: "name" }}
+                        optionFilterProp="name"
+                        disabled={!vendorForm.country}
+                        onChange={handleStateChange}
+                      />
+                    </div>
 
-                    <AntSelect
-                      showSearch
-                      allowClear
-                      className="w-full"
-                      placeholder="Select City"
-                      value={vendorForm.city || undefined}
-                      options={citiesList}
-                      fieldNames={{ label: "name", value: "name" }}
-                      optionFilterProp="name"
-                      disabled={!vendorForm.state}
-                      onChange={(value) =>
-                        handleInputChange("city", value || "")
-                      }
-                    />
-
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-medium text-default-700">
+                        City <span className="text-danger">*</span>
+                      </label>
+                      <AntSelect
+                        showSearch
+                        allowClear
+                        className="w-full"
+                        placeholder="Select City"
+                        value={vendorForm.city || undefined}
+                        options={citiesList}
+                        fieldNames={{ label: "name", value: "name" }}
+                        optionFilterProp="name"
+                        disabled={!vendorForm.state}
+                        onChange={(value) =>
+                          handleInputChange("city", value || "")
+                        }
+                      />
+                    </div>
                     <Textarea
                       className="md:col-span-2"
                       label="Description"

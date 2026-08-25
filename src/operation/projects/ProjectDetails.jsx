@@ -989,6 +989,14 @@ const ProjectDetails = () => {
   const milestoneStatusList = useSelector(
     (state) => state.common.milestoneStatusList,
   );
+  const filteredMilestoneStatusList = useMemo(() => {
+    const excludedStatuses = ["QUEUED", "REJECTED"];
+
+    return (milestoneStatusList || []).filter(
+      (status) =>
+        !excludedStatuses.includes(String(status?.name).toUpperCase()),
+    );
+  }, [milestoneStatusList]);
   const mileStoneHistoryDetail = useSelector(
     (state) => state.operation.mileStoneEventHistory,
   );
@@ -1048,15 +1056,13 @@ const ProjectDetails = () => {
         .toLowerCase()
         .replace(/-/g, " ") === "skipped non mandatory";
 
-    const assignmentEntries = (
-      mileStoneHistoryDetail?.assignmentEvents || []
-    )
+    const assignmentEntries = (mileStoneHistoryDetail?.assignmentEvents || [])
       .filter((event) => !isNoiseReason(event?.reason))
       .map((event) => ({ kind: "assignment", ...event }));
 
-    const statusEntries = (mileStoneHistoryDetail?.statusChangeEvents || []).map(
-      (event) => ({ kind: "status", ...event }),
-    );
+    const statusEntries = (
+      mileStoneHistoryDetail?.statusChangeEvents || []
+    ).map((event) => ({ kind: "status", ...event }));
 
     return [...assignmentEntries, ...statusEntries].sort(
       (a, b) => new Date(a.date) - new Date(b.date),
@@ -3264,7 +3270,12 @@ const ProjectDetails = () => {
           <div className="flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                <Chip size="sm" color="primary" variant="flat" className="h-5 text-[10.5px]">
+                <Chip
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  className="h-5 text-[10.5px]"
+                >
                   Project Detail
                 </Chip>
 
@@ -3620,7 +3631,12 @@ const ProjectDetails = () => {
                   <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
                     <div className="min-w-0">
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                        <Chip color="primary" variant="flat" size="sm" className="h-5 text-[10.5px]">
+                        <Chip
+                          color="primary"
+                          variant="flat"
+                          size="sm"
+                          className="h-5 text-[10.5px]"
+                        >
                           Active Milestone
                         </Chip>
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -3795,7 +3811,8 @@ const ProjectDetails = () => {
                       <div className="relative space-y-0 before:absolute before:left-3 before:top-1 before:h-[calc(100%-8px)] before:w-px before:bg-default-200">
                         {milestoneTimeline.map((event, index) => {
                           if (event.kind === "status") {
-                            const color = statusColors[event.newStatus] || "default";
+                            const color =
+                              statusColors[event.newStatus] || "default";
 
                             return (
                               <div
@@ -4589,7 +4606,7 @@ const ProjectDetails = () => {
                   isRequired={true}
                   errorMessage={"please select status"}
                   label={"Select status"}
-                  data={milestoneStatusList || []}
+                  data={filteredMilestoneStatusList}
                   labelKey={"name"}
                   valueKey={"name"}
                   value={statusObj?.newStatusName}

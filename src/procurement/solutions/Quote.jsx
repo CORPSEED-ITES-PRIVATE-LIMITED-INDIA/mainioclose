@@ -354,7 +354,7 @@ const vendorAgreementSchema = z.object({
   attachmentUrl: z.any().refine((value) => Boolean(value), {
     message: "Please upload final agreement attachment",
   }),
-  remarks: z.string().optional(),
+  remarks: z.string().min(1, "Please enter remarks"),
 });
 
 const sendToAccountsDefaultValues = {
@@ -4295,6 +4295,7 @@ const Quote = () => {
                   render={({ field }) => (
                     <Input
                       label="Remarks"
+                      isRequired
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       isInvalid={!!vendorAgreementErrors.remarks}
