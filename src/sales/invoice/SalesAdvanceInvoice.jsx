@@ -29,7 +29,6 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const columns = [
   { name: "DATE", uid: "date" },
-  { name: "REQUEST ID", uid: "requestId" },
   { name: "ESTIMATE NUMBER", uid: "estimateNumber" },
   { name: "REQUESTED BY", uid: "requestedBy" },
   { name: "ESTIMATE TOTAL", uid: "estimateTotal" },
@@ -268,20 +267,6 @@ const SalesAdvanceInvoice = () => {
             </p>
             <p className="text-[11.5px] text-default-500">
               {formatDateTime(item?.createdAt)}
-            </p>
-          </div>
-        );
-      case "requestId":
-        return (
-          <div className="flex flex-col">
-            <p className="text-[12.5px] font-semibold">
-              {item?.requestId ?? "-"}
-            </p>
-            <p
-              title={item?.publicUuid}
-              className="max-w-[145px] truncate text-[11.5px] text-default-500"
-            >
-              {item?.publicUuid || "-"}
             </p>
           </div>
         );

@@ -25,7 +25,13 @@ import {
   Textarea,
 } from "@heroui/react";
 
-import { ExternalLink, MoreVertical, PencilLine, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ExternalLink,
+  MoreVertical,
+  PencilLine,
+  Search,
+} from "lucide-react";
 
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -95,29 +101,29 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 const approvalStageOptions = [
-  { label: "CRT Review", value: "CRT_REVIEW" },
-  { label: "Accounts Review", value: "ACCOUNTS_REVIEW" },
-  { label: "Completed", value: "COMPLETED" },
+  { label: "CRT_REVIEW", value: "CRT_REVIEW" },
+  { label: "ACCOUNTS_REVIEW", value: "ACCOUNTS_REVIEW" },
+  { label: "COMPLETED", value: "COMPLETED" },
 ];
 
 const approvalStatusOptions = [
-  { label: "All Statuses", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
-  { label: "On Hold", value: "ON_HOLD" },
-  { label: "Cancelled", value: "CANCELLED" },
+  { label: "ALL", value: "ALL" },
+  { label: "PENDING", value: "PENDING" },
+  { label: "APPROVED", value: "APPROVED" },
+  { label: "REJECTED", value: "REJECTED" },
+  { label: "ON_HOLD", value: "ON_HOLD" },
+  { label: "CANCELLED", value: "CANCELLED" },
 ];
 
 const crtDecisionOptions = [
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
-  { label: "On Hold", value: "ON_HOLD" },
+  { label: "APPROVED", value: "APPROVED" },
+  { label: "REJECTED", value: "REJECTED" },
+  { label: "ON_HOLD", value: "ON_HOLD" },
 ];
 
 const governmentFeeDecisionOptions = [
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
+  { label: "APPROVED", value: "APPROVED" },
+  { label: "REJECTED", value: "REJECTED" },
 ];
 
 // ----------------------------------------------------------------------------
@@ -920,14 +926,14 @@ const Expenses = () => {
                 {expense?.projectName || "-"}
               </span>
 
-              <span className="text-[11.5px] text-default-500">
+              <span className="text-[11.5px] text-default-500 whitespace-nowrap">
                 {expense?.projectNo
                   ? `Project No: ${expense.projectNo}`
                   : `Project ID: ${expense?.projectId || "-"}`}
               </span>
 
               {expense?.unbilledNumber && (
-                <span className="text-[11.5px] text-default-500">
+                <span className="text-[11.5px] text-default-500 whitespace-nowrap">
                   Unbilled: {expense.unbilledNumber}
                 </span>
               )}
@@ -988,27 +994,15 @@ const Expenses = () => {
               <span className="text-[12.5px] font-medium">
                 {expense?.raisedDepartmentName || "-"}
               </span>
-
-              {expense?.raisedDepartmentId && (
-                <span className="text-[11.5px] text-default-500">
-                  ID: {expense.raisedDepartmentId}
-                </span>
-              )}
             </div>
           );
 
         case "createdBy":
           return (
             <div className="flex flex-col">
-              <span className="text-[12.5px] font-medium">
+              <span className="text-[12.5px] font-medium whitespace-nowrap">
                 {expense?.createdByUserName || "-"}
               </span>
-
-              {expense?.createdByUserId && (
-                <span className="text-[11.5px] text-default-500">
-                  User ID: {expense.createdByUserId}
-                </span>
-              )}
             </div>
           );
 
@@ -1279,16 +1273,25 @@ const Expenses = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={approvalStageOptions}
-                labelKey="label"
-                valueKey="value"
-                label="Approval stage"
-                value={approvalStage}
-                onChange={(value) => {
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                  className="capitalize"
+                >
+                  {approvalStage}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[approvalStage]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let value = Array.from(e)[0];
                   if (value) {
                     setApprovalStage(value);
 
@@ -1298,19 +1301,33 @@ const Expenses = () => {
                     }));
                   }
                 }}
-              />
-            </div>
+              >
+                {approvalStageOptions?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={approvalStatusOptions}
-                labelKey="label"
-                valueKey="value"
-                label="Approval status"
-                value={approvalStatus}
-                onChange={(value) => {
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  {approvalStatus}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={[approvalStatus]}
+                selectionMode="single"
+                onSelectionChange={(e) => {
+                  let value = Array.from(e)[0];
                   if (value) {
                     setApprovalStatus(value);
 
@@ -1320,27 +1337,40 @@ const Expenses = () => {
                     }));
                   }
                 }}
-              />
-            </div>
+              >
+                {approvalStatusOptions?.map((column) => (
+                  <DropdownItem key={column.value} className="capitalize">
+                    {column.label}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 
