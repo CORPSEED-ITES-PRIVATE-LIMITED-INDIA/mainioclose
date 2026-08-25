@@ -62,7 +62,7 @@ import {
 import FileUploader from "../../components/FileUploader";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import NewSelect from "../../components/NewSelect";
-import { parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 
 const RFQ_VENDOR_STATUSES = [
   "ALL",
@@ -331,8 +331,6 @@ const defaultValues = {
   termsAndConditions: "<p></p>",
   deliveryLocation: "",
   quotationSubmissionDeadline: "",
-  expectedStartDate: "",
-  expectedEndDate: "",
   contactPersonName: "",
   contactPersonEmail: "",
   contactPersonMobile: "",
@@ -396,8 +394,6 @@ const rfqSchema = z.object({
   quotationSubmissionDeadline: z
     .string()
     .min(1, "Please select quotation submission deadline"),
-  expectedStartDate: z.string().min(1, "Please select expected start date"),
-  expectedEndDate: z.string().min(1, "Please select expected end date"),
   contactPersonName: z.string().min(1, "Please enter contact person name"),
   contactPersonEmail: z
     .string()
@@ -778,12 +774,6 @@ const RequestForQuotation = () => {
       quotationSubmissionDeadline: rowData?.quotationSubmissionDeadline
         ? dayjs(rowData.quotationSubmissionDeadline).format("YYYY-MM-DD")
         : "",
-      expectedStartDate: rowData?.expectedStartDate
-        ? dayjs(rowData.expectedStartDate).format("YYYY-MM-DD")
-        : "",
-      expectedEndDate: rowData?.expectedEndDate
-        ? dayjs(rowData.expectedEndDate).format("YYYY-MM-DD")
-        : "",
       contactPersonName: rowData?.contactPersonName || "",
       contactPersonEmail: rowData?.contactPersonEmail || "",
       contactPersonMobile: rowData?.contactPersonMobile || "",
@@ -904,8 +894,6 @@ const RequestForQuotation = () => {
       quotationSubmissionDeadline: toIsoDateTime(
         values.quotationSubmissionDeadline,
       ),
-      expectedStartDate: toIsoDateTime(values.expectedStartDate),
-      expectedEndDate: toIsoDateTime(values.expectedEndDate),
       contactPersonName: values.contactPersonName,
       contactPersonEmail: values.contactPersonEmail,
       contactPersonMobile: values.contactPersonMobile,
@@ -1582,6 +1570,7 @@ const RequestForQuotation = () => {
                           <DatePicker
                             label="Quotation Submission Deadline"
                             isRequired
+                            minValue={today(getLocalTimeZone())}
                             value={toDatePickerValue(field.value)}
                             onChange={(value) =>
                               field.onChange(value ? value.toString() : "")
@@ -1590,40 +1579,6 @@ const RequestForQuotation = () => {
                             errorMessage={
                               errors.quotationSubmissionDeadline?.message
                             }
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="expectedStartDate"
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            label="Expected Start Date"
-                            isRequired
-                            value={toDatePickerValue(field.value)}
-                            onChange={(value) =>
-                              field.onChange(value ? value.toString() : "")
-                            }
-                            isInvalid={!!errors.expectedStartDate}
-                            errorMessage={errors.expectedStartDate?.message}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name="expectedEndDate"
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            label="Expected End Date"
-                            isRequired
-                            value={toDatePickerValue(field.value)}
-                            onChange={(value) =>
-                              field.onChange(value ? value.toString() : "")
-                            }
-                            isInvalid={!!errors.expectedEndDate}
-                            errorMessage={errors.expectedEndDate?.message}
                           />
                         )}
                       />

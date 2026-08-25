@@ -32,7 +32,7 @@ import {
   DatePicker,
   Avatar,
 } from "@heroui/react";
-import { parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -199,6 +199,25 @@ const quotationStatusSelectOptions = quotationStatusOptions.map((status) => ({
   label: status,
   value: status,
 }));
+
+const QUOTATION_ITEM_UNIT_OPTIONS = [
+  { label: "Kilogram (KG)", value: "KG" },
+  { label: "Gram (GM)", value: "GM" },
+  { label: "Metric Tonne (MT)", value: "MT" },
+  { label: "Liter (LTR)", value: "LTR" },
+  { label: "Milliliter (ML)", value: "ML" },
+  { label: "Meter (MTR)", value: "MTR" },
+  { label: "Square Meter (SQM)", value: "SQM" },
+  { label: "Cubic Meter (CBM)", value: "CBM" },
+  { label: "Pieces (PCS)", value: "PCS" },
+  { label: "Numbers (NOS)", value: "NOS" },
+  { label: "Box (BOX)", value: "BOX" },
+  { label: "Dozen (DOZ)", value: "DOZ" },
+  { label: "Set (SET)", value: "SET" },
+  { label: "Pair (PAIR)", value: "PAIR" },
+  { label: "Roll (ROLL)", value: "ROLL" },
+  { label: "Bag (BAG)", value: "BAG" },
+];
 
 const quotationDefaultValues = {
   validFrom: "",
@@ -3467,6 +3486,7 @@ const Quote = () => {
                           <DatePicker
                             label="Valid From"
                             isRequired
+                            minValue={today(getLocalTimeZone())}
                             value={field.value ? parseDate(field.value) : null}
                             onChange={(date) =>
                               field.onChange(date ? date.toString() : "")
@@ -3483,6 +3503,7 @@ const Quote = () => {
                           <DatePicker
                             label="Valid Till"
                             isRequired
+                            minValue={today(getLocalTimeZone())}
                             value={field.value ? parseDate(field.value) : null}
                             onChange={(date) =>
                               field.onChange(date ? date.toString() : "")
@@ -3735,12 +3756,16 @@ const Quote = () => {
                               name={`items.${index}.unit`}
                               control={quotationControl}
                               render={({ field }) => (
-                                <Input
+                                <Select
                                   label="Unit"
                                   isRequired
-                                  value={field.value}
-                                  onChange={(e) =>
-                                    field.onChange(e.target.value)
+                                  selectedKeys={
+                                    field.value
+                                      ? new Set([field.value])
+                                      : new Set([])
+                                  }
+                                  onSelectionChange={(keys) =>
+                                    field.onChange(Array.from(keys)?.[0] || "")
                                   }
                                   isInvalid={
                                     !!quotationErrors.items?.[index]?.unit
@@ -3749,7 +3774,13 @@ const Quote = () => {
                                     quotationErrors.items?.[index]?.unit
                                       ?.message
                                   }
-                                />
+                                >
+                                  {QUOTATION_ITEM_UNIT_OPTIONS.map((unit) => (
+                                    <SelectItem key={unit.value}>
+                                      {unit.label}
+                                    </SelectItem>
+                                  ))}
+                                </Select>
                               )}
                             />
 
@@ -3788,22 +3819,6 @@ const Quote = () => {
                                 />
                               )}
                             /> */}
-
-                            <div className="md:col-span-3">
-                              <Controller
-                                name={`items.${index}.description`}
-                                control={quotationControl}
-                                render={({ field }) => (
-                                  <Input
-                                    label="Agreement Description"
-                                    value={field.value}
-                                    onChange={(e) =>
-                                      field.onChange(e.target.value)
-                                    }
-                                  />
-                                )}
-                              />
-                            </div>
 
                             <div className="md:col-span-3">
                               <Controller
