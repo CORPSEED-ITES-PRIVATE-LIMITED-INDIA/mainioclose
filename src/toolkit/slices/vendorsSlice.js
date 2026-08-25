@@ -812,6 +812,18 @@ export const getVendorsByProductId = createAsyncThunk(
     return response.data;
   },
 );
+export const getPendingLegalRequestById = createAsyncThunk(
+  "getPendingLegalRequestById",
+  async ({data}) => {
+    const response = await api.post(
+      `/operationService/api/vendor-quotation-legal-requests/assigned-counts`,
+      data
+    );
+    return response.data;
+  },
+);
+
+
 
 
 
@@ -820,6 +832,7 @@ const VendorsSlice = createSlice({
   initialState: {
     vendorsCategoryList: [],
     loading: "",
+    pendingLegalRequests:[],
     singleCategoryDetail: {},
     vendorsList: [],
     totalVendorRequestCount: 0,
@@ -1110,6 +1123,18 @@ vendorDetails:{}
     builder.addCase(getVendorById.rejected, (state, action) => {
       state.loading = "rejected";
       state.vendorDetails = {};
+    });
+    builder.addCase(getPendingLegalRequestById.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getPendingLegalRequestById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.pendingLegalRequests =  action.payload || {};
+    });
+
+    builder.addCase(getPendingLegalRequestById.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.pendingLegalRequests = [];
     });
     builder.addCase(getVendorsByProductId.pending, (state) => {
       state.loading = "pending";

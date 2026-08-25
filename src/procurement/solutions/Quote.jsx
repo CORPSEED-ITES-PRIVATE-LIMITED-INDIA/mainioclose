@@ -65,6 +65,7 @@ import {
   sendVendorOnboardingForm,
   createLegalRequest,
   getVendorById,
+  getPendingLegalRequestById,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -669,6 +670,10 @@ const Quote = () => {
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
   );
+
+  const pendingLegalRequestsResponse = useSelector(
+    (state) => state.vendors.pendingLegalRequests,
+  );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const admin = userRole.includes("ADMIN");
 
@@ -856,6 +861,20 @@ const Quote = () => {
 
     return apiUsers.length > 0 ? apiUsers : userList;
   }, [legalDepartmentUsers, userList]);
+
+  const pendingLegalRequestCountByUserId = useMemo(() => {
+    const list = Array.isArray(pendingLegalRequestsResponse)
+      ? pendingLegalRequestsResponse
+      : [];
+
+    return list.reduce((acc, entry) => {
+      if (entry?.userId !== undefined && entry?.userId !== null) {
+        acc[String(entry.userId)] = entry?.pendingRequestCount ?? 0;
+      }
+
+      return acc;
+    }, {});
+  }, [pendingLegalRequestsResponse]);
 
   const selectedChatPerson = useMemo(() => {
     return (
@@ -1084,6 +1103,25 @@ const Quote = () => {
     fetchVendorFinalizations,
     fetchVendorLegalRequests,
   ]);
+  useEffect(() => {
+    if (
+      !Array.isArray(legalDepartmentUsers) ||
+      legalDepartmentUsers.length === 0
+    ) {
+      return;
+    }
+
+    const users = legalDepartmentUsers
+      .map((user) => ({
+        id: user?.id,
+        name: user?.fullName || user?.name || "",
+      }))
+      .filter((user) => user?.id);
+
+    if (!users.length) return;
+
+    dispatch(getPendingLegalRequestById({ data: { users } }));
+  }, [dispatch, legalDepartmentUsers]);
 
   const getUploadedFileValue = (value) => {
     return (
@@ -4167,14 +4205,29 @@ const Quote = () => {
                       isInvalid={!!legalRequestErrors.assignedToLegal}
                       errorMessage={legalRequestErrors.assignedToLegal?.message}
                     >
-                      {(legalDepartmentUsers || []).map((user) => (
-                        <SelectItem
-                          key={String(user.id)}
-                          textValue={`${user.fullName || ""} ${user.email || ""}`}
-                        >
-                          {user.fullName} - {user.email}
-                        </SelectItem>
-                      ))}
+                      {(legalDepartmentUsers || []).map((user) => {
+                        const pendingCount =
+                          pendingLegalRequestCountByUserId[String(user.id)] ??
+                          0;
+
+                        return (
+                          <SelectItem
+                            key={String(user.id)}
+                            textValue={`${user.fullName || ""} - ${pendingCount} pending`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span>{user.fullName}</span>
+                              <Chip
+                                size="sm"
+                                variant="flat"
+                                color={pendingCount > 0 ? "warning" : "default"}
+                              >
+                                {pendingCount} pending
+                              </Chip>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </Select>
                   )}
                 />
