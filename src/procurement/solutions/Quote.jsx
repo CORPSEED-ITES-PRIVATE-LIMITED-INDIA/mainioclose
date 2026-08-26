@@ -28,6 +28,8 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Tabs,
+  Tab,
   useDisclosure,
   DatePicker,
   Avatar,
@@ -57,7 +59,6 @@ import dayjs from "dayjs";
 import FileUploader from "../../components/FileUploader";
 import {
   createQuotation,
-  getAllQuotations,
   getRFQById,
   getVendorsByVendorIdandRFQId,
   createVendorFinalization,
@@ -66,6 +67,7 @@ import {
   createLegalRequest,
   getVendorById,
   getPendingLegalRequestById,
+  getAllQuotationsByRFQId,
 } from "../../toolkit/slices/vendorsSlice";
 import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
@@ -92,6 +94,16 @@ const columns = [
   { name: "PAYMENT TERMS", uid: "paymentTerms" },
   { name: "ATTACHMENTS", uid: "attachments" },
   { name: "CREATED BY", uid: "createdBy" },
+  { name: "ACTIONS", uid: "actions" },
+];
+
+const allQuotationsColumns = [
+  { name: "QUOTATION NO.", uid: "quotationNumber" },
+  { name: "VENDOR", uid: "vendor" },
+  { name: "DATES", uid: "dates" },
+  { name: "COMMERCIALS", uid: "commercials" },
+  { name: "STATUS", uid: "status" },
+  { name: "ATTACHMENTS", uid: "attachments" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -807,6 +819,10 @@ const Quote = () => {
     size: 10,
   });
 
+  const [activeQuoteView, setActiveQuoteView] = useState("vendor"); // "vendor" | "all"
+  const [allQuotations, setAllQuotations] = useState([]);
+  const [allQuotationsLoading, setAllQuotationsLoading] = useState(false);
+
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [chatConversationId, setChatConversationId] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
@@ -995,6 +1011,31 @@ const Quote = () => {
     });
   }, [dispatch, rfqId, routeVendorId]);
 
+  const fetchAllQuotations = useCallback(() => {
+    if (!rfqId) return;
+
+    setAllQuotationsLoading(true);
+
+    dispatch(getAllQuotationsByRFQId(rfqId)).then((resp) => {
+      setAllQuotationsLoading(false);
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        setAllQuotations(normalizePageContent(resp.payload));
+      } else {
+        setAllQuotations([]);
+
+        addToast({
+          title: "ERROR",
+          description:
+            resp?.payload?.message ||
+            resp?.payload ||
+            "Failed to fetch all quotations.",
+          color: "danger",
+        });
+      }
+    });
+  }, [dispatch, rfqId]);
+
   const fetchRFQDetails = useCallback(() => {
     if (!rfqId) return;
 
@@ -1103,6 +1144,13 @@ const Quote = () => {
     fetchVendorFinalizations,
     fetchVendorLegalRequests,
   ]);
+
+  useEffect(() => {
+    if (activeQuoteView === "all") {
+      fetchAllQuotations();
+    }
+  }, [activeQuoteView, fetchAllQuotations]);
+
   useEffect(() => {
     if (
       !Array.isArray(legalDepartmentUsers) ||
@@ -2919,6 +2967,157 @@ const Quote = () => {
     ],
   );
 
+  const renderAllQuotationsCell = useCallback(
+    (rowData, columnKey) => {
+      switch (columnKey) {
+        case "quotationNumber":
+          return (
+            <div className="flex flex-col">
+              <span className="font-semibold text-foreground">
+                {rowData?.quotationNumber || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                ID: {rowData?.id || "-"}
+              </span>
+              {rowData?.latest ? (
+                <Chip
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  className="mt-1 w-fit"
+                >
+                  Latest
+                </Chip>
+              ) : null}
+            </div>
+          );
+
+        case "vendor":
+          return (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {rowData?.vendorName || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                Vendor ID: {rowData?.vendorId || "-"}
+              </span>
+              <span className="text-xs text-default-500">
+                RFQ Vendor ID: {rowData?.rfqVendorId || "-"}
+              </span>
+            </div>
+          );
+
+        case "dates":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              <span>
+                Quoted:{" "}
+                {rowData?.quotationDate
+                  ? dayjs(rowData.quotationDate).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
+              <span>
+                Valid:{" "}
+                {rowData?.validFrom
+                  ? dayjs(rowData.validFrom).format("DD-MM-YYYY")
+                  : "-"}{" "}
+                →{" "}
+                {rowData?.validTill
+                  ? dayjs(rowData.validTill).format("DD-MM-YYYY")
+                  : "-"}
+              </span>
+              <span>Delivery: {rowData?.deliveryDays ?? "-"} days</span>
+            </div>
+          );
+
+        case "commercials":
+          return (
+            <div className="flex flex-col gap-1">
+              <Chip size="sm" variant="flat">
+                {rowData?.currency || "INR"}
+              </Chip>
+              <span className="text-xs text-default-500">
+                Total: {rowData?.grandTotal ?? "-"}
+              </span>
+            </div>
+          );
+
+        case "status":
+          return rowData?.status ? (
+            <Chip
+              size="sm"
+              variant="flat"
+              color={
+                rowData.status === "ACCEPTED"
+                  ? "success"
+                  : rowData.status === "REJECTED" ||
+                      rowData.status === "REJECTED_BY_ACCOUNTS"
+                    ? "danger"
+                    : rowData.status === "AGREEMENT_SENT_TO_VENDOR"
+                      ? "primary"
+                      : "default"
+              }
+            >
+              {rowData.status}
+            </Chip>
+          ) : (
+            "-"
+          );
+
+        case "attachments":
+          return (
+            <div className="flex flex-col gap-1 text-xs">
+              {getQuotationDocuments(rowData).length > 0 ? (
+                getQuotationDocuments(rowData).map((doc, index) => (
+                  <a
+                    key={doc.id || doc.fileUrl || index}
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-primary text-xs"
+                  >
+                    {doc.fileName || `Attachment ${index + 1}`}
+                    <ExternalLink size={12} />
+                  </a>
+                ))
+              ) : (
+                <span className="text-default-400">No Attachment</span>
+              )}
+
+              {rowData?.agreementFileUrl ? (
+                <a
+                  href={rowData.agreementFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-primary"
+                >
+                  Agreement PDF <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="text-default-400">Agreement PDF: -</span>
+              )}
+            </div>
+          );
+
+        case "actions":
+          return (
+            <Button
+              size="sm"
+              variant="light"
+              isIconOnly
+              onPress={() => handleView(rowData)}
+            >
+              <Eye size={16} />
+            </Button>
+          );
+
+        default:
+          return rowData?.[columnKey] || "-";
+      }
+    },
+    [handleView],
+  );
+
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-2">
@@ -3088,54 +3287,110 @@ const Quote = () => {
       <div className="flex flex-col gap-2">
         <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">Quote</h1>
 
-        <Table
-          isHeaderSticky
-          removeWrapper={false}
-          aria-label="Quotation table"
-          bottomContent={bottomContent}
-          bottomContentPlacement="outside"
-          topContent={topContent}
-          topContentPlacement="outside"
-          classNames={{
-            base: "gap-2.5",
-            wrapper:
-              "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
-            table: "w-full",
-            thead: "[&>tr]:first:rounded-none",
-            th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
-            td: "py-1.5 text-[12.5px]",
-          }}
+        <Tabs
+          aria-label="Quote views"
+          variant="underlined"
+          color="primary"
+          selectedKey={activeQuoteView}
+          onSelectionChange={(key) => setActiveQuoteView(String(key))}
         >
-          <TableHeader columns={headerColumns}>
-            {(column) => (
-              <TableColumn
-                key={column.uid}
-                align={column.uid === "actions" ? "center" : "start"}
-              >
-                {column.name}
-              </TableColumn>
-            )}
-          </TableHeader>
-
-          <TableBody
-            isLoading={loading}
-            emptyContent={loading ? "Loading..." : "No quotation found"}
-            items={paginatedItems}
-          >
-            {(item) => (
-              <TableRow
-                key={
-                  item?.id ||
-                  `${item?.rfqId || "rfq"}-${item?.rfqVendorId || "vendor"}`
-                }
-              >
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
+          <Tab key="vendor" title="Vendor Quotation">
+            <Table
+              isHeaderSticky
+              removeWrapper={false}
+              aria-label="Quotation table"
+              bottomContent={bottomContent}
+              bottomContentPlacement="outside"
+              topContent={topContent}
+              topContentPlacement="outside"
+              classNames={{
+                base: "gap-2.5",
+                wrapper:
+                  "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+                table: "w-full",
+                thead: "[&>tr]:first:rounded-none",
+                th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+                td: "py-1.5 text-[12.5px]",
+              }}
+            >
+              <TableHeader columns={headerColumns}>
+                {(column) => (
+                  <TableColumn
+                    key={column.uid}
+                    align={column.uid === "actions" ? "center" : "start"}
+                  >
+                    {column.name}
+                  </TableColumn>
                 )}
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              </TableHeader>
+
+              <TableBody
+                isLoading={loading}
+                emptyContent={loading ? "Loading..." : "No quotation found"}
+                items={paginatedItems}
+              >
+                {(item) => (
+                  <TableRow
+                    key={
+                      item?.id ||
+                      `${item?.rfqId || "rfq"}-${item?.rfqVendorId || "vendor"}`
+                    }
+                  >
+                    {(columnKey) => (
+                      <TableCell>{renderCell(item, columnKey)}</TableCell>
+                    )}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Tab>
+
+          <Tab key="all" title="All Quotations">
+            <Table
+              isHeaderSticky
+              removeWrapper={false}
+              aria-label="All quotations table"
+              classNames={{
+                base: "gap-2.5",
+                wrapper:
+                  "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
+                table: "w-full",
+                thead: "[&>tr]:first:rounded-none",
+                th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+                td: "py-1.5 text-[12.5px]",
+              }}
+            >
+              <TableHeader columns={allQuotationsColumns}>
+                {(column) => (
+                  <TableColumn
+                    key={column.uid}
+                    align={column.uid === "actions" ? "center" : "start"}
+                  >
+                    {column.name}
+                  </TableColumn>
+                )}
+              </TableHeader>
+
+              <TableBody
+                isLoading={allQuotationsLoading}
+                emptyContent={
+                  allQuotationsLoading ? "Loading..." : "No quotations found"
+                }
+                items={allQuotations}
+              >
+                {(item) => (
+                  <TableRow key={item?.id}>
+                    {(columnKey) => (
+                      <TableCell>
+                        {renderAllQuotationsCell(item, columnKey)}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Tab>
+        </Tabs>
       </div>
 
       <Modal

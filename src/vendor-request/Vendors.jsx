@@ -28,7 +28,19 @@ import {
 } from "@heroui/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { EllipsisVertical, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  Ban,
+  Calendar,
+  EllipsisVertical,
+  Eye,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useParams } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Select as AntSelect } from "antd";
@@ -38,13 +50,14 @@ import {
   getAllStatesByCountryName,
 } from "../toolkit/slices/commonSlice";
 import {
+  createRestrictionForVendor,
   createVendor,
   deleteVendor,
   getAllVendors,
   updateVendor,
 } from "../toolkit/slices/vendorsSlice";
 import { allowOnlyNumbers, formatGSTInput, formatPANInput } from "../common";
-
+import FileUploader from "../components/FileUploader.jsx";
 const columns = [
   { name: "ID", uid: "id", sortable: true },
   // { name: "VENDOR CODE", uid: "vendorCode", sortable: true },
@@ -62,6 +75,20 @@ const gstRegistrationTypeOptions = [
   { label: "Unregistered", value: "UNREGISTERED" },
   { label: "SEZ", value: "SEZ" },
   { label: "International", value: "INTERNATIONAL" },
+];
+
+const restrictionTypeOptions = [
+  { label: "Suspension", value: "SUSPENSION" },
+  { label: "Blacklisted", value: "BLACKLISTED" },
+];
+
+const vendorStatusOptions = [
+  { label: "Prospective", value: "PROSPECTIVE" },
+  { label: "Onboarding", value: "ONBOARDING" },
+  { label: "Active", value: "ACTIVE" },
+  { label: "Inactive", value: "INACTIVE" },
+  { label: "Blacklisted", value: "BLACKLISTED" },
+  { label: "Suspended", value: "SUSPENDED" },
 ];
 
 const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
@@ -137,6 +164,14 @@ const initialVendorForm = {
   city: "",
 };
 
+const initialRestrictionForm = {
+  restrictionType: "",
+  reason: "",
+  restrictionStartDate: "",
+  restrictionEndDate: "",
+  attachmentUrl: "",
+};
+
 const toNumberOrNull = (value) => {
   if (
     value === undefined ||
@@ -169,12 +204,18 @@ const Vendors = () => {
 
   const vendorModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const restrictModal = useDisclosure();
+  const viewModal = useDisclosure();
 
   const vendorList = useSelector((state) => state.vendors.vendorList);
   const loading = useSelector((state) => state.vendors.loading);
   const createLoading = useSelector((state) => state.vendors.createLoading);
   const updateLoading = useSelector((state) => state.vendors.updateLoading);
   const deleteLoading = useSelector((state) => state.vendors.deleteLoading);
+  // NOTE: add `restrictLoading` to the vendors slice's initial state and
+  // handle pending/fulfilled/rejected of createRestrictionForVendor there,
+  // the same way createLoading/updateLoading/deleteLoading are handled.
+  const restrictLoading = useSelector((state) => state.vendors.restrictLoading);
 
   const countryList = useSelector((state) => state.common.countriesList || []);
   const statesList = useSelector((state) => state.common.statesList || []);
@@ -185,10 +226,14 @@ const Vendors = () => {
     : vendorList?.content || [];
 
   const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [modalMode, setModalMode] = useState("create");
   const [vendorForm, setVendorForm] = useState(initialVendorForm);
+  const [restrictionForm, setRestrictionForm] = useState(
+    initialRestrictionForm,
+  );
 
   const [sortDescriptor, setSortDescriptor] = useState({
     column: "id",
@@ -200,6 +245,8 @@ const Vendors = () => {
     size: 50,
   });
 
+  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
+
   const auditUserId = toNumberOrNull(userId);
 
   const refetchVendors = useCallback(
@@ -210,10 +257,11 @@ const Vendors = () => {
           page: pagination.page,
           size: pagination.size,
           search: search,
+          status: statusFilter !== "ALL" ? statusFilter : undefined,
         }),
       );
     },
-    [dispatch, pagination.page, pagination.size],
+    [dispatch, pagination.page, pagination.size, statusFilter],
   );
 
   useEffect(() => {
@@ -228,6 +276,11 @@ const Vendors = () => {
     setVendorForm(initialVendorForm);
     setSelectedVendor(null);
     setModalMode("create");
+  };
+
+  const resetRestrictionForm = () => {
+    setRestrictionForm(initialRestrictionForm);
+    setIsAttachmentUploading(false);
   };
 
   const handleInputChange = (field, value) => {
@@ -256,6 +309,23 @@ const Vendors = () => {
       }
 
       return updatedForm;
+    });
+  };
+
+  const handleRestrictionInputChange = (field, value) => {
+    setRestrictionForm((prev) => {
+      const updated = {
+        ...prev,
+        [field]: value,
+      };
+
+      // restrictionStartDate / restrictionEndDate only apply to SUSPENSION
+      if (field === "restrictionType" && value !== "SUSPENSION") {
+        updated.restrictionStartDate = "";
+        updated.restrictionEndDate = "";
+      }
+
+      return updated;
     });
   };
 
@@ -325,6 +395,17 @@ const Vendors = () => {
   const openDeleteModal = (vendor) => {
     setSelectedVendor(vendor);
     deleteModal.onOpen();
+  };
+
+  const openRestrictModal = (vendor) => {
+    setSelectedVendor(vendor);
+    resetRestrictionForm();
+    restrictModal.onOpen();
+  };
+
+  const openViewModal = (vendor) => {
+    setSelectedVendor(vendor);
+    viewModal.onOpen();
   };
 
   const validateVendorForm = () => {
@@ -462,6 +543,75 @@ const Vendors = () => {
     return true;
   };
 
+  const validateRestrictionForm = () => {
+    if (!auditUserId) {
+      addToast({
+        title: "User ID is missing",
+        description: "Please check route params. userId cannot be undefined.",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!toNumberOrNull(selectedVendor?.id)) {
+      addToast({
+        title: "Vendor ID is missing",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!restrictionForm.restrictionType) {
+      addToast({
+        title: "Restriction type is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!restrictionForm.reason.trim()) {
+      addToast({
+        title: "Reason is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (restrictionForm.restrictionType === "SUSPENSION") {
+      if (!restrictionForm.restrictionStartDate) {
+        addToast({
+          title: "Restriction start date is required",
+          description: "Start date is mandatory for suspension.",
+          color: "danger",
+        });
+        return false;
+      }
+
+      if (!restrictionForm.restrictionEndDate) {
+        addToast({
+          title: "Restriction end date is required",
+          description: "End date is mandatory for suspension.",
+          color: "danger",
+        });
+        return false;
+      }
+
+      if (
+        new Date(restrictionForm.restrictionEndDate) <
+        new Date(restrictionForm.restrictionStartDate)
+      ) {
+        addToast({
+          title: "Invalid restriction period",
+          description: "End date cannot be before start date.",
+          color: "danger",
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const buildVendorPayload = () => {
     return {
       name: vendorForm.name.trim(),
@@ -486,6 +636,23 @@ const Vendors = () => {
       country: vendorForm.country,
       state: vendorForm.state,
       city: vendorForm.city,
+    };
+  };
+
+  const buildRestrictionPayload = (vendorId) => {
+    const isSuspension = restrictionForm.restrictionType === "SUSPENSION";
+
+    return {
+      vendorId,
+      restrictionType: restrictionForm.restrictionType,
+      reason: restrictionForm.reason.trim(),
+      restrictionStartDate: isSuspension
+        ? restrictionForm.restrictionStartDate
+        : null,
+      restrictionEndDate: isSuspension
+        ? restrictionForm.restrictionEndDate
+        : null,
+      attachmentUrl: restrictionForm.attachmentUrl.trim() || null,
     };
   };
 
@@ -601,6 +768,48 @@ const Vendors = () => {
     }
   };
 
+  const handleSubmitRestriction = async (e) => {
+    e.preventDefault();
+
+    if (!validateRestrictionForm()) return;
+
+    const vendorId = toNumberOrNull(selectedVendor?.id);
+    const payload = buildRestrictionPayload(vendorId);
+
+    try {
+      await dispatch(
+        createRestrictionForVendor({
+          id: vendorId,
+          userId: auditUserId,
+          data: payload,
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "SUCCESS",
+        description:
+          restrictionForm.restrictionType === "SUSPENSION"
+            ? "Vendor suspension Initiated"
+            : "Vendor blacklist Initiated",
+        color: "success",
+      });
+
+      resetRestrictionForm();
+      setSelectedVendor(null);
+      restrictModal.onClose();
+      refetchVendors();
+    } catch (error) {
+      addToast({
+        title: "Failed to restrict vendor",
+        description: getErrorMessage(
+          error,
+          "Please try again after some time.",
+        ),
+        color: "danger",
+      });
+    }
+  };
+
   const filteredItems = useMemo(() => {
     const search = filterValue.trim().toLowerCase();
 
@@ -654,6 +863,15 @@ const Vendors = () => {
       page: 1,
     }));
     refetchVendors();
+  }, []);
+
+  const onStatusFilterChange = useCallback((keys) => {
+    const selected = Array.from(keys)[0] || "ALL";
+    setStatusFilter(selected);
+    setPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
   }, []);
 
   const onClear = useCallback(() => {
@@ -834,7 +1052,9 @@ const Vendors = () => {
       //     </Chip>
       //   );
 
-      case "actions":
+      case "actions": {
+        const isActive = rowData?.status?.toUpperCase() === "ACTIVE";
+
         return (
           <div className="flex items-center justify-center gap-2">
             <Dropdown>
@@ -845,7 +1065,15 @@ const Vendors = () => {
               </DropdownTrigger>
 
               <DropdownMenu aria-label="Vendor actions">
-                {rowData?.status?.toUpperCase() !== "ACTIVE" ? (
+                <DropdownItem
+                  key="view"
+                  startContent={<Eye className="h-4 w-4" />}
+                  onPress={() => openViewModal(rowData)}
+                >
+                  View Vendor
+                </DropdownItem>
+
+                {!isActive ? (
                   <DropdownItem
                     key="edit"
                     startContent={<Pencil className="h-4 w-4" />}
@@ -855,7 +1083,19 @@ const Vendors = () => {
                   </DropdownItem>
                 ) : null}
 
-                {rowData?.status?.toUpperCase() !== "ACTIVE" ? (
+                {isActive ? (
+                  <DropdownItem
+                    key="restrict"
+                    className="text-warning"
+                    color="warning"
+                    startContent={<Ban className="h-4 w-4" />}
+                    onPress={() => openRestrictModal(rowData)}
+                  >
+                    Restrict Vendor
+                  </DropdownItem>
+                ) : null}
+
+                {!isActive ? (
                   <DropdownItem
                     key="delete"
                     className="text-danger"
@@ -870,6 +1110,7 @@ const Vendors = () => {
             </Dropdown>
           </div>
         );
+      }
 
       default:
         return rowData?.[columnKey] || "-";
@@ -893,6 +1134,20 @@ const Vendors = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
+            <Select
+              size="sm"
+              className="w-full sm:w-[180px]"
+              classNames={{ trigger: "h-8 min-h-8" }}
+              label="Status"
+              placeholder="Filter by status"
+              selectedKeys={new Set([statusFilter])}
+              onSelectionChange={onStatusFilterChange}
+            >
+              <SelectItem key="ALL">All</SelectItem>
+              {vendorStatusOptions.map((option) => (
+                <SelectItem key={option.value}>{option.label}</SelectItem>
+              ))}
+            </Select>
             <Button
               size="sm"
               color="primary"
@@ -931,7 +1186,9 @@ const Vendors = () => {
     onClear,
     onRowsPerPageChange,
     onSearchChange,
+    onStatusFilterChange,
     pagination.size,
+    statusFilter,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -1321,6 +1578,411 @@ const Vendors = () => {
                   onPress={handleDeleteVendor}
                 >
                   Delete
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={restrictModal.isOpen}
+        onOpenChange={restrictModal.onOpenChange}
+        size="lg"
+        scrollBehavior="inside"
+        isDismissable={false}
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 border-b border-default-200">
+                <span className="text-xl font-semibold">Restrict Vendor</span>
+                <span className="text-sm font-normal text-default-500">
+                  Suspend or blacklist{" "}
+                  <span className="font-medium text-foreground">
+                    {selectedVendor?.name || "this vendor"}
+                  </span>
+                  .
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="py-5">
+                <Form className="w-full" onSubmit={handleSubmitRestriction}>
+                  <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                    <Select
+                      isRequired
+                      className="md:col-span-2"
+                      label="Restriction Type"
+                      name="restrictionType"
+                      placeholder="Select restriction type"
+                      selectedKeys={
+                        restrictionForm.restrictionType
+                          ? new Set([restrictionForm.restrictionType])
+                          : new Set([])
+                      }
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] || "";
+
+                        handleRestrictionInputChange(
+                          "restrictionType",
+                          selected,
+                        );
+                      }}
+                    >
+                      <SelectItem key="SUSPENSION">Suspension</SelectItem>
+                      <SelectItem key="BLACKLIST">Blacklisted</SelectItem>
+                    </Select>
+
+                    {restrictionForm.restrictionType === "SUSPENSION" ? (
+                      <>
+                        <Input
+                          isRequired
+                          type="date"
+                          label="Restriction Start Date"
+                          name="restrictionStartDate"
+                          value={restrictionForm.restrictionStartDate}
+                          onValueChange={(value) =>
+                            handleRestrictionInputChange(
+                              "restrictionStartDate",
+                              value,
+                            )
+                          }
+                        />
+
+                        <Input
+                          isRequired
+                          type="date"
+                          label="Restriction End Date"
+                          name="restrictionEndDate"
+                          value={restrictionForm.restrictionEndDate}
+                          onValueChange={(value) =>
+                            handleRestrictionInputChange(
+                              "restrictionEndDate",
+                              value,
+                            )
+                          }
+                        />
+                      </>
+                    ) : null}
+
+                    <Textarea
+                      isRequired
+                      className="md:col-span-2"
+                      label="Reason"
+                      name="reason"
+                      placeholder="Enter reason for restriction"
+                      minRows={3}
+                      value={restrictionForm.reason}
+                      onValueChange={(value) =>
+                        handleRestrictionInputChange("reason", value)
+                      }
+                    />
+
+                    <div className="md:col-span-2">
+                      <FileUploader
+                        label="Attachment"
+                        placeholder="Drag & drop supporting document here, paste, or choose file"
+                        value={restrictionForm.attachmentUrl}
+                        onChange={(uploadedUrl) =>
+                          handleRestrictionInputChange(
+                            "attachmentUrl",
+                            uploadedUrl,
+                          )
+                        }
+                        onUploadingChange={setIsAttachmentUploading}
+                        uploadingType="single"
+                      />
+                    </div>
+                  </div>
+
+                  <ModalFooter className="mt-4 flex w-full justify-end gap-2 border-t border-default-200 px-0 pt-4">
+                    <Button
+                      variant="flat"
+                      onPress={() => {
+                        resetRestrictionForm();
+                        setSelectedVendor(null);
+                        modalClose();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      color="warning"
+                      type="submit"
+                      isLoading={restrictLoading === "pending"}
+                      isDisabled={isAttachmentUploading}
+                    >
+                      {restrictionForm.restrictionType === "BLACKLISTED"
+                        ? "Blacklist Vendor"
+                        : "Restrict Vendor"}
+                    </Button>
+                  </ModalFooter>
+                </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        size="2xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(modalClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-0 border-b border-default-200 bg-gradient-to-r from-default-50 to-transparent px-6 py-5">
+                <div className="flex w-full items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-lg font-bold text-primary-600">
+                      {(selectedVendor?.name || "-")
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((word) => word[0]?.toUpperCase())
+                        .join("")}
+                    </div>
+
+                    <div>
+                      <p className="text-lg font-bold leading-tight text-foreground">
+                        {selectedVendor?.name || "Vendor Details"}
+                      </p>
+                      <p className="text-xs font-medium text-default-400">
+                        Vendor ID&nbsp;
+                        <span className="font-semibold text-default-600">
+                          #{selectedVendor?.id ?? "-"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <Chip
+                    size="sm"
+                    radius="sm"
+                    variant="solid"
+                    color={
+                      selectedVendor?.status?.toUpperCase() === "ACTIVE"
+                        ? "success"
+                        : selectedVendor?.status?.toUpperCase() === "ONBOARDING"
+                          ? "warning"
+                          : "danger"
+                    }
+                    className="font-semibold tracking-wide"
+                  >
+                    {selectedVendor?.status || "-"}
+                  </Chip>
+                </div>
+              </ModalHeader>
+
+              <ModalBody className="gap-4 bg-default-50/40 px-6 py-5">
+                {/* Contact */}
+                <div className="rounded-xl border border-default-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100">
+                      <Mail className="h-3.5 w-3.5 text-blue-600" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-default-500">
+                      Contact Information
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        Email Address
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">
+                        {selectedVendor?.email || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        Mobile Number
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">
+                        {selectedVendor?.mobile || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Details */}
+                <div className="rounded-xl border border-default-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100">
+                      <span className="text-xs font-bold text-purple-600">
+                        ₹
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-default-500">
+                      Tax &amp; Registration Details
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        GST Registration Type
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">
+                        {selectedVendor?.gstRegistrationType || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        GST Number
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold tracking-wide text-foreground">
+                        {selectedVendor?.gstNumber || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        PAN Number
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold tracking-wide text-foreground">
+                        {selectedVendor?.panNumber || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="rounded-xl border border-default-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100">
+                      <MapPin className="h-3.5 w-3.5 text-orange-600" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-default-500">
+                      Registered Address
+                    </p>
+                  </div>
+
+                  <p className="text-sm font-semibold text-foreground">
+                    {selectedVendor?.fullAddress || "-"}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-default-500">
+                    {[
+                      selectedVendor?.city,
+                      selectedVendor?.state,
+                      selectedVendor?.country,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                  </p>
+                </div>
+
+                {/* Mapped Services */}
+                <div className="rounded-xl border border-default-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100">
+                        <span className="text-xs font-bold text-emerald-600">
+                          {Array.isArray(selectedVendor?.mappedProducts)
+                            ? selectedVendor.mappedProducts.length
+                            : 0}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-default-500">
+                        Mapped Services
+                      </p>
+                    </div>
+                  </div>
+
+                  {Array.isArray(selectedVendor?.mappedProducts) &&
+                  selectedVendor.mappedProducts.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {selectedVendor.mappedProducts.map((product) => {
+                        const isLive =
+                          product?.mappingActive && product?.productActive;
+
+                        return (
+                          <div
+                            key={product?.productId}
+                            className="flex items-center justify-between rounded-lg border border-default-100 bg-default-50 px-3 py-2"
+                          >
+                            <span className="text-sm font-semibold text-foreground">
+                              {product?.productName || "-"}
+                            </span>
+                            <Chip
+                              size="sm"
+                              radius="sm"
+                              variant="flat"
+                              color={isLive ? "success" : "default"}
+                              className="font-semibold"
+                            >
+                              {isLive ? "Active" : "Inactive"}
+                            </Chip>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs font-medium text-default-400">
+                      No services mapped
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                {selectedVendor?.description ? (
+                  <div className="rounded-xl border border-default-200 bg-white p-4 shadow-sm">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-default-500">
+                      Description
+                    </p>
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {selectedVendor.description}
+                    </p>
+                  </div>
+                ) : null}
+
+                {/* Audit trail */}
+                <div className="grid grid-cols-1 gap-3 rounded-xl border border-default-200 bg-default-100/60 p-4 sm:grid-cols-2">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="mt-0.5 h-4 w-4 text-default-400" />
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        Created On
+                      </p>
+                      <p className="mt-0.5 text-xs font-semibold text-foreground">
+                        {selectedVendor?.createdDate
+                          ? new Date(
+                              selectedVendor.createdDate,
+                            ).toLocaleString()
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Calendar className="mt-0.5 h-4 w-4 text-default-400" />
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-default-400">
+                        Last Updated
+                      </p>
+                      <p className="mt-0.5 text-xs font-semibold text-foreground">
+                        {selectedVendor?.updatedDate
+                          ? new Date(
+                              selectedVendor.updatedDate,
+                            ).toLocaleString()
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter className="border-t border-default-200 bg-white px-6 py-4">
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setSelectedVendor(null);
+                    modalClose();
+                  }}
+                >
+                  Close
                 </Button>
               </ModalFooter>
             </>

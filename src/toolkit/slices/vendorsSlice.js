@@ -486,8 +486,8 @@ export const createQuotation = createAsyncThunk(
   },
 );
 
-export const getAllQuotations = createAsyncThunk(
-  "operation/getAllQuotations",
+export const getAllQuotationsByRFQId = createAsyncThunk(
+  "operation/getAllQuotationsByRFQId",
   async (rfqId, { rejectWithValue }) => {
     try {
       const response = await api.get(
