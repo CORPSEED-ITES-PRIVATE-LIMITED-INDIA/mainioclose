@@ -78,6 +78,8 @@ export const columns = [
   { name: "SERVICE NAME", uid: "name" },
   { name: "COMPANY NAME", uid: "companyName" },
   { name: "SALES PERSON", uid: "salesPersonName" },
+  { name: "PREVIOUS ASIGNEE", uid: "previousAsignee" },
+  { name: "CURRENT ASIGNEE", uid: "currentAsignee" },
   { name: "UNBILL NO.", uid: "unbilledNumber" },
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "DATE", uid: "date" },
@@ -99,6 +101,8 @@ const INITIAL_VISIBLE_COLUMNS = [
   "name",
   "companyName",
   "salesPersonName",
+  "previousAsignee",
+  "currentAsignee",
   "unbilledNumber",
   "estimateNumber",
   "date",
@@ -388,6 +392,18 @@ const Projects = () => {
           );
         case "salesPersonName":
           return <p className="text-[12.5px]">{rowData?.salesPersonName}</p>;
+        case "previousAsignee":
+          return (
+            <p className="text-[12.5px]">
+              {rowData?.lastCompletedMilestoneUserName || "-"}
+            </p>
+          );
+        case "currentAsignee":
+          return (
+            <p className="text-[12.5px]">
+              {rowData?.currentAssignedUserName || "-"}
+            </p>
+          );
         case "contactName":
           return <p className="text-[12.5px]">{rowData?.contactName || "-"}</p>;
         case "date":
