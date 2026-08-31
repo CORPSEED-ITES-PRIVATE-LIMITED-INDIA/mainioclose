@@ -900,6 +900,128 @@ export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
   },
 );
 
+export const getAllTechnicalResearchCases = createAsyncThunk(
+  "getAllTechnicalResearchCases",
+  async (
+    { userId, page = 1, size = 10, status, priority, search } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId: Number(userId),
+        page: page - 1,
+        size,
+      };
+
+      if (
+        status !== undefined &&
+        status !== null &&
+        status !== "" &&
+        status !== "--" &&
+        status !== "ALL"
+      ) {
+        params.status = status;
+      }
+
+      if (
+        priority !== undefined &&
+        priority !== null &&
+        priority !== "" &&
+        priority !== "--" &&
+        priority !== "ALL"
+      ) {
+        params.priority = priority;
+      }
+
+      if (search !== undefined && search !== null && search !== "") {
+        params.search = search;
+      }
+
+      const response = await api.get(
+        "/operationService/api/technical-research-cases",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to fetch technical research cases",
+      );
+    }
+  },
+);
+
+export const assignTechnicalResearchCase = createAsyncThunk(
+  "assignTechnicalResearchCase",
+  async (
+    { caseId, assigneeUserId, assignedByUserId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/technical-research-cases/${caseId}/assignments`,
+        null,
+        {
+          params: {
+            assigneeUserId: Number(assigneeUserId),
+            assignedByUserId: Number(assignedByUserId),
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to assign technical research case",
+      );
+    }
+  },
+);
+
+export const getTechnicalResearchCasesByLead = createAsyncThunk(
+  "getTechnicalResearchCasesByLead",
+  async ({ leadId, page = 1, size = 10 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/technical-research-cases/lead/${leadId}`,
+        { params: { page: page - 1, size } },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to fetch technical research cases for lead",
+      );
+    }
+  },
+);
+
+export const createTechnicalResearchCase = createAsyncThunk(
+  "createTechnicalResearchCase",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/technical-research-cases",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to raise technical research case",
+      );
+    }
+  },
+);
+
 export const updateLegalRequestStatus = createAsyncThunk(
   "updateLegalRequestStatus",
   async ({ id, data }, { rejectWithValue }) => {
@@ -1882,6 +2004,10 @@ export const OperationSlice = createSlice({
     expenseList: [],
     legalRequestList: [],
     legalRequestCount: 0,
+    technicalResearchList: [],
+    technicalResearchCount: 0,
+    technicalResearchCasesByLead: [],
+    technicalResearchCasesByLeadCount: 0,
     servicePaymentTerm: [],
     procurementOrderByPurchaseIdList: [],
     procurementOrderByPurchaseIdLoading: false,
@@ -2211,6 +2337,39 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllLegalSupportRequestsForFilter.rejected, (state) => {
       state.loading = "rejected";
       state.legalRequestList = [];
+    });
+
+    builder.addCase(getAllTechnicalResearchCases.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllTechnicalResearchCases.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.technicalResearchList = action.payload?.content || [];
+        state.technicalResearchCount = action.payload?.totalElements || 0;
+      },
+    );
+    builder.addCase(getAllTechnicalResearchCases.rejected, (state) => {
+      state.loading = "rejected";
+      state.technicalResearchList = [];
+    });
+
+    builder.addCase(getTechnicalResearchCasesByLead.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getTechnicalResearchCasesByLead.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.technicalResearchCasesByLead = action.payload?.content || [];
+        state.technicalResearchCasesByLeadCount =
+          action.payload?.totalElements || 0;
+      },
+    );
+    builder.addCase(getTechnicalResearchCasesByLead.rejected, (state) => {
+      state.loading = "rejected";
+      state.technicalResearchCasesByLead = [];
     });
 
     builder.addCase(getServicePaymentTermBasedOnMilestone.pending, (state) => {

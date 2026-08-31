@@ -26,6 +26,9 @@ const ManagerApprovals = lazy(
   () => import("../operation/approval/ManagerApprovals"),
 );
 const Expenses = lazy(() => import("../operation/expenses/Expenses"));
+const TechnicalResearch = lazy(
+  () => import("../operation/technical/TechnicalResearch"),
+);
 
 const OperationModuleRouting = () => {
   return (
@@ -54,6 +57,7 @@ const OperationModuleRouting = () => {
         element={<ManagerOnHoldApproval />}
       />
       <Route path="operation/expenses" element={<Expenses />} />
+      <Route path="operation/research" element={<TechnicalResearch />} />
       <Route path="operation/settings" element={<OperationsSettings />}>
         <Route index element={<Navigate to="userMap" replace />} />
         <Route path="userMap" element={<UserMapWithProduct />} />

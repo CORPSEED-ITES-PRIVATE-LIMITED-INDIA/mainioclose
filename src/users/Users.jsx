@@ -28,7 +28,13 @@ import {
   useDisclosure,
   User,
 } from "@heroui/react";
-import { Dot, EllipsisVertical, Search, User2 } from "lucide-react";
+import {
+  ChevronDown,
+  Dot,
+  EllipsisVertical,
+  Search,
+  User2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -422,24 +428,31 @@ const Users = () => {
               Deactive users list
             </Button>
 
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  size="sm"
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 

@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { EllipsisVertical, Phone, Search } from "lucide-react";
+import { ChevronDown, EllipsisVertical, Phone, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -377,24 +377,31 @@ const UserManagerApproval = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
-            <div className="w-[160px]">
-              <NewSelect
-                size="sm"
-                isSearchable={false}
-                data={columns}
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
                 selectionMode="multiple"
-                labelKey="name"
-                valueKey="uid"
-                label="Columns"
-                placeholder="Columns"
-                value={Array.from(visibleColumns)}
-                onChange={(values) => {
-                  if (values.length > 0) {
-                    setVisibleColumns(new Set(values));
-                  }
-                }}
-              />
-            </div>
+                onSelectionChange={setVisibleColumns}
+              >
+                {columns?.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {column.name}
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
           </div>
         </div>
 
@@ -419,7 +426,14 @@ const UserManagerApproval = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange, filteration?.size]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    filteration?.size,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (
