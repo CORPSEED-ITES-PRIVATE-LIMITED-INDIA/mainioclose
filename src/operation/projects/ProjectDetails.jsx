@@ -59,6 +59,9 @@ import {
   sendBackToPreviousMilestone,
   createProjectReopenRequest,
   getProjectMilestoneAssignmentOptions,
+  getProjectDirectories,
+  createProjectDirectory,
+  uploadProjectDirectoryDocuments,
 } from "../../toolkit/slices/operationSlice";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -88,6 +91,11 @@ import {
   UserCog,
   User2,
   X,
+  FolderOpen,
+  FolderPlus,
+  FileUp,
+  FileText,
+  Download,
 } from "lucide-react";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
@@ -972,6 +980,7 @@ const ProjectDetails = () => {
   const vendorDrawer = useDisclosure();
   const activityDrawer = useDisclosure();
   const reopenModal = useDisclosure();
+  const directoriesDrawer = useDisclosure();
 
   const detailedData = useSelector(
     (state) => state.operation.operationProjectDetail,
@@ -1025,6 +1034,16 @@ const ProjectDetails = () => {
 
   const vendorDetail = useSelector(
     (state) => state.vendors.vendorDetailInProject,
+  );
+
+  const projectDirectories = useSelector(
+    (state) => state.operation.projectDirectories,
+  );
+  const projectDirectoriesLoading = useSelector(
+    (state) => state.operation.projectDirectoriesLoading,
+  );
+  const createDirectoryLoading = useSelector(
+    (state) => state.operation.createDirectoryLoading,
   );
 
   const eligibleVendors = vendorDetail?.eligibleVendors || [];
@@ -1173,6 +1192,9 @@ const ProjectDetails = () => {
   });
 
   const [isPoModalOpen, setIsPoModalOpen] = useState(false);
+
+  const [newDirectoryName, setNewDirectoryName] = useState("");
+  const [directoryUploadingId, setDirectoryUploadingId] = useState(null);
 
   const [responsibleMilestoneOptions, setResponsibleMilestoneOptions] =
     useState([]);
@@ -1325,10 +1347,7 @@ const ProjectDetails = () => {
     return String(value).trim();
   };
 
-  const handleSelectedReworkAttachmentChange = (
-    requiredDocumentId,
-    uploadedFiles,
-  ) => {
+  const handleSelectedReworkAttachmentChange = (uploadId, uploadedFiles) => {
     const files = Array.isArray(uploadedFiles)
       ? uploadedFiles
       : uploadedFiles
@@ -1343,7 +1362,7 @@ const ProjectDetails = () => {
       ...prev,
       changedById: userId,
       reworkDocuments: (prev.reworkDocuments || []).map((doc) =>
-        Number(doc.requiredDocumentId) === Number(requiredDocumentId)
+        Number(doc.uploadId) === Number(uploadId)
           ? {
               ...doc,
               attachmentFiles: files,
@@ -1354,10 +1373,7 @@ const ProjectDetails = () => {
     }));
   };
 
-  const handleSelectedReworkAttachmentSuccess = (
-    requiredDocumentId,
-    fileMeta,
-  ) => {
+  const handleSelectedReworkAttachmentSuccess = (uploadId, fileMeta) => {
     const attachment = normalizeReworkAttachment(fileMeta);
     if (!attachment) return;
 
@@ -1365,7 +1381,7 @@ const ProjectDetails = () => {
       ...prev,
       changedById: userId,
       reworkDocuments: (prev.reworkDocuments || []).map((doc) => {
-        if (Number(doc.requiredDocumentId) !== Number(requiredDocumentId)) {
+        if (Number(doc.uploadId) !== Number(uploadId)) {
           return doc;
         }
 
@@ -1450,7 +1466,7 @@ const ProjectDetails = () => {
   const isReworkSelected = statusObj?.newStatusName === "REWORK";
 
   const getRequiredDocId = (doc) => {
-    return doc?.documentId || doc?.requiredDocumentId || doc?.id;
+    return doc?.uploadId ?? doc?.documentId ?? doc?.requiredDocumentId ?? doc?.id;
   };
 
   const getRequiredDocName = (doc) => {
@@ -1470,7 +1486,7 @@ const ProjectDetails = () => {
     setStatusObj((prev) => {
       const oldReasonMap = new Map(
         (prev.reworkDocuments || []).map((item) => [
-          String(item.requiredDocumentId),
+          String(item.uploadId),
           item.reason || "",
         ]),
       );
@@ -1484,7 +1500,7 @@ const ProjectDetails = () => {
           if (!doc) return null;
 
           return {
-            requiredDocumentId: Number(docId),
+            uploadId: Number(docId),
             documentName: getRequiredDocName(doc),
             reason: oldReasonMap.get(String(docId)) || "",
           };
@@ -1499,12 +1515,12 @@ const ProjectDetails = () => {
     });
   };
 
-  const handleReworkDocReasonChange = (requiredDocumentId, reason) => {
+  const handleReworkDocReasonChange = (uploadId, reason) => {
     setStatusObj((prev) => ({
       ...prev,
       changedById: userId,
       reworkDocuments: (prev.reworkDocuments || []).map((doc) =>
-        Number(doc.requiredDocumentId) === Number(requiredDocumentId)
+        Number(doc.uploadId) === Number(uploadId)
           ? { ...doc, reason }
           : doc,
       ),
@@ -1758,7 +1774,7 @@ const ProjectDetails = () => {
         changedById: Number(userId),
         reason: statusObj.statusReason.trim(),
         rejectedDocumentIds: selectedReworkDocs.map((doc) =>
-          Number(doc.requiredDocumentId),
+          Number(doc.uploadId),
         ),
       };
 
@@ -2992,6 +3008,109 @@ const ProjectDetails = () => {
     return extension;
   };
 
+  // Procurement directories & certificates -------------------------------
+
+  const fetchProjectDirectories = () => {
+    dispatch(getProjectDirectories({ projectId }));
+  };
+
+  const handleOpenDirectoriesDrawer = () => {
+    directoriesDrawer.onOpen();
+    fetchProjectDirectories();
+  };
+
+  const handleCreateDirectory = () => {
+    const directoryName = newDirectoryName.trim();
+
+    if (!directoryName) {
+      addToast({
+        title: "REQUIRED",
+        description: "Please enter a directory name.",
+        color: "danger",
+      });
+      return;
+    }
+
+    dispatch(createProjectDirectory({ projectId, directoryName, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Directory created successfully!",
+            color: "success",
+          });
+          setNewDirectoryName("");
+          fetchProjectDirectories();
+        } else {
+          addToast({
+            title: "ERROR",
+            description: resp?.payload || "Failed to create directory.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong!",
+          color: "danger",
+        });
+      });
+  };
+
+  const handleDirectoryDocumentUploadSuccess = (directoryId, fileMeta) => {
+    const fileUrl = fileMeta?.filePath || "";
+    const fileName = fileMeta?.fileName || "";
+
+    if (!fileUrl) return;
+
+    const fileSizeKb = fileMeta?.fileSize
+      ? Math.ceil(Number(fileMeta.fileSize) / 1024)
+      : 0;
+    const fileFormat = getFileFormatFromMeta(fileMeta);
+
+    setDirectoryUploadingId(directoryId);
+
+    dispatch(
+      uploadProjectDirectoryDocuments({
+        projectId,
+        directoryId,
+        userId,
+        data: {
+          fileName,
+          fileUrl,
+          fileSizeKb,
+          fileFormat,
+          remarks: "",
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Document uploaded successfully!",
+            color: "success",
+          });
+          fetchProjectDirectories();
+        } else {
+          addToast({
+            title: "ERROR",
+            description: resp?.payload || "Failed to upload document.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong!",
+          color: "danger",
+        });
+      })
+      .finally(() => setDirectoryUploadingId(null));
+  };
+
   const isSameRequiredDocument = (requiredDoc, companyDoc) => {
     const requiredDocumentId =
       requiredDoc?.documentId ||
@@ -3483,6 +3602,20 @@ const ProjectDetails = () => {
                     }}
                   >
                     Purchase Orders
+                  </Button>
+                )}
+
+              {isProcurementMilestone &&
+                (department === "Procurement" || adminRole) && (
+                  <Button
+                    size="sm"
+                    radius="md"
+                    variant="flat"
+                    className="font-medium"
+                    startContent={<FolderOpen className="h-3.5 w-3.5" />}
+                    onPress={handleOpenDirectoriesDrawer}
+                  >
+                    Directories
                   </Button>
                 )}
 
@@ -4753,7 +4886,7 @@ const ProjectDetails = () => {
                       selectedKeys={
                         new Set(
                           (statusObj.reworkDocuments || []).map((doc) =>
-                            String(doc.requiredDocumentId),
+                            String(doc.uploadId),
                           ),
                         )
                       }
@@ -4776,7 +4909,7 @@ const ProjectDetails = () => {
                       <div className="space-y-3">
                         {(statusObj.reworkDocuments || []).map((doc) => (
                           <div
-                            key={doc.requiredDocumentId}
+                            key={doc.uploadId}
                             className="rounded-lg border border-default-200 bg-content1 p-3"
                           >
                             <p className="mb-2 text-sm font-medium text-foreground">
@@ -4790,7 +4923,7 @@ const ProjectDetails = () => {
                               value={doc.reason}
                               onChange={(e) =>
                                 handleReworkDocReasonChange(
-                                  doc.requiredDocumentId,
+                                  doc.uploadId,
                                   e.target.value,
                                 )
                               }
@@ -4804,13 +4937,13 @@ const ProjectDetails = () => {
                                 value={doc.attachmentFiles || []}
                                 onChange={(uploadedFiles) =>
                                   handleSelectedReworkAttachmentChange(
-                                    doc.requiredDocumentId,
+                                    doc.uploadId,
                                     uploadedFiles,
                                   )
                                 }
                                 onUploadSuccess={(fileMeta) =>
                                   handleSelectedReworkAttachmentSuccess(
-                                    doc.requiredDocumentId,
+                                    doc.uploadId,
                                     fileMeta,
                                   )
                                 }
@@ -6649,6 +6782,167 @@ const ProjectDetails = () => {
                       </Card>
                     </div>
                   </div>
+                )}
+              </DrawerBody>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        isOpen={directoriesDrawer.isOpen}
+        onOpenChange={directoriesDrawer.onOpenChange}
+        size="2xl"
+        hideCloseButton
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="border-b border-default-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-6 py-5">
+                <div className="flex w-full items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Project Directories
+                    </h2>
+                    <p className="mt-1 text-sm text-default-500">
+                      Upload and manage procurement documents & certificates
+                      for this project.
+                    </p>
+                  </div>
+
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Close
+                  </Button>
+                </div>
+              </DrawerHeader>
+
+              <DrawerBody className="bg-default-50 px-6 py-6">
+                <div className="flex items-end gap-2 rounded-xl border border-default-200 bg-white p-3">
+                  <Input
+                    size="sm"
+                    label="New directory name"
+                    placeholder="e.g. Lab Testing"
+                    value={newDirectoryName}
+                    onChange={(e) => setNewDirectoryName(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    color="primary"
+                    className="shrink-0"
+                    isLoading={createDirectoryLoading}
+                    startContent={
+                      !createDirectoryLoading && (
+                        <FolderPlus className="h-3.5 w-3.5" />
+                      )
+                    }
+                    onPress={handleCreateDirectory}
+                  >
+                    Add Directory
+                  </Button>
+                </div>
+
+                {projectDirectoriesLoading ? (
+                  <div className="mt-6 flex min-h-[200px] items-center justify-center">
+                    <p className="text-sm text-default-500">
+                      Loading directories...
+                    </p>
+                  </div>
+                ) : (projectDirectories || []).length === 0 ? (
+                  <div className="mt-6 flex min-h-[200px] items-center justify-center rounded-3xl border border-dashed border-default-300 bg-white">
+                    <div className="text-center">
+                      <FolderOpen className="mx-auto h-8 w-8 text-default-300" />
+                      <p className="mt-2 text-sm font-semibold text-foreground">
+                        No directories yet
+                      </p>
+                      <p className="mt-1 text-xs text-default-500">
+                        Create a directory above to start uploading
+                        documents.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <Accordion
+                    className="mt-4 px-0"
+                    variant="splitted"
+                    selectionMode="multiple"
+                  >
+                    {projectDirectories.map((directory) => (
+                      <AccordionItem
+                        key={directory.directoryId}
+                        aria-label={directory.directoryName}
+                        title={
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-4 w-4 text-primary" />
+                            <span className="font-semibold text-foreground">
+                              {directory.directoryName}
+                            </span>
+                            <Chip size="sm" variant="flat">
+                              {directory.documents?.length || 0} file
+                              {directory.documents?.length === 1 ? "" : "s"}
+                            </Chip>
+                          </div>
+                        }
+                        className="bg-white shadow-sm"
+                      >
+                        <div className="flex flex-col gap-2">
+                          {(directory.documents || []).length === 0 ? (
+                            <p className="text-xs text-default-400">
+                              No documents uploaded yet.
+                            </p>
+                          ) : (
+                            directory.documents.map((doc) => (
+                              <div
+                                key={doc.id || doc.uuid}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-default-200 px-3 py-2"
+                              >
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <FileText className="h-4 w-4 shrink-0 text-default-400" />
+                                  <span
+                                    className="truncate text-xs font-medium text-foreground"
+                                    title={doc.fileName}
+                                  >
+                                    {doc.fileName || "-"}
+                                  </span>
+                                </div>
+
+                                {doc.url && (
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                    View
+                                  </a>
+                                )}
+                              </div>
+                            ))
+                          )}
+
+                          <Divider className="my-1" />
+
+                          <FileUploader
+                            label="Upload documents"
+                            placeholder="Drag & drop files here, paste, or choose files"
+                            uploadingType="multiple"
+                            onUploadSuccess={(fileMeta) =>
+                              handleDirectoryDocumentUploadSuccess(
+                                directory.directoryId,
+                                fileMeta,
+                              )
+                            }
+                          />
+
+                          {directoryUploadingId === directory.directoryId && (
+                            <p className="text-xs text-primary">
+                              Saving document to directory...
+                            </p>
+                          )}
+                        </div>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 )}
               </DrawerBody>
             </>

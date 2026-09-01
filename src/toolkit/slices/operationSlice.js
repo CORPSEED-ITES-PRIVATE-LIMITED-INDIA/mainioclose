@@ -649,6 +649,69 @@ export const updateDocumentStatus = createAsyncThunk(
   },
 );
 
+// Procurement directories & certificates -------------------------------
+
+export const getProjectDirectories = createAsyncThunk(
+  "getProjectDirectories",
+  async ({ projectId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/${projectId}/directories`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to fetch project directories",
+      );
+    }
+  },
+);
+
+export const createProjectDirectory = createAsyncThunk(
+  "createProjectDirectory",
+  async ({ projectId, directoryName, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/${projectId}/directories`,
+        null,
+        { params: { directoryName, userId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to create directory",
+      );
+    }
+  },
+);
+
+// Registers one already-uploaded file (via FileUploader) as a document
+// inside a project directory. `data` = { fileName, fileUrl, fileSizeKb,
+// fileFormat, remarks }.
+export const uploadProjectDirectoryDocuments = createAsyncThunk(
+  "uploadProjectDirectoryDocuments",
+  async ({ projectId, directoryId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/${projectId}/directories/${directoryId}/documents`,
+        data,
+        { params: { userId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to upload document",
+      );
+    }
+  },
+);
+
 export const addNoteInProject = createAsyncThunk(
   "addNoteInProject",
   async ({ projectId, data }, { rejectWithValue }) => {
@@ -2032,6 +2095,10 @@ export const OperationSlice = createSlice({
     companyDocs:[],
     companyDoc:{},
     quoteByRFQAndVendor:[],
+    projectDirectories: [],
+    projectDirectoriesLoading: false,
+    createDirectoryLoading: false,
+    uploadDirectoryDocumentLoading: false,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2628,6 +2695,40 @@ export const OperationSlice = createSlice({
     builder.addCase(getQuoteByRFQAndVendorId.rejected, (state) => {
       state.loading = "rejected";
       state.quoteByRFQAndVendor = [];
+    });
+
+    builder.addCase(getProjectDirectories.pending, (state) => {
+      state.projectDirectoriesLoading = true;
+    });
+    builder.addCase(getProjectDirectories.fulfilled, (state, action) => {
+      state.projectDirectoriesLoading = false;
+      state.projectDirectories = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+    builder.addCase(getProjectDirectories.rejected, (state) => {
+      state.projectDirectoriesLoading = false;
+      state.projectDirectories = [];
+    });
+
+    builder.addCase(createProjectDirectory.pending, (state) => {
+      state.createDirectoryLoading = true;
+    });
+    builder.addCase(createProjectDirectory.fulfilled, (state) => {
+      state.createDirectoryLoading = false;
+    });
+    builder.addCase(createProjectDirectory.rejected, (state) => {
+      state.createDirectoryLoading = false;
+    });
+
+    builder.addCase(uploadProjectDirectoryDocuments.pending, (state) => {
+      state.uploadDirectoryDocumentLoading = true;
+    });
+    builder.addCase(uploadProjectDirectoryDocuments.fulfilled, (state) => {
+      state.uploadDirectoryDocumentLoading = false;
+    });
+    builder.addCase(uploadProjectDirectoryDocuments.rejected, (state) => {
+      state.uploadDirectoryDocumentLoading = false;
     });
 
   },

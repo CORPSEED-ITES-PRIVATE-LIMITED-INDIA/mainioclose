@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -21,7 +21,7 @@ import {
   useDisclosure,
   addToast,
 } from "@heroui/react";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { parseDate } from "@internationalized/date";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
@@ -40,7 +40,9 @@ import {
   PRIORITY_COLOR_CODE,
 } from "../../operation/technical/technicalResearchShared";
 
-const PRIORITY_CHOICES = PRIORITY_OPTIONS.filter((option) => option.key !== "--");
+const PRIORITY_CHOICES = PRIORITY_OPTIONS.filter(
+  (option) => option.key !== "--",
+);
 
 const EMPTY_FORM = {
   subject: "",
@@ -56,6 +58,7 @@ const LeadResearch = () => {
   const createModal = useDisclosure();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [filterValue, setFilterValue] = useState("");
 
   const data = useSelector(
     (state) => state.operation.technicalResearchCasesByLead,
@@ -95,13 +98,29 @@ const LeadResearch = () => {
     }
   }, [dispatch, leadData?.originalName, userId]);
 
+  const filteredItems = useMemo(() => {
+    const list = data || [];
+    if (!filterValue) return list;
+    const search = filterValue.toLowerCase();
+    return list.filter((item) =>
+      [item?.caseNumber, item?.subject, item?.status, item?.priority].some(
+        (field) => field?.toLowerCase().includes(search),
+      ),
+    );
+  }, [data, filterValue]);
+
   const handleOpenCreate = () => {
     setForm(EMPTY_FORM);
     createModal.onOpen();
   };
 
   const handleSubmit = () => {
-    if (!form.subject || !form.businessContext || !form.researchScope || !form.dueDate) {
+    if (
+      !form.subject ||
+      !form.businessContext ||
+      !form.researchScope ||
+      !form.dueDate
+    ) {
       addToast({
         title: "Please fill all required fields",
         color: "danger",
@@ -162,7 +181,9 @@ const LeadResearch = () => {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between items-center">
-        <h1 className="font-sans text-lg font-semibold shrink-0">Research</h1>
+        <h1 className="font-sans text-lg font-semibold shrink-0">
+          Research Tickets
+        </h1>
         <Button
           size="sm"
           color="primary"
@@ -172,6 +193,18 @@ const LeadResearch = () => {
           Raise Research Ticket
         </Button>
       </div>
+
+      <Input
+        isClearable
+        size="sm"
+        className="w-full sm:max-w-[280px]"
+        classNames={{ inputWrapper: "h-8 min-h-8" }}
+        placeholder="Search ..."
+        startContent={<Search className="w-4 h-4 text-default-400" />}
+        value={filterValue}
+        onClear={() => setFilterValue("")}
+        onValueChange={setFilterValue}
+      />
 
       <Table
         removeWrapper={false}
@@ -195,8 +228,12 @@ const LeadResearch = () => {
           <TableColumn>CREATED</TableColumn>
         </TableHeader>
         <TableBody
-          emptyContent={"No research tickets raised for this lead yet"}
-          items={data || []}
+          emptyContent={
+            filterValue
+              ? "No research tickets match your search"
+              : "No research tickets raised for this lead yet"
+          }
+          items={filteredItems}
         >
           {(item) => (
             <TableRow key={item?.id}>
