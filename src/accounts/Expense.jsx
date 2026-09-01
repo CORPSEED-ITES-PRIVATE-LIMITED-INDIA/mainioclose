@@ -113,7 +113,7 @@ const PAYMENT_STATUS_OPTIONS = [
 const ACCOUNT_DECISION_OPTIONS = [
   { label: "APPROVED", value: "APPROVED" },
   { label: "REJECTED", value: "REJECTED" },
-  { label: "ON_HOLD", value: "ON_HOLD" },
+  // { label: "ON_HOLD", value: "ON_HOLD" },
 ];
 
 const INITIAL_DECISION_FORM = {

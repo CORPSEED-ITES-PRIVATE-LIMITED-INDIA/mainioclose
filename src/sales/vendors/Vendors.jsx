@@ -403,14 +403,14 @@ const Vendors = () => {
               onPress={onOpen}
               endContent={<Plus className="w-4 h-4" />}
             >
-              Add vendor's request
+              Add Research request
             </Button>
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-[12.5px]">
-            Total {count} vendors request
+            Total {count} research request
           </span>
 
           <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
@@ -474,7 +474,7 @@ const Vendors = () => {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-        Vendors list
+        Research list
       </h1>
 
       <Table

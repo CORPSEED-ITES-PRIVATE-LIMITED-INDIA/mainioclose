@@ -2015,6 +2015,9 @@ const Proposal = () => {
                       <p className="text-xs text-gray-500 mt-1 truncate">
                         {proposal?.emailSubject || "-"}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        Comment : {proposal?.comment || "-"}
+                      </p>
                     </div>
 
                     <div className="flex flex-col gap-1.5">

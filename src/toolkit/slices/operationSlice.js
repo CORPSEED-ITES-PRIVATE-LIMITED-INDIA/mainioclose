@@ -649,6 +649,69 @@ export const updateDocumentStatus = createAsyncThunk(
   },
 );
 
+// Procurement directories & certificates -------------------------------
+
+export const getProjectDirectories = createAsyncThunk(
+  "getProjectDirectories",
+  async ({ projectId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/${projectId}/directories`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to fetch project directories",
+      );
+    }
+  },
+);
+
+export const createProjectDirectory = createAsyncThunk(
+  "createProjectDirectory",
+  async ({ projectId, directoryName, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/${projectId}/directories`,
+        null,
+        { params: { directoryName, userId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to create directory",
+      );
+    }
+  },
+);
+
+// Registers one already-uploaded file (via FileUploader) as a document
+// inside a project directory. `data` = { fileName, fileUrl, fileSizeKb,
+// fileFormat, remarks }.
+export const uploadProjectDirectoryDocuments = createAsyncThunk(
+  "uploadProjectDirectoryDocuments",
+  async ({ projectId, directoryId, userId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/${projectId}/directories/${directoryId}/documents`,
+        data,
+        { params: { userId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.response?.data ||
+          "Failed to upload document",
+      );
+    }
+  },
+);
+
 export const addNoteInProject = createAsyncThunk(
   "addNoteInProject",
   async ({ projectId, data }, { rejectWithValue }) => {
@@ -895,6 +958,128 @@ export const getAllLegalSupportRequestsForFilter = createAsyncThunk(
         error?.response?.data?.message ||
           error?.response?.data ||
           "Failed to fetch legal support requests",
+      );
+    }
+  },
+);
+
+export const getAllTechnicalResearchCases = createAsyncThunk(
+  "getAllTechnicalResearchCases",
+  async (
+    { userId, page = 1, size = 10, status, priority, search } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = {
+        userId: Number(userId),
+        page: page - 1,
+        size,
+      };
+
+      if (
+        status !== undefined &&
+        status !== null &&
+        status !== "" &&
+        status !== "--" &&
+        status !== "ALL"
+      ) {
+        params.status = status;
+      }
+
+      if (
+        priority !== undefined &&
+        priority !== null &&
+        priority !== "" &&
+        priority !== "--" &&
+        priority !== "ALL"
+      ) {
+        params.priority = priority;
+      }
+
+      if (search !== undefined && search !== null && search !== "") {
+        params.search = search;
+      }
+
+      const response = await api.get(
+        "/operationService/api/technical-research-cases",
+        { params },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to fetch technical research cases",
+      );
+    }
+  },
+);
+
+export const assignTechnicalResearchCase = createAsyncThunk(
+  "assignTechnicalResearchCase",
+  async (
+    { caseId, assigneeUserId, assignedByUserId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/technical-research-cases/${caseId}/assignments`,
+        null,
+        {
+          params: {
+            assigneeUserId: Number(assigneeUserId),
+            assignedByUserId: Number(assignedByUserId),
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to assign technical research case",
+      );
+    }
+  },
+);
+
+export const getTechnicalResearchCasesByLead = createAsyncThunk(
+  "getTechnicalResearchCasesByLead",
+  async ({ leadId, page = 1, size = 10 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/technical-research-cases/lead/${leadId}`,
+        { params: { page: page - 1, size } },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to fetch technical research cases for lead",
+      );
+    }
+  },
+);
+
+export const createTechnicalResearchCase = createAsyncThunk(
+  "createTechnicalResearchCase",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        "/operationService/api/technical-research-cases",
+        data,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to raise technical research case",
       );
     }
   },
@@ -1882,6 +2067,10 @@ export const OperationSlice = createSlice({
     expenseList: [],
     legalRequestList: [],
     legalRequestCount: 0,
+    technicalResearchList: [],
+    technicalResearchCount: 0,
+    technicalResearchCasesByLead: [],
+    technicalResearchCasesByLeadCount: 0,
     servicePaymentTerm: [],
     procurementOrderByPurchaseIdList: [],
     procurementOrderByPurchaseIdLoading: false,
@@ -1906,6 +2095,10 @@ export const OperationSlice = createSlice({
     companyDocs:[],
     companyDoc:{},
     quoteByRFQAndVendor:[],
+    projectDirectories: [],
+    projectDirectoriesLoading: false,
+    createDirectoryLoading: false,
+    uploadDirectoryDocumentLoading: false,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2213,6 +2406,39 @@ export const OperationSlice = createSlice({
       state.legalRequestList = [];
     });
 
+    builder.addCase(getAllTechnicalResearchCases.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllTechnicalResearchCases.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.technicalResearchList = action.payload?.content || [];
+        state.technicalResearchCount = action.payload?.totalElements || 0;
+      },
+    );
+    builder.addCase(getAllTechnicalResearchCases.rejected, (state) => {
+      state.loading = "rejected";
+      state.technicalResearchList = [];
+    });
+
+    builder.addCase(getTechnicalResearchCasesByLead.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getTechnicalResearchCasesByLead.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.technicalResearchCasesByLead = action.payload?.content || [];
+        state.technicalResearchCasesByLeadCount =
+          action.payload?.totalElements || 0;
+      },
+    );
+    builder.addCase(getTechnicalResearchCasesByLead.rejected, (state) => {
+      state.loading = "rejected";
+      state.technicalResearchCasesByLead = [];
+    });
+
     builder.addCase(getServicePaymentTermBasedOnMilestone.pending, (state) => {
       state.loading = "pending";
     });
@@ -2469,6 +2695,40 @@ export const OperationSlice = createSlice({
     builder.addCase(getQuoteByRFQAndVendorId.rejected, (state) => {
       state.loading = "rejected";
       state.quoteByRFQAndVendor = [];
+    });
+
+    builder.addCase(getProjectDirectories.pending, (state) => {
+      state.projectDirectoriesLoading = true;
+    });
+    builder.addCase(getProjectDirectories.fulfilled, (state, action) => {
+      state.projectDirectoriesLoading = false;
+      state.projectDirectories = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    });
+    builder.addCase(getProjectDirectories.rejected, (state) => {
+      state.projectDirectoriesLoading = false;
+      state.projectDirectories = [];
+    });
+
+    builder.addCase(createProjectDirectory.pending, (state) => {
+      state.createDirectoryLoading = true;
+    });
+    builder.addCase(createProjectDirectory.fulfilled, (state) => {
+      state.createDirectoryLoading = false;
+    });
+    builder.addCase(createProjectDirectory.rejected, (state) => {
+      state.createDirectoryLoading = false;
+    });
+
+    builder.addCase(uploadProjectDirectoryDocuments.pending, (state) => {
+      state.uploadDirectoryDocumentLoading = true;
+    });
+    builder.addCase(uploadProjectDirectoryDocuments.fulfilled, (state) => {
+      state.uploadDirectoryDocumentLoading = false;
+    });
+    builder.addCase(uploadProjectDirectoryDocuments.rejected, (state) => {
+      state.uploadDirectoryDocumentLoading = false;
     });
 
   },

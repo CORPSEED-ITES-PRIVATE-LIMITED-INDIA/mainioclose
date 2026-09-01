@@ -372,6 +372,12 @@ export const navItems = [
         key: "expenses",
       },
       {
+        title: "Research",
+        icon: "",
+        url: "operation/research",
+        key: "research",
+      },
+      {
         title: "Settings",
         icon: "",
         url: "operation/settings",
@@ -927,6 +933,12 @@ export const operationNavItems = [
     url: "operation/expenses",
     key: "expenses",
   },
+  {
+    title: "Research",
+    icon: "FlaskConical",
+    url: "operation/research",
+    key: "research",
+  },
   // {
   //   title: "Settings",
   //   icon: "Settings",
@@ -971,6 +983,12 @@ export const operationEmpItems = [
     icon: "FileText",
     url: "operation/expenses",
     key: "expenses",
+  },
+  {
+    title: "Research",
+    icon: "FlaskConical",
+    url: "operation/research",
+    key: "research",
   },
   {
     title: "Settings",

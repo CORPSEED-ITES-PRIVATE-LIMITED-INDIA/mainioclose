@@ -28,6 +28,7 @@ const CreateCompanyForm = lazy(
   () => import("../sales/company/CreateCompanyForm"),
 );
 const Vendors = lazy(() => import("../sales/vendors/Vendors"));
+const LeadResearch = lazy(() => import("../sales/leads/LeadResearch"));
 const Proposal = lazy(() => import("../sales/proposal/Proposal"));
 const LeadEstimate = lazy(() => import("../sales/leads/LeadEstimate"));
 const AutomationStatus = lazy(() => import("../sales/leads/AutomationStatus"));
@@ -75,6 +76,7 @@ const SalesModuleRouting = () => {
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
         <Route path="vendors" element={<Vendors />} />
+        <Route path="research" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
@@ -102,7 +104,8 @@ const SalesModuleRouting = () => {
         <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
-        <Route path="vendors" element={<Vendors />} />
+        <Route path="procurementResearch" element={<Vendors />} />
+        <Route path="technicalResearch" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
@@ -116,7 +119,8 @@ const SalesModuleRouting = () => {
         <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
-        <Route path="vendors" element={<Vendors />} />
+        <Route path="procurementResearch" element={<Vendors />} />
+        <Route path="technicalResearch" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
@@ -160,7 +164,8 @@ const SalesModuleRouting = () => {
         <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
-        <Route path="vendors" element={<Vendors />} />
+        <Route path="procurementResearch" element={<Vendors />} />
+        <Route path="technicalResearch" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
@@ -177,7 +182,8 @@ const SalesModuleRouting = () => {
         <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
-        <Route path="vendors" element={<Vendors />} />
+        <Route path="procurementResearch" element={<Vendors />} />
+        <Route path="technicalResearch" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
@@ -203,7 +209,8 @@ const SalesModuleRouting = () => {
         <Route path="childLead" element={<ChildLead />} />
         <Route path="companyForm" element={<CreateCompanyForm />} />
         <Route path="leadCompanyForm" element={<CreateLeadCompanyForm />} />
-        <Route path="vendors" element={<Vendors />} />
+        <Route path="procurementResearch" element={<Vendors />} />
+        <Route path="technicalResearch" element={<LeadResearch />} />
         <Route path="proposal" element={<Proposal />} />
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadEstimates" element={<LeadEstimates />} />
