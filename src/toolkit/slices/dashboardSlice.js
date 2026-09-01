@@ -782,15 +782,11 @@ export const getMilestoneTracker = createAsyncThunk(
 
 export const getMilestoneOverview = createAsyncThunk(
   "getMilestoneOverview",
-  async (
-    { userId },
-    { rejectWithValue },
-  ) => {
+  async ({ userId, fromDate, toDate }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/operationService/api/user-dashboard/milestone-overview?userId=${userId}`,
+        `/operationService/api/user-dashboard/milestone-overview?userId=${userId}&fromDate=${fromDate}&toDate=${toDate}`,
       );
-
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -805,15 +801,11 @@ export const getMilestoneOverview = createAsyncThunk(
 
 export const getTeamWorkload = createAsyncThunk(
   "getTeamWorkload",
-  async (
-    { userId },
-    { rejectWithValue },
-  ) => {
+  async ({ userId, fromDate, toDate }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/operationService/api/user-dashboard/team-workload?userId=${userId}`,
+        `/operationService/api/user-dashboard/team-workload?userId=${userId}&fromDate=${fromDate}&toDate=${toDate}`,
       );
-
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -825,17 +817,14 @@ export const getTeamWorkload = createAsyncThunk(
     }
   },
 );
+
 export const getStatusWiseSummary = createAsyncThunk(
   "getStatusWiseSummary",
-  async (
-    { userId },
-    { rejectWithValue },
-  ) => {
+  async ({ userId, fromDate, toDate }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/operationService/api/user-dashboard/status-wise-summary?userId=${userId}`,
+        `/operationService/api/user-dashboard/status-wise-summary?userId=${userId}&fromDate=${fromDate}&toDate=${toDate}`,
       );
-
       return response.data;
     } catch (error) {
       return rejectWithValue(

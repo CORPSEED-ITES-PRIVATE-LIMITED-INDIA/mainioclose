@@ -1064,38 +1064,6 @@ function ProjectsTable({
             title="All Projects Milestone Tracker"
             subtitle="A milestone is completed only when completion reaches 100%"
           />
-
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="bordered"
-              className="h-8 rounded-lg border-slate-200 text-xs"
-              startContent={<Filter size={14} />}
-            >
-              Filter
-            </Button>
-
-            <Dropdown>
-              <DropdownTrigger>
-                <Button
-                  size="sm"
-                  variant="bordered"
-                  className="h-8 rounded-lg border-slate-200 text-xs"
-                  endContent={<ChevronDown size={14} />}
-                >
-                  Stage
-                </Button>
-              </DropdownTrigger>
-
-              <DropdownMenu aria-label="Stage filter">
-                <DropdownItem key="all">All</DropdownItem>
-                <DropdownItem key="new">New</DropdownItem>
-                <DropdownItem key="in_progress">In Progress</DropdownItem>
-                <DropdownItem key="completed">Completed</DropdownItem>
-                <DropdownItem key="rework">Rework</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
         </div>
       </CardHeader>
 
@@ -1558,28 +1526,6 @@ export default function OperationsDashboard() {
     );
   }, [dispatch, userId, trackerPage]);
 
-  const fetchMilestoneOverview = useCallback(() => {
-    if (!userId) return;
-
-    dispatch(getMilestoneOverview({ userId }));
-  }, [dispatch, userId]);
-
-  const fetchTeamWorkload = useCallback(() => {
-    if (!userId) return;
-
-    dispatch(getTeamWorkload({ userId }));
-  }, [dispatch, userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchTeamWorkload();
-  }, [fetchTeamWorkload, userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchMilestoneOverview();
-  }, [fetchMilestoneOverview, userId]);
-
   useEffect(() => {
     if (!userId) return;
     fetchMilestoneTracker();
@@ -1637,15 +1583,22 @@ export default function OperationsDashboard() {
   }, [dispatch, userId, fromDate, toDate]);
 
   const fetchStatusWiseSummary = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !fromDate || !toDate || dateRangeError) return;
 
-    dispatch(getStatusWiseSummary({ userId }));
-  }, [dispatch, userId]);
+    dispatch(getStatusWiseSummary({ userId, fromDate, toDate }));
+  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchStatusWiseSummary();
-  }, [fetchStatusWiseSummary, userId]);
+  const fetchTeamWorkload = useCallback(() => {
+    if (!userId || !fromDate || !toDate || dateRangeError) return;
+
+    dispatch(getTeamWorkload({ userId, fromDate, toDate }));
+  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+
+  const fetchMilestoneOverview = useCallback(() => {
+    if (!userId || !fromDate || !toDate || dateRangeError) return;
+
+    dispatch(getMilestoneOverview({ userId, fromDate, toDate }));
+  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
 
   useEffect(() => {
     if (!userId) return;
@@ -1653,13 +1606,18 @@ export default function OperationsDashboard() {
     fetchProjectOverview();
     fetchUserProjectDashboard();
     fetchOperationRiskQueue();
+    fetchStatusWiseSummary();
+    fetchTeamWorkload();
+    fetchMilestoneOverview();
   }, [
     fetchProjectOverview,
     fetchUserProjectDashboard,
     fetchOperationRiskQueue,
+    fetchStatusWiseSummary,
+    fetchTeamWorkload,
+    fetchMilestoneOverview,
     userId,
   ]);
-
   return (
     <div className="max-h-[85vh] overflow-auto overflow-x-hidden bg-slate-50 text-slate-900">
       <div className="w-full p-2 sm:p-2.5 lg:p-3">
