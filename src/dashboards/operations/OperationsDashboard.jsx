@@ -20,12 +20,17 @@ import {
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+
 import {
-  getDashboardUsersByHeirarchy,
   getProjectOverviewCards,
   getUserProjectDashboard,
+  getOperationRiskQueue,
+  getMilestoneTracker,
+  getMilestoneOverview,
+  getTeamWorkload,
+  getStatusWiseSummary,
 } from "../../toolkit/slices/dashboardSlice.js";
-import NewSelect from "../../components/NewSelect";
+// import NewSelect from "../../components/NewSelect";
 import {
   AlertTriangle,
   BarChart3,
@@ -98,6 +103,18 @@ const topCardConfig = {
   },
 };
 
+const statusBarColor = {
+  OPEN: "bg-blue-600",
+  IN_PROGRESS: "bg-indigo-600",
+  COMPLETED: "bg-green-600",
+  CANCELLED: "bg-red-500",
+  REFUNDED: "bg-amber-500",
+  REOPENED: "bg-purple-500",
+  FORCE_CLOSED: "bg-slate-500",
+};
+
+const defaultStatusBarColor = "bg-slate-400";
+
 function toFiniteNumber(value, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
@@ -106,6 +123,28 @@ function toFiniteNumber(value, fallback = 0) {
 function formatPercentage(value) {
   const percentage = toFiniteNumber(value);
   return `${percentage.toFixed(2).replace(/\.00$/, "")}%`;
+}
+
+function formatCurrency(value) {
+  const amount = toFiniteNumber(value);
+  return `₹ ${amount.toLocaleString("en-IN")}`;
+}
+
+function formatTrackerDate(isoDate) {
+  if (!isoDate) return "-";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function toTitleCase(value) {
+  if (!value) return "-";
+  return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
 function getRootDashboardData(response) {
@@ -153,59 +192,57 @@ function buildTopCards(response) {
     };
   });
 }
-
-const milestoneOverview = [
-  {
-    title: "Documentation",
-    count: 31,
-    completed: 18,
-    avgCompletion: 72,
+const milestoneStyleConfig = {
+  Documentation: {
     icon: FileText,
     color: "primary",
     bg: "bg-blue-50",
     iconColor: "text-blue-600",
   },
-  {
-    title: "Filing",
-    count: 24,
-    completed: 11,
-    avgCompletion: 58,
+  Filling: {
     icon: FileCheck2,
     color: "secondary",
     bg: "bg-purple-50",
     iconColor: "text-purple-600",
   },
-  {
-    title: "Procurement",
-    count: 17,
-    completed: 7,
-    avgCompletion: 46,
+  Filing: {
+    icon: FileCheck2,
+    color: "secondary",
+    bg: "bg-purple-50",
+    iconColor: "text-purple-600",
+  },
+  Procurement: {
     icon: PackageCheck,
     color: "warning",
     bg: "bg-yellow-50",
     iconColor: "text-yellow-600",
   },
-  {
-    title: "Legal Review",
-    count: 12,
-    completed: 5,
-    avgCompletion: 41,
+  "Legal Review": {
     icon: ShieldCheck,
     color: "danger",
     bg: "bg-red-50",
     iconColor: "text-red-600",
   },
-  {
-    title: "Final Approval",
-    count: 15,
-    completed: 10,
-    avgCompletion: 81,
+  Certification: {
     icon: CheckCircle2,
     color: "success",
     bg: "bg-green-50",
     iconColor: "text-green-600",
   },
-];
+  "Final Approval": {
+    icon: CheckCircle2,
+    color: "success",
+    bg: "bg-green-50",
+    iconColor: "text-green-600",
+  },
+};
+
+const defaultMilestoneStyle = {
+  icon: Workflow,
+  color: "default",
+  bg: "bg-slate-100",
+  iconColor: "text-slate-600",
+};
 
 const projectStageConfig = {
   NEW: {
@@ -367,14 +404,6 @@ const dueProjects = [
   },
 ];
 
-const departmentWorkload = [
-  { name: "Documentation Team", assigned: 31, completed: 18, value: 58 },
-  { name: "Filing Team", assigned: 24, completed: 11, value: 46 },
-  { name: "Procurement Team", assigned: 17, completed: 7, value: 41 },
-  { name: "Legal Team", assigned: 12, completed: 5, value: 42 },
-  { name: "Accounts Team", assigned: 14, completed: 9, value: 64 },
-];
-
 const activities = [
   {
     dot: "bg-green-500",
@@ -403,6 +432,10 @@ const activities = [
 ];
 
 const statusConfig = {
+  OPEN: {
+    label: "Open",
+    color: "default",
+  },
   NEW: {
     label: "New",
     color: "default",
@@ -422,12 +455,13 @@ const statusConfig = {
 };
 
 const priorityConfig = {
-  High: "danger",
-  Medium: "warning",
-  Low: "success",
+  HIGH: "danger",
+  MEDIUM: "warning",
+  STANDARD: "default",
+  LOW: "success",
 };
 
-function SectionTitle({ title, subtitle, action = "View All" }) {
+function SectionTitle({ title, subtitle }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">
@@ -439,12 +473,6 @@ function SectionTitle({ title, subtitle, action = "View All" }) {
           <p className="mt-0.5 text-[10px] text-slate-500">{subtitle}</p>
         )}
       </div>
-
-      {action && (
-        <button className="shrink-0 text-[10px] font-medium text-blue-600 hover:text-blue-700">
-          {action}
-        </button>
-      )}
     </div>
   );
 }
@@ -568,7 +596,7 @@ function TopProjectCards({
   ));
 }
 
-function MilestoneOverview() {
+function MilestoneOverview({ items = [], loading = false }) {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
@@ -579,52 +607,87 @@ function MilestoneOverview() {
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        <div className="space-y-2">
-          {milestoneOverview.map((item) => {
-            const Icon = item.icon;
-
-            return (
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((item) => (
               <div
-                key={item.title}
-                className="rounded-xl border border-slate-100 px-3 py-2"
+                key={item}
+                className="animate-pulse rounded-xl border border-slate-100 px-3 py-2"
               >
                 <div className="flex items-center gap-2.5">
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.bg}`}
-                  >
-                    <Icon size={16} className={item.iconColor} />
+                  <div className="h-8 w-8 rounded-full bg-slate-200" />
+                  <div className="flex-1">
+                    <div className="h-3 w-24 rounded bg-slate-200" />
+                    <div className="mt-2 h-2.5 w-32 rounded bg-slate-100" />
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-slate-900">
-                      {item.title}
-                    </p>
-                    <p className="truncate text-[11px] text-slate-500">
-                      {item.completed} completed out of {item.count}
-                    </p>
-                  </div>
-
-                  <p className="shrink-0 text-xs font-bold text-slate-950">
-                    {item.avgCompletion}%
-                  </p>
+                  <div className="h-3 w-8 rounded bg-slate-200" />
                 </div>
-
-                <div className="mt-2 pl-[42px]">
-                  <Progress
-                    aria-label={item.title}
-                    value={item.avgCompletion}
-                    color={item.color}
-                    size="sm"
-                    radius="full"
-                    classNames={{
-                      track: "bg-slate-100",
-                    }}
-                  />
-                </div>
+                <div className="mt-2 ml-[42px] h-1.5 rounded-full bg-slate-100" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : !items.length ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+            <p className="text-xs font-semibold text-slate-700">
+              No milestone data found
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              There is no milestone activity to summarize yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => {
+              const style =
+                milestoneStyleConfig[item.milestoneName] ||
+                defaultMilestoneStyle;
+              const Icon = style.icon;
+              const completion = toFiniteNumber(item.completionPercentage);
+
+              return (
+                <div
+                  key={item.milestoneId}
+                  className="rounded-xl border border-slate-100 px-3 py-2"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${style.bg}`}
+                    >
+                      <Icon size={16} className={style.iconColor} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-900">
+                        {item.milestoneName}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-500">
+                        {item.completedProjects} completed out of{" "}
+                        {item.totalProjects}
+                      </p>
+                    </div>
+
+                    <p className="shrink-0 text-xs font-bold text-slate-950">
+                      {completion}%
+                    </p>
+                  </div>
+
+                  <div className="mt-2 pl-[42px]">
+                    <Progress
+                      aria-label={item.milestoneName}
+                      value={completion}
+                      color={style.color}
+                      size="sm"
+                      radius="full"
+                      classNames={{
+                        track: "bg-slate-100",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
@@ -651,7 +714,6 @@ function ProjectStatusOverview({
               ? `${totalProjects} projects in the selected period`
               : "Live project stage distribution"
           }
-          action={null}
         />
       </CardHeader>
 
@@ -779,70 +841,97 @@ function ProjectStatusOverview({
   );
 }
 
-function PortfolioCompletionChart() {
-  const bars = [
-    { label: "0-25%", count: 12, value: 25 },
-    { label: "26-50%", count: 21, value: 48 },
-    { label: "51-75%", count: 28, value: 70 },
-    { label: "76-99%", count: 17, value: 85 },
-    { label: "100%", count: 18, value: 100 },
-  ];
+function StatusWiseSummaryChart({ items = [], loading = false }) {
+  const maxCount = Math.max(
+    1,
+    ...items.map((i) => toFiniteNumber(i.projectCount)),
+  );
 
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
         <div className="flex w-full items-center justify-between">
           <SectionTitle
-            title="Project Completion Distribution"
-            subtitle="Projects grouped by overall completion"
-            action={null}
+            title="Project Status Distribution"
+            subtitle="Projects grouped by current status"
           />
-
-          <Button
-            size="sm"
-            variant="bordered"
-            className="h-8 rounded-lg border-slate-200 text-xs"
-            endContent={<ChevronDown size={14} />}
-          >
-            This Month
-          </Button>
         </div>
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        <div className="space-y-2.5">
-          {bars.map((item) => (
-            <div
-              key={item.label}
-              className="grid grid-cols-[70px_minmax(0,1fr)_45px] items-center gap-2.5"
-            >
-              <p className="text-xs font-semibold text-slate-700">
-                {item.label}
-              </p>
-
-              <div className="h-7 overflow-hidden rounded-lg bg-slate-100">
-                <div
-                  className="flex h-full items-center justify-end rounded-lg bg-blue-600 pr-2"
-                  style={{ width: `${item.value}%` }}
-                >
-                  <span className="text-[10px] font-semibold text-white">
-                    {item.count}
-                  </span>
-                </div>
+        {loading ? (
+          <div className="space-y-2.5">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="grid grid-cols-[90px_minmax(0,1fr)_70px] items-center gap-2.5 animate-pulse"
+              >
+                <div className="h-3 w-16 rounded bg-slate-200" />
+                <div className="h-7 rounded-lg bg-slate-100" />
+                <div className="h-3 w-14 rounded bg-slate-200" />
               </div>
+            ))}
+          </div>
+        ) : !items.length ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+            <p className="text-xs font-semibold text-slate-700">
+              No status data found
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              There are no projects to summarize yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {items.map((item) => {
+              const count = toFiniteNumber(item.projectCount);
+              const percentage = toFiniteNumber(item.percentage);
+              const widthPct = Math.max(
+                count > 0 ? 6 : 0,
+                (count / maxCount) * 100,
+              );
+              const barColor =
+                statusBarColor[item.statusName] || defaultStatusBarColor;
+              const label =
+                statusConfig[item.statusName]?.label ||
+                toTitleCase(item.statusName);
 
-              <p className="text-right text-xs font-semibold text-slate-950">
-                {item.count}
-              </p>
-            </div>
-          ))}
-        </div>
+              return (
+                <div
+                  key={item.statusId}
+                  className="grid grid-cols-[90px_minmax(0,1fr)_70px] items-center gap-2.5"
+                >
+                  <p className="truncate text-xs font-semibold text-slate-700">
+                    {label}
+                  </p>
+
+                  <div className="h-7 overflow-hidden rounded-lg bg-slate-100">
+                    <div
+                      className={`flex h-full items-center justify-end rounded-lg ${barColor} pr-2 transition-all`}
+                      style={{ width: `${widthPct}%` }}
+                    >
+                      {count > 0 && (
+                        <span className="text-[10px] font-semibold text-white">
+                          {count}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-right text-xs font-semibold text-slate-950">
+                    {formatPercentage(percentage)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
 }
 
-function DepartmentWorkload() {
+function DepartmentWorkload({ items = [], loading = false }) {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
@@ -853,37 +942,68 @@ function DepartmentWorkload() {
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        <div className="space-y-2.5">
-          {departmentWorkload.map((item) => (
-            <div key={item.name}>
-              <div className="mb-1.5 flex items-center justify-between gap-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-900">
-                    {item.name}
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    {item.completed} completed / {item.assigned} assigned
-                  </p>
+        {loading ? (
+          <div className="space-y-2.5">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="animate-pulse">
+                <div className="mb-1.5 flex items-center justify-between gap-2.5">
+                  <div className="flex-1">
+                    <div className="h-3 w-32 rounded bg-slate-200" />
+                    <div className="mt-2 h-2.5 w-40 rounded bg-slate-100" />
+                  </div>
+                  <div className="h-3 w-8 rounded bg-slate-200" />
                 </div>
-
-                <p className="shrink-0 text-xs font-bold text-slate-950">
-                  {item.value}%
-                </p>
+                <div className="h-1.5 rounded-full bg-slate-100" />
               </div>
+            ))}
+          </div>
+        ) : !items.length ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+            <p className="text-xs font-semibold text-slate-700">
+              No team workload data found
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              There is no assigned work to summarize yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {items.map((item) => {
+              const completion = toFiniteNumber(item.completionPercentage);
 
-              <Progress
-                aria-label={item.name}
-                value={item.value}
-                color={item.value >= 60 ? "success" : "warning"}
-                size="sm"
-                radius="full"
-                classNames={{
-                  track: "bg-slate-100",
-                }}
-              />
-            </div>
-          ))}
-        </div>
+              return (
+                <div key={item.departmentId}>
+                  <div className="mb-1.5 flex items-center justify-between gap-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-900">
+                        {item.departmentName}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {item.completedCount} completed / {item.assignedCount}{" "}
+                        assigned
+                      </p>
+                    </div>
+
+                    <p className="shrink-0 text-xs font-bold text-slate-950">
+                      {formatPercentage(completion)}
+                    </p>
+                  </div>
+
+                  <Progress
+                    aria-label={item.departmentName}
+                    value={completion}
+                    color={completion >= 60 ? "success" : "warning"}
+                    size="sm"
+                    radius="full"
+                    classNames={{
+                      track: "bg-slate-100",
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
@@ -892,12 +1012,12 @@ function DepartmentWorkload() {
 function MilestoneMiniProgress({ milestones = [] }) {
   return (
     <div className="flex min-w-[260px] flex-col gap-1.5">
-      {milestones.map((milestone) => {
+      {milestones.map((milestone, index) => {
         const isCompleted = milestone.completion === 100;
 
         return (
           <div
-            key={milestone.name}
+            key={`${milestone.name}-${index}`}
             className="grid grid-cols-[85px_minmax(70px,1fr)_38px] items-center gap-2"
           >
             <p className="truncate text-[10px] font-medium text-slate-600">
@@ -929,7 +1049,13 @@ function MilestoneMiniProgress({ milestones = [] }) {
   );
 }
 
-function ProjectsTable() {
+function ProjectsTable({
+  projects = [],
+  loading = false,
+  pageInfo = null,
+  onPrevPage,
+  onNextPage,
+}) {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
@@ -937,7 +1063,6 @@ function ProjectsTable() {
           <SectionTitle
             title="All Projects Milestone Tracker"
             subtitle="A milestone is completed only when completion reaches 100%"
-            action={null}
           />
 
           <div className="flex items-center gap-2">
@@ -994,22 +1119,29 @@ function ProjectsTable() {
             <TableColumn>OWNER</TableColumn>
           </TableHeader>
 
-          <TableBody>
+          <TableBody
+            emptyContent={loading ? "Loading projects..." : "No projects found"}
+          >
             {projects.map((project) => {
-              const stage = statusConfig[project.status] || {
-                label: project.status || "Unknown",
+              const stage = statusConfig[project.stage] || {
+                label: project.stage || "Unknown",
                 color: "default",
               };
 
+              const milestones = (project.milestones || []).map((m) => ({
+                name: m.milestoneName,
+                completion: toFiniteNumber(m.percentage),
+              }));
+
               return (
-                <TableRow key={project.id}>
+                <TableRow key={project.projectId}>
                   <TableCell>
                     <div>
                       <p className="whitespace-nowrap font-semibold text-slate-950">
-                        {project.projectNo}
+                        {project.projectNumber}
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-500">
-                        Value: {project.amount}
+                        Value: {formatCurrency(project.projectValue)}
                       </p>
                     </div>
                   </TableCell>
@@ -1017,10 +1149,10 @@ function ProjectsTable() {
                   <TableCell>
                     <div className="max-w-[220px]">
                       <p className="truncate font-semibold text-slate-950">
-                        {project.company}
+                        {project.companyName}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-slate-500">
-                        {project.service}
+                        {project.serviceName}
                       </p>
                     </div>
                   </TableCell>
@@ -1040,17 +1172,17 @@ function ProjectsTable() {
                     <div className="min-w-[110px]">
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-900">
-                          {project.overallCompletion}%
+                          {toFiniteNumber(project.overallPercentage)}%
                         </span>
                       </div>
 
                       <Progress
                         aria-label="Overall completion"
-                        value={project.overallCompletion}
+                        value={toFiniteNumber(project.overallPercentage)}
                         color={
-                          project.overallCompletion === 100
+                          project.overallPercentage === 100
                             ? "success"
-                            : project.overallCompletion >= 70
+                            : project.overallPercentage >= 70
                               ? "primary"
                               : "warning"
                         }
@@ -1066,22 +1198,23 @@ function ProjectsTable() {
                   <TableCell>
                     <div>
                       <p className="whitespace-nowrap font-semibold text-slate-950">
-                        {project.currentMilestone}
+                        {project.currentMilestoneName || "-"}
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-500">
-                        Pending docs: {project.pendingDocs}
+                        Pending docs:{" "}
+                        {toFiniteNumber(project.pendingDocumentCount)}
                       </p>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <MilestoneMiniProgress milestones={project.milestones} />
+                    <MilestoneMiniProgress milestones={milestones} />
                   </TableCell>
 
                   <TableCell>
                     <div>
                       <p className="whitespace-nowrap font-semibold text-slate-950">
-                        {project.dueDate}
+                        {formatTrackerDate(project.dueDate)}
                       </p>
                       <Chip
                         size="sm"
@@ -1089,14 +1222,14 @@ function ProjectsTable() {
                         color={priorityConfig[project.priority] || "default"}
                         className="mt-0.5 text-[10px]"
                       >
-                        {project.priority}
+                        {toTitleCase(project.priority)}
                       </Chip>
                     </div>
                   </TableCell>
 
                   <TableCell>
                     <p className="whitespace-nowrap font-semibold text-slate-950">
-                      {project.owner}
+                      {project.ownerName || "Unassigned"}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -1104,12 +1237,53 @@ function ProjectsTable() {
             })}
           </TableBody>
         </Table>
+
+        {pageInfo && (
+          <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2.5">
+            <p className="text-[11px] text-slate-500">
+              Page {pageInfo.number + 1} of {pageInfo.totalPages || 1} •{" "}
+              {pageInfo.totalElements} total projects
+            </p>
+
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="bordered"
+                className="h-7 rounded-lg border-slate-200 text-xs"
+                isDisabled={pageInfo.first}
+                onPress={onPrevPage}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="bordered"
+                className="h-7 rounded-lg border-slate-200 text-xs"
+                isDisabled={pageInfo.last}
+                onPress={onNextPage}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </CardBody>
     </Card>
   );
 }
 
-function DueProjects() {
+function DueProjects({ items = [], loading = false }) {
+  function formatDisplayDate(isoDate) {
+    if (!isoDate) return "-";
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return isoDate;
+
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
@@ -1120,50 +1294,92 @@ function DueProjects() {
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        <div className="space-y-2">
-          {dueProjects.map((item) => (
-            <div
-              key={item.projectNo}
-              className="rounded-xl border border-slate-100 px-3 py-2 hover:bg-slate-50"
-            >
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-950">
-                    {item.company}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
-                    {item.projectNo} • {item.milestone}
-                  </p>
-                </div>
-
-                <Chip
-                  size="sm"
-                  variant="flat"
-                  color={item.risk === "High" ? "danger" : "warning"}
-                  className="text-[10px]"
-                >
-                  {item.risk}
-                </Chip>
-              </div>
-
-              <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                  <p className="text-slate-500">Due Date</p>
-                  <p className="mt-0.5 font-semibold text-slate-950">
-                    {item.due}
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                  <p className="text-slate-500">Owner</p>
-                  <p className="mt-0.5 font-semibold text-slate-950">
-                    {item.owner}
-                  </p>
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="animate-pulse rounded-xl border border-slate-100 px-3 py-2"
+              >
+                <div className="h-3 w-32 rounded bg-slate-200" />
+                <div className="mt-2 h-2.5 w-44 rounded bg-slate-100" />
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="h-8 rounded-lg bg-slate-100" />
+                  <div className="h-8 rounded-lg bg-slate-100" />
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : !items.length ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+            <p className="text-xs font-semibold text-slate-700">
+              No projects at risk
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Nothing is due or overdue in the selected window.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <div
+                key={`${item.projectId}-${item.milestoneId}`}
+                className="rounded-xl border border-slate-100 px-3 py-2 hover:bg-slate-50"
+              >
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-slate-950">
+                      {item.companyName}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                      {item.projectNumber} • {item.milestoneName}
+                    </p>
+                  </div>
+
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color={
+                      item.priority === "HIGH"
+                        ? "danger"
+                        : item.priority === "MEDIUM"
+                          ? "warning"
+                          : "default"
+                    }
+                    className="text-[10px]"
+                  >
+                    {item.priority
+                      ? item.priority.charAt(0) +
+                        item.priority.slice(1).toLowerCase()
+                      : "Normal"}
+                  </Chip>
+                </div>
+
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="rounded-lg bg-slate-50 px-2 py-1.5">
+                    <p className="text-slate-500">Due Date</p>
+                    <p className="mt-0.5 font-semibold text-slate-950">
+                      {formatDisplayDate(item.dueDate)}
+                    </p>
+                    {item.overdue && (
+                      <p className="mt-0.5 text-[10px] font-medium text-red-600">
+                        Overdue by {item.overdueDays}{" "}
+                        {item.overdueDays === 1 ? "day" : "days"}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg bg-slate-50 px-2 py-1.5">
+                    <p className="text-slate-500">Owner</p>
+                    <p className="mt-0.5 font-semibold text-slate-950">
+                      {item.ownerName || "Unassigned"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
@@ -1173,7 +1389,7 @@ function RecentActivities() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
       <CardHeader className="px-3 pt-2.5 pb-0">
-        <SectionTitle title="Recent Project Activities" action={null} />
+        <SectionTitle title="Recent Project Activities" />
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
@@ -1263,15 +1479,43 @@ export default function OperationsDashboard() {
       ? parsedUserId
       : null;
 
-  const [userId, setUserId] = useState(loggedInUserId);
+  const userId = loggedInUserId;
 
-  // Reset the selected user whenever the logged-in user (route) changes.
-  useEffect(() => {
-    setUserId(loggedInUserId);
-  }, [loggedInUserId]);
+  const toInputDate = (d) => d.toISOString().slice(0, 10);
+
+  const getDefaultRange = () => {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return {
+      from: toInputDate(firstOfMonth),
+      to: toInputDate(today),
+    };
+  };
+
+  const [{ from: defaultFrom, to: defaultTo }] = useState(getDefaultRange);
+  const [fromDate, setFromDate] = useState(defaultFrom);
+  const [toDate, setToDate] = useState(defaultTo);
+  const [dateRangeError, setDateRangeError] = useState(null);
+
+  const handleFromDateChange = (value) => {
+    setFromDate(value);
+    setDateRangeError(
+      toDate && value && value > toDate
+        ? "From date cannot be after To date"
+        : null,
+    );
+  };
+
+  const handleToDateChange = (value) => {
+    setToDate(value);
+    setDateRangeError(
+      fromDate && value && fromDate > value
+        ? "To date cannot be before From date"
+        : null,
+    );
+  };
 
   const {
-    dashboardUsers = [],
     projectOverviewData = null,
     projectOverviewCards = [],
     projectOverviewLoading = "idle",
@@ -1279,13 +1523,67 @@ export default function OperationsDashboard() {
     userProjectDashboard = null,
     userProjectDashboardLoading = "idle",
     userProjectDashboardError = null,
+    riskQueue = [],
+    milestoneTracker = null,
+    milestoneOverview: milestoneOverviewData = [],
+    teamWorkload = [],
+    statusWiseSummary = [],
+
+    loading: sharedLoading = false,
   } = useSelector((state) => state.dashboard || {});
 
-  // Fetch the hierarchy (team) of the logged-in user for the "select user" dropdown.
+  const [trackerPage, setTrackerPage] = useState(0);
+  const trackerSize = 10;
+
+  const trackerContent = milestoneTracker?.content || [];
+  const trackerPageInfo = milestoneTracker
+    ? {
+        number: milestoneTracker.number ?? 0,
+        totalPages: milestoneTracker.totalPages ?? 1,
+        totalElements: milestoneTracker.totalElements ?? 0,
+        first: milestoneTracker.first ?? true,
+        last: milestoneTracker.last ?? true,
+      }
+    : null;
+
+  const fetchMilestoneTracker = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(
+      getMilestoneTracker({
+        userId,
+        page: trackerPage,
+        size: trackerSize,
+      }),
+    );
+  }, [dispatch, userId, trackerPage]);
+
+  const fetchMilestoneOverview = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(getMilestoneOverview({ userId }));
+  }, [dispatch, userId]);
+
+  const fetchTeamWorkload = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(getTeamWorkload({ userId }));
+  }, [dispatch, userId]);
+
   useEffect(() => {
-    if (!loggedInUserId) return;
-    dispatch(getDashboardUsersByHeirarchy(loggedInUserId));
-  }, [dispatch, loggedInUserId]);
+    if (!userId) return;
+    fetchTeamWorkload();
+  }, [fetchTeamWorkload, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchMilestoneOverview();
+  }, [fetchMilestoneOverview, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchMilestoneTracker();
+  }, [fetchMilestoneTracker, userId]);
 
   const topCards = useMemo(
     () => buildTopCards(userProjectDashboard),
@@ -1293,33 +1591,74 @@ export default function OperationsDashboard() {
   );
 
   const fetchProjectOverview = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !fromDate || !toDate || dateRangeError) return;
 
     dispatch(
       getProjectOverviewCards({
         userId,
-        currentMonth: true,
+        fromDate,
+        toDate,
       }),
     );
-  }, [dispatch, userId]);
+  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
 
   const fetchUserProjectDashboard = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !fromDate || !toDate || dateRangeError) return;
 
     dispatch(
       getUserProjectDashboard({
         userId,
-        currentMonth: true,
+        fromDate,
+        toDate,
       }),
     );
+  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+
+  const fetchOperationRiskQueue = useCallback(() => {
+    if (!userId) return;
+
+    const upcomingDays =
+      fromDate && toDate
+        ? Math.max(
+            1,
+            Math.ceil(
+              (new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24),
+            ),
+          )
+        : 30;
+
+    dispatch(
+      getOperationRiskQueue({
+        userId,
+        upcomingDays,
+        limit: 5,
+      }),
+    );
+  }, [dispatch, userId, fromDate, toDate]);
+
+  const fetchStatusWiseSummary = useCallback(() => {
+    if (!userId) return;
+
+    dispatch(getStatusWiseSummary({ userId }));
   }, [dispatch, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchStatusWiseSummary();
+  }, [fetchStatusWiseSummary, userId]);
 
   useEffect(() => {
     if (!userId) return;
 
     fetchProjectOverview();
     fetchUserProjectDashboard();
-  }, [fetchProjectOverview, fetchUserProjectDashboard, userId]);
+    fetchOperationRiskQueue();
+  }, [
+    fetchProjectOverview,
+    fetchUserProjectDashboard,
+    fetchOperationRiskQueue,
+    userId,
+  ]);
 
   return (
     <div className="max-h-[85vh] overflow-auto overflow-x-hidden bg-slate-50 text-slate-900">
@@ -1340,26 +1679,60 @@ export default function OperationsDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="bordered"
-              className="h-8 rounded-lg border-slate-200 text-xs"
-              startContent={<CalendarDays size={14} />}
-            >
-              Current Month
-            </Button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="dashboard-from-date"
+                    className="mb-0.5 text-[10px] font-medium text-slate-600"
+                  >
+                    From
+                  </label>
+                  <div className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2">
+                    <CalendarDays
+                      size={14}
+                      className="shrink-0 text-slate-500"
+                    />
+                    <input
+                      id="dashboard-from-date"
+                      type="date"
+                      value={fromDate}
+                      max={toDate || undefined}
+                      onChange={(e) => handleFromDateChange(e.target.value)}
+                      className="w-[118px] border-none bg-transparent text-xs text-slate-800 outline-none"
+                    />
+                  </div>
+                </div>
 
-            <div className="w-full sm:w-56">
-              <NewSelect
-                label="Viewing dashboard for"
-                labelPlacement="outside"
-                placeholder="Select user"
-                data={dashboardUsers}
-                labelKey="name"
-                valueKey="id"
-                value={userId}
-                onChange={(value) => value && setUserId(Number(value))}
-              />
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="dashboard-to-date"
+                    className="mb-0.5 text-[10px] font-medium text-slate-600"
+                  >
+                    To
+                  </label>
+                  <div className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2">
+                    <CalendarDays
+                      size={14}
+                      className="shrink-0 text-slate-500"
+                    />
+                    <input
+                      id="dashboard-to-date"
+                      type="date"
+                      value={toDate}
+                      min={fromDate || undefined}
+                      onChange={(e) => handleToDateChange(e.target.value)}
+                      className="w-[118px] border-none bg-transparent text-xs text-slate-800 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {dateRangeError && (
+                <p className="text-[10px] font-medium text-red-600">
+                  {dateRangeError}
+                </p>
+              )}
             </div>
 
             <Button
@@ -1384,8 +1757,14 @@ export default function OperationsDashboard() {
         </div>
 
         <div className="mt-2 grid grid-cols-1 gap-2 xl:grid-cols-2 2xl:grid-cols-[1fr_1fr_0.9fr]">
-          <PortfolioCompletionChart />
-          <MilestoneOverview />
+          <StatusWiseSummaryChart
+            items={statusWiseSummary}
+            loading={sharedLoading}
+          />
+          <MilestoneOverview
+            items={milestoneOverviewData}
+            loading={sharedLoading}
+          />
           <ProjectStatusOverview
             cards={projectOverviewCards}
             totalProjects={projectOverviewData?.totalProjects || 0}
@@ -1394,8 +1773,8 @@ export default function OperationsDashboard() {
             userId={userId}
             onRetry={fetchProjectOverview}
           />
-          <DepartmentWorkload />
-          <DueProjects />
+          <DepartmentWorkload items={teamWorkload} loading={sharedLoading} />
+          <DueProjects items={riskQueue} loading={sharedLoading} />
           <div className="space-y-2">
             <MilestoneDefinitionCard />
             <RecentActivities />
@@ -1403,7 +1782,13 @@ export default function OperationsDashboard() {
         </div>
 
         <div className="mt-2">
-          <ProjectsTable />
+          <ProjectsTable
+            projects={trackerContent}
+            loading={sharedLoading}
+            pageInfo={trackerPageInfo}
+            onPrevPage={() => setTrackerPage((p) => Math.max(0, p - 1))}
+            onNextPage={() => setTrackerPage((p) => p + 1)}
+          />
         </div>
       </div>
     </div>

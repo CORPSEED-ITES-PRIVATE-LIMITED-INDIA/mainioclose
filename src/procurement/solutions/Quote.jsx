@@ -2652,7 +2652,7 @@ const Quote = () => {
           return (
             <div className="flex flex-col">
               <span className="text-sm font-medium">
-                Vendor ID: {rowData?.vendorId || "-"}
+                {rowData?.vendorName || "-"}
               </span>
 
               <span className="text-xs text-default-500">

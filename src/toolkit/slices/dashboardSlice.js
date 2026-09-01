@@ -175,7 +175,7 @@ export const getDashboardSummaryCards = createAsyncThunk(
 
 export const getProjectOverviewCards = createAsyncThunk(
   "dashboard/getProjectOverviewCards",
-  async ({ userId, currentMonth = true, fromDate, toDate }) => {
+  async ({ userId, currentMonth = false, fromDate, toDate }) => {
     const response = await api.get(
       `/operationService/api/user-dashboard/overview`,
       {
@@ -194,7 +194,7 @@ export const getProjectOverviewCards = createAsyncThunk(
 
 export const getUserProjectDashboard = createAsyncThunk(
   "dashboard/getUserProjectDashboard",
-  async ({ userId, currentMonth = true, fromDate, toDate }) => {
+  async ({ userId, currentMonth = false, fromDate, toDate }) => {
     const response = await api.get(
       `/operationService/api/user-dashboard/projects`,
       {
@@ -734,6 +734,120 @@ export const getVendorVerificationRate = createAsyncThunk(
   },
 );
 
+export const getOperationRiskQueue = createAsyncThunk(
+  "getOperationRiskQueue",
+  async (
+    { userId, upcomingDays, limit=5 },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/due-risk-queue?userId=${userId}&upcomingDays=${upcomingDays}&limit=${limit}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Risk Queue collected",
+      );
+    }
+  },
+);
+export const getMilestoneTracker = createAsyncThunk(
+  "getMilestoneTracker",
+  async (
+    { userId, page=0, size=10 },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/milestone-tracker?userId=${userId}&page=${page}&size=${size}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Milestone Tracker",
+      );
+    }
+  },
+);
+
+
+export const getMilestoneOverview = createAsyncThunk(
+  "getMilestoneOverview",
+  async (
+    { userId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/milestone-overview?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Milestone Overview",
+      );
+    }
+  },
+);
+
+export const getTeamWorkload = createAsyncThunk(
+  "getTeamWorkload",
+  async (
+    { userId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/team-workload?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Team Workload",
+      );
+    }
+  },
+);
+export const getStatusWiseSummary = createAsyncThunk(
+  "getStatusWiseSummary",
+  async (
+    { userId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/status-wise-summary?userId=${userId}`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Status Wise Summary",
+      );
+    }
+  },
+);
+
 
 const DashboardSlice = createSlice({
   name: "dashboard",
@@ -753,7 +867,11 @@ const DashboardSlice = createSlice({
     topSellLeadsList: [],
     userLeadDataMonthWiseList: [],
     revenueDataList: [],
-
+    riskQueue:[],
+    milestoneTracker:[],
+    milestoneOverview:[],
+    teamWorkload:[],
+    statusWiseSummary:[],
     // NEW
     summaryCardsData: null,
     summaryCards: {
@@ -1416,6 +1534,102 @@ const DashboardSlice = createSlice({
       getVendorVerificationRate.rejected,
       (state, action) => {
         state.vendorVerificationRate = [];
+        state.loading = false;
+      },
+    );
+
+    builder.addCase(getOperationRiskQueue.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getOperationRiskQueue.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.riskQueue = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getOperationRiskQueue.rejected,
+      (state, action) => {
+        state.riskQueue = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getMilestoneTracker.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getMilestoneTracker.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.milestoneTracker = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getMilestoneTracker.rejected,
+      (state, action) => {
+        state.milestoneTracker = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getMilestoneOverview.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getMilestoneOverview.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.milestoneOverview = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getMilestoneOverview.rejected,
+      (state, action) => {
+        state.milestoneOverview = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getTeamWorkload.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getTeamWorkload.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.teamWorkload = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getTeamWorkload.rejected,
+      (state, action) => {
+        state.teamWorkload = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getStatusWiseSummary.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getStatusWiseSummary.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.statusWiseSummary = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getStatusWiseSummary.rejected,
+      (state, action) => {
+        state.statusWiseSummary = [];
         state.loading = false;
       },
     );

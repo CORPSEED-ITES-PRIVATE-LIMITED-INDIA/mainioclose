@@ -336,6 +336,12 @@ export const navItems = [
     key: "operation",
     children: [
       {
+        title: "Dashboard",
+        icon: "LayoutDashboard",
+        url: "operation/dashboard",
+        key: "dashboard",
+      },
+      {
         title: "Projects",
         icon: "",
         url: "operation/projects",
