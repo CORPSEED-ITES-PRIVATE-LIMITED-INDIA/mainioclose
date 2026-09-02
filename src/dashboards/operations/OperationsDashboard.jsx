@@ -30,6 +30,7 @@ import {
   getTeamWorkload,
   getStatusWiseSummary,
   getRecentProjectActivities,
+  getDashboardUsersByHeirarchy,
 } from "../../toolkit/slices/dashboardSlice.js";
 // import NewSelect from "../../components/NewSelect";
 import {
@@ -47,6 +48,7 @@ import {
   Layers3,
   PackageCheck,
   ShieldCheck,
+  Users,
   Workflow,
 } from "lucide-react";
 
@@ -290,120 +292,6 @@ const defaultProjectStageConfig = {
   bg: "bg-slate-100",
   iconColor: "text-slate-600",
 };
-
-const projects = [
-  {
-    id: 1,
-    projectNo: "PRJ-2026-0018",
-    company: "ABC Recycling Pvt. Ltd.",
-    service: "Lithium Battery Recycling Authorization",
-    owner: "Nabeela",
-    status: "IN_PROGRESS",
-    priority: "High",
-    dueDate: "08 Jul 2026",
-    overallCompletion: 76,
-    currentMilestone: "Filing",
-    pendingDocs: 2,
-    amount: "₹ 1,80,000",
-    milestones: [
-      { name: "Documentation", completion: 100 },
-      { name: "Filing", completion: 65 },
-      { name: "Procurement", completion: 40 },
-      { name: "Legal", completion: 0 },
-      { name: "Approval", completion: 0 },
-    ],
-  },
-  {
-    id: 2,
-    projectNo: "PRJ-2026-0019",
-    company: "Green Earth Industries",
-    service: "EPR Registration",
-    owner: "Shruti",
-    status: "NEW",
-    priority: "Medium",
-    dueDate: "10 Jul 2026",
-    overallCompletion: 12,
-    currentMilestone: "Documentation",
-    pendingDocs: 5,
-    amount: "₹ 95,000",
-    milestones: [
-      { name: "Documentation", completion: 45 },
-      { name: "Filing", completion: 0 },
-      { name: "Procurement", completion: 0 },
-      { name: "Legal", completion: 0 },
-      { name: "Approval", completion: 0 },
-    ],
-  },
-  {
-    id: 3,
-    projectNo: "PRJ-2026-0020",
-    company: "Sunrise Metals LLP",
-    service: "CTE / CTO Assistance",
-    owner: "Shaurya",
-    status: "REWORK",
-    priority: "High",
-    dueDate: "04 Jul 2026",
-    overallCompletion: 52,
-    currentMilestone: "Legal Review",
-    pendingDocs: 1,
-    amount: "₹ 1,25,000",
-    milestones: [
-      { name: "Documentation", completion: 100 },
-      { name: "Filing", completion: 80 },
-      { name: "Procurement", completion: 60 },
-      { name: "Legal", completion: 20 },
-      { name: "Approval", completion: 0 },
-    ],
-  },
-  {
-    id: 4,
-    projectNo: "PRJ-2026-0021",
-    company: "Bright Future Foundation",
-    service: "12A / 80G Registration",
-    owner: "Priya",
-    status: "COMPLETED",
-    priority: "Low",
-    dueDate: "01 Jul 2026",
-    overallCompletion: 100,
-    currentMilestone: "Completed",
-    pendingDocs: 0,
-    amount: "₹ 75,000",
-    milestones: [
-      { name: "Documentation", completion: 100 },
-      { name: "Filing", completion: 100 },
-      { name: "Procurement", completion: 100 },
-      { name: "Legal", completion: 100 },
-      { name: "Approval", completion: 100 },
-    ],
-  },
-];
-
-const dueProjects = [
-  {
-    company: "Sunrise Metals LLP",
-    projectNo: "PRJ-2026-0020",
-    due: "04 Jul 2026",
-    milestone: "Legal Review",
-    owner: "Shaurya",
-    risk: "High",
-  },
-  {
-    company: "ABC Recycling Pvt. Ltd.",
-    projectNo: "PRJ-2026-0018",
-    due: "08 Jul 2026",
-    milestone: "Filing",
-    owner: "Nabeela",
-    risk: "Medium",
-  },
-  {
-    company: "Green Earth Industries",
-    projectNo: "PRJ-2026-0019",
-    due: "10 Jul 2026",
-    milestone: "Documentation",
-    owner: "Shruti",
-    risk: "Medium",
-  },
-];
 
 const activityDotColor = {
   GREEN: "bg-green-500",
@@ -1337,92 +1225,94 @@ function DueProjects({ items = [], loading = false }) {
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="animate-pulse rounded-xl border border-slate-100 px-3 py-2"
-              >
-                <div className="h-3 w-32 rounded bg-slate-200" />
-                <div className="mt-2 h-2.5 w-44 rounded bg-slate-100" />
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div className="h-8 rounded-lg bg-slate-100" />
-                  <div className="h-8 rounded-lg bg-slate-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : !items.length ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
-            <p className="text-xs font-semibold text-slate-700">
-              No projects at risk
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Nothing is due or overdue in the selected window.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={`${item.projectId}-${item.milestoneId}`}
-                className="rounded-xl border border-slate-100 px-3 py-2 hover:bg-slate-50"
-              >
-                <div className="flex items-start justify-between gap-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-slate-950">
-                      {item.companyName}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-slate-500">
-                      {item.projectNumber} • {item.milestoneName}
-                    </p>
+        <div className="h-[360px] overflow-y-auto pr-1">
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="animate-pulse rounded-xl border border-slate-100 px-3 py-2"
+                >
+                  <div className="h-3 w-32 rounded bg-slate-200" />
+                  <div className="mt-2 h-2.5 w-44 rounded bg-slate-100" />
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="h-8 rounded-lg bg-slate-100" />
+                    <div className="h-8 rounded-lg bg-slate-100" />
                   </div>
-
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color={
-                      item.priority === "HIGH"
-                        ? "danger"
-                        : item.priority === "MEDIUM"
-                          ? "warning"
-                          : "default"
-                    }
-                    className="text-[10px]"
-                  >
-                    {item.priority
-                      ? item.priority.charAt(0) +
-                        item.priority.slice(1).toLowerCase()
-                      : "Normal"}
-                  </Chip>
                 </div>
-
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                    <p className="text-slate-500">Due Date</p>
-                    <p className="mt-0.5 font-semibold text-slate-950">
-                      {formatDisplayDate(item.dueDate)}
-                    </p>
-                    {item.overdue && (
-                      <p className="mt-0.5 text-[10px] font-medium text-red-600">
-                        Overdue by {item.overdueDays}{" "}
-                        {item.overdueDays === 1 ? "day" : "days"}
+              ))}
+            </div>
+          ) : !items.length ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+              <p className="text-xs font-semibold text-slate-700">
+                No projects at risk
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Nothing is due or overdue in the selected window.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div
+                  key={`${item.projectId}-${item.milestoneId}`}
+                  className="rounded-xl border border-slate-100 px-3 py-2 hover:bg-slate-50"
+                >
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-950">
+                        {item.companyName}
                       </p>
-                    )}
+                      <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                        {item.projectNumber} • {item.milestoneName}
+                      </p>
+                    </div>
+
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={
+                        item.priority === "HIGH"
+                          ? "danger"
+                          : item.priority === "MEDIUM"
+                            ? "warning"
+                            : "default"
+                      }
+                      className="text-[10px]"
+                    >
+                      {item.priority
+                        ? item.priority.charAt(0) +
+                          item.priority.slice(1).toLowerCase()
+                        : "Normal"}
+                    </Chip>
                   </div>
 
-                  <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                    <p className="text-slate-500">Owner</p>
-                    <p className="mt-0.5 font-semibold text-slate-950">
-                      {item.ownerName || "Unassigned"}
-                    </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
+                      <p className="text-slate-500">Due Date</p>
+                      <p className="mt-0.5 font-semibold text-slate-950">
+                        {formatDisplayDate(item.dueDate)}
+                      </p>
+                      {item.overdue && (
+                        <p className="mt-0.5 text-[10px] font-medium text-red-600">
+                          Overdue by {item.overdueDays}{" "}
+                          {item.overdueDays === 1 ? "day" : "days"}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
+                      <p className="text-slate-500">Owner</p>
+                      <p className="mt-0.5 font-semibold text-slate-950">
+                        {item.ownerName || "Unassigned"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </CardBody>
     </Card>
   );
@@ -1490,6 +1380,14 @@ export default function OperationsDashboard() {
 
   const userId = loggedInUserId;
 
+  // NEW: which team member's data is currently being viewed.
+  // null means "show my own (logged-in user's) data".
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  // NEW: every fetch below now uses this instead of `userId` directly,
+  // so switching the dropdown swaps the entire dashboard.
+  const activeUserId = selectedUser?.id ?? userId;
+
   const toInputDate = (d) => d.toISOString().slice(0, 10);
 
   const getDefaultRange = () => {
@@ -1538,6 +1436,7 @@ export default function OperationsDashboard() {
     teamWorkload = [],
     statusWiseSummary = [],
     recentProjectActivities = [],
+    dashboardUsers = [], // NEW: hierarchy list for the dropdown
 
     loading: sharedLoading = false,
   } = useSelector((state) => state.dashboard || {});
@@ -1556,27 +1455,28 @@ export default function OperationsDashboard() {
       }
     : null;
 
-  const fetchRecentActivities = useCallback(() => {
+  // NEW: fetch the hierarchy list once we know who's logged in.
+  useEffect(() => {
     if (!userId) return;
-    dispatch(getRecentProjectActivities({ userId, limit: 5 }));
+    dispatch(getDashboardUsersByHeirarchy(userId));
   }, [dispatch, userId]);
 
   const fetchMilestoneTracker = useCallback(() => {
-    if (!userId) return;
+    if (!activeUserId) return;
 
     dispatch(
       getMilestoneTracker({
-        userId,
+        userId: activeUserId,
         page: trackerPage,
         size: trackerSize,
       }),
     );
-  }, [dispatch, userId, trackerPage]);
+  }, [dispatch, activeUserId, trackerPage]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!activeUserId) return;
     fetchMilestoneTracker();
-  }, [fetchMilestoneTracker, userId]);
+  }, [fetchMilestoneTracker, activeUserId]);
 
   const topCards = useMemo(
     () => buildTopCards(userProjectDashboard),
@@ -1584,31 +1484,31 @@ export default function OperationsDashboard() {
   );
 
   const fetchProjectOverview = useCallback(() => {
-    if (!userId || !fromDate || !toDate || dateRangeError) return;
+    if (!activeUserId || !fromDate || !toDate || dateRangeError) return;
 
     dispatch(
       getProjectOverviewCards({
-        userId,
+        userId: activeUserId,
         fromDate,
         toDate,
       }),
     );
-  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+  }, [dispatch, activeUserId, fromDate, toDate, dateRangeError]);
 
   const fetchUserProjectDashboard = useCallback(() => {
-    if (!userId || !fromDate || !toDate || dateRangeError) return;
+    if (!activeUserId || !fromDate || !toDate || dateRangeError) return;
 
     dispatch(
       getUserProjectDashboard({
-        userId,
+        userId: activeUserId,
         fromDate,
         toDate,
       }),
     );
-  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+  }, [dispatch, activeUserId, fromDate, toDate, dateRangeError]);
 
   const fetchOperationRiskQueue = useCallback(() => {
-    if (!userId) return;
+    if (!activeUserId) return;
 
     const upcomingDays =
       fromDate && toDate
@@ -1622,33 +1522,38 @@ export default function OperationsDashboard() {
 
     dispatch(
       getOperationRiskQueue({
-        userId,
+        userId: activeUserId,
         upcomingDays,
         limit: 5,
       }),
     );
-  }, [dispatch, userId, fromDate, toDate]);
+  }, [dispatch, activeUserId, fromDate, toDate]);
 
   const fetchStatusWiseSummary = useCallback(() => {
-    if (!userId || !fromDate || !toDate || dateRangeError) return;
+    if (!activeUserId || !fromDate || !toDate || dateRangeError) return;
 
-    dispatch(getStatusWiseSummary({ userId, fromDate, toDate }));
-  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+    dispatch(getStatusWiseSummary({ userId: activeUserId, fromDate, toDate }));
+  }, [dispatch, activeUserId, fromDate, toDate, dateRangeError]);
 
   const fetchTeamWorkload = useCallback(() => {
-    if (!userId || !fromDate || !toDate || dateRangeError) return;
+    if (!activeUserId || !fromDate || !toDate || dateRangeError) return;
 
-    dispatch(getTeamWorkload({ userId, fromDate, toDate }));
-  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+    dispatch(getTeamWorkload({ userId: activeUserId, fromDate, toDate }));
+  }, [dispatch, activeUserId, fromDate, toDate, dateRangeError]);
 
   const fetchMilestoneOverview = useCallback(() => {
-    if (!userId || !fromDate || !toDate || dateRangeError) return;
+    if (!activeUserId || !fromDate || !toDate || dateRangeError) return;
 
-    dispatch(getMilestoneOverview({ userId, fromDate, toDate }));
-  }, [dispatch, userId, fromDate, toDate, dateRangeError]);
+    dispatch(getMilestoneOverview({ userId: activeUserId, fromDate, toDate }));
+  }, [dispatch, activeUserId, fromDate, toDate, dateRangeError]);
+
+  const fetchRecentActivities = useCallback(() => {
+    if (!activeUserId) return;
+    dispatch(getRecentProjectActivities({ userId: activeUserId, limit: 5 }));
+  }, [dispatch, activeUserId]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!activeUserId) return;
 
     fetchProjectOverview();
     fetchUserProjectDashboard();
@@ -1665,8 +1570,9 @@ export default function OperationsDashboard() {
     fetchTeamWorkload,
     fetchMilestoneOverview,
     fetchRecentActivities,
-    userId,
+    activeUserId,
   ]);
+
   return (
     <div className="max-h-[85vh] overflow-auto overflow-x-hidden bg-slate-50 text-slate-900">
       <div className="w-full p-2 sm:p-2.5 lg:p-3">
@@ -1686,6 +1592,48 @@ export default function OperationsDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* NEW: team member selector */}
+            {dashboardUsers.length > 0 && (
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    size="sm"
+                    variant="bordered"
+                    className="h-8 rounded-lg border-slate-200 text-xs"
+                    startContent={<Users size={14} />}
+                    endContent={<ChevronDown size={14} />}
+                  >
+                    {selectedUser ? selectedUser.name : "My Dashboard"}
+                  </Button>
+                </DropdownTrigger>
+
+                <DropdownMenu
+                  aria-label="Select team member"
+                  onAction={(key) => {
+                    if (key === "self") {
+                      setSelectedUser(null);
+                      return;
+                    }
+
+                    const person = dashboardUsers.find(
+                      (user) => String(user.id) === key,
+                    );
+
+                    if (person) {
+                      setSelectedUser(person);
+                    }
+                  }}
+                >
+                  <DropdownItem key="self">My Dashboard</DropdownItem>
+                  {dashboardUsers.map((person) => (
+                    <DropdownItem key={String(person.id)}>
+                      {person.name}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            )}
+
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <div className="flex flex-col">
@@ -1758,7 +1706,7 @@ export default function OperationsDashboard() {
             cards={topCards}
             loading={userProjectDashboardLoading}
             error={userProjectDashboardError}
-            userId={userId}
+            userId={activeUserId}
             onRetry={fetchUserProjectDashboard}
           />
         </div>
@@ -1777,7 +1725,7 @@ export default function OperationsDashboard() {
             totalProjects={projectOverviewData?.totalProjects || 0}
             loading={projectOverviewLoading}
             error={projectOverviewError}
-            userId={userId}
+            userId={activeUserId}
             onRetry={fetchProjectOverview}
           />
           <DepartmentWorkload items={teamWorkload} loading={sharedLoading} />
