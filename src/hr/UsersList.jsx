@@ -1233,9 +1233,6 @@ const UsersList = () => {
                               const managerIdValue =
                                 value !== undefined ? String(value) : "";
                               field.onChange(managerIdValue);
-                              // Auto-set managerFlag true whenever a manager is selected
-                              setValue("managerFlag", !!managerIdValue);
-                              clearErrors("managerFlag");
                             }}
                             isInvalid={!!errors.managerId}
                             errorMessage={errors.managerId?.message}
@@ -1254,6 +1251,31 @@ const UsersList = () => {
                                 No managers available
                               </SelectItem>
                             )}
+                          </Select>
+                        )}
+                      />
+
+                      <Controller
+                        name="managerFlag"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="Is Manager"
+                            selectedKeys={[field.value ? "true" : "false"]}
+                            onSelectionChange={(keys) => {
+                              const value = Array.from(keys)[0];
+                              if (value !== undefined)
+                                field.onChange(value === "true");
+                            }}
+                            errorMessage={errors.managerFlag?.message}
+                            isInvalid={!!errors.managerFlag}
+                          >
+                            <SelectItem key="false" value="false">
+                              No
+                            </SelectItem>
+                            <SelectItem key="true" value="true">
+                              Yes
+                            </SelectItem>
                           </Select>
                         )}
                       />
