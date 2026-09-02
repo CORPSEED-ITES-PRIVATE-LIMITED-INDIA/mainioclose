@@ -1461,6 +1461,18 @@ export default function OperationsDashboard() {
     dispatch(getDashboardUsersByHeirarchy(userId));
   }, [dispatch, userId]);
 
+  useEffect(() => {
+    if (!userId || !dashboardUsers.length) return;
+
+    const matchedUser = dashboardUsers.find(
+      (person) => String(person.id) === String(userId),
+    );
+
+    if (matchedUser) {
+      setSelectedUser(matchedUser);
+    }
+  }, [userId, dashboardUsers]);
+
   const fetchMilestoneTracker = useCallback(() => {
     if (!activeUserId) return;
 
@@ -1603,7 +1615,7 @@ export default function OperationsDashboard() {
                     startContent={<Users size={14} />}
                     endContent={<ChevronDown size={14} />}
                   >
-                    {selectedUser ? selectedUser.name : "My Dashboard"}
+                    {selectedUser ? selectedUser.name : "Select User"}
                   </Button>
                 </DropdownTrigger>
 
@@ -1624,7 +1636,7 @@ export default function OperationsDashboard() {
                     }
                   }}
                 >
-                  <DropdownItem key="self">My Dashboard</DropdownItem>
+                  <DropdownItem key="self">Select User</DropdownItem>
                   {dashboardUsers.map((person) => (
                     <DropdownItem key={String(person.id)}>
                       {person.name}
