@@ -836,6 +836,24 @@ export const getStatusWiseSummary = createAsyncThunk(
     }
   },
 );
+export const getRecentProjectActivities = createAsyncThunk(
+  "getRecentProjectActivities",
+  async ({ userId, limit=5 }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/user-dashboard/recent-activities?userId=${userId}&limit=${limit}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Recent Project Activities",
+      );
+    }
+  },
+);
 
 
 const DashboardSlice = createSlice({
@@ -861,6 +879,7 @@ const DashboardSlice = createSlice({
     milestoneOverview:[],
     teamWorkload:[],
     statusWiseSummary:[],
+    recentProjectActivities:[],
     // NEW
     summaryCardsData: null,
     summaryCards: {
@@ -1619,6 +1638,25 @@ const DashboardSlice = createSlice({
       getStatusWiseSummary.rejected,
       (state, action) => {
         state.statusWiseSummary = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getRecentProjectActivities.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getRecentProjectActivities.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.recentProjectActivities = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getRecentProjectActivities.rejected,
+      (state, action) => {
+        state.recentProjectActivities = [];
         state.loading = false;
       },
     );

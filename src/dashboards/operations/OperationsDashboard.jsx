@@ -29,6 +29,7 @@ import {
   getMilestoneOverview,
   getTeamWorkload,
   getStatusWiseSummary,
+  getRecentProjectActivities,
 } from "../../toolkit/slices/dashboardSlice.js";
 // import NewSelect from "../../components/NewSelect";
 import {
@@ -404,32 +405,104 @@ const dueProjects = [
   },
 ];
 
-const activities = [
-  {
-    dot: "bg-green-500",
-    title: "Milestone completed",
-    desc: "Documentation completed for ABC Recycling Pvt. Ltd.",
-    time: "03 Jul 2026, 10:45 AM",
-  },
-  {
-    dot: "bg-blue-500",
-    title: "Project moved to In Progress",
-    desc: "EPR Registration - Green Earth Industries",
-    time: "03 Jul 2026, 09:35 AM",
-  },
-  {
-    dot: "bg-yellow-500",
-    title: "Project sent for Rework",
-    desc: "Legal review correction required for Sunrise Metals LLP",
-    time: "02 Jul 2026, 05:10 PM",
-  },
-  {
-    dot: "bg-green-500",
-    title: "Project completed",
-    desc: "12A / 80G Registration completed for Bright Future Foundation",
-    time: "02 Jul 2026, 03:20 PM",
-  },
-];
+const activityDotColor = {
+  GREEN: "bg-green-500",
+  BLUE: "bg-blue-500",
+  ORANGE: "bg-amber-500",
+  YELLOW: "bg-amber-500",
+  RED: "bg-red-500",
+};
+
+const defaultActivityDotColor = "bg-slate-400";
+
+function formatActivityTimestamp(isoDate) {
+  if (!isoDate) return "-";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  const datePart = date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const timePart = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${datePart}, ${timePart}`;
+}
+
+function RecentActivities({ items = [], loading = false }) {
+  return (
+    <Card className="rounded-xl border border-slate-200 shadow-sm">
+      <CardHeader className="px-3 pt-2.5 pb-0">
+        <SectionTitle
+          title="Recent Project Activities"
+          subtitle="Latest milestone & project status updates"
+        />
+      </CardHeader>
+
+      <CardBody className="px-3 pb-2.5">
+        <div className="h-[360px] space-y-2.5 overflow-y-auto pr-1">
+          {loading ? (
+            [1, 2, 3, 4, 5].map((item) => (
+              <div key={item} className="flex animate-pulse gap-2.5">
+                <div className="pt-1">
+                  <span className="block h-2.5 w-2.5 rounded-full bg-slate-200" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="h-3 w-32 rounded bg-slate-200" />
+                  <div className="mt-1.5 h-2.5 w-48 rounded bg-slate-100" />
+                  <div className="mt-1.5 h-2.5 w-24 rounded bg-slate-100" />
+                </div>
+              </div>
+            ))
+          ) : !items.length ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+              <p className="text-xs font-semibold text-slate-700">
+                No recent activity found
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Activity will show up here as projects and milestones update.
+              </p>
+            </div>
+          ) : (
+            items.map((activity, index) => (
+              <div
+                key={`${activity.activityType}-${activity.timestamp}-${index}`}
+                className="flex gap-2.5"
+              >
+                <div className="pt-1">
+                  <span
+                    className={`block h-2.5 w-2.5 rounded-full ${
+                      activityDotColor[activity.colorCode] ||
+                      defaultActivityDotColor
+                    }`}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-900">
+                    {activity.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">
+                    {activity.description}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">
+                    {formatActivityTimestamp(activity.timestamp)}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
 const statusConfig = {
   OPEN: {
@@ -942,68 +1015,70 @@ function DepartmentWorkload({ items = [], loading = false }) {
       </CardHeader>
 
       <CardBody className="px-3 pb-2.5">
-        {loading ? (
-          <div className="space-y-2.5">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="animate-pulse">
-                <div className="mb-1.5 flex items-center justify-between gap-2.5">
-                  <div className="flex-1">
-                    <div className="h-3 w-32 rounded bg-slate-200" />
-                    <div className="mt-2 h-2.5 w-40 rounded bg-slate-100" />
-                  </div>
-                  <div className="h-3 w-8 rounded bg-slate-200" />
-                </div>
-                <div className="h-1.5 rounded-full bg-slate-100" />
-              </div>
-            ))}
-          </div>
-        ) : !items.length ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
-            <p className="text-xs font-semibold text-slate-700">
-              No team workload data found
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              There is no assigned work to summarize yet.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {items.map((item) => {
-              const completion = toFiniteNumber(item.completionPercentage);
-
-              return (
-                <div key={item.departmentId}>
+        <div className="h-[360px] overflow-y-auto pr-1">
+          {loading ? (
+            <div className="space-y-2.5">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="animate-pulse">
                   <div className="mb-1.5 flex items-center justify-between gap-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-slate-900">
-                        {item.departmentName}
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        {item.completedCount} completed / {item.assignedCount}{" "}
-                        assigned
+                    <div className="flex-1">
+                      <div className="h-3 w-32 rounded bg-slate-200" />
+                      <div className="mt-2 h-2.5 w-40 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-3 w-8 rounded bg-slate-200" />
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : !items.length ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+              <p className="text-xs font-semibold text-slate-700">
+                No team workload data found
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                There is no assigned work to summarize yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {items.map((item) => {
+                const completion = toFiniteNumber(item.completionPercentage);
+
+                return (
+                  <div key={item.departmentId}>
+                    <div className="mb-1.5 flex items-center justify-between gap-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-slate-900">
+                          {item.departmentName}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {item.completedCount} completed / {item.assignedCount}{" "}
+                          assigned
+                        </p>
+                      </div>
+
+                      <p className="shrink-0 text-xs font-bold text-slate-950">
+                        {formatPercentage(completion)}
                       </p>
                     </div>
 
-                    <p className="shrink-0 text-xs font-bold text-slate-950">
-                      {formatPercentage(completion)}
-                    </p>
+                    <Progress
+                      aria-label={item.departmentName}
+                      value={completion}
+                      color={completion >= 60 ? "success" : "warning"}
+                      size="sm"
+                      radius="full"
+                      classNames={{
+                        track: "bg-slate-100",
+                      }}
+                    />
                   </div>
-
-                  <Progress
-                    aria-label={item.departmentName}
-                    value={completion}
-                    color={completion >= 60 ? "success" : "warning"}
-                    size="sm"
-                    radius="full"
-                    classNames={{
-                      track: "bg-slate-100",
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </CardBody>
     </Card>
   );
@@ -1353,40 +1428,6 @@ function DueProjects({ items = [], loading = false }) {
   );
 }
 
-function RecentActivities() {
-  return (
-    <Card className="rounded-xl border border-slate-200 shadow-sm">
-      <CardHeader className="px-3 pt-2.5 pb-0">
-        <SectionTitle title="Recent Project Activities" />
-      </CardHeader>
-
-      <CardBody className="px-3 pb-2.5">
-        <div className="space-y-2.5">
-          {activities.map((activity) => (
-            <div key={activity.title} className="flex gap-2.5">
-              <div className="pt-1">
-                <span
-                  className={`block h-2.5 w-2.5 rounded-full ${activity.dot}`}
-                />
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-900">
-                  {activity.title}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-600">{activity.desc}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  {activity.time}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
-
 function MilestoneDefinitionCard() {
   return (
     <Card className="rounded-xl border border-slate-200 shadow-sm">
@@ -1496,6 +1537,7 @@ export default function OperationsDashboard() {
     milestoneOverview: milestoneOverviewData = [],
     teamWorkload = [],
     statusWiseSummary = [],
+    recentProjectActivities = [],
 
     loading: sharedLoading = false,
   } = useSelector((state) => state.dashboard || {});
@@ -1513,6 +1555,11 @@ export default function OperationsDashboard() {
         last: milestoneTracker.last ?? true,
       }
     : null;
+
+  const fetchRecentActivities = useCallback(() => {
+    if (!userId) return;
+    dispatch(getRecentProjectActivities({ userId, limit: 5 }));
+  }, [dispatch, userId]);
 
   const fetchMilestoneTracker = useCallback(() => {
     if (!userId) return;
@@ -1609,6 +1656,7 @@ export default function OperationsDashboard() {
     fetchStatusWiseSummary();
     fetchTeamWorkload();
     fetchMilestoneOverview();
+    fetchRecentActivities();
   }, [
     fetchProjectOverview,
     fetchUserProjectDashboard,
@@ -1616,6 +1664,7 @@ export default function OperationsDashboard() {
     fetchStatusWiseSummary,
     fetchTeamWorkload,
     fetchMilestoneOverview,
+    fetchRecentActivities,
     userId,
   ]);
   return (
@@ -1734,8 +1783,11 @@ export default function OperationsDashboard() {
           <DepartmentWorkload items={teamWorkload} loading={sharedLoading} />
           <DueProjects items={riskQueue} loading={sharedLoading} />
           <div className="space-y-2">
-            <MilestoneDefinitionCard />
-            <RecentActivities />
+            {/* <MilestoneDefinitionCard /> */}
+            <RecentActivities
+              items={recentProjectActivities}
+              loading={sharedLoading}
+            />
           </div>
         </div>
 
