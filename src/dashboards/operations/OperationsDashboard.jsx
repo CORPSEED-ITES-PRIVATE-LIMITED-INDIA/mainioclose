@@ -1603,7 +1603,7 @@ export default function OperationsDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap justify-center items-center gap-2">
             {/* NEW: team member selector */}
             {dashboardUsers.length > 0 && (
               <Dropdown>
@@ -1620,6 +1620,7 @@ export default function OperationsDashboard() {
                 </DropdownTrigger>
 
                 <DropdownMenu
+                  className="max-h-64 overflow-y-auto"
                   aria-label="Select team member"
                   onAction={(key) => {
                     if (key === "self") {
@@ -1702,14 +1703,14 @@ export default function OperationsDashboard() {
               )}
             </div>
 
-            <Button
+            {/* <Button
               size="sm"
               color="primary"
               className="h-8 rounded-lg text-xs"
               startContent={<BarChart3 size={14} />}
             >
               Export Report
-            </Button>
+            </Button> */}
           </div>
         </div>
 

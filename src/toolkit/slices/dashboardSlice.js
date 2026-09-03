@@ -854,6 +854,97 @@ export const getRecentProjectActivities = createAsyncThunk(
     }
   },
 );
+export const getPaymentLegalSummary = createAsyncThunk(
+  "getPaymentLegalSummary",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/payment-legal-verification/summary?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Payment Legal Summary",
+      );
+    }
+  },
+);
+export const getCompanyLegalSummary = createAsyncThunk(
+  "getCompanyLegalSummary",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/company-legal-verification/summary?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Company Legal Summary",
+      );
+    }
+  },
+);
+export const getVendorQuotationLegalSummary = createAsyncThunk(
+  "getVendorQuotationLegalSummary",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/vendor-quotation-legal-requests/summary?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Vendor Quotation Legal Summary",
+      );
+    }
+  },
+);
+export const getLegalSummary = createAsyncThunk(
+  "getLegalSummary",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/legal-requests/summary?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Legal Summary",
+      );
+    }
+  },
+);
+
+export const getPendingQueue = createAsyncThunk(
+  "getPendingQueue",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/legal-dashboard/pending-queue?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Pending Queue",
+      );
+    }
+  },
+);
 
 
 const DashboardSlice = createSlice({
@@ -880,6 +971,11 @@ const DashboardSlice = createSlice({
     teamWorkload:[],
     statusWiseSummary:[],
     recentProjectActivities:[],
+    paymentLegalSummary:[],
+    companyLegalSummary:[],
+    vendorQuotationLegalSummary:[],
+    legalSummary:[],
+    pendingQueue:[],
     // NEW
     summaryCardsData: null,
     summaryCards: {
@@ -1657,6 +1753,101 @@ const DashboardSlice = createSlice({
       getRecentProjectActivities.rejected,
       (state, action) => {
         state.recentProjectActivities = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getPaymentLegalSummary.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getPaymentLegalSummary.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.paymentLegalSummary = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getPaymentLegalSummary.rejected,
+      (state, action) => {
+        state.paymentLegalSummary = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getCompanyLegalSummary.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getCompanyLegalSummary.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.companyLegalSummary = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getCompanyLegalSummary.rejected,
+      (state, action) => {
+        state.companyLegalSummary = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getVendorQuotationLegalSummary.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getVendorQuotationLegalSummary.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.vendorQuotationLegalSummary = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getVendorQuotationLegalSummary.rejected,
+      (state, action) => {
+        state.vendorQuotationLegalSummary = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getLegalSummary.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getLegalSummary.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.legalSummary = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getLegalSummary.rejected,
+      (state, action) => {
+        state.legalSummary = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getPendingQueue.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getPendingQueue.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.pendingQueue = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getPendingQueue.rejected,
+      (state, action) => {
+        state.pendingQueue = [];
         state.loading = false;
       },
     );

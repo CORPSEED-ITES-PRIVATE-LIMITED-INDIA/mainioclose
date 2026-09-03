@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
+import LegalDashboard from "../dashboards/legal/LegalDashboard";
 const AdminDashboards = lazy(() => import("../dashboards/AdminDashboards"));
 const LeadDashboardDetail = lazy(
   () => import("../dashboards/LeadDashboardDetail"),
@@ -35,6 +36,7 @@ const DashboardRouting = () => {
       {/* Quality dashboard */}
       <Route path="quality/dashboard" element={<AdminDashboards />} />
       <Route path="operation/dashboard" element={<OperationsDashboard />} />
+      <Route path="legal/dashboard" element={<LegalDashboard />} />
     </>
   );
 };

@@ -335,12 +335,12 @@ export const navItems = [
     url: "/operation",
     key: "operation",
     children: [
-      {
-        title: "Dashboard",
-        icon: "LayoutDashboard",
-        url: "operation/dashboard",
-        key: "dashboard",
-      },
+      // {
+      //   title: "Dashboard",
+      //   icon: "LayoutDashboard",
+      //   url: "operation/dashboard",
+      //   key: "dashboard",
+      // },
       {
         title: "Projects",
         icon: "",
@@ -999,6 +999,12 @@ export const operationEmpItems = [
 ];
 
 export const legalNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "legal/dashboard",
+    key: "dashboard",
+  },
   {
     title: "Operation requests",
     icon: "Scale",
