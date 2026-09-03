@@ -144,7 +144,7 @@ const CRT_DECISION_DEFAULT_VALUES = {
 const crtDecisionSchema = z
   .object({
     status: z.string().min(1, "Status is required"),
-    expensePaidBy: z.string().min(1, "Expense paid by is required"),
+    expensePaidBy: z.string().optional(),
     clientPaymentDate: z.string().optional(),
     clientPaymentMode: z.string().optional(),
     clientPaymentBankLedgerId: z.string().optional(),
@@ -153,6 +153,20 @@ const crtDecisionSchema = z
     remark: z.string().trim().min(1, "Remark is required"),
   })
   .superRefine((data, ctx) => {
+    // Expense paid by isn't applicable when the decision is REJECTED — only
+    // the remark is shown/required in that case.
+    if (data.status === "REJECTED") {
+      return;
+    }
+
+    if (!data.expensePaidBy) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["expensePaidBy"],
+        message: "Expense paid by is required",
+      });
+    }
+
     if (data.expensePaidBy !== "CLIENT_TO_COMPANY") {
       return;
     }
@@ -426,10 +440,13 @@ const Expenses = () => {
     dispatch(getActivePaymentLedgerForPaymentRegister());
   }, [dispatch]);
 
+  const decisionStatus = watchDecision("status");
   const decisionExpensePaidBy = watchDecision("expensePaidBy");
   const decisionClientPaymentMode = watchDecision("clientPaymentMode");
 
-  const isCompanyPaidExpense = decisionExpensePaidBy === "CLIENT_TO_COMPANY";
+  const isRejectedDecision = decisionStatus === "REJECTED";
+  const isCompanyPaidExpense =
+    !isRejectedDecision && decisionExpensePaidBy === "CLIENT_TO_COMPANY";
   const isCashPaymentMode = decisionClientPaymentMode === "CASH";
 
   const isCashLedger = useCallback((ledger) => {
@@ -1589,7 +1606,20 @@ const Expenses = () => {
                     errorMessage={error?.message}
                     onSelectionChange={(keys) => {
                       const value = Array.from(keys)[0];
-                      field.onChange(value ? String(value) : "");
+                      const nextValue = value ? String(value) : "";
+
+                      field.onChange(nextValue);
+
+                      // Expense paid by (and the payment details it drives)
+                      // don't apply to a rejected decision — only the remark
+                      // is needed, so clear them when REJECTED is selected.
+                      if (nextValue === "REJECTED") {
+                        setDecisionValue("expensePaidBy", "");
+                        setDecisionValue("clientPaymentMode", "");
+                        setDecisionValue("clientPaymentBankLedgerId", "");
+                        setDecisionValue("clientPaymentReference", "");
+                        setDecisionValue("clientPaymentProofUrl", "");
+                      }
                     }}
                   >
                     {crtDecisionOptions.map((option) => (
@@ -1601,42 +1631,44 @@ const Expenses = () => {
                 )}
               />
 
-              <Controller
-                name="expensePaidBy"
-                control={decisionControl}
-                render={({ field, fieldState: { error } }) => (
-                  <Select
-                    isRequired
-                    label="Expense Paid By"
-                    selectedKeys={
-                      field.value ? new Set([field.value]) : new Set([])
-                    }
-                    isInvalid={!!error}
-                    errorMessage={error?.message}
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0];
-                      const nextValue = value ? String(value) : "";
-
-                      field.onChange(nextValue);
-
-                      if (nextValue !== "CLIENT_TO_COMPANY") {
-                        setDecisionValue("clientPaymentMode", "");
-                        setDecisionValue("clientPaymentBankLedgerId", "");
-                        setDecisionValue("clientPaymentReference", "");
-                        setDecisionValue("clientPaymentProofUrl", "");
+              {!isRejectedDecision && (
+                <Controller
+                  name="expensePaidBy"
+                  control={decisionControl}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      isRequired
+                      label="Expense Paid By"
+                      selectedKeys={
+                        field.value ? new Set([field.value]) : new Set([])
                       }
-                    }}
-                  >
-                    <SelectItem key="CLIENT_DIRECT" textValue="Client">
-                      Client
-                    </SelectItem>
+                      isInvalid={!!error}
+                      errorMessage={error?.message}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+                        const nextValue = value ? String(value) : "";
 
-                    <SelectItem key="CLIENT_TO_COMPANY" textValue="Company">
-                      Company
-                    </SelectItem>
-                  </Select>
-                )}
-              />
+                        field.onChange(nextValue);
+
+                        if (nextValue !== "CLIENT_TO_COMPANY") {
+                          setDecisionValue("clientPaymentMode", "");
+                          setDecisionValue("clientPaymentBankLedgerId", "");
+                          setDecisionValue("clientPaymentReference", "");
+                          setDecisionValue("clientPaymentProofUrl", "");
+                        }
+                      }}
+                    >
+                      <SelectItem key="CLIENT_DIRECT" textValue="Client">
+                        Client
+                      </SelectItem>
+
+                      <SelectItem key="CLIENT_TO_COMPANY" textValue="Company">
+                        Company
+                      </SelectItem>
+                    </Select>
+                  )}
+                />
+              )}
 
               {isCompanyPaidExpense && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

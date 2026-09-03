@@ -5354,6 +5354,7 @@ const ProjectDetails = () => {
                       render={({ field }) => (
                         <FileUploader
                           label="Upload file"
+                          acceptZip={true}
                           value={field.value}
                           errorMessage={errors.fileUrl?.message}
                           onChange={(uploadedUrl) => {

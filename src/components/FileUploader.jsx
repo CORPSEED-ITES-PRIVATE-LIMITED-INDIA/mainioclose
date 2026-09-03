@@ -17,6 +17,21 @@ const allowedTypes = [
   "application/csv",
 ];
 
+// Zip files get reported under a handful of different MIME types depending on
+// the browser/OS, so we check both the MIME type and the file extension.
+const zipTypes = [
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-zip",
+  "multipart/x-zip",
+];
+
+const isZipFile = (file) =>
+  zipTypes.includes(file?.type) ||
+  String(file?.name || "")
+    .toLowerCase()
+    .endsWith(".zip");
+
 const extractUploadedUrl = (responseData) => {
   if (!responseData) return "";
 
@@ -52,6 +67,7 @@ const FileUploader = ({
   isRequired = false,
   errorMessage,
   uploadingType = "single",
+  acceptZip = false,
 }) => {
   const dropRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -113,6 +129,8 @@ const FileUploader = ({
     const selectedFileList = Array.from(selectedFiles || []);
 
     const validFiles = selectedFileList.filter((file) => {
+      if (acceptZip && isZipFile(file)) return true;
+
       return !file?.type || allowedTypes.includes(file.type);
     });
 
@@ -223,15 +241,19 @@ const FileUploader = ({
   const helperText =
     placeholder ||
     (uploadingType === "multiple"
-      ? "Drag & drop files here, paste, or choose files"
-      : "Drag & drop file here, paste, or choose file");
+      ? `Drag & drop files here, paste, or choose files${acceptZip ? " (zip supported)" : ""}`
+      : `Drag & drop file here, paste, or choose file${acceptZip ? " (zip supported)" : ""}`);
+
+  const inputAcceptTypes = acceptZip
+    ? [...allowedTypes, ...zipTypes, ".zip"]
+    : allowedTypes;
 
   return (
     <div className="w-full">
       <input
         type="file"
         ref={fileInputRef}
-        accept={allowedTypes.join(",")}
+        accept={inputAcceptTypes.join(",")}
         className="hidden"
         style={{ display: "none" }}
         onChange={handleFileInputChange}
