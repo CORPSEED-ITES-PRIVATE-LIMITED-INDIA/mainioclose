@@ -1052,6 +1052,15 @@ const ProjectDetails = () => {
     return [];
   }, [vendorList]);
 
+  const normalizedProjectTimeline = useMemo(() => {
+    if (Array.isArray(projectTimeline)) return projectTimeline;
+    if (Array.isArray(projectTimeline?.content)) return projectTimeline.content;
+    if (Array.isArray(projectTimeline?.data)) return projectTimeline.data;
+    if (Array.isArray(projectTimeline?.data?.content))
+      return projectTimeline.data.content;
+    return [];
+  }, [projectTimeline]);
+
   console.log("adsjgdfjgs", normalizedVendorList);
 
   const vendorDetail = useSelector(
@@ -1090,10 +1099,10 @@ const ProjectDetails = () => {
 
   // Project-level timeline: newest event first.
   const projectTimelineEvents = useMemo(() => {
-    return [...(projectTimeline || [])].sort(
+    return [...normalizedProjectTimeline].sort(
       (a, b) => new Date(b?.occurredAt || 0) - new Date(a?.occurredAt || 0),
     );
-  }, [projectTimeline]);
+  }, [normalizedProjectTimeline]);
   // Assignment History: system re-checks a "skip non-mandatory" milestone
   // every few seconds while it's pending, so most assignmentEvents are just
   // that automatic re-check noise. Drop those and merge in the (always
