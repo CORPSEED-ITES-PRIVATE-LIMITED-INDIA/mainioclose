@@ -2462,6 +2462,7 @@ const ProjectDetails = () => {
     const replacePayload = {
       projectId: Number(projectId),
       requiredDocumentId,
+      fileUrl: data.fileUrl,
       fileName: data.fileName,
       uploadedById: Number(userId),
       createdById: Number(userId),
