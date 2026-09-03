@@ -15,48 +15,95 @@ import {
   Pagination,
   Chip,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
-import {
-  getAllVendorsPaymentCount,
-  getAllVendorsPaymentList,
-} from "../toolkit/slices/accountSlice";
+import { getVendorTransactionsByUser } from "../toolkit/slices/operationSlice";
 import { useParams } from "react-router-dom";
 import { inrCurrency } from "../common";
-import NewSelect from "../components/NewSelect";
 
 export const columns = [
-  { name: "DATE", uid: "date" },
-  { name: "ESTIMATE NO.", uid: "estimateNo", sortable: true },
-  { name: "SERVICE", uid: "service" },
+  { name: "PO NO.", uid: "purchaseOrderNumber", sortable: true },
+  { name: "VENDOR NAME", uid: "vendorName" },
+  { name: "INVOICE", uid: "invoice" },
+  { name: "TAXABLE AMOUNT", uid: "taxableAmount" },
+  { name: "GST AMOUNT", uid: "gstAmount" },
+  { name: "GST %", uid: "gstPercentage" },
+  { name: "INVOICE AMOUNT", uid: "invoiceAmount" },
+  { name: "TDS AMOUNT", uid: "tdsAmount" },
+  { name: "TDS %", uid: "tdsPercentage" },
+  { name: "AMOUNT PAID TO VENDOR", uid: "amountPaidToVendor" },
+  { name: "SETTLEMENT AMOUNT", uid: "settlementAmount" },
+  { name: "PAYMENT MODE", uid: "paymentMode" },
+  { name: "TRANSACTION REF.", uid: "transactionReference" },
   { name: "STATUS", uid: "status" },
-  { name: "COMPANY", uid: "company" },
-  { name: "AMOUNT", uid: "amount" },
-  { name: "ADDED BY", uid: "addedBy" },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "PAYMENT RELEASED DATE", uid: "paymentReleasedDate" },
+  { name: "PROOF", uid: "paymentProof" },
 ];
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
+// The API returns GST/TDS as absolute amounts only, so the rate is derived
+// from the taxable amount (e.g. 18 gstAmount on 100 taxableAmount => 18%).
+function computePercentage(amount, base) {
+  if (amount == null || base == null || Number(base) === 0) return null;
+  return Number(((Number(amount) / Number(base)) * 100).toFixed(2));
+}
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "DRAFT":
+      return "default";
+
+    case "PENDING_APPROVAL":
+      return "warning";
+
+    case "APPROVED":
+      return "success";
+
+    case "REJECTED":
+      return "danger";
+
+    case "PAYMENT_RELEASED":
+      return "primary";
+
+    case "PAYMENT_DONE":
+    case "COMPLETED":
+      return "success";
+
+    default:
+      return "default";
+  }
+};
+
 const INITIAL_VISIBLE_COLUMNS = [
-  "date",
-  "estimateNo",
-  "service",
+  "purchaseOrderNumber",
+  "vendorName",
+  "invoice",
+  "invoiceAmount",
+  "gstAmount",
+  "gstPercentage",
+  "tdsAmount",
+  "tdsPercentage",
+  "amountPaidToVendor",
+  "paymentMode",
+  "transactionReference",
   "status",
-  "company",
-  "amount",
-  "addedBy",
-  "actions",
+  "paymentReleasedDate",
+  "paymentProof",
 ];
 
 const VendorPaymentForProcurement = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
-  const data = useSelector((state) => state.account.vendorsPaymentList);
-  const count = useSelector((state) => state.account.vendorsPaymentCount);
+  const data = useSelector(
+    (state) => state.operation.vendorTransactionsByUser?.content,
+  );
+  const count = useSelector(
+    (state) => state.operation.vendorTransactionsByUser?.totalElements || 0,
+  );
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -64,16 +111,19 @@ const VendorPaymentForProcurement = () => {
   );
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "age",
-    direction: "ascending",
+    column: "paymentReleasedDate",
+    direction: "descending",
   });
   const [page, setPage] = React.useState(1);
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
-    dispatch(getAllVendorsPaymentList({ page, size: rowsPerPage }));
-    dispatch(getAllVendorsPaymentCount());
-  }, [dispatch, page, rowsPerPage]);
+    if (userId) {
+      dispatch(
+        getVendorTransactionsByUser({ userId, page, size: rowsPerPage }),
+      );
+    }
+  }, [dispatch, userId, page, rowsPerPage]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -112,71 +162,134 @@ const VendorPaymentForProcurement = () => {
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
-      case "date":
+      case "purchaseOrderNumber":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.date).format("DD-MM-YYYY")}
+          <p className="text-[12.5px] font-normal whitespace-nowrap">
+            {rowData?.purchaseOrderNumber || "-"}
           </p>
         );
-      case "estimateNo":
-        return <p className="text-sm capitalize">{rowData?.estimateNo}</p>;
-      case "service":
-        return <p className="text-sm capitalize">{rowData?.serviceName}</p>;
-      case "company":
-        return <p className="text-sm capitalize">{rowData?.company}</p>;
-      case "status":
+      case "vendorName":
         return (
-          <div className="flex flex-col gap-2">
-            <Chip
-              className="text-sm capitalize"
-              size="sm"
-              color={
-                rowData?.status === "approved"
-                  ? "success"
-                  : rowData?.status === "disapproved"
-                    ? "danger"
-                    : "default"
-              }
-            >
-              {rowData?.status}
-            </Chip>
-          </div>
+          <p className="text-[12.5px] font-normal whitespace-nowrap">
+            {rowData?.vendorName || "-"}
+          </p>
         );
-      case "amount":
+      case "invoice":
         return (
           <div className="flex flex-col">
-            <p className="text-sm capitalize">
-              Paid : {inrCurrency(rowData?.totalPaidAmount)}
-            </p>
-            <p className="text-sm capitalize">
-              Due : {inrCurrency(rowData?.totalDueAmount)}
-            </p>
-            <p className="text-sm capitalize">
-              Total : {inrCurrency(rowData?.totalAmount)}
-            </p>
+            <span className="text-[12.5px] font-normal">
+              {rowData?.invoiceNumber || "-"}
+            </span>
+            {rowData?.invoiceDate && (
+              <span className="text-[11.5px] text-default-500">
+                {dayjs(rowData?.invoiceDate).format("DD MMM YYYY")}
+              </span>
+            )}
           </div>
         );
-      case "addedBy":
-        return <p className="text-sm capitalize">{rowData?.assigneeName}</p>;
-      case "actions":
+      case "taxableAmount":
         return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <EllipsisVertical className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem
-                  key="history"
-                  href={`erp/${userId}/procurement/vendors-payments/${rowData?.id}/paymentHistory`}
-                >
-                  History
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.taxableAmount) || "-"}
+          </span>
+        );
+      case "gstAmount":
+        return (
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.gstAmount) || "-"}
+          </span>
+        );
+      case "gstPercentage": {
+        const gstPercentage = computePercentage(
+          rowData?.gstAmount,
+          rowData?.taxableAmount,
+        );
+        return (
+          <span className="text-[12.5px] font-normal">
+            {gstPercentage != null ? `${gstPercentage}%` : "-"}
+          </span>
+        );
+      }
+      case "invoiceAmount":
+        return (
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.invoiceAmount) || "-"}
+          </span>
+        );
+      case "tdsAmount":
+        return (
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.tdsAmount) || "-"}
+          </span>
+        );
+      case "tdsPercentage": {
+        const tdsPercentage = computePercentage(
+          rowData?.tdsAmount,
+          rowData?.taxableAmount,
+        );
+        return (
+          <span className="text-[12.5px] font-normal">
+            {tdsPercentage != null ? `${tdsPercentage}%` : "-"}
+          </span>
+        );
+      }
+      case "amountPaidToVendor":
+        return (
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.amountPaidToVendor) || "-"}
+          </span>
+        );
+      case "settlementAmount":
+        return (
+          <span className="text-[12.5px] font-normal">
+            {inrCurrency(rowData?.settlementAmount) || "-"}
+          </span>
+        );
+      case "paymentMode":
+        return (
+          <p className="text-[12.5px] font-normal capitalize">
+            {rowData?.paymentMode || "-"}
+          </p>
+        );
+      case "transactionReference":
+        return (
+          <p className="text-[12.5px] font-normal">
+            {rowData?.transactionReference || "-"}
+          </p>
+        );
+      case "status":
+        return (
+          <Chip
+            size="sm"
+            className="capitalize"
+            variant="flat"
+            color={getStatusColor(rowData?.status)}
+          >
+            {rowData?.status || "-"}
+          </Chip>
+        );
+      case "paymentReleasedDate":
+        return (
+          <div className="flex flex-col text-[12.5px]">
+            {rowData?.paymentReleasedDate
+              ? dayjs(rowData?.paymentReleasedDate).format(
+                  "DD MMM YYYY hh:mm A",
+                )
+              : "-"}
           </div>
+        );
+      case "paymentProof":
+        return rowData?.paymentProof ? (
+          <a
+            href={rowData.paymentProof}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[12.5px] text-blue-500 hover:underline"
+          >
+            View
+          </a>
+        ) : (
+          "-"
         );
       default:
         return cellValue;
@@ -334,7 +447,7 @@ const VendorPaymentForProcurement = () => {
       <Table
         isHeaderSticky
         removeWrapper={false}
-        aria-label="Example table with custom cells, pagination and sorting"
+        aria-label="Vendor's payments table with custom cells, pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
@@ -356,7 +469,7 @@ const VendorPaymentForProcurement = () => {
           {(column) => (
             <TableColumn
               key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
+              align="start"
               allowsSorting={column.sortable}
             >
               {column.name}
@@ -365,7 +478,7 @@ const VendorPaymentForProcurement = () => {
         </TableHeader>
         <TableBody emptyContent={"No data found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={`${item.estimateId}unbill`}>
+            <TableRow key={item.paymentRequestId}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

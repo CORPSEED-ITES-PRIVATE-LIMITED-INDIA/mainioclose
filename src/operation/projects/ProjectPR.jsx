@@ -41,6 +41,12 @@ const columns = [
   { name: "VENDOR NAME", uid: "vendorName" },
   { name: "INVOICE AMOUNT", uid: "invoiceAmount" },
   { name: "PAYABLE AMOUNT", uid: "payableAmount" },
+  { name: "GST AMOUNT", uid: "gstAmount" },
+  { name: "GST %", uid: "gstPercentage" },
+  { name: "TDS AMOUNT", uid: "tdsAmount" },
+  { name: "TDS %", uid: "tdsPercentage" },
+  { name: "PAYMENT MODE", uid: "paymentMode" },
+  { name: "TRANSACTION REF.", uid: "transactionReference" },
   { name: "STATUS", uid: "status" },
   { name: "APPROVED DATE", uid: "approvedDate" },
   { name: "PAYMENT RELEASED DATE", uid: "paymentReleasedDate" },
@@ -88,6 +94,12 @@ const INITIAL_VISIBLE_COLUMNS = [
   "vendorName",
   "invoiceAmount",
   "payableAmount",
+  "gstAmount",
+  "gstPercentage",
+  "tdsAmount",
+  "tdsPercentage",
+  "paymentMode",
+  "transactionReference",
   "status",
   "approvedDate",
   "paymentReleasedDate",
@@ -247,6 +259,48 @@ const ProjectPR = () => {
               {inrCurrency(rowData?.payableAmount) || "-"}
             </span>
           </div>
+        );
+      case "gstAmount":
+        return (
+          <span className="font-normal text-[12.5px]">
+            {rowData?.totalGstAmount != null
+              ? inrCurrency(rowData.totalGstAmount)
+              : "-"}
+          </span>
+        );
+      case "gstPercentage":
+        return (
+          <span className="font-normal text-[12.5px]">
+            {rowData?.gstPercentage != null
+              ? `${Number(rowData.gstPercentage)}%`
+              : "-"}
+          </span>
+        );
+      case "tdsAmount":
+        return (
+          <span className="font-normal text-[12.5px]">
+            {rowData?.tdsAmount != null ? inrCurrency(rowData.tdsAmount) : "-"}
+          </span>
+        );
+      case "tdsPercentage":
+        return (
+          <span className="font-normal text-[12.5px]">
+            {rowData?.tdsPercentage != null
+              ? `${Number(rowData.tdsPercentage)}%`
+              : "-"}
+          </span>
+        );
+      case "paymentMode":
+        return (
+          <span className="font-normal text-[12.5px] capitalize">
+            {rowData?.paymentMode || "-"}
+          </span>
+        );
+      case "transactionReference":
+        return (
+          <span className="font-normal text-[12.5px]">
+            {rowData?.transactionReference || "-"}
+          </span>
         );
       case "status":
         return (

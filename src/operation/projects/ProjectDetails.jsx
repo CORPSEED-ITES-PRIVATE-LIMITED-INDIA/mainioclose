@@ -11,6 +11,10 @@ import {
   Chip,
   DatePicker,
   Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -26,6 +30,8 @@ import {
   Progress,
   Select,
   SelectItem,
+  Tab,
+  Tabs,
   Textarea,
   useDisclosure,
   User,
@@ -43,6 +49,7 @@ import {
   getClientLogInCredentialDetailForPortal,
   getHistoryByMileStoneIdAndProjectId,
   getOperationProjectDetailById,
+  getProjectTimeline,
   getRequiredDocumentsByProductId,
   mapVendorWithProjectInOperations,
   updateApplicantTypeInProject,
@@ -96,6 +103,7 @@ import {
   FileUp,
   FileText,
   Download,
+  Banknote,
 } from "lucide-react";
 import dayjs from "dayjs";
 import NewSelect from "../../components/NewSelect";
@@ -169,6 +177,13 @@ const STATUS_BADGE_CLASSES = {
 
 const getStatusBadgeClass = (colorKey) =>
   STATUS_BADGE_CLASSES[colorKey] || STATUS_BADGE_CLASSES.default;
+
+const TIMELINE_EVENT_ICONS = {
+  PROJECT_STATUS_CHANGED: Flag,
+  MILESTONE_STATUS_CHANGED: Flag,
+  MILESTONE_ASSIGNEE_CHANGED: UserCog,
+  MILESTONE_ASSIGNMENT_CHANGED: UserCog,
+};
 
 const getInitials = (name = "") => {
   return name
@@ -961,6 +976,7 @@ const expenseSchema = z.object({
 
 const ProjectDetails = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const lastHistoryRequestRef = useRef(null);
   const { projectId, userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -1008,6 +1024,12 @@ const ProjectDetails = () => {
   }, [milestoneStatusList]);
   const mileStoneHistoryDetail = useSelector(
     (state) => state.operation.mileStoneEventHistory,
+  );
+  const projectTimeline = useSelector(
+    (state) => state.operation.projectTimeline,
+  );
+  const projectTimelineLoading = useSelector(
+    (state) => state.operation.projectTimelineLoading,
   );
   const applicantTypeList = useSelector(
     (state) => state.setting.applicantTypeList,
@@ -1064,6 +1086,14 @@ const ProjectDetails = () => {
     vendorDetail?.selectedVendorId ||
     null;
 
+  const [detailPanelTab, setDetailPanelTab] = useState("history");
+
+  // Project-level timeline: newest event first.
+  const projectTimelineEvents = useMemo(() => {
+    return [...(projectTimeline || [])].sort(
+      (a, b) => new Date(b?.occurredAt || 0) - new Date(a?.occurredAt || 0),
+    );
+  }, [projectTimeline]);
   // Assignment History: system re-checks a "skip non-mandatory" milestone
   // every few seconds while it's pending, so most assignmentEvents are just
   // that automatic re-check noise. Drop those and merge in the (always
@@ -1093,6 +1123,9 @@ const ProjectDetails = () => {
   const department = useSelector(
     (state) => state.auth.getDepartmentDetail?.department,
   );
+
+  console.log("Department:", department);
+
   const isManager = useSelector(
     (state) => state.auth.getDepartmentDetail?.isManager,
   );
@@ -1466,7 +1499,9 @@ const ProjectDetails = () => {
   const isReworkSelected = statusObj?.newStatusName === "REWORK";
 
   const getRequiredDocId = (doc) => {
-    return doc?.uploadId ?? doc?.documentId ?? doc?.requiredDocumentId ?? doc?.id;
+    return (
+      doc?.uploadId ?? doc?.documentId ?? doc?.requiredDocumentId ?? doc?.id
+    );
   };
 
   const getRequiredDocName = (doc) => {
@@ -1520,9 +1555,7 @@ const ProjectDetails = () => {
       ...prev,
       changedById: userId,
       reworkDocuments: (prev.reworkDocuments || []).map((doc) =>
-        Number(doc.uploadId) === Number(uploadId)
-          ? { ...doc, reason }
-          : doc,
+        Number(doc.uploadId) === Number(uploadId) ? { ...doc, reason } : doc,
       ),
     }));
   };
@@ -1625,6 +1658,7 @@ const ProjectDetails = () => {
         }
       },
     );
+    dispatch(getProjectTimeline(projectId));
 
     dispatch(getAllMilestoneStatusesForOperations());
     dispatch(getClientLogInCredentialDetailForPortal({ projectId, userId }));
@@ -3412,7 +3446,7 @@ const ProjectDetails = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:gap-3">
+              <div className="flex flex-col gap-0.5 2xl:flex-row 2xl:items-baseline 2xl:gap-3">
                 <h1 className="font-sans text-base font-semibold shrink-0">
                   {detailedData?.projectDetails?.name || "Project"}
                 </h1>
@@ -3494,6 +3528,27 @@ const ProjectDetails = () => {
                     {selectedMilestone?.assignedUser?.fullName || "Unassigned"}
                   </span>
                 </div>
+
+                {(department === "Procurement" || adminRole) && (
+                  <div className="flex items-center gap-1.5 text-default-600">
+                    <Banknote className="h-3.5 w-3.5 text-default-400" />
+                    <span className="text-default-400">Paid amount:</span>
+                    <span className="font-medium text-foreground">
+                      {inrCurrency(detailedData?.projectDetails?.paidAmount) ||
+                        "NA"}
+                    </span>
+                  </div>
+                )}
+                {(department === "Procurement" || adminRole) && (
+                  <div className="flex items-center gap-1.5 text-default-600">
+                    <Banknote className="h-3.5 w-3.5 text-default-400" />
+                    <span className="text-default-400">Total amount:</span>
+                    <span className="font-medium text-foreground">
+                      {inrCurrency(detailedData?.projectDetails?.totalAmount) ||
+                        "NA"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {detailedData?.projectDetails?.address && (
@@ -3557,108 +3612,115 @@ const ProjectDetails = () => {
                 )}
             </div>
 
-            <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:max-w-[560px] xl:justify-end">
-              {isProcurementMilestone &&
-                (department === "Procurement" || adminRole) && (
+            <div className="flex w-full items-center justify-end gap-2 xl:w-auto">
+              <Dropdown>
+                <DropdownTrigger>
                   <Button
+                    isIconOnly
                     size="sm"
                     radius="md"
                     variant="flat"
-                    className="font-medium"
+                    aria-label="More actions"
+                  >
+                    <EllipsisVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Project actions">
+                  {isProcurementMilestone &&
+                    (department === "Procurement" || adminRole) && (
+                      <DropdownItem
+                        key="vendor"
+                        startContent={<Building2 className="h-3.5 w-3.5" />}
+                        onPress={() => {
+                          vendorDrawer.onOpen();
+                          dispatch(
+                            getVendorDetailInProject({
+                              procurementAssignmentId:
+                                detailedData?.projectDetails
+                                  ?.procurementMilestoneAssignmentId,
+                            }),
+                          );
+                        }}
+                      >
+                        Vendor
+                      </DropdownItem>
+                    )}
+
+                  {isProcurementMilestone &&
+                    (department === "Procurement" || adminRole) && (
+                      <DropdownItem
+                        key="purchaseOrders"
+                        startContent={<Receipt className="h-3.5 w-3.5" />}
+                        onPress={() => {
+                          navigate(
+                            `/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`,
+                            {
+                              state: {
+                                procurementAssignmentId:
+                                  detailedData?.projectDetails
+                                    ?.procurementMilestoneAssignmentId,
+                                vendorId: selectedVendorId,
+                                defaultEstimatedAmount:
+                                  detailedData?.projectDetails
+                                    ?.estimatedAmount ||
+                                  detailedData?.projectDetails?.amount ||
+                                  0,
+                              },
+                            },
+                          );
+                        }}
+                      >
+                        Purchase Orders
+                      </DropdownItem>
+                    )}
+
+                  {isProcurementMilestone &&
+                    (department === "Procurement" || adminRole) && (
+                      <DropdownItem
+                        key="acknowledgement"
+                        startContent={<FolderOpen className="h-3.5 w-3.5" />}
+                        onPress={handleOpenDirectoriesDrawer}
+                      >
+                        Acknowledgement
+                      </DropdownItem>
+                    )}
+
+                  <DropdownItem
+                    key="documents"
+                    startContent={<FileText className="h-3.5 w-3.5" />}
                     onPress={() => {
-                      vendorDrawer.onOpen();
+                      onOpen();
+
                       dispatch(
-                        getVendorDetailInProject({
-                          procurementAssignmentId:
-                            detailedData?.projectDetails
-                              ?.procurementMilestoneAssignmentId,
+                        getRequiredDocumentsByProductId({
+                          userId,
+                          projectId,
                         }),
                       );
+
+                      fetchCompanyDocuments();
                     }}
                   >
-                    Vendor
-                  </Button>
-                )}
+                    Documents
+                  </DropdownItem>
 
-              {isProcurementMilestone &&
-                (department === "Procurement" || adminRole) && (
-                  <Button
-                    as={Link}
-                    size="sm"
-                    radius="md"
-                    color="primary"
-                    variant="flat"
-                    className="font-medium"
-                    to={`/erp/${userId}/operation/projects/${projectId}/projectDetail/purchaseOrder`}
-                    state={{
-                      procurementAssignmentId:
-                        detailedData?.projectDetails
-                          ?.procurementMilestoneAssignmentId,
-                      vendorId: selectedVendorId,
-                      defaultEstimatedAmount:
-                        detailedData?.projectDetails?.estimatedAmount ||
-                        detailedData?.projectDetails?.amount ||
-                        0,
-                    }}
+                  <DropdownItem
+                    key="clientLoginCredentials"
+                    startContent={<UserCog className="h-3.5 w-3.5" />}
+                    onPress={clientModal.onOpen}
                   >
-                    Purchase Orders
-                  </Button>
-                )}
+                    Client login credentials
+                  </DropdownItem>
 
-              {isProcurementMilestone &&
-                (department === "Procurement" || adminRole) && (
-                  <Button
-                    size="sm"
-                    radius="md"
-                    variant="flat"
-                    className="font-medium"
-                    startContent={<FolderOpen className="h-3.5 w-3.5" />}
-                    onPress={handleOpenDirectoriesDrawer}
+                  <DropdownItem
+                    key="comment"
+                    startContent={<MessageSquare className="h-3.5 w-3.5" />}
+                    onPress={activityDrawer.onOpen}
                   >
-                    Directories
-                  </Button>
-                )}
-
-              <Button
-                size="sm"
-                radius="md"
-                variant="flat"
-                className="font-medium"
-                onPress={() => {
-                  onOpen();
-
-                  dispatch(
-                    getRequiredDocumentsByProductId({
-                      userId,
-                      projectId,
-                    }),
-                  );
-
-                  fetchCompanyDocuments();
-                }}
-              >
-                Documents
-              </Button>
-
-              <Button
-                size="sm"
-                radius="md"
-                variant="flat"
-                className="font-medium"
-                onPress={clientModal.onOpen}
-              >
-                Client login credentials
-              </Button>
-
-              <Button
-                size="sm"
-                radius="md"
-                color="primary"
-                className="font-medium"
-                onPress={activityDrawer.onOpen}
-              >
-                Comment
-              </Button>
+                    Comment
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
           </div>
         </section>
@@ -3820,9 +3882,9 @@ const ProjectDetails = () => {
                       <h2 className="truncate text-[15px] font-semibold text-foreground">
                         {selectedMilestone?.milestoneName || "Milestone"}
                       </h2>
-                      <p className="mt-0.5 text-[11px] text-default-500">
+                      {/* <p className="mt-0.5 text-[11px] text-default-500">
                         Assignment ID: {selectedMilestone?.id || "-"}
-                      </p>
+                      </p> */}
                     </div>
                     {!isCertificationMilestone && (
                       <div className="flex flex-wrap items-center gap-2">
@@ -3925,134 +3987,294 @@ const ProjectDetails = () => {
                   </dl>
 
                   <div className="pt-3">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">
-                          History
-                        </p>
-                        <p className="text-[11px] text-default-500">
-                          Assignment changes and status updates for this
-                          milestone
-                        </p>
-                      </div>
+                    <Tabs
+                      aria-label="Milestone history and project timeline"
+                      selectedKey={detailPanelTab}
+                      onSelectionChange={setDetailPanelTab}
+                      variant="underlined"
+                      size="sm"
+                      classNames={{
+                        base: "w-full",
+                        tabList: "gap-4 px-0",
+                        panel: "px-0 pb-0",
+                      }}
+                    >
+                      <Tab key="history" title="History">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              History
+                            </p>
+                            <p className="text-[11px] text-default-500">
+                              Assignment changes and status updates for this
+                              milestone
+                            </p>
+                          </div>
 
-                      <span className="text-[11px] font-medium text-default-500">
-                        {milestoneTimeline.length} update
-                        {milestoneTimeline.length === 1 ? "" : "s"}
-                      </span>
-                    </div>
+                          <span className="text-[11px] font-medium text-default-500">
+                            {milestoneTimeline.length} update
+                            {milestoneTimeline.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
 
-                    {milestoneTimeline.length > 0 ? (
-                      <div className="relative space-y-0 before:absolute before:left-3 before:top-1 before:h-[calc(100%-8px)] before:w-px before:bg-default-200">
-                        {milestoneTimeline.map((event, index) => {
-                          if (event.kind === "status") {
-                            const color =
-                              statusColors[event.newStatus] || "default";
+                        {milestoneTimeline.length > 0 ? (
+                          <div className="relative space-y-0 before:absolute before:left-3 before:top-1 before:h-[calc(100%-8px)] before:w-px before:bg-default-200">
+                            {milestoneTimeline.map((event, index) => {
+                              if (event.kind === "status") {
+                                const color =
+                                  statusColors[event.newStatus] || "default";
 
-                            return (
-                              <div
-                                key={`status-${event.date}-${index}`}
-                                className="relative flex gap-2.5 py-2"
-                              >
-                                <div
-                                  className={`z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${getStatusBadgeClass(color)}`}
-                                >
-                                  <Flag className="h-3 w-3" />
-                                </div>
-
-                                <div className="min-w-0 flex-1 pb-0.5">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="text-[11.5px] font-medium text-default-500">
-                                        {formatEnumLabel(event.previousStatus)}
-                                      </span>
-                                      <ArrowRight className="h-3 w-3 text-default-400" />
-                                      <Chip
-                                        size="sm"
-                                        variant="flat"
-                                        color={color}
-                                        className="h-5 px-1.5 text-[10.5px]"
-                                      >
-                                        {formatEnumLabel(event.newStatus)}
-                                      </Chip>
+                                return (
+                                  <div
+                                    key={`status-${event.date}-${index}`}
+                                    className="relative flex gap-2.5 py-2"
+                                  >
+                                    <div
+                                      className={`z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${getStatusBadgeClass(color)}`}
+                                    >
+                                      <Flag className="h-3 w-3" />
                                     </div>
 
-                                    <span className="text-[10.5px] font-medium text-default-400">
-                                      {event.date
-                                        ? dayjs(event.date).format(
-                                            "DD MMM YYYY, hh:mm A",
-                                          )
-                                        : "-"}
-                                    </span>
+                                    <div className="min-w-0 flex-1 pb-0.5">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          <span className="text-[11.5px] font-medium text-default-500">
+                                            {formatEnumLabel(
+                                              event.previousStatus,
+                                            )}
+                                          </span>
+                                          <ArrowRight className="h-3 w-3 text-default-400" />
+                                          <Chip
+                                            size="sm"
+                                            variant="flat"
+                                            color={color}
+                                            className="h-5 px-1.5 text-[10.5px]"
+                                          >
+                                            {formatEnumLabel(event.newStatus)}
+                                          </Chip>
+                                        </div>
+
+                                        <span className="text-[10.5px] font-medium text-default-400">
+                                          {event.date
+                                            ? dayjs(event.date).format(
+                                                "DD MMM YYYY, hh:mm A",
+                                              )
+                                            : "-"}
+                                        </span>
+                                      </div>
+
+                                      <p className="mt-1 text-[11px] text-default-600">
+                                        by{" "}
+                                        <span className="font-medium text-foreground">
+                                          {event.changedByName || "-"}
+                                        </span>
+                                        {event.reason?.trim() && (
+                                          <span className="text-default-500">
+                                            {" "}
+                                            · "{event.reason.trim()}"
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  key={`assignment-${event.date}-${index}`}
+                                  className="relative flex gap-2.5 py-2"
+                                >
+                                  <div className="z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary">
+                                    <UserCog className="h-3 w-3" />
                                   </div>
 
-                                  <p className="mt-1 text-[11px] text-default-600">
-                                    by{" "}
-                                    <span className="font-medium text-foreground">
-                                      {event.changedByName || "-"}
-                                    </span>
-                                    {event.reason?.trim() && (
-                                      <span className="text-default-500">
-                                        {" "}
-                                        · "{event.reason.trim()}"
+                                  <div className="min-w-0 flex-1 pb-0.5">
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <p className="break-words text-[11.5px] font-semibold text-foreground">
+                                        {event.reason?.trim() || "Reassigned"}
+                                      </p>
+
+                                      <span className="text-[10.5px] font-medium text-default-400">
+                                        {event.date
+                                          ? dayjs(event.date).format(
+                                              "DD MMM YYYY, hh:mm A",
+                                            )
+                                          : "-"}
                                       </span>
+                                    </div>
+
+                                    <p className="mt-1 text-[11px] text-default-600">
+                                      Assigned to{" "}
+                                      <span className="font-medium text-foreground">
+                                        {event.assignedToName || "Unassigned"}
+                                      </span>{" "}
+                                      by{" "}
+                                      <span className="font-medium text-foreground">
+                                        {event.assignedByName || "-"}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="py-8 text-center">
+                            <p className="text-sm font-semibold text-foreground">
+                              No history found
+                            </p>
+                            <p className="mt-1 text-[11px] text-default-500">
+                              History will appear here once this milestone is
+                              updated.
+                            </p>
+                          </div>
+                        )}
+                      </Tab>
+
+                      <Tab key="timeline" title="Timeline">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              Timeline
+                            </p>
+                            <p className="text-[11px] text-default-500">
+                              Complete history of events for this project
+                            </p>
+                          </div>
+
+                          <span className="text-[11px] font-medium text-default-500">
+                            {projectTimelineEvents.length} event
+                            {projectTimelineEvents.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
+
+                        {projectTimelineLoading ? (
+                          <div className="py-8 text-center">
+                            <p className="text-[11px] text-default-500">
+                              Loading timeline...
+                            </p>
+                          </div>
+                        ) : projectTimelineEvents.length > 0 ? (
+                          <div className="relative space-y-0 before:absolute before:left-3 before:top-1 before:h-[calc(100%-8px)] before:w-px before:bg-default-200">
+                            {projectTimelineEvents.map((event, index) => {
+                              const color =
+                                statusColors[event?.newValue] || "default";
+                              const EventIcon =
+                                TIMELINE_EVENT_ICONS[event?.eventType] ||
+                                Activity;
+
+                              return (
+                                <div
+                                  key={event?.id ?? `timeline-${index}`}
+                                  className="relative flex gap-2.5 py-2"
+                                >
+                                  <div
+                                    className={`z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${getStatusBadgeClass(color)}`}
+                                  >
+                                    <EventIcon className="h-3 w-3" />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1 pb-0.5">
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <p className="break-words text-[11.5px] font-semibold text-foreground">
+                                        {event?.eventTitle ||
+                                          formatEnumLabel(event?.eventType)}
+                                      </p>
+
+                                      <span className="text-[10.5px] font-medium text-default-400">
+                                        {event?.occurredAt
+                                          ? dayjs(event.occurredAt).format(
+                                              "DD MMM YYYY, hh:mm A",
+                                            )
+                                          : "-"}
+                                      </span>
+                                    </div>
+
+                                    {event?.newValue && (
+                                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                        {event?.previousValue && (
+                                          <>
+                                            <span className="text-[11.5px] font-medium text-default-500">
+                                              {formatEnumLabel(
+                                                event.previousValue,
+                                              )}
+                                            </span>
+                                            <ArrowRight className="h-3 w-3 text-default-400" />
+                                          </>
+                                        )}
+
+                                        <Chip
+                                          size="sm"
+                                          variant="flat"
+                                          color={color}
+                                          className="h-5 px-1.5 text-[10.5px]"
+                                        >
+                                          {formatEnumLabel(event.newValue)}
+                                        </Chip>
+                                      </div>
                                     )}
-                                  </p>
+
+                                    {event?.description && (
+                                      <p className="mt-1 text-[11px] text-default-600">
+                                        {event.description}
+                                      </p>
+                                    )}
+
+                                    {(event?.newAssigneeName ||
+                                      event?.previousAssigneeName) && (
+                                      <p className="mt-1 text-[11px] text-default-600">
+                                        Assigned to{" "}
+                                        <span className="font-medium text-foreground">
+                                          {event?.newAssigneeName ||
+                                            "Unassigned"}
+                                        </span>
+                                        {event?.previousAssigneeName && (
+                                          <span className="text-default-500">
+                                            {" "}
+                                            (was {event.previousAssigneeName})
+                                          </span>
+                                        )}
+                                      </p>
+                                    )}
+
+                                    <p className="mt-1 text-[11px] text-default-600">
+                                      {event?.milestoneName && (
+                                        <span className="text-default-500">
+                                          {event.milestoneName} ·{" "}
+                                        </span>
+                                      )}
+                                      by{" "}
+                                      <span className="font-medium text-foreground">
+                                        {event?.performedByName ||
+                                          event?.triggeredByName ||
+                                          "System"}
+                                      </span>
+                                      {event?.reason?.trim() && (
+                                        <span className="text-default-500">
+                                          {" "}
+                                          · "{event.reason.trim()}"
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div
-                              key={`assignment-${event.date}-${index}`}
-                              className="relative flex gap-2.5 py-2"
-                            >
-                              <div className="z-[1] flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary">
-                                <UserCog className="h-3 w-3" />
-                              </div>
-
-                              <div className="min-w-0 flex-1 pb-0.5">
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <p className="break-words text-[11.5px] font-semibold text-foreground">
-                                    {event.reason?.trim() || "Reassigned"}
-                                  </p>
-
-                                  <span className="text-[10.5px] font-medium text-default-400">
-                                    {event.date
-                                      ? dayjs(event.date).format(
-                                          "DD MMM YYYY, hh:mm A",
-                                        )
-                                      : "-"}
-                                  </span>
-                                </div>
-
-                                <p className="mt-1 text-[11px] text-default-600">
-                                  Assigned to{" "}
-                                  <span className="font-medium text-foreground">
-                                    {event.assignedToName || "Unassigned"}
-                                  </span>{" "}
-                                  by{" "}
-                                  <span className="font-medium text-foreground">
-                                    {event.assignedByName || "-"}
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center">
-                        <p className="text-sm font-semibold text-foreground">
-                          No history found
-                        </p>
-                        <p className="mt-1 text-[11px] text-default-500">
-                          History will appear here once this milestone is
-                          updated.
-                        </p>
-                      </div>
-                    )}
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="py-8 text-center">
+                            <p className="text-sm font-semibold text-foreground">
+                              No timeline events found
+                            </p>
+                            <p className="mt-1 text-[11px] text-default-500">
+                              Events will appear here as this project
+                              progresses.
+                            </p>
+                          </div>
+                        )}
+                      </Tab>
+                    </Tabs>
                   </div>
                 </div>
               </section>
@@ -6805,8 +7027,8 @@ const ProjectDetails = () => {
                       Project Directories
                     </h2>
                     <p className="mt-1 text-sm text-default-500">
-                      Upload and manage procurement documents & certificates
-                      for this project.
+                      Upload and manage procurement documents & certificates for
+                      this project.
                     </p>
                   </div>
 
@@ -6855,8 +7077,7 @@ const ProjectDetails = () => {
                         No directories yet
                       </p>
                       <p className="mt-1 text-xs text-default-500">
-                        Create a directory above to start uploading
-                        documents.
+                        Create a directory above to start uploading documents.
                       </p>
                     </div>
                   </div>

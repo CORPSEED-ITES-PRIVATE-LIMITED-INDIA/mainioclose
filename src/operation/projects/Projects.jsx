@@ -26,6 +26,7 @@ import {
   addToast,
   Chip,
   Progress,
+  Tooltip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -39,6 +40,7 @@ import {
   Eye,
   Filter,
   EllipsisVertical,
+  Info,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -84,6 +86,7 @@ export const columns = [
   { name: "ESTIMATE NO.", uid: "estimateNumber" },
   { name: "DATE", uid: "date" },
   { name: "MILESTONE", uid: "mileStone" },
+  { name: "MILESTONE STATUS", uid: "milestoneStatus" },
   // { name: "AMOUNT", uid: "amount" },
   // { name: "DUE AMOUNT", uid: "dueAmount" },
   { name: "STATUS", uid: "status" },
@@ -93,6 +96,21 @@ export const columns = [
 
 export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
+
+export const MILESTONE_STATUS_COLOR = {
+  COMPLETED: "success",
+  IN_PROGRESS: "warning",
+  NEW: "default",
+  ON_HOLD: "danger",
+};
+
+export function formatMilestoneStatus(status) {
+  if (!status) return "-";
+  return status
+    .split("_")
+    .map((word) => capitalize(word))
+    .join(" ");
 }
 
 const INITIAL_VISIBLE_COLUMNS = [
@@ -109,6 +127,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   // "amount",
   // "dueAmount",
   "mileStone",
+  "milestoneStatus",
   "status",
   "actions",
 ];
@@ -469,6 +488,73 @@ const Projects = () => {
               />
             </div>
           );
+        case "milestoneStatus": {
+          const milestones = rowData?.milestones || [];
+          // Prefer the milestone the API marks as current, then the one that is
+          // in progress, then the first one still pending (NEW).
+          const activeMilestone =
+            milestones.find(
+              (milestone) => milestone?.id === rowData?.currentMilestoneId,
+            ) ||
+            milestones.find(
+              (milestone) => milestone?.status === "IN_PROGRESS",
+            ) ||
+            milestones.find((milestone) => milestone?.status === "NEW");
+          const currentName =
+            rowData?.currentMilestoneName || activeMilestone?.name;
+          const currentStatus =
+            rowData?.currentMilestoneStatusName || activeMilestone?.status;
+
+          return (
+            <div className="flex items-center gap-1.5">
+              {currentName ? (
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={MILESTONE_STATUS_COLOR[currentStatus] || "default"}
+                >
+                  {`${currentName} - ${formatMilestoneStatus(currentStatus)}`}
+                </Chip>
+              ) : (
+                <span className="text-[12.5px]">-</span>
+              )}
+
+              {milestones.length > 0 && (
+                <Tooltip
+                  content={
+                    <div className="flex flex-col gap-1.5 py-1">
+                      <p className="text-[11.5px] font-semibold text-default-500">
+                        All milestones
+                      </p>
+                      <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5">
+                        {milestones.map((milestone) => (
+                          <React.Fragment key={milestone?.id}>
+                            <span className="text-[12.5px]">
+                              {milestone?.name}
+                            </span>
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color={
+                                MILESTONE_STATUS_COLOR[milestone?.status] ||
+                                "default"
+                              }
+                            >
+                              {formatMilestoneStatus(milestone?.status)}
+                            </Chip>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                  }
+                >
+                  <Info className="w-3.5 h-3.5 text-default-400 cursor-pointer shrink-0" />
+                </Tooltip>
+              )}
+            </div>
+          );
+        }
+
         case "address":
           return (
             <div className="flex flex-col">

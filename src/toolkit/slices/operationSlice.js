@@ -580,6 +580,20 @@ export const getHistoryByMileStoneIdAndProjectId = createAsyncThunk(
   },
 );
 
+export const getProjectTimeline = createAsyncThunk(
+  "getProjectTimeline",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/${projectId}/timeline`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.message);
+    }
+  },
+);
+
 export const uploadProjectsDocument = createAsyncThunk(
   "uploadProjectsDocument",
   async ({ projectId, milestoneAssignmentId, data }, { rejectWithValue }) => {
@@ -1018,10 +1032,7 @@ export const getAllTechnicalResearchCases = createAsyncThunk(
 
 export const assignTechnicalResearchCase = createAsyncThunk(
   "assignTechnicalResearchCase",
-  async (
-    { caseId, assigneeUserId, assignedByUserId },
-    { rejectWithValue },
-  ) => {
+  async ({ caseId, assigneeUserId, assignedByUserId }, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/operationService/api/technical-research-cases/${caseId}/assignments`,
@@ -1193,6 +1204,16 @@ export const getProcurementPaymentRequestByOrderId = createAsyncThunk(
   async ({ procurementOrderId, page, size }) => {
     const response = await api.get(
       `/operationService/api/procurement-payment-requests/byPurchaseOrderId/${procurementOrderId}?page=${page - 1}&size=${size}`,
+    );
+    return response.data;
+  },
+);
+
+export const getVendorTransactionsByUser = createAsyncThunk(
+  "getVendorTransactionsByUser",
+  async ({ userId, page, size }) => {
+    const response = await api.get(
+      `/operationService/api/procurement-payment-requests/vendor-transactions/by-user/${userId}?page=${page - 1}&size=${size}`,
     );
     return response.data;
   },
@@ -1834,7 +1855,7 @@ export const decideProjectLifecycleRequest = createAsyncThunk(
 
 export const payGovernmentPortalFee = createAsyncThunk(
   "payGovernmentPortalFee",
-  async ({ expenseId,projectId,userId, data }, { rejectWithValue }) => {
+  async ({ expenseId, projectId, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/operationService/api/projects/expenses/${expenseId}/government-fee/payment-proof?projectId=${projectId}&userId=${userId}`,
@@ -1853,7 +1874,7 @@ export const payGovernmentPortalFee = createAsyncThunk(
 );
 export const accountsApproveGovernmentFee = createAsyncThunk(
   "accountsApproveGovernmentFee",
-  async ({ expenseId,projectId,userId, data }, { rejectWithValue }) => {
+  async ({ expenseId, projectId, userId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
         `/operationService/api/projects/expenses/${expenseId}/government-fee/payment-decision?projectId=${projectId}&userId=${userId}`,
@@ -1881,7 +1902,9 @@ export const approveAdminPOApproval = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || { message: "Unable to approve purchase order." },
+        error?.response?.data || {
+          message: "Unable to approve purchase order.",
+        },
       );
     }
   },
@@ -1898,7 +1921,9 @@ export const rejectAdminPOApproval = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || { message: "Unable to reject purchase order." },
+        error?.response?.data || {
+          message: "Unable to reject purchase order.",
+        },
       );
     }
   },
@@ -1906,14 +1931,13 @@ export const rejectAdminPOApproval = createAsyncThunk(
 
 export const getAllPOByStatus = createAsyncThunk(
   "getAllPOByStatus",
-  async ({  page=0,size=10,status  }, { rejectWithValue }) => {
-    try{
-
+  async ({ page = 0, size = 10, status }, { rejectWithValue }) => {
+    try {
       const params = {
         page,
         size,
       };
-      
+
       if (
         status !== undefined &&
         status !== null &&
@@ -1922,11 +1946,11 @@ export const getAllPOByStatus = createAsyncThunk(
       ) {
         params.status = status;
       }
-      
+
       const response = await api.get("/operationService/api/purchase-orders", {
         params,
       });
-      
+
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -1937,7 +1961,6 @@ export const getAllPOByStatus = createAsyncThunk(
     }
   },
 );
-
 
 export const getAllCompanyDocs = createAsyncThunk(
   "getAllCompanyDocs",
@@ -1955,12 +1978,13 @@ export const getAllCompanyDocs = createAsyncThunk(
 );
 export const addCompanyDocument = createAsyncThunk(
   "addCompanyDocument",
-  async ({userId,data}, { rejectWithValue }) => {
+  async ({ userId, data }, { rejectWithValue }) => {
     try {
-
-      const response = await api.post(`/operationService/api/company-documents?userId=${userId}`,data);
+      const response = await api.post(
+        `/operationService/api/company-documents?userId=${userId}`,
+        data,
+      );
       return response.data;
-
     } catch (error) {
       return rejectWithValue(
         error?.response?.data || "Failed to Add company doc",
@@ -1970,12 +1994,13 @@ export const addCompanyDocument = createAsyncThunk(
 );
 export const updateCompanyDocument = createAsyncThunk(
   "updateCompanyDocument",
-  async ({userId,id,data}, { rejectWithValue }) => {
+  async ({ userId, id, data }, { rejectWithValue }) => {
     try {
-
-      const response = await api.put(`/operationService/api/company-documents/${id}?userId=${userId}`,data);
+      const response = await api.put(
+        `/operationService/api/company-documents/${id}?userId=${userId}`,
+        data,
+      );
       return response.data;
-
     } catch (error) {
       return rejectWithValue(
         error?.response?.data || "Failed to Update company doc",
@@ -1985,12 +2010,12 @@ export const updateCompanyDocument = createAsyncThunk(
 );
 export const removeCompanyDocument = createAsyncThunk(
   "removeCompanyDocument",
-  async ({id}, { rejectWithValue }) => {
+  async ({ id }, { rejectWithValue }) => {
     try {
-
-      const response = await api.delete(`/operationService/api/company-documents/${id}`);
+      const response = await api.delete(
+        `/operationService/api/company-documents/${id}`,
+      );
       return response.data;
-
     } catch (error) {
       return rejectWithValue(
         error?.response?.data || "Failed to remove company doc",
@@ -2000,12 +2025,15 @@ export const removeCompanyDocument = createAsyncThunk(
 );
 export const getMilestoneOnHoldReqs = createAsyncThunk(
   "getMilestoneOnHoldReqs",
-  async ({managerId,page=0,size=10,status="PENDING"}, { rejectWithValue }) => {
+  async (
+    { managerId, page = 0, size = 10, status = "PENDING" },
+    { rejectWithValue },
+  ) => {
     try {
-
-      const response = await api.get(`/operationService/api/milestone-on-hold-requests/manager/${managerId}?page=${page}&size=${size}&status=${status}`,);
+      const response = await api.get(
+        `/operationService/api/milestone-on-hold-requests/manager/${managerId}?page=${page}&size=${size}&status=${status}`,
+      );
       return response.data;
-
     } catch (error) {
       return rejectWithValue(
         error?.response?.data || "Failed to fetch On Hold Requests",
@@ -2015,33 +2043,32 @@ export const getMilestoneOnHoldReqs = createAsyncThunk(
 );
 export const approveMilestoneOnHoldReqs = createAsyncThunk(
   "approveMilestoneOnHoldReqs",
-  async ({requestId,data}, { rejectWithValue }) => {
+  async ({ requestId, data }, { rejectWithValue }) => {
     try {
-
-      const response = await api.put(`/operationService/api/milestone-on-hold-requests/${requestId}/decision`,data);
+      const response = await api.put(
+        `/operationService/api/milestone-on-hold-requests/${requestId}/decision`,
+        data,
+      );
       return response.data;
-
     } catch (error) {
       return rejectWithValue(
-        error?.response?.data || "Failed to Approve/Disapprove On Hold Requests",
+        error?.response?.data ||
+          "Failed to Approve/Disapprove On Hold Requests",
       );
     }
   },
 );
 
-
 export const getQuoteByRFQAndVendorId = createAsyncThunk(
   "getQuoteByRFQAndVendorId",
-  async ({rfqId,vendorId}, { rejectWithValue }) => {
+  async ({ rfqId, vendorId }, { rejectWithValue }) => {
     try {
-
-      const response = await api.get(`/operationService/api/quotation/rfq/${rfqId}/vendor/${vendorId}`,);
-      return response.data;
-
-    } catch (error) {
-      return rejectWithValue(
-        error?.response?.data || "Failed to fetch Quotes",
+      const response = await api.get(
+        `/operationService/api/quotation/rfq/${rfqId}/vendor/${vendorId}`,
       );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || "Failed to fetch Quotes");
     }
   },
 );
@@ -2062,6 +2089,8 @@ export const OperationSlice = createSlice({
     updatedDepartmentConfig: null,
     clientLoginCredential: {},
     mileStoneEventHistory: {},
+    projectTimeline: [],
+    projectTimelineLoading: false,
     projectCount: 0,
     activitiesByProjectId: {},
     expenseList: [],
@@ -2079,6 +2108,7 @@ export const OperationSlice = createSlice({
     allProcurementPurchaseOrdersLoading: false,
     allProcurementPurchaseOrdersError: null,
     paymentRequestByPoId: {},
+    vendorTransactionsByUser: {},
     compnyDocumentListByCompanyIdAndUnitId: [],
     departmentUsers: [],
     vendorLegalRequests: [],
@@ -2090,11 +2120,11 @@ export const OperationSlice = createSlice({
     expensePaymentQueueError: null,
     accountsDecisionLoading: false,
     accountsDecisionError: null,
-    procurementOrderByStatus:[],
-    milestoneOnHoldReqs:[],
-    companyDocs:[],
-    companyDoc:{},
-    quoteByRFQAndVendor:[],
+    procurementOrderByStatus: [],
+    milestoneOnHoldReqs: [],
+    companyDocs: [],
+    companyDoc: {},
+    quoteByRFQAndVendor: [],
     projectDirectories: [],
     projectDirectoriesLoading: false,
     createDirectoryLoading: false,
@@ -2335,6 +2365,17 @@ export const OperationSlice = createSlice({
       state.loading = "rejected";
       state.mileStoneEventHistory = {};
     });
+    builder.addCase(getProjectTimeline.pending, (state) => {
+      state.projectTimelineLoading = true;
+    });
+    builder.addCase(getProjectTimeline.fulfilled, (state, action) => {
+      state.projectTimelineLoading = false;
+      state.projectTimeline = action.payload || [];
+    });
+    builder.addCase(getProjectTimeline.rejected, (state) => {
+      state.projectTimelineLoading = false;
+      state.projectTimeline = [];
+    });
 
     builder.addCase(getActivitiesByProjectId.pending, (state) => {
       state.loading = "pending";
@@ -2409,14 +2450,11 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllTechnicalResearchCases.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getAllTechnicalResearchCases.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.technicalResearchList = action.payload?.content || [];
-        state.technicalResearchCount = action.payload?.totalElements || 0;
-      },
-    );
+    builder.addCase(getAllTechnicalResearchCases.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.technicalResearchList = action.payload?.content || [];
+      state.technicalResearchCount = action.payload?.totalElements || 0;
+    });
     builder.addCase(getAllTechnicalResearchCases.rejected, (state) => {
       state.loading = "rejected";
       state.technicalResearchList = [];
@@ -2511,6 +2549,18 @@ export const OperationSlice = createSlice({
       },
     );
 
+    builder.addCase(getVendorTransactionsByUser.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getVendorTransactionsByUser.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.vendorTransactionsByUser = action.payload;
+    });
+    builder.addCase(getVendorTransactionsByUser.rejected, (state) => {
+      state.loading = "rejected";
+      state.vendorTransactionsByUser = {};
+    });
+
     builder.addCase(
       getAllCompanyDocumentsByCompanyIdAndUnitId.pending,
       (state) => {
@@ -2559,20 +2609,14 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllPOByStatus.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getAllPOByStatus.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.procurementOrderByStatus = action.payload;
-      },
-    );
-    builder.addCase(
-      getAllPOByStatus.rejected,
-      (state, action) => {
-        state.loading = "rejected";
-        state.procurementOrderByStatus = [];
-      },
-    );
+    builder.addCase(getAllPOByStatus.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.procurementOrderByStatus = action.payload;
+    });
+    builder.addCase(getAllPOByStatus.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.procurementOrderByStatus = [];
+    });
 
     builder.addCase(getExpenseApprovalQueueList.pending, (state) => {
       state.expenseApprovalQueueLoading = true;
@@ -2653,17 +2697,13 @@ export const OperationSlice = createSlice({
         action.payload || "Failed to update accounts expense decision";
     });
 
-
     builder.addCase(getAllCompanyDocs.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getAllCompanyDocs.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.companyDocs = action?.payload;
-      },
-    );
+    builder.addCase(getAllCompanyDocs.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.companyDocs = action?.payload;
+    });
     builder.addCase(getAllCompanyDocs.rejected, (state) => {
       state.loading = "rejected";
       state.companyDocs = [];
@@ -2671,13 +2711,10 @@ export const OperationSlice = createSlice({
     builder.addCase(getMilestoneOnHoldReqs.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getMilestoneOnHoldReqs.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.milestoneOnHoldReqs = action?.payload;
-      },
-    );
+    builder.addCase(getMilestoneOnHoldReqs.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.milestoneOnHoldReqs = action?.payload;
+    });
     builder.addCase(getMilestoneOnHoldReqs.rejected, (state) => {
       state.loading = "rejected";
       state.milestoneOnHoldReqs = [];
@@ -2685,13 +2722,10 @@ export const OperationSlice = createSlice({
     builder.addCase(getQuoteByRFQAndVendorId.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      getQuoteByRFQAndVendorId.fulfilled,
-      (state, action) => {
-        state.loading = "success";
-        state.quoteByRFQAndVendor = action?.payload;
-      },
-    );
+    builder.addCase(getQuoteByRFQAndVendorId.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.quoteByRFQAndVendor = action?.payload;
+    });
     builder.addCase(getQuoteByRFQAndVendorId.rejected, (state) => {
       state.loading = "rejected";
       state.quoteByRFQAndVendor = [];
@@ -2730,7 +2764,6 @@ export const OperationSlice = createSlice({
     builder.addCase(uploadProjectDirectoryDocuments.rejected, (state) => {
       state.uploadDirectoryDocumentLoading = false;
     });
-
   },
 });
 
