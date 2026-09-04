@@ -35,6 +35,7 @@ import {
   Book,
   ReceiptText,
   Scale,
+  KeyRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -82,6 +83,7 @@ const icons = {
   ReceiptText,
   Book,
   Scale,
+  KeyRound,
 };
 
 const Sidebar = ({ items, collapsed, className = "" }) => {

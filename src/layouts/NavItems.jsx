@@ -366,6 +366,12 @@ export const navItems = [
         key: "onHoldApprovals",
       },
       {
+        title: "Credentials",
+        icon: "KeyRound",
+        url: "operation/credentials",
+        key: "credentials",
+      },
+      {
         title: "Expenses",
         icon: "",
         url: "operation/expenses",
@@ -928,6 +934,12 @@ export const operationNavItems = [
     key: "legalRequests",
   },
   {
+    title: "Credentials",
+    icon: "KeyRound",
+    url: "operation/credentials",
+    key: "credentials",
+  },
+  {
     title: "Expenses",
     icon: "FileText",
     url: "operation/expenses",
@@ -977,6 +989,12 @@ export const operationEmpItems = [
     icon: "FileText",
     url: "operation/onHoldApprovals",
     key: "onHoldApprovals",
+  },
+  {
+    title: "Credentials",
+    icon: "KeyRound",
+    url: "operation/credentials",
+    key: "credentials",
   },
   {
     title: "Expenses",

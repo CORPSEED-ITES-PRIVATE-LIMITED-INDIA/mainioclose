@@ -2248,7 +2248,6 @@ const ProjectDetails = () => {
       .finally(() => setDirectoryUploadingId(null));
   };
 
-
   const handleOpenReopenModal = () => {
     if (!projectId) {
       addToast({
@@ -2670,7 +2669,6 @@ const ProjectDetails = () => {
             )}
           </main>
         </div>
-
 
         <ActivityFeedDrawer
           isOpen={activityDrawer.isOpen}
