@@ -2073,6 +2073,23 @@ export const getQuoteByRFQAndVendorId = createAsyncThunk(
   },
 );
 
+export const getProjectCompletionAcknowledgements = createAsyncThunk(
+  "getProjectCompletionAcknowledgements",
+  async ({ projectId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/milestone-assignments/${projectId}/completion-acknowledgements?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to fetch completion acknowledgements",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -2129,6 +2146,8 @@ export const OperationSlice = createSlice({
     projectDirectoriesLoading: false,
     createDirectoryLoading: false,
     uploadDirectoryDocumentLoading: false,
+    projectCompletionAcknowledgements: [],
+    projectCompletionAcknowledgementsLoading: false,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2764,6 +2783,31 @@ export const OperationSlice = createSlice({
     builder.addCase(uploadProjectDirectoryDocuments.rejected, (state) => {
       state.uploadDirectoryDocumentLoading = false;
     });
+
+    builder.addCase(
+      getProjectCompletionAcknowledgements.pending,
+      (state) => {
+        state.projectCompletionAcknowledgementsLoading = true;
+      },
+    );
+    builder.addCase(
+      getProjectCompletionAcknowledgements.fulfilled,
+      (state, action) => {
+        state.projectCompletionAcknowledgementsLoading = false;
+        state.projectCompletionAcknowledgements = Array.isArray(
+          action.payload,
+        )
+          ? action.payload
+          : [];
+      },
+    );
+    builder.addCase(
+      getProjectCompletionAcknowledgements.rejected,
+      (state) => {
+        state.projectCompletionAcknowledgementsLoading = false;
+        state.projectCompletionAcknowledgements = [];
+      },
+    );
   },
 });
 
