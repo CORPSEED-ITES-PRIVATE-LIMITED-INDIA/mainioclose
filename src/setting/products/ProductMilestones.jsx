@@ -38,12 +38,17 @@ import { useMediaQuery } from "react-responsive";
 import NewSelect from "../../components/NewSelect";
 import { useParams } from "react-router-dom";
 
+// Table columns — TAT values are all shown in minutes (derived from the
+// hours the backend stores), matching what the Add/Edit form now collects.
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "milestoneName" },
   { name: "ORDER", uid: "order" },
-  { name: "TAT", uid: "tatInDays" },
-  { name: "ROLLBACK TAT", uid: "rollbackTatInDays" },
+  { name: "EXECUTION TAT", uid: "executionTatMinutes" },
+  { name: "DEPARTMENT TAT", uid: "departmentTatMinutes" },
+  { name: "PERFORMANCE TAT", uid: "performanceTatMinutes" },
+  { name: "CUSTOMER TAT", uid: "customerTatMinutes" },
+  { name: "ROLLBACK TAT", uid: "rollbackTatMinutes" },
   { name: "MAX ATTEMPTS", uid: "maxAttempts" },
   { name: "PAYMENT %", uid: "paymentPercentage" },
   { name: "STRICT APPROVAL", uid: "strictApproval" },
@@ -60,8 +65,11 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "milestoneName",
   "order",
-  "tatInDays",
-  "rollbackTatInDays",
+  "executionTatMinutes",
+  // "departmentTatMinutes",
+  // "performanceTatMinutes",
+  // "customerTatMinutes",
+  // "rollbackTatMinutes",
   "maxAttempts",
   "paymentPercentage",
   "strictApproval",
@@ -84,6 +92,9 @@ const MINUTES_PER_DAY = 60 * 24;
 const hoursFromMinutes = (minutes) => toNumberSafe(minutes) / MINUTES_PER_HOUR;
 const daysFromMinutes = (minutes) => toNumberSafe(minutes) / MINUTES_PER_DAY;
 const minutesFromHours = (hours) => toNumberSafe(hours) * MINUTES_PER_HOUR;
+// Rounded variant for read-only display in the table.
+const minutesFromHoursDisplay = (hours) =>
+  Math.round(toNumberSafe(hours) * MINUTES_PER_HOUR);
 
 function toNumberSafe(value, fallback = 0) {
   const numberValue = Number(value);
@@ -375,12 +386,39 @@ const ProductMilestones = ({ details }) => {
         case "milestoneName":
           return <p className="text-[12.5px]">{rowData?.milestoneName}</p>;
 
-        case "tatInDays":
-          return <p className="text-[12.5px]">{rowData?.tatInDays} days</p>;
-
-        case "rollbackTatInDays":
+        case "executionTatMinutes":
           return (
-            <p className="text-[12.5px]">{rowData?.rollbackTatInDays} days</p>
+            <p className="text-[12.5px]">
+              {minutesFromHoursDisplay(rowData?.executionTatHours)} min
+            </p>
+          );
+
+        case "departmentTatMinutes":
+          return (
+            <p className="text-[12.5px]">
+              {minutesFromHoursDisplay(rowData?.departmentTatHours)} min
+            </p>
+          );
+
+        case "performanceTatMinutes":
+          return (
+            <p className="text-[12.5px]">
+              {minutesFromHoursDisplay(rowData?.performanceTatHours)} min
+            </p>
+          );
+
+        case "customerTatMinutes":
+          return (
+            <p className="text-[12.5px]">
+              {minutesFromHoursDisplay(rowData?.customerTatHours)} min
+            </p>
+          );
+
+        case "rollbackTatMinutes":
+          return (
+            <p className="text-[12.5px]">
+              {minutesFromHoursDisplay(rowData?.rollbackTatHours)} min
+            </p>
           );
 
         case "strictApproval":
