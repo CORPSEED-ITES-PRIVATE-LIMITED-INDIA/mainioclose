@@ -34,7 +34,7 @@ import {
   getActivitiesByDateRangeAndProjectId,
 } from "../../toolkit/slices/operationSlice";
 
-import { ActivityItem } from "./ProjectDetails";
+import { ActivityItem } from "./ActivityItem";
 import SingleFileUploader from "../../components/SingleFileUploader";
 import { getUserDetailById } from "../../toolkit/slices/commonSlice";
 import { parseDate, toCalendarDate } from "@internationalized/date";

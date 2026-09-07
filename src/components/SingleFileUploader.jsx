@@ -63,7 +63,7 @@ const SingleFileUploader = ({
       const url = response?.data;
       if (response?.status === 200 && url) {
         setStatus("success");
-        onChange(url); // Call onChange with the uploaded URL
+        onChange(url, selectedFile?.name); // Call onChange with the uploaded URL and original file name
       } else {
         console.warn("Unexpected response structure:", response?.data);
         setStatus("error");
@@ -122,7 +122,7 @@ const SingleFileUploader = ({
 
   const handleClearFile = () => {
     setFile(null);
-    onChange(null); // Clear the URL via onChange
+    onChange(null, null); // Clear the URL (and name) via onChange
     setStatus("idle");
   };
 

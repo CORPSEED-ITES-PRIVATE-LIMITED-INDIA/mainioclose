@@ -1678,6 +1678,40 @@ export const getExpenseApprovalQueueList = createAsyncThunk(
   },
 );
 
+export const getPortalDetailsApprovalQueue = createAsyncThunk(
+  "operation/getPortalDetailsApprovalQueue",
+  async ({ userId, status, page, size }, { rejectWithValue }) => {
+    try {
+      const params = {
+        userId: Number(userId),
+        page: page || 1,
+        size: size || 10,
+      };
+
+      // status is optional — omit it to fetch every status.
+      if (status && status !== "ALL") {
+        params.status = status;
+      }
+
+      const response = await api.get(
+        "/operationService/api/projects/portal-details/approval-queue",
+        {
+          params,
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || {
+          message:
+            error?.message || "Failed to fetch portal details approval queue",
+        },
+      );
+    }
+  },
+);
+
 export const updateCrtExpenseDecision = createAsyncThunk(
   "operation/updateCrtExpenseDecision",
   async ({ projectId, expenseId, userId, data }, { rejectWithValue }) => {
@@ -2073,6 +2107,23 @@ export const getQuoteByRFQAndVendorId = createAsyncThunk(
   },
 );
 
+export const getProjectCompletionAcknowledgements = createAsyncThunk(
+  "getProjectCompletionAcknowledgements",
+  async ({ projectId, userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/milestone-assignments/${projectId}/completion-acknowledgements?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to fetch completion acknowledgements",
+      );
+    }
+  },
+);
+
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
@@ -2118,6 +2169,9 @@ export const OperationSlice = createSlice({
     expensePaymentQueueList: [],
     expensePaymentQueueLoading: false,
     expensePaymentQueueError: null,
+    portalDetailsApprovalQueue: null,
+    portalDetailsApprovalQueueLoading: false,
+    portalDetailsApprovalQueueError: null,
     accountsDecisionLoading: false,
     accountsDecisionError: null,
     procurementOrderByStatus: [],
@@ -2129,6 +2183,8 @@ export const OperationSlice = createSlice({
     projectDirectoriesLoading: false,
     createDirectoryLoading: false,
     uploadDirectoryDocumentLoading: false,
+    projectCompletionAcknowledgements: [],
+    projectCompletionAcknowledgementsLoading: false,
   },
   extraReducers: (builder) => {
     builder.addCase(getAllOperationsProject.pending, (state) => {
@@ -2639,6 +2695,31 @@ export const OperationSlice = createSlice({
       }
     });
 
+    builder.addCase(getPortalDetailsApprovalQueue.pending, (state) => {
+      state.portalDetailsApprovalQueueLoading = true;
+      state.portalDetailsApprovalQueueError = null;
+    });
+
+    builder.addCase(
+      getPortalDetailsApprovalQueue.fulfilled,
+      (state, action) => {
+        state.portalDetailsApprovalQueueLoading = false;
+        state.portalDetailsApprovalQueue = action.payload || null;
+      },
+    );
+
+    builder.addCase(
+      getPortalDetailsApprovalQueue.rejected,
+      (state, action) => {
+        state.portalDetailsApprovalQueueLoading = false;
+        state.portalDetailsApprovalQueue = null;
+        state.portalDetailsApprovalQueueError =
+          action.payload?.message ||
+          action.payload ||
+          "Failed to fetch portal details approval queue";
+      },
+    );
+
     builder.addCase(getExpenseApprovalQueueList.rejected, (state, action) => {
       state.expenseApprovalQueueLoading = false;
       state.expenseApprovalQueueList = [];
@@ -2763,6 +2844,23 @@ export const OperationSlice = createSlice({
     });
     builder.addCase(uploadProjectDirectoryDocuments.rejected, (state) => {
       state.uploadDirectoryDocumentLoading = false;
+    });
+
+    builder.addCase(getProjectCompletionAcknowledgements.pending, (state) => {
+      state.projectCompletionAcknowledgementsLoading = true;
+    });
+    builder.addCase(
+      getProjectCompletionAcknowledgements.fulfilled,
+      (state, action) => {
+        state.projectCompletionAcknowledgementsLoading = false;
+        state.projectCompletionAcknowledgements = Array.isArray(action.payload)
+          ? action.payload
+          : [];
+      },
+    );
+    builder.addCase(getProjectCompletionAcknowledgements.rejected, (state) => {
+      state.projectCompletionAcknowledgementsLoading = false;
+      state.projectCompletionAcknowledgements = [];
     });
   },
 });
