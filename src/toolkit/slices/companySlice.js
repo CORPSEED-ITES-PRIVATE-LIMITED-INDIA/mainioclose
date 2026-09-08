@@ -302,7 +302,7 @@ export const updateMultiCompanyAssignee = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = api.put(
-        `/leadService/api/v1/company/updateMultiCompanyAssignee`,
+        `/leadService/api/companies/updateMultiCompanyAssignee`,
         data,
       );
       return response.data;

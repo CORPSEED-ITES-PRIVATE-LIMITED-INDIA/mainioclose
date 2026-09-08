@@ -649,6 +649,12 @@ const Vendors = () => {
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(
+                              allowOnlyNumbers(e.target.value, 10),
+                            );
+                          }}
                         />
                       )}
                     />
@@ -663,6 +669,12 @@ const Vendors = () => {
                           errorMessage={error?.message}
                           isInvalid={!!error}
                           {...field}
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(
+                              allowOnlyNumbers(e.target.value, 15),
+                            );
+                          }}
                         />
                       )}
                     />
