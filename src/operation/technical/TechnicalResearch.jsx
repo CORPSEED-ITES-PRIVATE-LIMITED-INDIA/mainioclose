@@ -20,6 +20,7 @@ import {
   ModalContent,
   ModalHeader,
   Chip,
+  Textarea,
   addToast,
 } from "@heroui/react";
 import { ChevronDown, Search, EllipsisVertical } from "lucide-react";
@@ -29,13 +30,17 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   assignTechnicalResearchCase,
   getAllTechnicalResearchCases,
+  updateTechnicalResearchCaseStatus,
 } from "../../toolkit/slices/operationSlice";
 import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 import NewSelect from "../../components/NewSelect";
 import {
+  canManageResearchCases,
   capitalize,
   formatStatusLabel,
   STATUS_OPTIONS,
+  STATUS_REASON_MAX_LENGTH,
+  STATUS_UPDATE_OPTIONS,
   PRIORITY_OPTIONS,
   STATUS_COLOR_CODE,
   PRIORITY_COLOR_CODE,
@@ -70,13 +75,26 @@ const TechnicalResearch = () => {
   const { userId } = useParams();
   const viewModal = useDisclosure();
   const assignModal = useDisclosure();
+  const statusModal = useDisclosure();
   const [selectedCase, setSelectedCase] = useState(null);
   const [assigneeUserId, setAssigneeUserId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [statusValue, setStatusValue] = useState("");
+  const [statusReason, setStatusReason] = useState("");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const data = useSelector((state) => state.operation.technicalResearchList);
   const count = useSelector((state) => state.operation.technicalResearchCount);
   const dashboardUsers = useSelector((state) => state.dashboard.dashboardUsers);
+
+  // Changing a case's status or assignee is a Technical-department action;
+  // everyone else gets a read-only view of the same list.
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
+  const userRole = useSelector((state) => state.auth.currentUser?.roles);
+  const admin = userRole?.includes("ADMIN");
+  const canManageCases = canManageResearchCases(department, admin);
 
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
@@ -163,6 +181,55 @@ const TechnicalResearch = () => {
       .finally(() => setIsAssigning(false));
   };
 
+  const closeStatusModal = () => {
+    statusModal.onClose();
+    setStatusValue("");
+    setStatusReason("");
+    setSelectedCase(null);
+  };
+
+  const handleStatusSubmit = () => {
+    if (!statusValue) {
+      addToast({ title: "Please select a status", color: "danger" });
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    dispatch(
+      updateTechnicalResearchCaseStatus({
+        caseId: selectedCase?.id,
+        status: statusValue,
+        updatedByUserId: userId,
+        reason: statusReason.trim(),
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Status updated successfully.",
+            color: "success",
+          });
+          closeStatusModal();
+          fetchList();
+        } else {
+          addToast({
+            title: "ERROR",
+            description: resp?.payload || "Failed to update status.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong.",
+          color: "danger",
+        }),
+      )
+      .finally(() => setIsUpdatingStatus(false));
+  };
+
   const renderCell = React.useCallback((rowData, columnKey) => {
     const cellValue = rowData[columnKey];
     switch (columnKey) {
@@ -245,13 +312,26 @@ const TechnicalResearch = () => {
                   if (key === "view") {
                     viewModal.onOpen();
                   } else if (key === "assign") {
-                    setAssigneeUserId(String(rowData?.assigneeUserId || ""));
+                    setAssigneeUserId(
+                      String(rowData?.currentAssigneeUserId || ""),
+                    );
                     assignModal.onOpen();
+                  } else if (key === "status") {
+                    setStatusValue(rowData?.status || "");
+                    setStatusReason("");
+                    statusModal.onOpen();
                   }
                 }}
               >
                 <DropdownItem key="view">View details</DropdownItem>
-                <DropdownItem key="assign">Update assignee</DropdownItem>
+                {/* Technical department only: everyone else keeps a
+                    read-only view with no write actions in the menu. */}
+                {canManageCases && (
+                  <DropdownItem key="status">Update status</DropdownItem>
+                )}
+                {canManageCases && (
+                  <DropdownItem key="assign">Update assignee</DropdownItem>
+                )}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -259,7 +339,8 @@ const TechnicalResearch = () => {
       default:
         return cellValue;
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManageCases]);
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) setPage(page + 1);
@@ -571,6 +652,14 @@ const TechnicalResearch = () => {
                   </div>
                   <div>
                     <p className="text-[11.5px] text-default-400">
+                      Current assignee
+                    </p>
+                    <p className="text-[13px]">
+                      {selectedCase?.currentAssigneeName || "Unassigned"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11.5px] text-default-400">
                       Assignment count
                     </p>
                     <p className="text-[13px]">
@@ -631,6 +720,71 @@ const TechnicalResearch = () => {
                   isDisabled={!assigneeUserId}
                   isLoading={isAssigning}
                   onPress={handleAssignSubmit}
+                >
+                  Submit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={statusModal.isOpen}
+        onOpenChange={(open) => {
+          statusModal.onOpenChange(open);
+          if (!open) {
+            setStatusValue("");
+            setStatusReason("");
+            setSelectedCase(null);
+          }
+        }}
+        size="md"
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Update Status
+                <span className="text-xs font-normal text-default-500">
+                  {selectedCase?.caseNumber}
+                </span>
+              </ModalHeader>
+              <ModalBody className="max-h-[75vh] overflow-auto gap-3">
+                <NewSelect
+                  label="Status"
+                  isRequired
+                  isSearchable={false}
+                  data={STATUS_UPDATE_OPTIONS}
+                  labelKey="name"
+                  valueKey="id"
+                  value={statusValue}
+                  onChange={(value) => setStatusValue(value)}
+                />
+                <Textarea
+                  label="Reason"
+                  size="sm"
+                  minRows={3}
+                  maxLength={STATUS_REASON_MAX_LENGTH}
+                  placeholder="Why is the status changing? (optional)"
+                  description={`${statusReason.length}/${STATUS_REASON_MAX_LENGTH}`}
+                  value={statusReason}
+                  onValueChange={setStatusReason}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button
+                  color="primary"
+                  isDisabled={
+                    !statusValue || statusValue === selectedCase?.status
+                  }
+                  isLoading={isUpdatingStatus}
+                  onPress={handleStatusSubmit}
                 >
                   Submit
                 </Button>

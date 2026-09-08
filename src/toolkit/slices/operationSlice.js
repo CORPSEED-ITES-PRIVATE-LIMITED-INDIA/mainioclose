@@ -1056,6 +1056,35 @@ export const assignTechnicalResearchCase = createAsyncThunk(
   },
 );
 
+export const updateTechnicalResearchCaseStatus = createAsyncThunk(
+  "updateTechnicalResearchCaseStatus",
+  async ({ caseId, status, updatedByUserId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/technical-research-cases/${caseId}/status`,
+        {
+          // UPPER_SNAKE (`IN_PROGRESS`), matching the rest of this API. The
+          // endpoint's OpenAPI schema advertises display labels and its
+          // validation error lists them, but the deserialiser takes either -
+          // and the list filter accepts UPPER_SNAKE only.
+          status,
+          updatedByUserId: Number(updatedByUserId),
+          // `reason` is optional; the column caps at 2000 chars.
+          ...(reason ? { reason } : {}),
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to update technical research case status",
+      );
+    }
+  },
+);
+
 export const getTechnicalResearchCasesByLead = createAsyncThunk(
   "getTechnicalResearchCasesByLead",
   async ({ leadId, page = 1, size = 10 } = {}, { rejectWithValue }) => {

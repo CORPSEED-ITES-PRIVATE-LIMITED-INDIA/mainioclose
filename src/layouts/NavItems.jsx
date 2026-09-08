@@ -959,7 +959,7 @@ export const operationNavItems = [
   // },
 ];
 
-export const operationEmpItems = [
+export const operationHeadItems = [
   {
     title: "Dashboard",
     icon: "LayoutDashboard",
@@ -977,18 +977,6 @@ export const operationEmpItems = [
     icon: "Scale",
     url: "operation/legalRequests",
     key: "legalRequests",
-  },
-  {
-    title: "Approvals",
-    icon: "FileText",
-    url: "operation/approvals",
-    key: "approvals",
-  },
-  {
-    title: "On Hold Approvals",
-    icon: "FileText",
-    url: "operation/onHoldApprovals",
-    key: "onHoldApprovals",
   },
   {
     title: "Credentials",
@@ -1009,10 +997,49 @@ export const operationEmpItems = [
     key: "research",
   },
   {
-    title: "Settings",
-    icon: "Settings",
-    url: "operation/settings",
-    key: "settings",
+    title: "Approvals",
+    icon: "FileText",
+    url: "operation/approvals",
+    key: "approvals",
+  },
+  {
+    title: "On Hold Approvals",
+    icon: "FileText",
+    url: "operation/onHoldApprovals",
+    key: "onHoldApprovals",
+  },
+  // {
+  //   title: "Settings",
+  //   icon: "Settings",
+  //   url: "operation/settings",
+  //   key: "settings",
+  // },
+];
+
+export const crtNavItems = [
+  {
+    title: "Dashboard",
+    icon: "LayoutDashboard",
+    url: "operation/dashboard",
+    key: "dashboard",
+  },
+  {
+    title: "Projects",
+    icon: "GitCommitHorizontal",
+    url: "operation/projects",
+    key: "projects",
+  },
+  {
+    title: "Legal request",
+    icon: "Scale",
+    url: "operation/legalRequests",
+    key: "legalRequests",
+  },
+  {
+    title: "Expenses",
+    icon: "FileText",
+    url: "operation/expenses",
+    key: "expenses",
   },
 ];
 

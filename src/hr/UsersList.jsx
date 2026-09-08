@@ -293,8 +293,6 @@ const UsersList = () => {
     defaultValues,
   });
 
-  console.log("jgdskjfgsdajgjk", formSchema(formFlags), formFlags);
-
   useEffect(() => {
     console.log("Current form values:", watch());
     console.log("Form errors:", errors);

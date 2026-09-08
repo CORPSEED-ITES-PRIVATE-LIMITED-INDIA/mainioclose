@@ -13,10 +13,11 @@ import {
 import { ThemeSwitch } from "../components/theme-switch";
 import {
   accountNavItems,
+  crtNavItems,
   hrItems,
   legalNavItems,
   navItems,
-  operationEmpItems,
+  operationHeadItems,
   operationNavItems,
   procurementItems,
   qualityNavItems,
@@ -42,16 +43,10 @@ const getNavItemsByDepartment = (department, admin) => {
     accounts: accountNavItems,
     procurement: procurementItems,
     "human resource": hrItems,
-
-    crt: isManager ? operationEmpItems : operationNavItems,
+    crt: isManager ? crtNavItems : crtNavItems,
     legal: legalNavItems,
-    technical: isManager ? operationEmpItems : operationNavItems,
-    liaisoning: isManager ? operationEmpItems : operationNavItems,
-    filing: isManager ? operationEmpItems : operationNavItems,
-
-    operations: isManager ? operationEmpItems : operationNavItems,
-    "liasoning test": isManager ? operationEmpItems : operationNavItems,
-    "crt test": isManager ? operationEmpItems : operationNavItems,
+    technical: isManager ? operationHeadItems : operationNavItems,
+    operations: isManager ? operationHeadItems : operationNavItems,
   };
 
   return items[trimmed];
