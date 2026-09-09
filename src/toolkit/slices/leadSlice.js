@@ -927,6 +927,19 @@ export const rejectDiscount = createAsyncThunk(
     }
   },
 );
+export const approveRejectLead = createAsyncThunk(
+  "approveRejectLead",
+  async ({leadId,userId,isApproved,remarks}, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/lead/approveRejectLead?leadId=${leadId}&userId=${userId}&remarks=${remarks}&isApproved=${isApproved}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 
 

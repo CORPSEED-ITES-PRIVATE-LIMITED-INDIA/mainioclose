@@ -33,6 +33,7 @@ import {
   Search,
   FileText,
   ExternalLink,
+  Eye,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
@@ -47,6 +48,8 @@ export const columns = [
   { name: "DATE", uid: "createdAt" },
   { name: "REQUEST TITLE", uid: "legalRequestTitle" },
   { name: "STATUS", uid: "status" },
+  { name: "STATUS REASON", uid: "statusReason" },
+  { name: "RESOLUTION SUMMARY", uid: "resolutionSummary" },
   { name: "NOTES", uid: "notes" },
   { name: "RAISED BY", uid: "raisedBy" },
   { name: "DOCUMENTS", uid: "documents" },
@@ -60,6 +63,8 @@ const INITIAL_VISIBLE_COLUMNS = [
   "createdAt",
   "legalRequestTitle",
   "status",
+  "statusReason",
+  "resolutionSummary",
   "notes",
   "raisedBy",
   "documents",
@@ -111,6 +116,11 @@ const OperationsLegal = () => {
   const statusModal = useDisclosure();
   const viewModal = useDisclosure();
   const documentsModal = useDisclosure();
+  const fullTextModal = useDisclosure();
+  const [fullTextModalData, setFullTextModalData] = useState({
+    title: "",
+    content: "",
+  });
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const data = useSelector((state) => state.operation.legalRequestList);
@@ -208,6 +218,11 @@ const OperationsLegal = () => {
     window.open(fileUrl, "_blank", "noopener,noreferrer");
   };
 
+  const openFullText = (title, content) => {
+    setFullTextModalData({ title, content: content || "-" });
+    fullTextModal.onOpen();
+  };
+
   const renderCell = React.useCallback(
     (rowData, columnKey) => {
       const cellValue = rowData[columnKey];
@@ -237,6 +252,51 @@ const OperationsLegal = () => {
             >
               {rowData?.status}
             </Chip>
+          );
+        case "statusReason":
+          return (
+            <div className="flex items-center gap-1.5 max-w-[180px]">
+              <p className="text-[12.5px] line-clamp-1">
+                {rowData?.statusReason || "-"}
+              </p>
+              {rowData?.statusReason ? (
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  className="min-w-6 w-6 h-6"
+                  onPress={() =>
+                    openFullText("Status Reason", rowData?.statusReason)
+                  }
+                >
+                  <Eye size={14} className="text-default-400" />
+                </Button>
+              ) : null}
+            </div>
+          );
+        case "resolutionSummary":
+          return (
+            <div className="flex items-center gap-1.5 max-w-[180px]">
+              <p className="text-[12.5px] line-clamp-1">
+                {rowData?.resolutionSummary || "-"}
+              </p>
+              {rowData?.resolutionSummary ? (
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  className="min-w-6 w-6 h-6"
+                  onPress={() =>
+                    openFullText(
+                      "Resolution Summary",
+                      rowData?.resolutionSummary,
+                    )
+                  }
+                >
+                  <Eye size={14} className="text-default-400" />
+                </Button>
+              ) : null}
+            </div>
           );
         case "notes":
           return <p className="text-[11.5px] capitalize">{rowData?.notes}</p>;
@@ -300,7 +360,7 @@ const OperationsLegal = () => {
           return cellValue;
       }
     },
-    [documentsModal, statusModal],
+    [documentsModal, statusModal, fullTextModal],
   );
 
   const onNextPage = React.useCallback(() => {
@@ -358,6 +418,7 @@ const OperationsLegal = () => {
           setUpdatedStatusData({
             status: "",
             statusReason: "",
+            resolutionSummary: "",
           });
           statusModal.onClose();
           dispatch(
@@ -748,6 +809,33 @@ const OperationsLegal = () => {
                 )}
               </ModalBody>
 
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={fullTextModal.isOpen}
+        onOpenChange={fullTextModal.onOpenChange}
+        placement="top-center"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                {fullTextModalData.title}
+              </ModalHeader>
+              <ModalBody className="max-h-[70vh] overflow-auto">
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {fullTextModalData.content}
+                </p>
+              </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
                   Close
