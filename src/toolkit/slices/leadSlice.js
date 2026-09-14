@@ -886,6 +886,7 @@ export const getAllCompanyLegalVerifications = createAsyncThunk(
     }
   },
 );
+
 export const reviewCompanyLegalVerifications = createAsyncThunk(
   "reviewCompanyLegalVerifications",
   async ({requestId,reviewedBy,data}, { rejectWithValue }) => {
@@ -900,6 +901,7 @@ export const reviewCompanyLegalVerifications = createAsyncThunk(
     }
   },
 );
+
 export const approveDiscount = createAsyncThunk(
   "approveDiscount",
   async ({token,adminUserId}, { rejectWithValue }) => {
@@ -927,6 +929,7 @@ export const rejectDiscount = createAsyncThunk(
     }
   },
 );
+
 export const approveRejectLead = createAsyncThunk(
   "approveRejectLead",
   async ({leadId,userId,isApproved,remarks}, { rejectWithValue }) => {

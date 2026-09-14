@@ -382,8 +382,9 @@ const Company = () => {
     }
   };
 
-  const handleUpdateAssignee = (id) => {
-    setCompanyId([id]);
+  const handleUpdateAssignee = (company) => {
+    setSelectedCompany(company);
+    setCompanyId([company?.id]);
     updateModal.onOpen();
   };
 
@@ -613,14 +614,16 @@ const Company = () => {
                     History
                   </DropdownItem>
 
-                  <DropdownItem
-                    key="edit"
-                    onPress={() => {
-                      handleUpdateAssignee(company?.id);
-                    }}
-                  >
-                    Update assignee
-                  </DropdownItem>
+                  {company?.onboardingStatus === "APPROVED" && (
+                    <DropdownItem
+                      key="edit"
+                      onPress={() => {
+                        handleUpdateAssignee(company);
+                      }}
+                    >
+                      Update assignee
+                    </DropdownItem>
+                  )}
 
                   <DropdownItem
                     key="edit-company"

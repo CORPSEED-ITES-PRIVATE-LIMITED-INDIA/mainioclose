@@ -312,6 +312,13 @@ export const navItems = [
         key: "paymentVerification",
         allowedRoles: ["ADMIN", "Legal Executive"],
       },
+      {
+        title: "Project Escalation",
+        icon: "",
+        url: "legal/projectEscalation",
+        key: "projectEscalation",
+        allowedRoles: ["ADMIN", "Legal Executive"],
+      },
     ],
   },
   {
@@ -1079,5 +1086,11 @@ export const legalNavItems = [
     icon: "BadgeCheck",
     url: "legal/paymentVerification",
     key: "paymentVerification",
+  },
+  {
+    title: "Project Escalation",
+    icon: "KeyRound",
+    url: "legal/projectEscalation",
+    key: "projectEscalation",
   },
 ];

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -41,6 +41,7 @@ import {
   Filter,
   EllipsisVertical,
   Info,
+  Scale,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -49,11 +50,14 @@ import {
   getAllOperationsProject,
   getAllProjectsForOperations,
   getTotalCountForOperationProjects,
+  getUsersByDepartment,
+  raiseLegalRequestOperations,
   searchByCompany,
   searchByContactName,
   searchByProjectName,
   searchByProjectNumber,
 } from "../../toolkit/slices/operationSlice";
+import { getPendingLegalRequestById } from "../../toolkit/slices/vendorsSlice";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -74,6 +78,10 @@ import { inrCurrency } from "../../common";
 import { getEstimeteByEstimateNumber } from "../../toolkit/slices/accountSlice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 
+// Department ID used to fetch the legal team for "Assign to Legal".
+// Matches the department id used in Quote.jsx (getUsersByDepartment({ id: 12 })).
+const LEGAL_DEPARTMENT_ID = 12;
+
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "PROJECT NO.", uid: "projectNo" },
@@ -90,6 +98,7 @@ export const columns = [
   // { name: "AMOUNT", uid: "amount" },
   // { name: "DUE AMOUNT", uid: "dueAmount" },
   { name: "STATUS", uid: "status" },
+  { name: "LEGAL STATUS", uid: "legalRequestStatus" },
   { name: "ACTION", uid: "actions" },
   { name: "ADDRESS", uid: "address" },
 ];
@@ -113,6 +122,30 @@ export function formatMilestoneStatus(status) {
     .join(" ");
 }
 
+// Legal request status -> Chip color mapping, and whether that status
+// counts as an "active" request (blocks raising a new one).
+export const LEGAL_STATUS_COLOR = {
+  RAISED: "warning",
+  REFUND: "success",
+  NON_REFUNDED: "danger",
+  SERVICE_CHANGE: "primary",
+  NONE: "default",
+};
+
+const INACTIVE_LEGAL_STATUSES = new Set([undefined, null, "", "NONE"]);
+
+export function isLegalRequestActive(status) {
+  return !INACTIVE_LEGAL_STATUSES.has(status);
+}
+
+export function formatLegalStatus(status) {
+  if (!status || status === "NONE") return "-";
+  return status
+    .split("_")
+    .map((word) => capitalize(word))
+    .join(" ");
+}
+
 const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "projectNo",
@@ -129,6 +162,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "mileStone",
   "milestoneStatus",
   "status",
+  "legalRequestStatus",
   "actions",
 ];
 
@@ -174,18 +208,34 @@ const defaultValues = {
   paymentTypeId: "",
 };
 
+const LEGAL_REQUEST_FORM_DEFAULTS = {
+  legalRequestTitle: "",
+  assignedToLegal: "",
+  notes: "",
+};
+
 const Projects = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const formModal = useDisclosure();
   const viewModal = useDisclosure();
   const lifecycleRequestModal = useDisclosure();
+  const legalRequestModal = useDisclosure();
   const data = useSelector((state) => state.operation.projectListForOperation);
   const count = useSelector((state) => state.operation.projectCount) || "";
   const usersList = useSelector((state) => state?.common?.usersList);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
+
+  // Legal team + pending request counts, same source as Quote.jsx
+  const legalDepartmentUsers = useSelector(
+    (state) => state.operation.departmentUsers || [],
+  );
+  const pendingLegalRequestsResponse = useSelector(
+    (state) => state.vendors.pendingLegalRequests,
+  );
+
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [searchBy, setSearchBy] = useState("projectName");
@@ -219,6 +269,19 @@ const Projects = () => {
   });
   const [isLifecycleSubmitting, setIsLifecycleSubmitting] = useState(false);
 
+  // ---- Legal request state ----
+  const [selectedLegalRequestProject, setSelectedLegalRequestProject] =
+    useState(null);
+  const [legalRequestData, setLegalRequestData] = useState(
+    LEGAL_REQUEST_FORM_DEFAULTS,
+  );
+  const [legalRequestErrors, setLegalRequestErrors] = useState({
+    legalRequestTitle: "",
+    assignedToLegal: "",
+  });
+  const [isLegalRequestSubmitting, setIsLegalRequestSubmitting] =
+    useState(false);
+
   const hasSearchFilter = Boolean(filterValue);
 
   useEffect(() => {
@@ -230,6 +293,46 @@ const Projects = () => {
     dispatch(getAllUsers());
     dispatch(getAllCountries());
   }, []);
+
+  // Fetch legal team once, same as Quote.jsx
+  useEffect(() => {
+    dispatch(getUsersByDepartment({ id: LEGAL_DEPARTMENT_ID }));
+  }, [dispatch]);
+
+  // Once we know who's in Legal, fetch each user's pending request count
+  useEffect(() => {
+    if (
+      !Array.isArray(legalDepartmentUsers) ||
+      legalDepartmentUsers.length === 0
+    ) {
+      return;
+    }
+
+    const users = legalDepartmentUsers
+      .map((user) => ({
+        id: user?.id,
+        name: user?.fullName || user?.name || "",
+      }))
+      .filter((user) => user?.id);
+
+    if (!users.length) return;
+
+    dispatch(getPendingLegalRequestById({ data: { users } }));
+  }, [dispatch, legalDepartmentUsers]);
+
+  const pendingLegalRequestCountByUserId = useMemo(() => {
+    const list = Array.isArray(pendingLegalRequestsResponse)
+      ? pendingLegalRequestsResponse
+      : [];
+
+    return list.reduce((acc, entry) => {
+      if (entry?.userId !== undefined && entry?.userId !== null) {
+        acc[String(entry.userId)] = entry?.pendingRequestCount ?? 0;
+      }
+
+      return acc;
+    }, {});
+  }, [pendingLegalRequestsResponse]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -383,6 +486,96 @@ const Projects = () => {
     }
   };
 
+  // ---- Legal request handlers ----
+
+  const openLegalRequestModal = (project) => {
+    if (isLegalRequestActive(project?.legalRequestStatus)) {
+      addToast({
+        title: "Legal request already active",
+        description: `This project already has an open legal request (${formatLegalStatus(
+          project?.legalRequestStatus,
+        )}).`,
+        color: "warning",
+      });
+      return;
+    }
+
+    setSelectedLegalRequestProject(project);
+    setLegalRequestData(LEGAL_REQUEST_FORM_DEFAULTS);
+    setLegalRequestErrors({ legalRequestTitle: "", assignedToLegal: "" });
+    legalRequestModal.onOpen();
+  };
+
+  const handleLegalRequestSubmit = async (event) => {
+    event.preventDefault();
+
+    const errors = {
+      legalRequestTitle: legalRequestData.legalRequestTitle.trim()
+        ? ""
+        : "Title is required",
+      assignedToLegal: legalRequestData.assignedToLegal
+        ? ""
+        : "Please assign this to a legal team member",
+    };
+
+    setLegalRequestErrors(errors);
+
+    if (errors.legalRequestTitle || errors.assignedToLegal) {
+      return;
+    }
+
+    const payload = {
+      projectMilestoneAssignmentId: null,
+      legalRequestTitle: legalRequestData.legalRequestTitle.trim(),
+      assignedToLegal: Number(legalRequestData.assignedToLegal),
+      createdById: Number(userId),
+      notes: legalRequestData.notes.trim(),
+    };
+
+    setIsLegalRequestSubmitting(true);
+
+    try {
+      const response = await dispatch(
+        raiseLegalRequestOperations({
+          projectId: Number(selectedLegalRequestProject?.id),
+          userId: Number(userId),
+          data: payload,
+        }),
+      );
+
+      if (response.meta.requestStatus === "fulfilled") {
+        addToast({
+          title: "SUCCESS",
+          description: "Legal request raised successfully.",
+          color: "success",
+        });
+
+        legalRequestModal.onClose();
+
+        dispatch(getAllProjectsForOperations(paginationData));
+        dispatch(getTotalCountForOperationProjects(userId));
+        return;
+      }
+
+      addToast({
+        title: "ERROR",
+        description:
+          typeof response?.payload === "string"
+            ? response.payload
+            : "Unable to raise legal request.",
+        color: "danger",
+      });
+    } catch (error) {
+      addToast({
+        title: "ERROR",
+        description: "Unable to raise legal request.",
+        color: "danger",
+      });
+    } finally {
+      setIsLegalRequestSubmitting(false);
+    }
+  };
+
   const renderCell = React.useCallback(
     (rowData, columnKey) => {
       const cellValue = rowData[columnKey];
@@ -474,6 +667,44 @@ const Projects = () => {
               {rowData?.statusName}
             </Chip>
           );
+
+        case "legalRequestStatus": {
+          const status = rowData?.legalRequestStatus;
+
+          if (!isLegalRequestActive(status)) {
+            return <span className="text-[12.5px] text-default-400">-</span>;
+          }
+
+          return (
+            <Tooltip
+              content={
+                <div className="flex flex-col gap-1 py-1 max-w-[220px]">
+                  <p className="text-[12px] font-semibold">
+                    {rowData?.legalRequestTitle || "Legal Request"}
+                  </p>
+                  {rowData?.legalRequestAssignedToLegalName && (
+                    <p className="text-[11.5px] text-default-500">
+                      Assigned to: {rowData.legalRequestAssignedToLegalName}
+                    </p>
+                  )}
+                  {rowData?.legalRequestNotes && (
+                    <p className="text-[11.5px] text-default-500">
+                      {rowData.legalRequestNotes}
+                    </p>
+                  )}
+                </div>
+              }
+            >
+              <Chip
+                size="sm"
+                variant="flat"
+                color={LEGAL_STATUS_COLOR[status] || "default"}
+              >
+                {formatLegalStatus(status)}
+              </Chip>
+            </Tooltip>
+          );
+        }
 
         case "mileStone":
           return (
@@ -567,7 +798,11 @@ const Projects = () => {
             </div>
           );
 
-        case "actions":
+        case "actions": {
+          const legalRequestAlreadyActive = isLegalRequestActive(
+            rowData?.legalRequestStatus,
+          );
+
           return (
             <div className="flex justify-center">
               <Dropdown placement="bottom-end">
@@ -590,16 +825,32 @@ const Projects = () => {
                   >
                     Force Close / Reopen
                   </DropdownItem>
+
+                  <DropdownItem
+                    key="legal-request"
+                    description={
+                      legalRequestAlreadyActive
+                        ? `Active request: ${formatLegalStatus(
+                            rowData?.legalRequestStatus,
+                          )}`
+                        : "Escalate this project to the legal team"
+                    }
+                    isDisabled={legalRequestAlreadyActive}
+                    onPress={() => openLegalRequestModal(rowData)}
+                  >
+                    Raise Legal Request
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
           );
+        }
 
         default:
           return cellValue;
       }
     },
-    [openLifecycleRequestModal],
+    [openLifecycleRequestModal, openLegalRequestModal],
   );
 
   const onNextPage = React.useCallback(() => {
@@ -1308,6 +1559,139 @@ const Projects = () => {
                   color="primary"
                   type="submit"
                   isLoading={isLifecycleSubmitting}
+                >
+                  Submit Request
+                </Button>
+              </ModalFooter>
+            </form>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={legalRequestModal.isOpen}
+        onOpenChange={legalRequestModal.onOpenChange}
+        size="lg"
+        isDismissable={!isLegalRequestSubmitting}
+        hideCloseButton={isLegalRequestSubmitting}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <form onSubmit={handleLegalRequestSubmit}>
+              <ModalHeader className="flex flex-col gap-1">
+                <span className="flex items-center gap-2">
+                  <Scale className="w-4 h-4" />
+                  Raise Legal Request
+                </span>
+                <span className="text-xs font-normal text-default-500">
+                  Project: {selectedLegalRequestProject?.projectNo || "-"} —{" "}
+                  {selectedLegalRequestProject?.name || "-"}
+                </span>
+              </ModalHeader>
+
+              <ModalBody className="gap-4">
+                <Input
+                  label="Request Title"
+                  placeholder="e.g. Refund dispute, Service change request"
+                  isRequired
+                  value={legalRequestData.legalRequestTitle}
+                  isInvalid={Boolean(legalRequestErrors.legalRequestTitle)}
+                  errorMessage={legalRequestErrors.legalRequestTitle}
+                  onChange={(event) => {
+                    setLegalRequestData((previous) => ({
+                      ...previous,
+                      legalRequestTitle: event.target.value,
+                    }));
+
+                    setLegalRequestErrors((previous) => ({
+                      ...previous,
+                      legalRequestTitle: "",
+                    }));
+                  }}
+                />
+
+                {/*
+                  Assign to Legal — matches the Select + pending-count Chip
+                  pattern used in Quote.jsx's "Assign To Legal" field.
+                */}
+                <Select
+                  label="Assign To Legal"
+                  placeholder="Select a legal team member"
+                  isRequired
+                  selectedKeys={
+                    legalRequestData.assignedToLegal
+                      ? new Set([String(legalRequestData.assignedToLegal)])
+                      : new Set([])
+                  }
+                  onSelectionChange={(keys) => {
+                    const selectedValue = Array.from(keys)?.[0];
+
+                    setLegalRequestData((previous) => ({
+                      ...previous,
+                      assignedToLegal: selectedValue
+                        ? String(selectedValue)
+                        : "",
+                    }));
+
+                    setLegalRequestErrors((previous) => ({
+                      ...previous,
+                      assignedToLegal: "",
+                    }));
+                  }}
+                  isInvalid={Boolean(legalRequestErrors.assignedToLegal)}
+                  errorMessage={legalRequestErrors.assignedToLegal}
+                >
+                  {(legalDepartmentUsers || []).map((user) => {
+                    const pendingCount =
+                      pendingLegalRequestCountByUserId[String(user.id)] ?? 0;
+
+                    return (
+                      <SelectItem
+                        key={String(user.id)}
+                        textValue={`${user.fullName || ""} - ${pendingCount} pending`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span>{user.fullName}</span>
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={pendingCount > 0 ? "warning" : "default"}
+                          >
+                            {pendingCount} pending
+                          </Chip>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </Select>
+
+                <Textarea
+                  label="Notes"
+                  placeholder="Describe the issue for the legal team"
+                  minRows={4}
+                  value={legalRequestData.notes}
+                  onChange={(event) => {
+                    setLegalRequestData((previous) => ({
+                      ...previous,
+                      notes: event.target.value,
+                    }));
+                  }}
+                />
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={onClose}
+                  isDisabled={isLegalRequestSubmitting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isLegalRequestSubmitting}
                 >
                   Submit Request
                 </Button>

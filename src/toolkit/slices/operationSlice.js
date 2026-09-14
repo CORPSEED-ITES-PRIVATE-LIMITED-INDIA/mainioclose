@@ -2152,11 +2152,70 @@ export const getProjectCompletionAcknowledgements = createAsyncThunk(
     }
   },
 );
+export const raiseLegalRequestOperations = createAsyncThunk(
+  "raiseLegalRequestOperations",
+  async ({ projectId, userId ,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/operationService/api/projects/${projectId}/legal-request?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to raise a Legal Request",
+      );
+    }
+  },
+);
+export const resolveLegalRequestOperations = createAsyncThunk(
+  "resolveLegalRequestOperations",
+  async ({ projectId, userId ,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/operationService/api/projects/${projectId}/legal-request/resolve?userId=${userId}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          "Failed to resolve a Legal Request",
+      );
+    }
+  },
+);
+export const getAllLegalRequestOperations = createAsyncThunk(
+  "getAllLegalRequestOperations",
+  async ({ page, size, status, userId }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams({
+        userId,
+        page,
+        size,
+      });
 
+      if (status) {
+        params.append("status", status);
+      }
+
+      const response = await api.get(
+        `/operationService/api/projects/legal-requests?${params.toString()}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to fetch Legal Requests",
+      );
+    }
+  },
+);
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {
     loading: "",
+    legalRequestsOperations:[],
     operationProjectList: [],
     userMappedWithProductList: [],
     mileStoneList: [],
@@ -2890,6 +2949,18 @@ export const OperationSlice = createSlice({
     builder.addCase(getProjectCompletionAcknowledgements.rejected, (state) => {
       state.projectCompletionAcknowledgementsLoading = false;
       state.projectCompletionAcknowledgements = [];
+    });
+
+        builder.addCase(getAllLegalRequestOperations.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLegalRequestOperations.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.legalRequestsOperations = action?.payload;
+    });
+    builder.addCase(getAllLegalRequestOperations.rejected, (state) => {
+      state.loading = "rejected";
+      state.legalRequestsOperations = [];
     });
   },
 });

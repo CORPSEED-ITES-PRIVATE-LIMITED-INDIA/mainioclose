@@ -885,6 +885,21 @@ export const getAllInvoiceFeed = createAsyncThunk(
   },
 );
 
+export const issueUnbilledInvoiceRefund = createAsyncThunk(
+  "issueUnbilledInvoiceRefund",
+  async ({ unbilledNumber, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/accountService/api/v1/unbilled-invoices/${unbilledNumber}/refund`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 const AccountSlice = createSlice({
   name: "accounts",
   initialState: {

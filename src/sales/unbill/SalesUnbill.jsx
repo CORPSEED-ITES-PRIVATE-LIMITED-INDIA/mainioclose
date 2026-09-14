@@ -133,6 +133,27 @@ const INITIAL_VISIBLE_COLUMNS = [
   "actions",
 ];
 
+// Returns true for a value worth pre-filling — excludes null, undefined,
+// and empty strings, but allows 0 (a valid, if unusual, refund amount).
+const isValidRefundValue = (value) =>
+  value !== null && value !== undefined && value !== "";
+
+// Pre-fills the credit note form from whatever refund data already exists
+// on the unbilled row (refundAmount / refundReason / refundAttachment),
+// falling back to the blank defaults for any field that isn't valid.
+const buildCreditNoteDataFromRow = (rowData, defaults) => ({
+  ...defaults,
+  refundAmount: isValidRefundValue(rowData?.refundAmount)
+    ? String(rowData.refundAmount)
+    : defaults.refundAmount,
+  reason: isValidRefundValue(rowData?.refundReason)
+    ? rowData.refundReason
+    : defaults.reason,
+  attachment: isValidRefundValue(rowData?.refundAttachment)
+    ? rowData.refundAttachment
+    : defaults.attachment,
+});
+
 const SalesUnbill = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
@@ -733,7 +754,12 @@ const SalesUnbill = () => {
                         );
 
                         setCreditNoteRow(rowData);
-                        setCreditNoteData(initialCreditNoteData);
+                        setCreditNoteData(
+                          buildCreditNoteDataFromRow(
+                            rowData,
+                            initialCreditNoteData,
+                          ),
+                        );
                         creditNoteModal.onOpen();
                       }}
                     >
@@ -1584,6 +1610,23 @@ const SalesUnbill = () => {
               </ModalHeader>
 
               <ModalBody className="max-h-[65vh] overflow-auto">
+                {creditNoteRow?.refundIssued && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-success-200 bg-success-50 px-4 py-3">
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-[12.5px] font-semibold text-success-700">
+                        A refund is already recorded for this unbilled invoice.
+                      </p>
+                      <p className="text-[11.5px] text-success-600">
+                        Amount, reason and attachment have been pre-filled below
+                        — review before submitting.
+                      </p>
+                    </div>
+                    <Chip size="sm" variant="flat" color="success">
+                      Refund Issued
+                    </Chip>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <Input
                     type="number"
@@ -1591,6 +1634,7 @@ const SalesUnbill = () => {
                     placeholder="Enter refund amount"
                     isRequired
                     min={0}
+                    readOnly
                     value={creditNoteData.refundAmount}
                     onChange={(e) =>
                       setCreditNoteData((prev) => ({

@@ -25,6 +25,7 @@ import { restoreSession } from "./toolkit/slices/authSlice";
 import AdminPoApproval from "./admin/AdminPoApproval";
 import CreatePurchaseOrderModal from "./operation/projects/CreatePurchaseOrderModal";
 import { Form as AntForm, Select as AntSelect } from "antd";
+import ProjectEscalations from "./legal/ProjectEscalations";
 
 // TEMP DEBUG HARNESS -- remove before finishing.
 const TestGstSelectHarness = () => {
@@ -32,9 +33,15 @@ const TestGstSelectHarness = () => {
   const gstActive = AntForm.useWatch("gstActive", form);
   return (
     <div style={{ padding: 40 }}>
-      <div style={{ marginBottom: 20 }}>Current watched gstActive: {JSON.stringify(gstActive)}</div>
+      <div style={{ marginBottom: 20 }}>
+        Current watched gstActive: {JSON.stringify(gstActive)}
+      </div>
       <AntForm form={form} layout="vertical" style={{ maxWidth: 300 }}>
-        <AntForm.Item label="GST Applicable" name="gstActive" initialValue="false">
+        <AntForm.Item
+          label="GST Applicable"
+          name="gstActive"
+          initialValue="false"
+        >
           <AntSelect
             options={[
               { label: "Yes", value: "true" },
@@ -84,9 +91,7 @@ const PaymentVerification = lazy(() => import("./legal/PaymentVerification"));
 const AdminVendorRestrictionApproval = lazy(
   () => import("./admin/AdminVendorRestrictionApproval"),
 );
-const ForceCloserAndReopen = lazy(
-  () => import("./admin/ForceCloserAndReopen"),
-);
+const ForceCloserAndReopen = lazy(() => import("./admin/ForceCloserAndReopen"));
 
 function App() {
   const dispatch = useDispatch();
@@ -162,6 +167,10 @@ function App() {
                 element={<OperationsLegal />}
               />
               <Route path="legal/vendors" element={<ProcurementVendors />} />
+              <Route
+                path="legal/projectEscalation"
+                element={<ProjectEscalations />}
+              />
               <Route
                 path="legal/companyDocuments"
                 element={<CompanyDocuments />}
