@@ -27,6 +27,7 @@ const NewSelect = ({
   isOpen = null,
   onOpenChange = () => {},
   variant,
+  onSearchChange = () => {},
 }) => {
   const isControlled = isOpen !== null && isOpen !== undefined;
 
@@ -92,6 +93,7 @@ const NewSelect = ({
   const handleSearchQuery = useCallback(
     (query) => {
       setSearchQuery(query);
+      onSearchChange(query);
 
       let result = [];
 
@@ -114,7 +116,7 @@ const NewSelect = ({
 
       setFilteredData(result);
     },
-    [normalizedData, labelKey],
+    [normalizedData, labelKey, onSearchChange],
   );
 
   const topContent = useMemo(

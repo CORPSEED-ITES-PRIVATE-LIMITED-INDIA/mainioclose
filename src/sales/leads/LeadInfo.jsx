@@ -47,6 +47,8 @@ import {
   getAllComments,
   getAllSlugList,
   getAllStatusData,
+  getLeadAssignmentSolutionUsers,
+  getSolutionDetailByName,
 } from "../../toolkit/slices/settingSlice";
 import {
   changeLeadAssigneeLeads,
@@ -159,6 +161,10 @@ const LeadInfo = () => {
     (state) => state.leads.leadDetailLoading,
   );
   const allUsers = useSelector((state) => state.leads.leadUsersList);
+  const solutionDetail = useSelector((state) => state.setting.solutionDetailById);
+  const solutionEligibleUsers = useSelector(
+    (state) => state.setting.leadAssignmentSolutionUsers,
+  );
   const slugList = useSelector((state) => state.setting.slugList);
   const statusList = useSelector((state) => state.setting.statusList);
   const allComments = useSelector((state) => state.setting.allComments);
@@ -207,6 +213,23 @@ const LeadInfo = () => {
     dispatch(getAllLeadUser(userId));
     dispatch(getAllRemarkAndCommnts(leadId));
   }, [dispatch, leadId, userId]);
+
+  // Resolve the lead's solution so the assignee dropdown can be scoped to
+  // only the users eligible for that particular service/product, instead of
+  // every user in the hierarchy.
+  useEffect(() => {
+    if (leadData?.originalName) {
+      dispatch(
+        getSolutionDetailByName({ name: leadData.originalName, userId }),
+      );
+    }
+  }, [dispatch, leadData?.originalName, userId]);
+
+  useEffect(() => {
+    if (solutionDetail?.id) {
+      dispatch(getLeadAssignmentSolutionUsers(solutionDetail.id));
+    }
+  }, [dispatch, solutionDetail?.id]);
 
   const handleUpdateLeadName = (leadName) => {
     setLeadLoading("pending");
@@ -962,10 +985,15 @@ const LeadInfo = () => {
                             </div>
                           ) : (
                             <NewSelect
-                              data={allUsers || []}
+                              data={solutionEligibleUsers || []}
                               labelKey="fullName"
                               valueKey="id"
                               label="Select assignee"
+                              placeholder={
+                                solutionDetail?.id
+                                  ? "Select assignee"
+                                  : "Resolving solution..."
+                              }
                               value={String(leadData?.assigne?.id)}
                               onChange={(e) => changeLeadAssignee(e)}
                             />

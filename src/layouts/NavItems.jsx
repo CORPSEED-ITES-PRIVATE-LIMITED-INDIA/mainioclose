@@ -525,6 +525,12 @@ export const navItems = [
         key: "designation",
       },
       {
+        title: "Assignment Teams",
+        icon: "",
+        url: "settings/leadAssignmentTeams",
+        key: "leadAssignmentTeams",
+      },
+      {
         title: "Procurement category",
         icon: "",
         url: "settings/procurementCategory",

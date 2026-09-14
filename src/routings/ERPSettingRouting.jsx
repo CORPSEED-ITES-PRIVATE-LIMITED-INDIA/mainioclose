@@ -12,6 +12,12 @@ const Slug = lazy(() => import("../setting/slug/Slug"));
 const Urls = lazy(() => import("../setting/urls/Urls"));
 const Department = lazy(() => import("../setting/department/Department"));
 const Designation = lazy(() => import("../setting/designation/Designation"));
+const LeadAssignmentTeams = lazy(
+  () => import("../setting/leadAssignment/LeadAssignmentTeams"),
+);
+const LeadAssignmentTeamDetail = lazy(
+  () => import("../setting/leadAssignment/LeadAssignmentTeamDetail"),
+);
 const ProcurementCategory = lazy(
   () => import("../setting/procurement/ProcurementCategory"),
 );
@@ -113,6 +119,14 @@ const ERPSettingRouting = () => {
       <Route path="settings/urls" element={<Urls />} />
       <Route path="settings/department" element={<Department />} />
       <Route path="settings/designation" element={<Designation />} />
+      <Route
+        path="settings/leadAssignmentTeams"
+        element={<LeadAssignmentTeams />}
+      />
+      <Route
+        path="settings/leadAssignmentTeams/:teamId"
+        element={<LeadAssignmentTeamDetail />}
+      />
       <Route
         path="settings/procurementCategory"
         element={<ProcurementCategory />}

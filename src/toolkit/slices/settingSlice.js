@@ -410,6 +410,95 @@ export const convertUrlsToProduct = createAsyncThunk(
   },
 );
 
+export const getAllLeadAssignmentTeams = createAsyncThunk(
+  "getAllLeadAssignmentTeams",
+  async (params = {}) => {
+    const { search, active, page = 0, size = 10, sort } = params;
+
+    const query = new URLSearchParams();
+
+    if (search) query.append("search", search);
+    if (active !== undefined && active !== null && active !== "") {
+      query.append("active", active);
+    }
+    query.append("page", page);
+    query.append("size", size);
+    (sort?.length ? sort : ["createdAt,desc"]).forEach((value) =>
+      query.append("sort", value),
+    );
+
+    const response = await api.get(
+      `/leadService/api/v1/lead-assignment/admin/teams?${query.toString()}`,
+    );
+    return response.data;
+  },
+);
+
+export const getLeadAssignmentTeamById = createAsyncThunk(
+  "getLeadAssignmentTeamById",
+  async (teamId) => {
+    const response = await api.get(
+      `/leadService/api/v1/lead-assignment/admin/teams/${teamId}`,
+    );
+    return response.data;
+  },
+);
+
+export const createLeadAssignmentTeam = createAsyncThunk(
+  "createLeadAssignmentTeam",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/lead-assignment/admin/teams`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response);
+    }
+  },
+);
+
+export const updateLeadAssignmentTeam = createAsyncThunk(
+  "updateLeadAssignmentTeam",
+  async ({ teamId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/lead-assignment/admin/teams/${teamId}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response);
+    }
+  },
+);
+
+export const addLeadAssignmentTeamMember = createAsyncThunk(
+  "addLeadAssignmentTeamMember",
+  async ({ teamId, ...data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/lead-assignment/admin/teams/${teamId}/members`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response);
+    }
+  },
+);
+
+export const getAllSalesManagers = createAsyncThunk(
+  "getAllSalesManagers",
+  async (userId) => {
+    const response = await api.get(
+      `/leadService/api/v1/users/getAllSalesManagers?userId=${userId}`,
+    );
+    return response.data;
+  },
+);
+
 export const getAllDepartment = createAsyncThunk(
   "getAllDepartment",
   async () => {
@@ -888,6 +977,94 @@ export const getSolutionById = createAsyncThunk(
   },
 );
 
+export const updateLeadAssignmentSolutionPolicy = createAsyncThunk(
+  "updateLeadAssignmentSolutionPolicy",
+  async ({ solutionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/lead-assignment/admin/solutions/${solutionId}/policy`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const updateLeadAssignmentAutoAssignment = createAsyncThunk(
+  "updateLeadAssignmentAutoAssignment",
+  async ({ solutionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/lead-assignment/admin/solutions/${solutionId}/auto-assignment`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const mapLeadAssignmentTeamToSolution = createAsyncThunk(
+  "mapLeadAssignmentTeamToSolution",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/lead-assignment/admin/solutions/teams`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const getLeadAssignmentTeamSolutions = createAsyncThunk(
+  "getLeadAssignmentTeamSolutions",
+  async (teamId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/lead-assignment/admin/teams/${teamId}/solutions`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const mapLeadAssignmentTeamMemberToSolutions = createAsyncThunk(
+  "mapLeadAssignmentTeamMemberToSolutions",
+  async ({ teamId, salesUserId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/lead-assignment/admin/teams/${teamId}/users/${salesUserId}/solutions`,
+        data,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
+export const getLeadAssignmentSolutionUsers = createAsyncThunk(
+  "getLeadAssignmentSolutionUsers",
+  async (solutionId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/lead-assignment/admin/solutions/${solutionId}/users`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const SettingSlice = createSlice({
   name: "setting",
   initialState: {
@@ -907,6 +1084,17 @@ export const SettingSlice = createSlice({
     urlCount: 0,
     departmentList: [],
     designationList: [],
+    leadAssignmentTeamsList: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 10,
+    },
+    leadAssignmentTeamDetail: null,
+    leadAssignmentTeamSolutions: [],
+    leadAssignmentSolutionUsers: [],
+    salesManagersList: [],
     templateAndMailList: [],
     applicantTypeList: [],
     solutionsList: [],
@@ -1110,6 +1298,42 @@ export const SettingSlice = createSlice({
     });
     builder.addCase(getAllUrlCount.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(getAllLeadAssignmentTeams.pending, (state) => {
+      state.leadAssignmentTeamsLoading = "pending";
+    });
+    builder.addCase(getAllLeadAssignmentTeams.fulfilled, (state, action) => {
+      state.leadAssignmentTeamsLoading = "success";
+      state.leadAssignmentTeamsList = action.payload;
+    });
+    builder.addCase(getAllLeadAssignmentTeams.rejected, (state) => {
+      state.leadAssignmentTeamsLoading = "rejected";
+    });
+
+    builder.addCase(getLeadAssignmentTeamById.pending, (state) => {
+      state.loading = "pending";
+      state.leadAssignmentTeamDetail = null;
+    });
+    builder.addCase(getLeadAssignmentTeamById.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadAssignmentTeamDetail = action.payload;
+    });
+    builder.addCase(getLeadAssignmentTeamById.rejected, (state) => {
+      state.loading = "rejected";
+      state.leadAssignmentTeamDetail = null;
+    });
+
+    builder.addCase(getAllSalesManagers.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllSalesManagers.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.salesManagersList = action.payload;
+    });
+    builder.addCase(getAllSalesManagers.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesManagersList = [];
     });
 
     builder.addCase(getAllDepartment.pending, (state) => {
@@ -1338,6 +1562,79 @@ export const SettingSlice = createSlice({
     });
     builder.addCase(getSolutionById.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(updateLeadAssignmentSolutionPolicy.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      updateLeadAssignmentSolutionPolicy.fulfilled,
+      (state) => {
+        state.loading = "success";
+      },
+    );
+    builder.addCase(updateLeadAssignmentSolutionPolicy.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(updateLeadAssignmentAutoAssignment.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      updateLeadAssignmentAutoAssignment.fulfilled,
+      (state) => {
+        state.loading = "success";
+      },
+    );
+    builder.addCase(updateLeadAssignmentAutoAssignment.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(mapLeadAssignmentTeamToSolution.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(mapLeadAssignmentTeamToSolution.fulfilled, (state) => {
+      state.loading = "success";
+    });
+    builder.addCase(mapLeadAssignmentTeamToSolution.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getLeadAssignmentTeamSolutions.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getLeadAssignmentTeamSolutions.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadAssignmentTeamSolutions = action.payload;
+    });
+    builder.addCase(getLeadAssignmentTeamSolutions.rejected, (state) => {
+      state.loading = "rejected";
+      state.leadAssignmentTeamSolutions = [];
+    });
+
+    builder.addCase(mapLeadAssignmentTeamMemberToSolutions.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      mapLeadAssignmentTeamMemberToSolutions.fulfilled,
+      (state) => {
+        state.loading = "success";
+      },
+    );
+    builder.addCase(mapLeadAssignmentTeamMemberToSolutions.rejected, (state) => {
+      state.loading = "rejected";
+    });
+
+    builder.addCase(getLeadAssignmentSolutionUsers.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getLeadAssignmentSolutionUsers.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadAssignmentSolutionUsers = action.payload;
+    });
+    builder.addCase(getLeadAssignmentSolutionUsers.rejected, (state) => {
+      state.loading = "rejected";
+      state.leadAssignmentSolutionUsers = [];
     });
   },
 });

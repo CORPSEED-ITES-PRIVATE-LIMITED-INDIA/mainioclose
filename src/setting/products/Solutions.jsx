@@ -24,6 +24,8 @@ import {
   addToast,
   ModalFooter,
   Textarea,
+  Switch,
+  Chip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -32,6 +34,8 @@ import {
   getAllSolutionsByType,
   searchSolutionsByName,
   updateSolution,
+  updateLeadAssignmentSolutionPolicy,
+  updateLeadAssignmentAutoAssignment,
 } from "../../toolkit/slices/settingSlice";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
@@ -39,11 +43,45 @@ import {
   addProductsInOperations,
   updateProductsInOperations,
 } from "../../toolkit/slices/operationSlice";
+import NewSelect from "../../components/NewSelect";
+
+// Mirrors com.lead.em.lead.SalesAssignmentMode on the backend.
+const SALES_ASSIGNMENT_MODE_OPTIONS = [
+  { id: "MANUAL", name: "Manual — Quality/Admin selects the salesperson" },
+  { id: "AUTOMATIC", name: "Automatic — system selects the salesperson" },
+];
+
+// Mirrors com.lead.em.lead.AutoAssignmentStrategy on the backend.
+const AUTO_ASSIGNMENT_STRATEGY_OPTIONS = [
+  { id: "ROUND_ROBIN", name: "Round robin" },
+  { id: "RATING_BASED", name: "Rating based" },
+  { id: "WORKLOAD_BASED", name: "Workload based" },
+  { id: "RATING_AND_WORKLOAD", name: "Rating and workload" },
+];
+
+const policyFormDefaultValues = {
+  useGlobalConfiguration: true,
+  assignmentMode: "MANUAL",
+  assignmentStrategy: "ROUND_ROBIN",
+  autoAssignmentEnabled: true,
+  maximumOpenLeadsPerUser: 0,
+};
+
+const autoAssignmentFormDefaultValues = {
+  enabled: true,
+  reason: "",
+};
 
 export const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "NAME", uid: "name" },
   { name: "TYPE", uid: "type" },
+  { name: "ASSIGNMENT MODE", uid: "assignmentMode" },
+  { name: "ASSIGNMENT STRATEGY", uid: "assignmentStrategy" },
+  { name: "AUTO ASSIGN", uid: "autoAssignmentEnabled" },
+  { name: "MAX OPEN LEADS/USER", uid: "maximumOpenLeadsPerUser" },
+  { name: "MAPPED TEAMS", uid: "totalMappedTeams" },
+  { name: "ELIGIBLE USERS", uid: "totalEligibleSalesUsers" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
@@ -57,7 +95,27 @@ export function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name", "type", "actions"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "id",
+  "name",
+  "type",
+  "assignmentMode",
+  "assignmentStrategy",
+  "autoAssignmentEnabled",
+  "maximumOpenLeadsPerUser",
+  "actions",
+];
+
+// e.g. "RATING_AND_WORKLOAD" -> "Rating And Workload" — used for compact
+// table chips, kept separate from the more descriptive Select option labels.
+const formatEnumLabel = (value) =>
+  value
+    ? value
+        .toLowerCase()
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "-";
 
 const Solutions = () => {
   const dispatch = useDispatch();
@@ -66,6 +124,8 @@ const Solutions = () => {
   const count = useSelector((state) => state.setting.solutionsCount);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const modal = useDisclosure();
+  const policyModal = useDisclosure();
+  const autoAssignmentModal = useDisclosure();
   const [filterValue, setFilterValue] = React.useState("");
   const [visibleColumns, setVisibleColumns] = React.useState(
     new Set(INITIAL_VISIBLE_COLUMNS),
@@ -88,6 +148,14 @@ const Solutions = () => {
     userId,
   });
   const [rowItem, setRowItem] = useState(null);
+  const [policyRowItem, setPolicyRowItem] = useState(null);
+  const [policyFormData, setPolicyFormData] = useState(
+    policyFormDefaultValues,
+  );
+  const [autoAssignmentRowItem, setAutoAssignmentRowItem] = useState(null);
+  const [autoAssignmentFormData, setAutoAssignmentFormData] = useState(
+    autoAssignmentFormDefaultValues,
+  );
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -125,6 +193,116 @@ const Solutions = () => {
       scope: row?.scope,
     });
     onOpen();
+  };
+
+  const handleOpenPolicyModal = (row) => {
+    const policy = row?.assignmentConfiguration?.policy;
+
+    setPolicyRowItem(row);
+    setPolicyFormData({
+      useGlobalConfiguration:
+        policy?.useGlobalConfiguration ??
+        policyFormDefaultValues.useGlobalConfiguration,
+      assignmentMode:
+        policy?.assignmentMode ?? policyFormDefaultValues.assignmentMode,
+      assignmentStrategy:
+        policy?.assignmentStrategy ??
+        policyFormDefaultValues.assignmentStrategy,
+      autoAssignmentEnabled:
+        policy?.autoAssignmentEnabled ??
+        policyFormDefaultValues.autoAssignmentEnabled,
+      maximumOpenLeadsPerUser:
+        policy?.maximumOpenLeadsPerUser ??
+        policyFormDefaultValues.maximumOpenLeadsPerUser,
+    });
+    policyModal.onOpen();
+  };
+
+  const handleSubmitPolicy = () => {
+    dispatch(
+      updateLeadAssignmentSolutionPolicy({
+        solutionId: policyRowItem?.id,
+        data: {
+          ...policyFormData,
+          maximumOpenLeadsPerUser: Number(
+            policyFormData?.maximumOpenLeadsPerUser,
+          ),
+          updatedByUserId: Number(userId),
+        },
+      }),
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Lead assignment policy updated successfully !.",
+            color: "success",
+          });
+          policyModal.onOpenChange(false);
+          setPolicyRowItem(null);
+          dispatch(getAllSolutionsByType(initialFilteration));
+        } else {
+          addToast({
+            title: response?.payload?.status || "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              "Something went wrong while updating the policy.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" }),
+      );
+  };
+
+  const handleOpenAutoAssignmentModal = (row) => {
+    setAutoAssignmentRowItem(row);
+    setAutoAssignmentFormData({
+      enabled:
+        row?.assignmentConfiguration?.policy?.autoAssignmentEnabled ??
+        autoAssignmentFormDefaultValues.enabled,
+      reason: "",
+    });
+    autoAssignmentModal.onOpen();
+  };
+
+  const handleSubmitAutoAssignment = () => {
+    dispatch(
+      updateLeadAssignmentAutoAssignment({
+        solutionId: autoAssignmentRowItem?.id,
+        data: {
+          enabled: autoAssignmentFormData?.enabled,
+          reason: autoAssignmentFormData?.reason,
+          updatedByUserId: Number(userId),
+        },
+      }),
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: `Auto assignment ${
+              autoAssignmentFormData?.enabled ? "enabled" : "disabled"
+            } successfully !.`,
+            color: "success",
+          });
+          autoAssignmentModal.onOpenChange(false);
+          setAutoAssignmentRowItem(null);
+          dispatch(getAllSolutionsByType(initialFilteration));
+        } else {
+          addToast({
+            title: response?.payload?.status || "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              "Something went wrong while updating auto assignment.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" }),
+      );
   };
 
   // const handleDelete = () => {
@@ -238,6 +416,63 @@ const Solutions = () => {
           </Link>
         );
 
+      case "assignmentMode":
+        return (
+          <span>
+            {formatEnumLabel(
+              rowData?.assignmentConfiguration?.policy?.assignmentMode,
+            )}
+          </span>
+        );
+
+      case "assignmentStrategy":
+        return (
+          <span>
+            {formatEnumLabel(
+              rowData?.assignmentConfiguration?.policy?.assignmentStrategy,
+            )}
+          </span>
+        );
+
+      case "autoAssignmentEnabled":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={
+              rowData?.assignmentConfiguration?.policy?.autoAssignmentEnabled
+                ? "success"
+                : "default"
+            }
+          >
+            {rowData?.assignmentConfiguration?.policy?.autoAssignmentEnabled
+              ? "Enabled"
+              : "Disabled"}
+          </Chip>
+        );
+
+      case "maximumOpenLeadsPerUser":
+        return (
+          <span>
+            {rowData?.assignmentConfiguration?.policy
+              ?.maximumOpenLeadsPerUser ?? "-"}
+          </span>
+        );
+
+      case "totalMappedTeams":
+        return (
+          <Chip size="sm" variant="flat">
+            {rowData?.assignmentConfiguration?.totalMappedTeams ?? 0}
+          </Chip>
+        );
+
+      case "totalEligibleSalesUsers":
+        return (
+          <Chip size="sm" variant="flat">
+            {rowData?.assignmentConfiguration?.totalEligibleSalesUsers ?? 0}
+          </Chip>
+        );
+
       case "actions":
         return (
           <div className="relative flex justify-center items-center gap-2">
@@ -250,6 +485,18 @@ const Solutions = () => {
               <DropdownMenu>
                 <DropdownItem key="edit" onPress={() => handleOpen(rowData)}>
                   Edit
+                </DropdownItem>
+                <DropdownItem
+                  key="assignmentPolicy"
+                  onPress={() => handleOpenPolicyModal(rowData)}
+                >
+                  Assignment policy
+                </DropdownItem>
+                <DropdownItem
+                  key="toggleAutoAssignment"
+                  onPress={() => handleOpenAutoAssignmentModal(rowData)}
+                >
+                  Toggle auto assignment
                 </DropdownItem>
                 {/* <DropdownItem
                   key="delete"
@@ -690,6 +937,186 @@ const Solutions = () => {
           )}
         </ModalContent>
       </Modal>
+      {/* Lead assignment policy modal */}
+      <Modal
+        size="lg"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={policyModal.isOpen}
+        onOpenChange={(open) => {
+          policyModal.onOpenChange(open);
+          if (!open) {
+            setPolicyRowItem(null);
+            setPolicyFormData(policyFormDefaultValues);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                Assignment policy — {policyRowItem?.name}
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="flex w-full flex-col gap-4 pb-2">
+                  <Switch
+                    isSelected={policyFormData?.useGlobalConfiguration}
+                    onValueChange={(value) =>
+                      setPolicyFormData((prev) => ({
+                        ...prev,
+                        useGlobalConfiguration: value,
+                      }))
+                    }
+                    size="sm"
+                  >
+                    Use global configuration
+                  </Switch>
+
+                  <NewSelect
+                    isRequired
+                    isSearchable={false}
+                    label="Assignment mode"
+                    data={SALES_ASSIGNMENT_MODE_OPTIONS}
+                    labelKey="name"
+                    valueKey="id"
+                    value={policyFormData?.assignmentMode}
+                    onChange={(value) =>
+                      setPolicyFormData((prev) => ({
+                        ...prev,
+                        assignmentMode: value,
+                      }))
+                    }
+                  />
+
+                  <NewSelect
+                    isRequired
+                    isSearchable={false}
+                    label="Assignment strategy"
+                    data={AUTO_ASSIGNMENT_STRATEGY_OPTIONS}
+                    labelKey="name"
+                    valueKey="id"
+                    value={policyFormData?.assignmentStrategy}
+                    onChange={(value) =>
+                      setPolicyFormData((prev) => ({
+                        ...prev,
+                        assignmentStrategy: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    type="number"
+                    min={0}
+                    label="Maximum open leads per user"
+                    value={String(
+                      policyFormData?.maximumOpenLeadsPerUser ?? 0,
+                    )}
+                    onChange={(e) =>
+                      setPolicyFormData((prev) => ({
+                        ...prev,
+                        maximumOpenLeadsPerUser: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Switch
+                    isSelected={policyFormData?.autoAssignmentEnabled}
+                    onValueChange={(value) =>
+                      setPolicyFormData((prev) => ({
+                        ...prev,
+                        autoAssignmentEnabled: value,
+                      }))
+                    }
+                    size="sm"
+                  >
+                    Enable auto assignment
+                  </Switch>
+                </div>
+
+                <ModalFooter className="px-0">
+                  <Button variant="flat" onPress={onClose}>
+                    Cancel
+                  </Button>
+
+                  <Button color="primary" onPress={handleSubmitPolicy}>
+                    Submit
+                  </Button>
+                </ModalFooter>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Toggle auto assignment modal */}
+      <Modal
+        size="md"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={autoAssignmentModal.isOpen}
+        onOpenChange={(open) => {
+          autoAssignmentModal.onOpenChange(open);
+          if (!open) {
+            setAutoAssignmentRowItem(null);
+            setAutoAssignmentFormData(autoAssignmentFormDefaultValues);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                Auto assignment — {autoAssignmentRowItem?.name}
+              </ModalHeader>
+
+              <ModalBody>
+                <div className="flex w-full flex-col gap-4 pb-2">
+                  <Switch
+                    isSelected={autoAssignmentFormData?.enabled}
+                    onValueChange={(value) =>
+                      setAutoAssignmentFormData((prev) => ({
+                        ...prev,
+                        enabled: value,
+                      }))
+                    }
+                    size="sm"
+                  >
+                    {autoAssignmentFormData?.enabled ? "Enabled" : "Disabled"}
+                  </Switch>
+
+                  <Textarea
+                    label="Reason"
+                    placeholder="Why are you changing auto assignment ?"
+                    value={autoAssignmentFormData?.reason}
+                    onChange={(e) =>
+                      setAutoAssignmentFormData((prev) => ({
+                        ...prev,
+                        reason: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <ModalFooter className="px-0">
+                  <Button variant="flat" onPress={onClose}>
+                    Cancel
+                  </Button>
+
+                  <Button color="primary" onPress={handleSubmitAutoAssignment}>
+                    Submit
+                  </Button>
+                </ModalFooter>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       <Modal
         isOpen={modal.isOpen}
         backdrop="blur"
