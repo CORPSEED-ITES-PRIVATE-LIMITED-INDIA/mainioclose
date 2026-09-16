@@ -1,5 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AliveScope } from "react-activation";
 
@@ -21,7 +20,6 @@ import {
 } from "./routings/AccountsModuleRouting";
 import ProcurementRouting from "./routings/ProcurementRouting";
 import QualityRouting from "./routings/QualityRouting";
-import { restoreSession } from "./toolkit/slices/authSlice";
 import AdminPoApproval from "./admin/AdminPoApproval";
 import CreatePurchaseOrderModal from "./operation/projects/CreatePurchaseOrderModal";
 import { Form as AntForm, Select as AntSelect } from "antd";
@@ -94,12 +92,6 @@ const AdminVendorRestrictionApproval = lazy(
 const ForceCloserAndReopen = lazy(() => import("./admin/ForceCloserAndReopen"));
 
 function App() {
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(restoreSession());
-  }, [dispatch]);
-
   return (
     <AliveScope>
       <Suspense fallback={<LoadingSpinner />}>

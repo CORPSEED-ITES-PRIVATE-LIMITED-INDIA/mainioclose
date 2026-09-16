@@ -201,15 +201,28 @@ export const activateUserByAdminInAuth = createAsyncThunk(
   },
 );
 
+// Read synchronously at store-creation time. The route guard decides during its
+// very first render, so anything asynchronous here (redux-persist rehydration,
+// a restore dispatched from an effect) lands too late and looks like a logout.
+const readStoredUser = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem("userDetail")) || {};
+  } catch {
+    return {};
+  }
+};
+
+const storedUser = readStoredUser();
+
 export const AuthSlice = createSlice({
   name: "auth",
   initialState: {
     loginLoading: false,
-    currentUser: {},
+    currentUser: storedUser,
     loginError: false,
-    roles: [],
-    jwt: "",
-    isAuth: false,
+    roles: storedUser?.roles || [],
+    jwt: storedUser?.jwt || "",
+    isAuth: !!storedUser?.id,
     isManagerApproved: false,
     getDepartmentDetail: {},
     userLoading: "",
@@ -224,21 +237,9 @@ export const AuthSlice = createSlice({
 
       sessionStorage.removeItem("userDetail");
       sessionStorage.removeItem("vendorDetail");
-
-      localStorage.removeItem("persist:root"); // only keep if redux-persist still uses localStorage
     },
     handleLoadingState: (state, action) => {
       state.userLoading = action.payload;
-    },
-    restoreSession: (state) => {
-      const userDetail = sessionStorage.getItem("userDetail");
-      if (userDetail) {
-        const parsed = JSON.parse(userDetail);
-        state.currentUser = parsed;
-        state.jwt = parsed?.jwt || "";
-        state.roles = parsed?.roles || [];
-        state.isAuth = !!parsed?.id;
-      }
     },
   },
   extraReducers: (builder) => {
@@ -285,6 +286,5 @@ export const AuthSlice = createSlice({
   },
 });
 
-export const { logoutFun, handleLoadingState, restoreSession } =
-  AuthSlice.actions;
+export const { logoutFun, handleLoadingState } = AuthSlice.actions;
 export default AuthSlice.reducer;

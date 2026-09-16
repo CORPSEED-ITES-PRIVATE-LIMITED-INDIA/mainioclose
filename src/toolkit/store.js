@@ -2,7 +2,6 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import persistReducer from "redux-persist/es/persistReducer";
 import persistStore from "redux-persist/es/persistStore";
 import storage from "redux-persist/lib/storage";
-import storageSession from "redux-persist/lib/storage/session";
 
 import authReducer from "./slices/authSlice";
 import leadReducer from "./slices/leadSlice";
@@ -16,11 +15,9 @@ import organizationReducer from "./slices/organizationSlice";
 import productReducer from "./slices/productSlice";
 import operationReducer from "./slices/operationSlice";
 
-const authPersistConfig = {
-  key: "auth",
-  storage: storageSession,
-};
-
+// `auth` is deliberately not persisted here: it hydrates synchronously from the
+// sessionStorage "userDetail" key that Login and the axios interceptor already
+// use. A second, asynchronous copy would race the route guard on reload.
 const rootPersistConfig = {
   key: "root",
   storage,
@@ -28,7 +25,7 @@ const rootPersistConfig = {
 };
 
 const appReducer = combineReducers({
-  auth: persistReducer(authPersistConfig, authReducer),
+  auth: authReducer,
   leads: leadReducer,
   common: commonReducer,
   setting: settingReducer,
@@ -46,7 +43,6 @@ const persistedReducer = persistReducer(rootPersistConfig, appReducer);
 const rootReducer = (state, action) => {
   if (action.type === "auth/logoutFun") {
     storage.removeItem("persist:root");
-    storageSession.removeItem("persist:auth");
     return appReducer(undefined, action);
   }
 

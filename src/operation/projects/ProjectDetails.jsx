@@ -1776,6 +1776,8 @@ const ProjectDetails = () => {
 
     const payload = {
       departmentId,
+      milestoneAssignmentId:
+        Number(selectedMilestone?.milestoneAssignmentId) || null,
       expenseCategory: formData.expenseCategory,
       amount: Number(formData.amount),
       remark: formData.remark.trim(),

@@ -30,6 +30,7 @@ import {
 } from "../toolkit/slices/authSlice";
 import BackButton from "../components/BackButton";
 import NotificationBell from "../components/NotificationBell";
+import useIdleLogout from "../hooks/useIdleLogout";
 
 const getNavItemsByDepartment = (department, admin) => {
   if (admin) return navItems;
@@ -59,6 +60,8 @@ const Layoutpage = () => {
   const user = useSelector((state) => state.auth.currentUser);
   const automationStatus = useSelector((state) => state.auth.automationStatus);
   const { userId } = useParams();
+
+  useIdleLogout(userId);
 
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector((state) => state?.auth?.getDepartmentDetail);
