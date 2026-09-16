@@ -265,14 +265,21 @@ const ProjectDetails = () => {
     changedById: null,
   });
 
+  // FIX: added certificateValidityType and certificateIssueDate (were
+  // missing entirely, causing ERR_CERTIFICATE_VALIDITY_TYPE_REQUIRED on
+  // submit), and removed the unused/misspelled "certificationExpiryDate"
+  // key in favor of the single canonical "certificateExpiryDate" used
+  // everywhere else in this file and in the modal.
   const [statusObj, setStatusObj] = useState({
     assignmentId: null,
     newStatusName: "",
     statusReason: "",
     changedById: null,
 
+    certificateValidityType: "",
+    certificateIssueDate: "",
     certificationTenure: "",
-    certificationExpiryDate: "",
+    certificateExpiryDate: "",
     certificationAttachmentUrl: "",
     certificationTenureUnit: "",
 
@@ -837,35 +844,60 @@ const ProjectDetails = () => {
       }
     }
 
+    // FIX: added certificateValidityType / certificateIssueDate validation
+    // (previously missing entirely). tenure/tenureUnit/expiryDate are now
+    // only required when certificateValidityType === "FIXED_TERM", matching
+    // validateAndSetCertificationDetails on the backend, which nulls those
+    // three fields out entirely for LIFETIME and never validates them there.
     if (isCertificationCompleted) {
-      if (
-        !statusObj.certificationTenure ||
-        Number(statusObj.certificationTenure) <= 0
-      ) {
+      if (!statusObj.certificateValidityType) {
         addToast({
           title: "REQUIRED",
-          description: "Certification tenure is required",
+          description: "Certificate validity type is required",
           color: "danger",
         });
         return;
       }
 
-      if (!statusObj.certificateExpiryDate) {
+      if (!statusObj.certificateIssueDate) {
         addToast({
           title: "REQUIRED",
-          description: "Certificate expiry date is required",
+          description: "Certificate issue date is required",
           color: "danger",
         });
         return;
       }
 
-      if (!statusObj.certificationTenureUnit) {
-        addToast({
-          title: "REQUIRED",
-          description: "Certificate tennure unit is required",
-          color: "danger",
-        });
-        return;
+      if (statusObj.certificateValidityType === "FIXED_TERM") {
+        if (
+          !statusObj.certificationTenure ||
+          Number(statusObj.certificationTenure) <= 0
+        ) {
+          addToast({
+            title: "REQUIRED",
+            description: "Certification tenure is required",
+            color: "danger",
+          });
+          return;
+        }
+
+        if (!statusObj.certificationTenureUnit) {
+          addToast({
+            title: "REQUIRED",
+            description: "Certificate tenure unit is required",
+            color: "danger",
+          });
+          return;
+        }
+
+        if (!statusObj.certificateExpiryDate) {
+          addToast({
+            title: "REQUIRED",
+            description: "Certificate expiry date is required",
+            color: "danger",
+          });
+          return;
+        }
       }
 
       if (!statusObj.certificationAttachmentUrl) {
@@ -921,6 +953,11 @@ const ProjectDetails = () => {
         data: reworkPayload,
       });
     } else {
+      // FIX: added certificateValidityType and certificateIssueDate to the
+      // payload (previously never sent to the API — this was the direct
+      // cause of ERR_CERTIFICATE_VALIDITY_TYPE_REQUIRED). Tenure/tenureUnit/
+      // expiryDate are now only included for FIXED_TERM, since the backend
+      // nulls them for LIFETIME and sending stale values serves no purpose.
       const normalPayload = {
         assignmentId: Number(statusObj.assignmentId),
         newStatusName: statusObj.newStatusName,
@@ -934,10 +971,15 @@ const ProjectDetails = () => {
         }),
 
         ...(isCertificationCompleted && {
-          certificationTenure: Number(statusObj.certificationTenure),
-          certificateExpiryDate: statusObj.certificateExpiryDate,
+          certificateValidityType: statusObj.certificateValidityType,
+          certificateIssueDate: statusObj.certificateIssueDate,
           certificationAttachmentUrl: statusObj.certificationAttachmentUrl,
-          certificationTenureUnit: statusObj.certificationTenureUnit,
+
+          ...(statusObj.certificateValidityType === "FIXED_TERM" && {
+            certificationTenure: Number(statusObj.certificationTenure),
+            certificationTenureUnit: statusObj.certificationTenureUnit,
+            certificateExpiryDate: statusObj.certificateExpiryDate,
+          }),
         }),
       };
 
@@ -955,6 +997,9 @@ const ProjectDetails = () => {
             color: "success",
           });
 
+          // FIX: added certificateValidityType and certificateIssueDate to
+          // the post-submit reset so a stale selection doesn't linger into
+          // the next time this modal is opened.
           setStatusObj({
             assignmentId: null,
             newStatusName: "",
@@ -962,6 +1007,8 @@ const ProjectDetails = () => {
             changedById: null,
             reworkDocuments: [],
             additionalReworkDocuments: [],
+            certificateValidityType: "",
+            certificateIssueDate: "",
             certificationTenure: "",
             certificateExpiryDate: "",
             certificationAttachmentUrl: "",

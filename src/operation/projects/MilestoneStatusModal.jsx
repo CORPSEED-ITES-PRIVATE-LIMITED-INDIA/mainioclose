@@ -71,8 +71,7 @@ const MilestoneStatusModal = ({
                     changedById: userId,
 
                     // Clear REWORK data when another status is selected
-                    reworkDocuments:
-                      e === "REWORK" ? prev.reworkDocuments : [],
+                    reworkDocuments: e === "REWORK" ? prev.reworkDocuments : [],
                     additionalReworkDocuments:
                       e === "REWORK" ? prev.additionalReworkDocuments : [],
                   }));
@@ -102,8 +101,8 @@ const MilestoneStatusModal = ({
                       Acknowledgement
                     </p>
                     <p className="text-xs text-default-500">
-                      Upload the acknowledgement attachment before marking
-                      this milestone as completed.
+                      Upload the acknowledgement attachment before marking this
+                      milestone as completed.
                     </p>
                   </div>
 
@@ -139,6 +138,15 @@ const MilestoneStatusModal = ({
                 </div>
               )}
 
+              {/*
+                UPDATED: Certification block now matches
+                UpdateMilestoneStatusDto / validateAndSetCertificationDetails:
+                - certificateValidityType (FIXED_TERM / LIFETIME) is now required
+                - certificateIssueDate is now required (for both validity types)
+                - tenure / tenureUnit / expiryDate are shown ONLY for FIXED_TERM,
+                  since the backend nulls them out entirely for LIFETIME
+                - certificationAttachmentUrl remains required in both cases
+              */}
               {isCertificationCompleted && (
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary-200 bg-primary-50/40 p-4 md:grid-cols-2">
                   <div className="md:col-span-2">
@@ -155,18 +163,31 @@ const MilestoneStatusModal = ({
                     className="max-w-xs"
                     isRequired
                     items={[
-                      { label: "DAYS", value: "DAYS" },
-                      { label: "MONTHS", value: "MONTHS" },
-                      { label: "YEARS", value: "YEARS" },
+                      { label: "Fixed Term", value: "FIXED_TERM" },
+                      { label: "Lifetime", value: "LIFETIME" },
                     ]}
-                    label="Certification Period"
-                    placeholder="Select period"
-                    selectedKeys={[statusObj.certificationTenureUnit]}
+                    label="Certificate Validity Type"
+                    placeholder="Select validity type"
+                    selectedKeys={
+                      statusObj.certificateValidityType
+                        ? [statusObj.certificateValidityType]
+                        : []
+                    }
                     onSelectionChange={(keys) => {
                       const temp = Array.from(keys)[0];
                       setStatusObj((prev) => ({
                         ...prev,
-                        certificationTenureUnit: temp,
+                        certificateValidityType: temp,
+                        // Backend nulls these out for LIFETIME — clear them
+                        // client-side too so a stale value isn't submitted.
+                        certificationTenure:
+                          temp === "LIFETIME" ? "" : prev.certificationTenure,
+                        certificationTenureUnit:
+                          temp === "LIFETIME"
+                            ? ""
+                            : prev.certificationTenureUnit,
+                        certificateExpiryDate:
+                          temp === "LIFETIME" ? "" : prev.certificateExpiryDate,
                       }));
                     }}
                   >
@@ -175,38 +196,90 @@ const MilestoneStatusModal = ({
                     )}
                   </Select>
 
-                  <Input
-                    type="number"
-                    min={1}
-                    label="Certification Tenure (Years)"
-                    placeholder="Enter tenure"
-                    isRequired
-                    value={statusObj.certificationTenure}
-                    onChange={(e) =>
-                      setStatusObj((prev) => ({
-                        ...prev,
-                        certificationTenure: e.target.value,
-                      }))
-                    }
-                  />
-
                   <DatePicker
-                    label="Certification Expiry Date"
+                    label="Certificate Issue Date"
                     isRequired
                     showMonthAndYearPickers
-                    minValue={today(getLocalTimeZone())}
+                    maxValue={today(getLocalTimeZone())}
                     value={
-                      statusObj.certificateExpiryDate
-                        ? parseDate(statusObj.certificateExpiryDate)
+                      statusObj.certificateIssueDate
+                        ? parseDate(statusObj.certificateIssueDate)
                         : null
                     }
                     onChange={(date) =>
                       setStatusObj((prev) => ({
                         ...prev,
-                        certificateExpiryDate: date ? date.toString() : "",
+                        certificateIssueDate: date ? date.toString() : "",
                       }))
                     }
                   />
+
+                  {statusObj.certificateValidityType === "FIXED_TERM" && (
+                    <>
+                      <Select
+                        className="max-w-xs"
+                        isRequired
+                        items={[
+                          { label: "DAYS", value: "DAYS" },
+                          { label: "MONTHS", value: "MONTHS" },
+                          { label: "YEARS", value: "YEARS" },
+                        ]}
+                        label="Certification Tenure Unit"
+                        placeholder="Select unit"
+                        selectedKeys={
+                          statusObj.certificationTenureUnit
+                            ? [statusObj.certificationTenureUnit]
+                            : []
+                        }
+                        onSelectionChange={(keys) => {
+                          const temp = Array.from(keys)[0];
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            certificationTenureUnit: temp,
+                          }));
+                        }}
+                      >
+                        {(item) => (
+                          <SelectItem key={item?.value}>
+                            {item.label}
+                          </SelectItem>
+                        )}
+                      </Select>
+
+                      <Input
+                        type="number"
+                        min={1}
+                        label="Certification Tenure"
+                        placeholder="Enter tenure"
+                        isRequired
+                        value={statusObj.certificationTenure}
+                        onChange={(e) =>
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            certificationTenure: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <DatePicker
+                        label="Certificate Expiry Date"
+                        isRequired
+                        showMonthAndYearPickers
+                        minValue={today(getLocalTimeZone())}
+                        value={
+                          statusObj.certificateExpiryDate
+                            ? parseDate(statusObj.certificateExpiryDate)
+                            : null
+                        }
+                        onChange={(date) =>
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            certificateExpiryDate: date ? date.toString() : "",
+                          }))
+                        }
+                      />
+                    </>
+                  )}
 
                   <div className="md:col-span-2">
                     <SingleFileUploader
@@ -334,85 +407,83 @@ const MilestoneStatusModal = ({
                       </Button>
                     </div>
 
-                    {(statusObj.additionalReworkDocuments || []).map(
-                      (doc) => (
-                        <div
-                          key={doc.tempId}
-                          className="rounded-lg border border-default-200 bg-content1 p-3"
-                        >
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <p className="text-sm font-medium text-foreground">
-                              Additional document
-                            </p>
+                    {(statusObj.additionalReworkDocuments || []).map((doc) => (
+                      <div
+                        key={doc.tempId}
+                        className="rounded-lg border border-default-200 bg-content1 p-3"
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p className="text-sm font-medium text-foreground">
+                            Additional document
+                          </p>
 
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              color="danger"
-                              onPress={() =>
-                                onRemoveAdditionalReworkDocument(doc.tempId)
-                              }
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <Input
-                              label="Document name"
-                              placeholder="Enter document name"
-                              value={doc.documentName}
-                              onChange={(e) =>
-                                onAdditionalReworkDocumentChange(
-                                  doc.tempId,
-                                  "documentName",
-                                  e.target.value,
-                                )
-                              }
-                            />
-
-                            <Textarea
-                              label="Small description / reason"
-                              placeholder="Enter why this document is required"
-                              value={doc.reason}
-                              onChange={(e) =>
-                                onAdditionalReworkDocumentChange(
-                                  doc.tempId,
-                                  "reason",
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div className="mt-3 rounded-lg border border-dashed border-default-300 p-3">
-                            <FileUploader
-                              label="Attachment optional"
-                              placeholder={
-                                doc.documentName
-                                  ? `Upload attachment for ${doc.documentName}`
-                                  : "Upload attachment for this document"
-                              }
-                              uploadingType="multiple"
-                              value={doc.attachmentFiles || []}
-                              onChange={(uploadedFiles) =>
-                                onAdditionalReworkAttachmentChange(
-                                  doc.tempId,
-                                  uploadedFiles,
-                                )
-                              }
-                              onUploadSuccess={(fileMeta) =>
-                                onAdditionalReworkAttachmentSuccess(
-                                  doc.tempId,
-                                  fileMeta,
-                                )
-                              }
-                            />
-                          </div>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            color="danger"
+                            onPress={() =>
+                              onRemoveAdditionalReworkDocument(doc.tempId)
+                            }
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ),
-                    )}
+
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <Input
+                            label="Document name"
+                            placeholder="Enter document name"
+                            value={doc.documentName}
+                            onChange={(e) =>
+                              onAdditionalReworkDocumentChange(
+                                doc.tempId,
+                                "documentName",
+                                e.target.value,
+                              )
+                            }
+                          />
+
+                          <Textarea
+                            label="Small description / reason"
+                            placeholder="Enter why this document is required"
+                            value={doc.reason}
+                            onChange={(e) =>
+                              onAdditionalReworkDocumentChange(
+                                doc.tempId,
+                                "reason",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-3 rounded-lg border border-dashed border-default-300 p-3">
+                          <FileUploader
+                            label="Attachment optional"
+                            placeholder={
+                              doc.documentName
+                                ? `Upload attachment for ${doc.documentName}`
+                                : "Upload attachment for this document"
+                            }
+                            uploadingType="multiple"
+                            value={doc.attachmentFiles || []}
+                            onChange={(uploadedFiles) =>
+                              onAdditionalReworkAttachmentChange(
+                                doc.tempId,
+                                uploadedFiles,
+                              )
+                            }
+                            onUploadSuccess={(fileMeta) =>
+                              onAdditionalReworkAttachmentSuccess(
+                                doc.tempId,
+                                fileMeta,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

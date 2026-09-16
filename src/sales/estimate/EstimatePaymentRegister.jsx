@@ -233,6 +233,14 @@ const EstimatePaymentRegister = ({
   const { userId } = useParams();
   const dispatch = useDispatch();
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
+
+  // FIX: paymentTypeList from the store can be a non-array (e.g. {} or a raw
+  // API response) if the reducer/initial state isn't shaped correctly.
+  // Normalize once here so every .find()/.filter() below is safe.
+  const safePaymentTypeList = Array.isArray(paymentTypeList)
+    ? paymentTypeList
+    : [];
+
   const paymentLegerList = useSelector(
     (state) => state.account.paymentLegerList,
   );
@@ -310,7 +318,7 @@ const EstimatePaymentRegister = ({
       return false;
     }
 
-    const paymentType = paymentTypeList?.find(
+    const paymentType = safePaymentTypeList.find(
       (item) => Number(item?.id) === Number(payment?.paymentTypeId),
     );
 
@@ -348,10 +356,10 @@ const EstimatePaymentRegister = ({
 
   // Prefer the exact payment type used in the first PO transaction.
   const purchaseOrderPaymentType =
-    paymentTypeList?.find(
+    safePaymentTypeList.find(
       (item) => Number(item?.id) === Number(firstPayment?.paymentTypeId),
     ) ||
-    paymentTypeList?.find((item) => {
+    safePaymentTypeList.find((item) => {
       const paymentTypeName = String(item?.name || "")
         .trim()
         .toLowerCase();
@@ -788,7 +796,7 @@ const EstimatePaymentRegister = ({
     Number(estimatePaymentHistory?.tdsPercentage) > 0;
 
   const getPaymentTypeName = (paymentTypeId) => {
-    const paymentType = paymentTypeList?.find(
+    const paymentType = safePaymentTypeList.find(
       (item) => Number(item.id) === Number(paymentTypeId),
     );
 
@@ -1038,18 +1046,14 @@ const EstimatePaymentRegister = ({
                     No previous payment history found.
                   </div>
                 )} */}
-              <form
-                id="payment-register-form"
-                onSubmit={handleSubmit(submitHandler, (formErrors) => {
-                  console.log("Form validation errors:", formErrors);
-
-                  addToast({
-                    title: "Please check required fields",
-                    color: "danger",
-                  });
-                })}
-                className="space-y-4"
-              >
+              {/*
+                FIX: changed <form> to <div>. A native <form> here was nesting
+                inside a parent Antd <Form> in LeadEstimates.jsx, which is
+                invalid HTML (validateDOMNesting warning). Submission is now
+                triggered manually from the Save button below via
+                handleSubmit(...), so no native <form> element is needed.
+              */}
+              <div id="payment-register-form" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* COMMON FIELD: Payment Type */}
                   <Controller
@@ -1537,7 +1541,7 @@ const EstimatePaymentRegister = ({
                     </div>
                   </div>
                 )}
-              </form>
+              </div>
             </ModalBody>
 
             <ModalFooter className="flex justify-end gap-2">
@@ -1556,12 +1560,24 @@ const EstimatePaymentRegister = ({
                 Cancel
               </Button>
 
+              {/*
+                FIX: no longer a native submit button pointing at a <form>.
+                Submission is now triggered manually via handleSubmit(...),
+                since the field above is now a <div>, not a <form>.
+              */}
               <Button
-                type="submit"
-                form="payment-register-form"
+                type="button"
                 color="primary"
                 isLoading={isSubmitting}
                 className="cursor-pointer"
+                onPress={handleSubmit(submitHandler, (formErrors) => {
+                  console.log("Form validation errors:", formErrors);
+
+                  addToast({
+                    title: "Please check required fields",
+                    color: "danger",
+                  });
+                })}
               >
                 Save
               </Button>
