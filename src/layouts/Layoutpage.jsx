@@ -26,6 +26,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAutomationStatus,
+  getDepartmentOfUser,
   handleToggleAutomation,
 } from "../toolkit/slices/authSlice";
 import BackButton from "../components/BackButton";
@@ -65,6 +66,15 @@ const Layoutpage = () => {
 
   const adminRole = userRole.includes("ADMIN");
   const department = useSelector((state) => state?.auth?.getDepartmentDetail);
+  const hasDepartment = !!department?.department;
+
+  // Login is the only place that fetches this, so a session opened before it was
+  // stored — or one where the call failed — would otherwise sit with no sidebar.
+  useEffect(() => {
+    if (userId && !hasDepartment) {
+      dispatch(getDepartmentOfUser(userId));
+    }
+  }, [dispatch, userId, hasDepartment]);
 
   const pathname = location.pathname;
   const segments = pathname.split("/");

@@ -212,6 +212,17 @@ const readStoredUser = () => {
   }
 };
 
+// The department decides which nav items the sidebar gets, so it has to be here
+// on the first render too — it is only fetched once, at login, and without this
+// a reload left every non-admin with an empty sidebar.
+const readStoredDepartment = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem("departmentDetail")) || {};
+  } catch {
+    return {};
+  }
+};
+
 const storedUser = readStoredUser();
 
 export const AuthSlice = createSlice({
@@ -224,7 +235,7 @@ export const AuthSlice = createSlice({
     jwt: storedUser?.jwt || "",
     isAuth: !!storedUser?.id,
     isManagerApproved: false,
-    getDepartmentDetail: {},
+    getDepartmentDetail: readStoredDepartment(),
     userLoading: "",
     automationStatus: false,
   },
@@ -235,8 +246,11 @@ export const AuthSlice = createSlice({
       state.roles = [];
       state.jwt = "";
 
+      state.getDepartmentDetail = {};
+
       sessionStorage.removeItem("userDetail");
       sessionStorage.removeItem("vendorDetail");
+      sessionStorage.removeItem("departmentDetail");
     },
     handleLoadingState: (state, action) => {
       state.userLoading = action.payload;
@@ -274,6 +288,8 @@ export const AuthSlice = createSlice({
 
     builder.addCase(getDepartmentOfUser.fulfilled, (state, action) => {
       state.getDepartmentDetail = action.payload;
+
+      sessionStorage.setItem("departmentDetail", JSON.stringify(action.payload));
     });
 
     builder.addCase(getDepartmentOfUser.rejected, (state) => {
