@@ -945,6 +945,24 @@ export const getPendingQueue = createAsyncThunk(
     }
   },
 );
+export const getLiasoningData = createAsyncThunk(
+  "getLiasoningData",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/projects/liaisoning-dashboard?userId=${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          error?.message ||
+          "Failed to fetch Liasoning Data",
+      );
+    }
+  },
+);
 
 
 const DashboardSlice = createSlice({
@@ -976,6 +994,7 @@ const DashboardSlice = createSlice({
     vendorQuotationLegalSummary:[],
     legalSummary:[],
     pendingQueue:[],
+    liasoningData:[],
     // NEW
     summaryCardsData: null,
     summaryCards: {
@@ -1848,6 +1867,25 @@ const DashboardSlice = createSlice({
       getPendingQueue.rejected,
       (state, action) => {
         state.pendingQueue = [];
+        state.loading = false;
+      },
+    );
+    builder.addCase(getLiasoningData.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(
+      getLiasoningData.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.liasoningData = action.payload;
+      },
+    );
+    
+    builder.addCase(
+      getLiasoningData.rejected,
+      (state, action) => {
+        state.liasoningData = [];
         state.loading = false;
       },
     );

@@ -355,6 +355,12 @@ export const navItems = [
         key: "projects",
       },
       {
+        title: "Liasoning",
+        icon: "",
+        url: "liasoning/dashboard",
+        key: "liasoningDashboard",
+      },
+      {
         title: "Legal requests",
         icon: "",
         url: "operation/legalRequests",

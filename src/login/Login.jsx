@@ -76,15 +76,22 @@ const Login = () => {
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
                       return;
                     }
+                    if (department === "liasoning") {
+                      console.log("dsjkhgkjsgkjdghj 44444", response);
+                      navigate(`/erp/${resp?.payload?.id}/liasoning/dashboard`);
+                      return;
+                    }
+                    if (department === "legal") {
+                      console.log("dsjkhgkjsgkjdghj 44444", response);
+                      navigate(`/erp/${resp?.payload?.id}/legal/dashboard`);
+                      return;
+                    }
 
                     if (
                       department === "crt" ||
-                      department === "legal" ||
                       department === "technical" ||
-                      department === "liaisoning" ||
                       department === "crt test" ||
                       department === "operations" ||
-                      department === "liasoning test" ||
                       department === "filing"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
