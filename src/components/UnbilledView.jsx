@@ -175,26 +175,6 @@ const UnbilledView = ({ invoiceData, heading }) => {
     dispatch(getOrganizationByName());
   }, [dispatch]);
 
-  const seller = useMemo(() => {
-    if (!organizationDetail) return null;
-
-    return {
-      name: organizationDetail?.name || "",
-      addressLine1:
-        `${organizationDetail?.addressLine1}, ${organizationDetail?.city}, ${organizationDetail?.state}, ${organizationDetail?.country} - ${organizationDetail?.pinCode}` ||
-        "",
-      gstin: organizationDetail?.gstNo || "",
-      stateName: organizationDetail?.state || "",
-      stateCode: organizationDetail?.gstNo?.slice(0, 2) || "",
-      email: organizationDetail?.email || "",
-      bankName: organizationDetail?.bankName || "",
-      accountNo: organizationDetail?.accountNo || "",
-      branchIfsc: `${organizationDetail?.ifscCode || ""} & ${
-        organizationDetail?.ifscCode || ""
-      }`,
-    };
-  }, [organizationDetail]);
-
   // invoiceData can be object OR JSON string
   const inv = useMemo(() => {
     if (!invoiceData) return {};
@@ -208,6 +188,29 @@ const UnbilledView = ({ invoiceData, heading }) => {
     }
     return invoiceData;
   }, [invoiceData]);
+
+  const seller = useMemo(() => {
+    if (!organizationDetail) return null;
+
+    const bankBranch = inv?.organizationBankBranch || "";
+    const ifscCode =
+      inv?.organizationIfscCode || organizationDetail?.ifscCode || "";
+
+    return {
+      name: organizationDetail?.name || "",
+      addressLine1:
+        `${organizationDetail?.addressLine1}, ${organizationDetail?.city}, ${organizationDetail?.state}, ${organizationDetail?.country} - ${organizationDetail?.pinCode}` ||
+        "",
+      gstin: organizationDetail?.gstNo || "",
+      stateName: organizationDetail?.state || "",
+      stateCode: organizationDetail?.gstNo?.slice(0, 2) || "",
+      email: organizationDetail?.email || "",
+      bankName: inv?.organizationBankName || organizationDetail?.bankName || "",
+      accountNo:
+        inv?.organizationAccountNumber || organizationDetail?.accountNo || "",
+      branchIfsc: [bankBranch, ifscCode].filter(Boolean).join(" & "),
+    };
+  }, [organizationDetail, inv]);
 
   // lineItems safe + sort
   const items = useMemo(() => {
@@ -393,7 +396,9 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     <div className="text-[10px] text-gray-500">
                       Mode/Terms of Payment
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inv?.paymentTypeCode || <>&nbsp;</>}
+                    </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
@@ -431,7 +436,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
               </div>
             </div>
 
-            {/* Consignee + Buyer */}
+            {/* Buyer + Consignee */}
             <div className="grid grid-cols-2 border-b border-gray-300">
               <div className="border-r border-gray-300 p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
@@ -452,10 +457,12 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   City : {buyerAddress.city || "NA"} , PIN code :{" "}
                   {buyerAddress.pinCode || "NA"}
                 </div>
-                <div className="text-[11px]">E-mail : {inv?.email || ""}</div>
+                <div className="text-[11px]">
+                  E-mail : {inv?.emails || inv?.email || ""}
+                </div>
               </div>
 
-              <div className=" p-2.5">
+              <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
                   Consignee (Ship to)
                 </div>
@@ -474,7 +481,9 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   City : {buyerAddress.city || "NA"} , PIN code :{" "}
                   {buyerAddress.pinCode || "NA"}
                 </div>
-                <div className="text-[11px]">E-mail : {inv?.email || ""}</div>
+                <div className="text-[11px]">
+                  E-mail : {inv?.emails || inv?.email || ""}
+                </div>
               </div>
             </div>
 
@@ -728,7 +737,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
             {/* Footer */}
             <div className="grid grid-cols-2 gap-3 border-t border-gray-300 p-2.5">
               <div className="text-[11px]">
-                <b>Remark :</b>
+                <b>Remark :</b> {inv?.rejectionReason || "-"}
               </div>
 
               <div className="text-[11px]">

@@ -218,6 +218,7 @@ const AdvanceTaxInvoiceView = ({ invoiceData, heading }) => {
         (inv?.buyerGstin || inv?.unitGstNo)?.slice(0, 2) ||
         "",
       contactName: inv?.contactName || "",
+      contactEmail: inv?.contactEmail || "",
     };
   }, [inv]);
 
@@ -788,11 +789,11 @@ Corpseed Team`,
               </div>
             </div>
 
-            {/* Consignee + Buyer */}
+            {/* Buyer + Consignee */}
             <div className="grid grid-cols-2 border-b border-gray-300">
               <div className="border-r border-gray-300 p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Consignee (Ship to)
+                  Buyer (Bill to)
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">
@@ -812,7 +813,7 @@ Corpseed Team`,
 
               <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Buyer (Bill to)
+                  Consignee (Ship to)
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">

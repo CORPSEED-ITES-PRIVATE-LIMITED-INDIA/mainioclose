@@ -398,12 +398,26 @@ const VendorRequests = () => {
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
+      dispatch(
+        getAllVendorsRequest({
+          userId,
+          page: filteration.page + 1,
+          size: filteration.size,
+        }),
+      );
       setFilteration((prev) => ({ ...prev, page: prev.page + 1 }));
     }
   }, [filteration, pages]);
 
   const onPreviousPage = useCallback(() => {
     if (filteration?.page > 1) {
+      dispatch(
+        getAllVendorsRequest({
+          userId,
+          page: filteration.page - 1,
+          size: filteration.size,
+        }),
+      );
       setFilteration((prev) => ({ ...prev, page: prev.page - 1 }));
     }
   }, [filteration]);
@@ -676,6 +690,9 @@ const VendorRequests = () => {
           total={pages}
           onChange={(e) => {
             setFilteration((prev) => ({ ...prev, page: e }));
+            dispatch(
+              getAllVendorsRequest({ userId, page: e, size: filteration.size }),
+            );
           }}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
