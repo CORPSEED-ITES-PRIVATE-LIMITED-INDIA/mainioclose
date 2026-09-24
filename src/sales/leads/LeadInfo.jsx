@@ -254,9 +254,11 @@ const LeadInfo = () => {
 
   useEffect(() => {
     if (solutionDetail?.id) {
-      dispatch(getLeadAssignmentSolutionUsers(solutionDetail.id));
+      dispatch(
+        getLeadAssignmentSolutionUsers({ solutionId: solutionDetail.id, userId }),
+      );
     }
-  }, [dispatch, solutionDetail?.id]);
+  }, [dispatch, solutionDetail?.id, userId]);
 
   const handleUpdateLeadName = (leadName) => {
     setLeadLoading("pending");
