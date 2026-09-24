@@ -1153,10 +1153,10 @@ export const mapLeadAssignmentTeamMemberToSolutions = createAsyncThunk(
 
 export const getLeadAssignmentSolutionUsers = createAsyncThunk(
   "getLeadAssignmentSolutionUsers",
-  async (solutionId, { rejectWithValue }) => {
+  async ({ solutionId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/leadService/api/v1/lead-assignment/admin/solutions/${solutionId}/users`,
+        `/leadService/api/v1/lead-assignment/admin/solutions/${solutionId}/users?userId=${userId}`,
       );
       return response.data;
     } catch (err) {
