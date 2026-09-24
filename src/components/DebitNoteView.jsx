@@ -4,7 +4,6 @@ import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import numWords from "num-words";
 import { useDispatch, useSelector } from "react-redux";
-import { Image } from "@heroui/react";
 import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import { inrCurrency } from "../common";
@@ -109,43 +108,90 @@ const DebitNoteView = ({ invoiceData, heading }) => {
   }, [invoiceData]);
 
   const projectNo = useMemo(
-    () => inv?.project || parseProjectNoFromNarration(inv?.narration),
+    () => inv?.projectNo || inv?.project || parseProjectNoFromNarration(inv?.narration),
     [inv],
   );
 
-  // Issuer (Corpseed) — sourced from redux organization state, same shape
-  // PurchaseInvoiceView.jsx uses for the buyer side.
+  // Issuer (Corpseed) — the voucher payload already carries its own snapshot
+  // of the organization (same organizationXxx fields TaxInvoice.jsx reads),
+  // so that's the primary source. Bank details aren't part of the voucher
+  // payload, so those still fall back to the redux organization fetch.
   const org = useMemo(() => {
     const addressParts = [
-      organizationDetail?.addressLine1,
-      organizationDetail?.city,
-      organizationDetail?.state,
-      organizationDetail?.country,
+      inv?.organizationAddressLine1,
+      inv?.organizationAddressLine2,
+      inv?.organizationCity,
+      inv?.organizationState,
+      inv?.organizationCountry,
     ].filter(Boolean);
 
-    const address = addressParts.join(", ");
-    const pinCode = organizationDetail?.pinCode
-      ? ` - ${organizationDetail.pinCode}`
-      : "";
-    const gstin = organizationDetail?.gstNo || "";
+    const address = addressParts.length
+      ? addressParts.join(", ")
+      : [
+          organizationDetail?.addressLine1,
+          organizationDetail?.city,
+          organizationDetail?.state,
+          organizationDetail?.country,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+    const pinCode =
+      inv?.organizationPinCode || organizationDetail?.pinCode
+        ? ` - ${inv?.organizationPinCode || organizationDetail?.pinCode}`
+        : "";
+
+    const gstin = inv?.organizationGstNo || organizationDetail?.gstNo || "";
+    const stateName = inv?.organizationState || organizationDetail?.state || "";
 
     return {
-      name: organizationDetail?.name || "",
+      name: inv?.organizationName || organizationDetail?.name || "",
       addressLine1: `${address}${pinCode}`,
       gstin,
-      stateName: organizationDetail?.state || "",
+      stateName,
       stateCode: gstin.slice(0, 2),
-      email: organizationDetail?.email || "",
-      phone: organizationDetail?.phone || "",
-      panNo: organizationDetail?.panNo || "",
-      cinNumber: organizationDetail?.cinNumber || "",
-      logoUrl: organizationDetail?.logoUrl || "",
+      email: inv?.organizationEmail || organizationDetail?.email || "",
+      phone: inv?.organizationPhone || organizationDetail?.phone || "",
+      website: inv?.organizationWebsite || "",
+      panNo: inv?.organizationPanNo || organizationDetail?.panNo || "",
+      cinNumber: inv?.organizationCinNumber || organizationDetail?.cinNumber || "",
+      logoUrl: inv?.organizationLogoUrl || organizationDetail?.logoUrl || "",
       bankName: organizationDetail?.bankName || "",
       accountNo: organizationDetail?.accountNo || "",
       ifscCode: organizationDetail?.ifscCode || "",
       branchName: organizationDetail?.branchName || "",
     };
-  }, [organizationDetail]);
+  }, [inv, organizationDetail]);
+
+  // Buyer/consignee snapshot (client company + unit) — comes straight off
+  // the voucher payload, same clientXxx fields for both Bill to and Ship to,
+  // mirroring TaxInvoice.jsx's Consignee/Buyer block.
+  const client = useMemo(() => {
+    const addressParts = [
+      inv?.clientAddressLine1,
+      inv?.clientAddressLine2,
+      inv?.clientCity,
+      inv?.clientState,
+      inv?.clientCountry,
+    ].filter(Boolean);
+
+    const address = addressParts.join(", ");
+    const pinCode = inv?.clientPinCode ? ` - ${inv.clientPinCode}` : "";
+    const gstin = inv?.clientGstNo || "";
+
+    return {
+      companyName: inv?.clientCompanyName || "",
+      unitName: inv?.clientUnitName || inv?.clientCompanyName || "",
+      contactName: inv?.clientContactName || "",
+      address: `${address}${pinCode}`,
+      gstin,
+      stateName: inv?.clientState || "",
+      stateCode: gstin.slice(0, 2),
+      email: inv?.clientEmail || "",
+      phone: inv?.clientPhone || "",
+      panNo: inv?.clientPanNo || "",
+    };
+  }, [inv]);
 
   const grandTotal = toNumber(inv?.amount);
 
@@ -409,11 +455,16 @@ Corpseed Team`,
             <div className="grid grid-cols-[1.2fr_1fr] border-b border-gray-300">
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
-                  <Image
+                  <img
                     src={org.logoUrl || logo}
                     alt={org.name || "Organization logo"}
                     className="h-10 max-w-[120px] object-contain"
                     crossOrigin="anonymous"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.crossOrigin = null;
+                      e.currentTarget.src = logo;
+                    }}
                   />
                 </div>
 
@@ -434,8 +485,8 @@ Corpseed Team`,
                 {org.email ? (
                   <div className="text-[11px]">E-mail : {org.email}</div>
                 ) : null}
-                {org.panNo ? (
-                  <div className="text-[11px]">PAN : {org.panNo}</div>
+                {org.phone ? (
+                  <div className="text-[11px]">Phone : {org.phone}</div>
                 ) : null}
                 {org.cinNumber ? (
                   <div className="text-[11px]">CIN : {org.cinNumber}</div>
@@ -503,12 +554,86 @@ Corpseed Team`,
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 border-b border-gray-300">
+                  <div className="border-r border-gray-300 p-2.5">
+                    <div className="text-[10px] text-gray-500">Paid By</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {humanize(inv?.expensePaidBy)}
+                    </div>
+                  </div>
+                  <div className="p-2.5">
+                    <div className="text-[10px] text-gray-500">
+                      Party Ledger
+                    </div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inv?.partyLedgerName || <>&nbsp;</>}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="p-2.5">
                   <div className="text-[10px] text-gray-500">Status</div>
                   <div className="h-4 text-[11px] font-bold">
                     {inv?.status || <>&nbsp;</>}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Buyer + Consignee — mirrors TaxInvoice.jsx's Bill to / Ship to
+                block, sourced from the voucher's own clientXxx fields. */}
+            <div className="grid grid-cols-2 border-b border-gray-300">
+              <div className="border-r border-gray-300 p-2.5">
+                <div className="mb-1 text-[11px] font-bold">
+                  Buyer (Bill to)
+                </div>
+                <div className="text-[11px]">{client.companyName || "NA"}</div>
+                {client.gstin ? (
+                  <div className="text-[11px]">
+                    GSTIN/UIN : {client.gstin}
+                  </div>
+                ) : null}
+                {client.address ? (
+                  <div className="text-[11px]">
+                    Address : {client.address}
+                  </div>
+                ) : null}
+                {client.stateName ? (
+                  <div className="text-[11px]">
+                    State name : {client.stateName} , code : {client.stateCode}
+                  </div>
+                ) : null}
+                {client.email ? (
+                  <div className="text-[11px]">E-mail : {client.email}</div>
+                ) : null}
+              </div>
+
+              <div className="p-2.5">
+                <div className="mb-1 text-[11px] font-bold">
+                  Consignee (Ship to)
+                </div>
+                <div className="text-[11px]">{client.unitName || "NA"}</div>
+                {client.gstin ? (
+                  <div className="text-[11px]">
+                    GSTIN/UIN : {client.gstin}
+                  </div>
+                ) : null}
+                {client.address ? (
+                  <div className="text-[11px]">
+                    Address : {client.address}
+                  </div>
+                ) : null}
+                {client.stateName ? (
+                  <div className="text-[11px]">
+                    State name : {client.stateName} , code : {client.stateCode}
+                  </div>
+                ) : null}
+                {client.email ? (
+                  <div className="text-[11px]">E-mail : {client.email}</div>
+                ) : null}
+                {client.phone ? (
+                  <div className="text-[11px]">Phone : {client.phone}</div>
+                ) : null}
               </div>
             </div>
 
@@ -532,11 +657,6 @@ Corpseed Team`,
                     <div className="font-semibold">
                       {humanize(inv?.sourceType)}
                     </div>
-                    {inv?.narration ? (
-                      <div className="mt-0.5 text-[10px] text-gray-500">
-                        {inv.narration}
-                      </div>
-                    ) : null}
                   </TableTd>
                   <TableTd className="text-center">
                     {inv?.voucherType || "NA"}
@@ -571,7 +691,7 @@ Corpseed Team`,
             {/* Footer */}
             <div className="grid grid-cols-2 gap-3 border-t border-gray-300 p-2.5">
               <div className="text-[11px]">
-                <b>Remark :</b> {inv?.narration || ""}
+                <b>Remark :</b>
               </div>
 
               <div className="text-[11px]">

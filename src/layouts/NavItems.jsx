@@ -114,7 +114,7 @@ export const navItems = [
       {
         title: "Expenses",
         url: "accounts/expensesApprovals",
-        key: "allInvoice",
+        key: "expensesApprovals",
       },
       {
         title: "Unbilled",
@@ -538,10 +538,10 @@ export const navItems = [
         key: "designation",
       },
       {
-        title: "Assignment Teams",
+        title: "Work Functions",
         icon: "",
-        url: "settings/leadAssignmentTeams",
-        key: "leadAssignmentTeams",
+        url: "settings/workFunctions",
+        key: "workFunctions",
       },
       {
         title: "Procurement category",

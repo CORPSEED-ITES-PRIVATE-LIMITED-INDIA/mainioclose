@@ -11,9 +11,15 @@ const OperationsSettings = lazy(
 const Slug = lazy(() => import("../setting/slug/Slug"));
 const Urls = lazy(() => import("../setting/urls/Urls"));
 const Department = lazy(() => import("../setting/department/Department"));
+const SubDepartment = lazy(
+  () => import("../setting/department/SubDepartment"),
+);
 const Designation = lazy(() => import("../setting/designation/Designation"));
-const LeadAssignmentTeams = lazy(
-  () => import("../setting/leadAssignment/LeadAssignmentTeams"),
+const WorkFunctions = lazy(
+  () => import("../setting/leadAssignment/WorkFunctions"),
+);
+const SubDepartmentTeams = lazy(
+  () => import("../setting/leadAssignment/SubDepartmentTeams"),
 );
 const LeadAssignmentTeamDetail = lazy(
   () => import("../setting/leadAssignment/LeadAssignmentTeamDetail"),
@@ -118,13 +124,18 @@ const ERPSettingRouting = () => {
       <Route path="settings/applicantType" element={<ApplicantTypes />} />
       <Route path="settings/urls" element={<Urls />} />
       <Route path="settings/department" element={<Department />} />
-      <Route path="settings/designation" element={<Designation />} />
       <Route
-        path="settings/leadAssignmentTeams"
-        element={<LeadAssignmentTeams />}
+        path="settings/department/:departmentId/subDepartment"
+        element={<SubDepartment />}
+      />
+      <Route path="settings/designation" element={<Designation />} />
+      <Route path="settings/workFunctions" element={<WorkFunctions />} />
+      <Route
+        path="settings/department/:departmentId/subDepartment/:subDepartmentId/teams"
+        element={<SubDepartmentTeams />}
       />
       <Route
-        path="settings/leadAssignmentTeams/:teamId"
+        path="settings/department/:departmentId/subDepartment/:subDepartmentId/teams/:teamId"
         element={<LeadAssignmentTeamDetail />}
       />
       <Route

@@ -26,7 +26,7 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
@@ -49,6 +49,7 @@ const teamFormSchema = z.object({
   description: z.string().optional(),
   managerUserId: z.string().min(1, "please select the manager."),
   autoAssignmentEnabled: z.boolean(),
+  manualAssignmentEnabled: z.boolean(),
 });
 
 const teamFormDefaultValues = {
@@ -56,6 +57,7 @@ const teamFormDefaultValues = {
   description: "",
   managerUserId: "",
   autoAssignmentEnabled: true,
+  manualAssignmentEnabled: true,
 };
 
 const memberFormSchema = z.object({
@@ -130,9 +132,15 @@ const INITIAL_VISIBLE_COLUMNS = [
 // into a "+N" chip whose tooltip lists every remaining solution name.
 const MAX_VISIBLE_SOLUTIONS = 2;
 
-const LeadAssignmentTeams = () => {
-  const { userId } = useParams();
+const SubDepartmentTeams = () => {
+  const { departmentId, subDepartmentId } = useParams();
+  const location = useLocation();
   const dispatch = useDispatch();
+
+  const currentUser = useSelector((state) => state.auth.currentUser);
+  const currentUserId = currentUser?.id || currentUser?.userId;
+
+  const subDepartmentName = location?.state?.subDepartmentName;
 
   const teamsPage = useSelector(
     (state) => state.setting.leadAssignmentTeamsList,
@@ -185,6 +193,7 @@ const LeadAssignmentTeams = () => {
   const fetchTeams = useCallback(() => {
     dispatch(
       getAllLeadAssignmentTeams({
+        subDepartmentId,
         search: filterValue || undefined,
         active: activeFilter === "all" ? undefined : activeFilter,
         page: (initialFilteration?.page || 1) - 1,
@@ -192,7 +201,7 @@ const LeadAssignmentTeams = () => {
         sort: ["createdAt,desc"],
       }),
     );
-  }, [dispatch, filterValue, activeFilter, initialFilteration]);
+  }, [dispatch, subDepartmentId, filterValue, activeFilter, initialFilteration]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -201,7 +210,7 @@ const LeadAssignmentTeams = () => {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValue, activeFilter, initialFilteration]);
+  }, [subDepartmentId, filterValue, activeFilter, initialFilteration]);
 
   // Debounced solution search inside the "Map to solution" modal — reuses the
   // existing solution search API (searchSolutionByName) instead of filtering
@@ -216,16 +225,16 @@ const LeadAssignmentTeams = () => {
             name: trimmedValue,
             page: 1,
             size: 50,
-            userId,
+            userId: currentUserId,
           }),
         );
       } else if (trimmedValue.length === 0) {
-        dispatch(getAllSolutionList(userId));
+        dispatch(getAllSolutionList(currentUserId));
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [dispatch, solutionSearchTerm, userId]);
+  }, [dispatch, solutionSearchTerm, currentUserId]);
 
   const managerOptions = useMemo(
     () =>
@@ -268,7 +277,7 @@ const LeadAssignmentTeams = () => {
   const handleOpenCreateModal = () => {
     setItem(null);
     reset(teamFormDefaultValues);
-    dispatch(getAllSalesManagers(userId));
+    dispatch(getAllSalesManagers(currentUserId));
     onOpen();
   };
 
@@ -279,8 +288,9 @@ const LeadAssignmentTeams = () => {
       description: rowData?.description || "",
       managerUserId: rowData?.manager?.id ? String(rowData?.manager?.id) : "",
       autoAssignmentEnabled: rowData?.autoAssignmentEnabled ?? true,
+      manualAssignmentEnabled: rowData?.manualAssignmentEnabled ?? true,
     });
-    dispatch(getAllSalesManagers(userId));
+    dispatch(getAllSalesManagers(currentUserId));
     onOpen();
   };
 
@@ -295,7 +305,7 @@ const LeadAssignmentTeams = () => {
     setItem(rowData);
     mapSolutionForm.reset(mapSolutionFormDefaultValues);
     setSolutionSearchTerm("");
-    dispatch(getAllSolutionList(userId));
+    dispatch(getAllSolutionList(currentUserId));
     mapSolutionModal.onOpen();
   };
 
@@ -311,17 +321,20 @@ const LeadAssignmentTeams = () => {
               description: values?.description,
               managerUserId: Number(values?.managerUserId),
               autoAssignmentEnabled: values?.autoAssignmentEnabled,
-              updatedByUserId: Number(userId),
+              manualAssignmentEnabled: values?.manualAssignmentEnabled,
+              updatedByUserId: Number(currentUserId),
             },
           }),
         )
       : dispatch(
           createLeadAssignmentTeam({
+            subDepartmentId: Number(subDepartmentId),
             teamName: values?.teamName,
             description: values?.description,
             managerUserId: Number(values?.managerUserId),
             autoAssignmentEnabled: values?.autoAssignmentEnabled,
-            createdByUserId: Number(userId),
+            manualAssignmentEnabled: values?.manualAssignmentEnabled,
+            createdByUserId: Number(currentUserId),
           }),
         );
 
@@ -348,7 +361,11 @@ const LeadAssignmentTeams = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -360,7 +377,7 @@ const LeadAssignmentTeams = () => {
         assignmentOrder: Number(values?.assignmentOrder),
         maximumOpenLeads: Number(values?.maximumOpenLeads),
         autoAssignmentEnabled: values?.autoAssignmentEnabled,
-        createdByUserId: Number(userId),
+        createdByUserId: Number(currentUserId),
       }),
     )
       .then((response) => {
@@ -385,7 +402,11 @@ const LeadAssignmentTeams = () => {
         }
       })
       .catch(() => {
-        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
       });
   };
 
@@ -397,7 +418,7 @@ const LeadAssignmentTeams = () => {
         priority: Number(values?.priority),
         dailyAssignmentLimit: Number(values?.dailyAssignmentLimit),
         autoAssignmentEnabled: values?.autoAssignmentEnabled,
-        createdByUserId: Number(userId),
+        createdByUserId: Number(currentUserId),
       }),
     )
       .then((response) => {
@@ -461,7 +482,11 @@ const LeadAssignmentTeams = () => {
         );
 
       case "memberCount":
-        return <Chip size="sm" variant="flat">{rowData?.memberCount ?? 0}</Chip>;
+        return (
+          <Chip size="sm" variant="flat">
+            {rowData?.memberCount ?? 0}
+          </Chip>
+        );
 
       case "solutions": {
         const solutions = rowData?.solutions || [];
@@ -771,14 +796,28 @@ const LeadAssignmentTeams = () => {
   return (
     <>
       <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 text-[12.5px] text-default-400">
+          <Link className="hover:underline" to="../../../department">
+            Departments
+          </Link>
+          <span>/</span>
+          <Link className="hover:underline" to="..">
+            Sub departments
+          </Link>
+          <span>/</span>
+          <span className="text-default-600">
+            {subDepartmentName || "Teams"}
+          </span>
+        </div>
+
         <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
-          Lead Assignment Teams
+          Sales teams
         </h1>
 
         <Table
           isHeaderSticky
           removeWrapper={false}
-          aria-label="Lead assignment teams table"
+          aria-label="Sub department teams table"
           bottomContent={bottomContent}
           bottomContentPlacement="outside"
           topContent={topContent}
@@ -816,7 +855,7 @@ const LeadAssignmentTeams = () => {
         </Table>
       </div>
 
-      {/* Create team modal */}
+      {/* Create / update team modal */}
       <Modal
         size="xl"
         isDismissable={false}
@@ -892,6 +931,20 @@ const LeadAssignmentTeams = () => {
                         size="sm"
                       >
                         Enable auto assignment
+                      </Switch>
+                    )}
+                  />
+
+                  <Controller
+                    name="manualAssignmentEnabled"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        isSelected={field.value}
+                        onValueChange={field.onChange}
+                        size="sm"
+                      >
+                        Enable manual assignment
                       </Switch>
                     )}
                   />
@@ -1136,4 +1189,4 @@ const LeadAssignmentTeams = () => {
   );
 };
 
-export default LeadAssignmentTeams;
+export default SubDepartmentTeams;

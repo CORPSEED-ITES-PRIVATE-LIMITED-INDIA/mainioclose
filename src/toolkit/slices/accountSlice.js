@@ -473,6 +473,24 @@ export const getProcurementPaymentRequestList = createAsyncThunk(
   },
 );
 
+// Purchase invoices list (PurchaseInvoices.jsx) — vendor payment requests
+// that have already been approved or had payment released. The backend
+// returns two independently paginated lists (approvedPayments /
+// releasedPayments) inside one payload.
+export const getApprovedOrReleasedProcurementPayments = createAsyncThunk(
+  "getApprovedOrReleasedProcurementPayments",
+  async ({ page = 1, size = 100 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/procurement-payment-requests/approved-or-released?page=${page - 1}&size=${size}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 // Government-fee journal vouchers, shown as the "Debit Note" list in
 // src/accounts/organization/DebitNotes.jsx. `page` here is 1-indexed (UI
 // convention across this app), converted to the backend's 0-indexed page.
@@ -924,6 +942,19 @@ const AccountSlice = createSlice({
     tdsDetail: {},
     procurementPurchaseOrderList: [],
     procurementPaymentRequestList: [],
+    approvedOrReleasedProcurementPayments: {
+      approvedPayments: {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+      },
+      releasedPayments: {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+      },
+    },
+    approvedOrReleasedProcurementPaymentsLoading: "idle",
     governmentFeeDebitNoteList: {
       content: [],
       totalElements: 0,
@@ -1194,6 +1225,33 @@ const AccountSlice = createSlice({
       state.loading = "rejected";
       state.procurementPaymentRequestList = [];
     });
+
+    builder.addCase(
+      getApprovedOrReleasedProcurementPayments.pending,
+      (state) => {
+        state.approvedOrReleasedProcurementPaymentsLoading = "pending";
+      },
+    );
+    builder.addCase(
+      getApprovedOrReleasedProcurementPayments.fulfilled,
+      (state, action) => {
+        state.approvedOrReleasedProcurementPaymentsLoading = "success";
+        state.approvedOrReleasedProcurementPayments = action.payload?.data || {
+          approvedPayments: { content: [], totalElements: 0, totalPages: 0 },
+          releasedPayments: { content: [], totalElements: 0, totalPages: 0 },
+        };
+      },
+    );
+    builder.addCase(
+      getApprovedOrReleasedProcurementPayments.rejected,
+      (state) => {
+        state.approvedOrReleasedProcurementPaymentsLoading = "rejected";
+        state.approvedOrReleasedProcurementPayments = {
+          approvedPayments: { content: [], totalElements: 0, totalPages: 0 },
+          releasedPayments: { content: [], totalElements: 0, totalPages: 0 },
+        };
+      },
+    );
 
     builder.addCase(getGovernmentFeeDebitNotes.pending, (state) => {
       state.governmentFeeDebitNoteLoading = "pending";

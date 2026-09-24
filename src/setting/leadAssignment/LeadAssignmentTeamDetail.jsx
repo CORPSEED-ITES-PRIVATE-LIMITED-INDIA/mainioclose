@@ -34,8 +34,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import NewSelect from "../../components/NewSelect";
 import {
   addLeadAssignmentTeamMember,
+  assignTeamMemberWorkFunctions,
   getLeadAssignmentTeamById,
   getLeadAssignmentTeamSolutions,
+  getWorkFunctions,
   mapLeadAssignmentTeamMemberToSolutions,
 } from "../../toolkit/slices/settingSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
@@ -66,12 +68,21 @@ const memberSolutionFormDefaultValues = {
   solutionIds: [],
 };
 
+const memberWorkFunctionFormSchema = z.object({
+  workFunctionIds: z.array(z.string()),
+});
+
+const memberWorkFunctionFormDefaultValues = {
+  workFunctionIds: [],
+};
+
 const columns = [
   { name: "#", uid: "id" },
   { name: "SALES USER", uid: "salesUser" },
   { name: "ORDER", uid: "assignmentOrder" },
   { name: "OPEN LEADS", uid: "openLeads" },
   { name: "SOLUTIONS", uid: "solutions" },
+  { name: "WORK FUNCTIONS", uid: "workFunctions" },
   { name: "AUTO ASSIGN", uid: "autoAssignmentEnabled" },
   { name: "STATUS", uid: "active" },
   { name: "ACTIONS", uid: "actions" },
@@ -83,18 +94,25 @@ const columns = [
 const MAX_VISIBLE_SOLUTIONS = 2;
 
 const LeadAssignmentTeamDetail = () => {
-  const { userId, teamId } = useParams();
+  const { teamId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const currentUser = useSelector((state) => state.auth.currentUser);
+  const currentUserId = currentUser?.id || currentUser?.userId;
 
   const team = useSelector((state) => state.setting.leadAssignmentTeamDetail);
   const usersList = useSelector((state) => state.common.usersList);
   const teamSolutions = useSelector(
     (state) => state.setting.leadAssignmentTeamSolutions,
   );
+  const workFunctionsList = useSelector(
+    (state) => state.setting.workFunctionsList,
+  );
 
   const memberModal = useDisclosure();
   const memberSolutionsModal = useDisclosure();
+  const memberWorkFunctionsModal = useDisclosure();
   const [filterValue, setFilterValue] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
 
@@ -106,6 +124,11 @@ const LeadAssignmentTeamDetail = () => {
   const memberSolutionForm = useForm({
     resolver: zodResolver(memberSolutionFormSchema),
     defaultValues: memberSolutionFormDefaultValues,
+  });
+
+  const memberWorkFunctionForm = useForm({
+    resolver: zodResolver(memberWorkFunctionFormSchema),
+    defaultValues: memberWorkFunctionFormDefaultValues,
   });
 
   const fetchTeam = useCallback(() => {
@@ -173,7 +196,7 @@ const LeadAssignmentTeamDetail = () => {
         assignmentOrder: Number(values?.assignmentOrder),
         maximumOpenLeads: Number(values?.maximumOpenLeads),
         autoAssignmentEnabled: values?.autoAssignmentEnabled,
-        createdByUserId: Number(userId),
+        createdByUserId: Number(currentUserId),
       }),
     )
       .then((response) => {
@@ -225,7 +248,7 @@ const LeadAssignmentTeamDetail = () => {
         salesUserId: selectedMember?.salesUser?.id,
         data: {
           solutionIds,
-          updatedByUserId: Number(userId),
+          updatedByUserId: Number(currentUserId),
         },
       }),
     )
@@ -247,6 +270,64 @@ const LeadAssignmentTeamDetail = () => {
             description:
               response?.payload?.data?.message ||
               "Something went wrong while updating the member's solutions.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
+      });
+  };
+
+  const handleOpenMemberWorkFunctionsModal = (member) => {
+    setSelectedMember(member);
+    memberWorkFunctionForm.reset({
+      workFunctionIds: (member?.workFunctions || []).map((workFunction) =>
+        String(workFunction?.id),
+      ),
+    });
+    dispatch(getWorkFunctions());
+    memberWorkFunctionsModal.onOpen();
+  };
+
+  // member.id here is sales_team_member.id (the row's own primary key),
+  // not the underlying salesUser's User ID — matches what the
+  // work-functions endpoint expects as {memberId}.
+  const handleMapMemberWorkFunctions = (values) => {
+    const salesWorkFunctionIds = (values?.workFunctionIds || []).map(Number);
+
+    dispatch(
+      assignTeamMemberWorkFunctions({
+        teamId: team?.id,
+        memberId: selectedMember?.id,
+        data: {
+          salesWorkFunctionIds,
+          updatedByUserId: Number(currentUserId),
+        },
+      }),
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Member work functions updated successfully !.",
+            color: "success",
+          });
+
+          memberWorkFunctionsModal.onOpenChange(false);
+          memberWorkFunctionForm.reset(memberWorkFunctionFormDefaultValues);
+          setSelectedMember(null);
+          fetchTeam();
+        } else {
+          addToast({
+            title: response?.payload?.status || "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              "Something went wrong while updating the member's work functions.",
             color: "danger",
           });
         }
@@ -340,6 +421,24 @@ const LeadAssignmentTeamDetail = () => {
         );
       }
 
+      case "workFunctions": {
+        const workFunctions = rowData?.workFunctions || [];
+
+        if (!workFunctions.length) {
+          return <span className="text-default-400">-</span>;
+        }
+
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {workFunctions.map((workFunction) => (
+              <Chip key={workFunction?.id} size="sm" variant="flat">
+                {workFunction?.code || workFunction?.name}
+              </Chip>
+            ))}
+          </div>
+        );
+      }
+
       case "autoAssignmentEnabled":
         return (
           <Chip
@@ -379,10 +478,15 @@ const LeadAssignmentTeamDetail = () => {
 
                   if (key === "mapSolutions") {
                     handleOpenMemberSolutionsModal(rowData);
+                  } else if (key === "mapWorkFunctions") {
+                    handleOpenMemberWorkFunctionsModal(rowData);
                   }
                 }}
               >
                 <DropdownItem key="mapSolutions">Map solutions</DropdownItem>
+                <DropdownItem key="mapWorkFunctions">
+                  Map work functions
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -720,6 +824,73 @@ const LeadAssignmentTeamDetail = () => {
                         data={teamSolutionOptions}
                         labelKey="solutionName"
                         valueKey="solutionId"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                      />
+                    )}
+                  />
+
+                  <ModalFooter className="px-0">
+                    <Button variant="flat" onPress={onClose}>
+                      Cancel
+                    </Button>
+
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Map member to work functions modal — options come from
+          GET /lead-assignment/admin/work-functions (Settings -> Work
+          Functions). */}
+      <Modal
+        size="xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={memberWorkFunctionsModal.isOpen}
+        onOpenChange={(open) => {
+          memberWorkFunctionsModal.onOpenChange(open);
+          if (!open) {
+            setSelectedMember(null);
+            memberWorkFunctionForm.reset(memberWorkFunctionFormDefaultValues);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                Map work functions to {selectedMember?.salesUser?.fullName}
+              </ModalHeader>
+
+              <ModalBody>
+                <form
+                  className="flex max-h-[65vh] w-full flex-col gap-4 overflow-auto"
+                  onSubmit={memberWorkFunctionForm.handleSubmit(
+                    handleMapMemberWorkFunctions,
+                  )}
+                >
+                  <Controller
+                    name="workFunctionIds"
+                    control={memberWorkFunctionForm.control}
+                    render={({ field, fieldState: { error } }) => (
+                      <NewSelect
+                        selectionMode="multiple"
+                        label="Work functions"
+                        placeholder="Select work functions..."
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        data={workFunctionsList || []}
+                        labelKey="name"
+                        valueKey="id"
                         value={field.value}
                         onChange={(value) => field.onChange(value)}
                       />

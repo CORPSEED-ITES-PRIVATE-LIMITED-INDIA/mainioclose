@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Chip,
@@ -24,9 +24,11 @@ import {
 } from "@heroui/react";
 import { ChevronDown, Search } from "lucide-react";
 import dayjs from "dayjs";
+import { useDispatch, useSelector } from "react-redux";
 import { inrCurrency } from "../../common";
-import NewSelect from "../../components/NewSelect";
 import PurchaseInvoiceView from "../../components/PurchaseInvoiceView";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import { getApprovedOrReleasedProcurementPayments } from "../../toolkit/slices/accountSlice";
 
 export const columns = [
   { name: "ID", uid: "id" },
@@ -78,11 +80,8 @@ const SEARCH_TYPE_OPTIONS = [
 
 const STATUS_FILTER_OPTIONS = [
   { label: "ALL", value: "ALL" },
-  { label: "PENDING", value: "PENDING" },
   { label: "APPROVED", value: "APPROVED" },
-  { label: "PAID", value: "PAID" },
-  { label: "PARTIALLY_PAID", value: "PARTIALLY_PAID" },
-  { label: "REJECTED", value: "REJECTED" },
+  { label: "PAYMENT RELEASED", value: "PAYMENT_RELEASED" },
 ];
 
 const getStatusColor = (status) => {
@@ -90,379 +89,77 @@ const getStatusColor = (status) => {
     case "APPROVED":
       return "success";
 
-    case "REJECTED":
-      return "danger";
-
-    case "PENDING":
-      return "warning";
-
-    case "PAID":
+    case "PAYMENT_RELEASED":
       return "primary";
-
-    case "PARTIALLY_PAID":
-      return "secondary";
 
     default:
       return "default";
   }
 };
 
-// TODO: replace DUMMY_PURCHASE_INVOICES with a real API call (e.g.
-// getPurchaseInvoiceList) once the backend endpoint is available. Each row's
-// shape (including vendor* and lineItems) is already what
-// PurchaseInvoiceView.jsx expects, so wiring the real endpoint should only
-// mean swapping this constant for redux state.
-const DUMMY_PURCHASE_INVOICES = [
-  {
-    id: 1,
-    invoiceNo: "PINV-2026-0001",
-    invoiceDate: "2026-06-02",
-    poNumber: "PO-1042",
-    projectName: "GST Registration Portal",
-    projectNo: "PRJ-3301",
-    vendorName: "Sharma IT Solutions",
-    vendorGstin: "07AACFS1234K1Z5",
-    vendorPanNo: "AACFS1234K",
-    vendorAddressLine1: "B-14, Okhla Industrial Area Phase 1",
-    vendorCity: "New Delhi",
-    vendorState: "Delhi",
-    vendorCountry: "India",
-    vendorPinCode: "110020",
-    vendorBankName: "HDFC Bank",
-    vendorAccountNo: "50100234567890",
-    vendorIfscCode: "HDFC0001234",
-    status: "PAID",
-    lineItems: [
-      {
-        itemName: "Server hosting - annual plan",
-        description: "Dedicated hosting for compliance portal",
-        hsnSacCode: "998315",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 85000,
-        lineTotalExGst: 85000,
-        gstRate: 18,
-        cgstAmount: 7650,
-        sgstAmount: 7650,
-        igstAmount: 0,
-        igstFlag: false,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 2,
-    invoiceNo: "PINV-2026-0002",
-    invoiceDate: "2026-06-10",
-    poNumber: "PO-1049",
-    projectName: "FSSAI License Automation",
-    projectNo: "PRJ-3312",
-    vendorName: "Nexus Office Supplies",
-    vendorGstin: "27AAECN5678L1ZA",
-    vendorPanNo: "AAECN5678L",
-    vendorAddressLine1: "Plot 22, MIDC Industrial Estate",
-    vendorCity: "Pune",
-    vendorState: "Maharashtra",
-    vendorCountry: "India",
-    vendorPinCode: "411019",
-    vendorBankName: "ICICI Bank",
-    vendorAccountNo: "003405001122",
-    vendorIfscCode: "ICIC0000034",
-    status: "APPROVED",
-    lineItems: [
-      {
-        itemName: "Office workstation furniture",
-        description: "6 desks + chairs for delivery team",
-        hsnSacCode: "9403",
-        quantity: 6,
-        unit: "NOS",
-        unitPriceExGst: 12500,
-        lineTotalExGst: 75000,
-        gstRate: 18,
-        gstAmount: 13500,
-        igstAmount: 13500,
-        igstFlag: true,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 3,
-    invoiceNo: "PINV-2026-0003",
-    invoiceDate: "2026-06-14",
-    poNumber: "PO-1051",
-    projectName: "Trademark Filing Suite",
-    projectNo: "PRJ-3320",
-    vendorName: "Bluewave Legal Research",
-    vendorGstin: "29AADCB4321M1Z9",
-    vendorPanNo: "AADCB4321M",
-    vendorAddressLine1: "4th Floor, Residency Road",
-    vendorCity: "Bengaluru",
-    vendorState: "Karnataka",
-    vendorCountry: "India",
-    vendorPinCode: "560025",
-    vendorBankName: "Axis Bank",
-    vendorAccountNo: "917020011223",
-    vendorIfscCode: "UTIB0001234",
-    status: "PENDING",
-    lineItems: [
-      {
-        itemName: "Trademark class search - retainer",
-        description: "Quarterly retainer, April-June 2026",
-        hsnSacCode: "998231",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 45000,
-        lineTotalExGst: 45000,
-        gstRate: 18,
-        igstAmount: 8100,
-        igstFlag: true,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 4,
-    invoiceNo: "PINV-2026-0004",
-    invoiceDate: "2026-06-18",
-    poNumber: "PO-1053",
-    projectName: "Import Export Code Desk",
-    projectNo: "PRJ-3328",
-    vendorName: "Vertex Cloud Services",
-    vendorGstin: "07AAFCV8765N1Z2",
-    vendorPanNo: "AAFCV8765N",
-    vendorAddressLine1: "Tower C, Cyber Hub",
-    vendorCity: "Gurugram",
-    vendorState: "Haryana",
-    vendorCountry: "India",
-    vendorPinCode: "122002",
-    vendorBankName: "Kotak Mahindra Bank",
-    vendorAccountNo: "6011223344",
-    vendorIfscCode: "KKBK0000601",
-    status: "PARTIALLY_PAID",
-    lineItems: [
-      {
-        itemName: "Document management SaaS - 50 seats",
-        description: "Annual subscription renewal",
-        hsnSacCode: "998313",
-        quantity: 50,
-        unit: "SEAT",
-        unitPriceExGst: 1800,
-        lineTotalExGst: 90000,
-        gstRate: 18,
-        cgstAmount: 8100,
-        sgstAmount: 8100,
-        igstAmount: 0,
-        igstFlag: false,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 5,
-    invoiceNo: "PINV-2026-0005",
-    invoiceDate: "2026-06-21",
-    poNumber: "PO-1058",
-    projectName: "Labour License Renewal",
-    projectNo: "PRJ-3334",
-    vendorName: "Suraksha Compliance Partners",
-    vendorGstin: "24AABCS2233P1Z6",
-    vendorPanNo: "AABCS2233P",
-    vendorAddressLine1: "402, Ashram Road",
-    vendorCity: "Ahmedabad",
-    vendorState: "Gujarat",
-    vendorCountry: "India",
-    vendorPinCode: "380009",
-    vendorBankName: "State Bank of India",
-    vendorAccountNo: "31245566778",
-    vendorIfscCode: "SBIN0001234",
-    status: "REJECTED",
-    lineItems: [
-      {
-        itemName: "Statutory audit assistance",
-        description: "On-site labour compliance audit",
-        hsnSacCode: "998221",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 32000,
-        lineTotalExGst: 32000,
-        gstRate: 18,
-        cgstAmount: 2880,
-        sgstAmount: 2880,
-        igstAmount: 0,
-        igstFlag: false,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 6,
-    invoiceNo: "PINV-2026-0006",
-    invoiceDate: "2026-06-25",
-    poNumber: "PO-1062",
-    projectName: "Startup India Recognition",
-    projectNo: "PRJ-3341",
-    vendorName: "Orbit Design Studio",
-    vendorGstin: "19AAGCO4433Q1ZC",
-    vendorPanNo: "AAGCO4433Q",
-    vendorAddressLine1: "Salt Lake Sector V",
-    vendorCity: "Kolkata",
-    vendorState: "West Bengal",
-    vendorCountry: "India",
-    vendorPinCode: "700091",
-    vendorBankName: "Yes Bank",
-    vendorAccountNo: "008812340099",
-    vendorIfscCode: "YESB0000088",
-    status: "APPROVED",
-    lineItems: [
-      {
-        itemName: "Pitch deck & branding refresh",
-        description: "Corporate identity redesign",
-        hsnSacCode: "998314",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 60000,
-        lineTotalExGst: 60000,
-        gstRate: 18,
-        gstAmount: 10800,
-        igstAmount: 10800,
-        igstFlag: true,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 7,
-    invoiceNo: "PINV-2026-0007",
-    invoiceDate: "2026-06-28",
-    poNumber: "PO-1066",
-    projectName: "ISO Certification Drive",
-    projectNo: "PRJ-3349",
-    vendorName: "Pinnacle Quality Auditors",
-    vendorGstin: "07AAHCP7788R1Z1",
-    vendorPanNo: "AAHCP7788R",
-    vendorAddressLine1: "Nehru Place",
-    vendorCity: "New Delhi",
-    vendorState: "Delhi",
-    vendorCountry: "India",
-    vendorPinCode: "110019",
-    vendorBankName: "Punjab National Bank",
-    vendorAccountNo: "0987654321",
-    vendorIfscCode: "PUNB0098765",
-    status: "PENDING",
-    lineItems: [
-      {
-        itemName: "ISO 9001 certification audit",
-        description: "Stage 1 + Stage 2 audit",
-        hsnSacCode: "998221",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 55000,
-        lineTotalExGst: 55000,
-        gstRate: 18,
-        cgstAmount: 4950,
-        sgstAmount: 4950,
-        igstAmount: 0,
-        igstFlag: false,
-        displayOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 8,
-    invoiceNo: "PINV-2026-0008",
-    invoiceDate: "2026-07-01",
-    poNumber: "PO-1071",
-    projectName: "Payroll Automation Rollout",
-    projectNo: "PRJ-3357",
-    vendorName: "Meridian HR Tech",
-    vendorGstin: "33AAICM9911S1Z4",
-    vendorPanNo: "AAICM9911S",
-    vendorAddressLine1: "Anna Salai",
-    vendorCity: "Chennai",
-    vendorState: "Tamil Nadu",
-    vendorCountry: "India",
-    vendorPinCode: "600002",
-    vendorBankName: "IndusInd Bank",
-    vendorAccountNo: "201122334455",
-    vendorIfscCode: "INDB0000201",
-    status: "PAID",
-    lineItems: [
-      {
-        itemName: "Payroll SaaS implementation",
-        description: "Setup + training, 1-time",
-        hsnSacCode: "998313",
-        quantity: 1,
-        unit: "NOS",
-        unitPriceExGst: 120000,
-        lineTotalExGst: 120000,
-        gstRate: 18,
-        gstAmount: 21600,
-        igstAmount: 21600,
-        igstFlag: true,
-        displayOrder: 1,
-      },
-    ],
-  },
-];
-
 const round2 = (value) =>
-  Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
-// Derive coherent top-level row fields (amount/gstPercentage/totals/payable)
-// from each row's own lineItems, instead of hand-typing unrelated numbers.
-const withDerivedTotals = (row) => {
-  const items = Array.isArray(row.lineItems) ? row.lineItems : [];
-
-  const amount = round2(
-    items.reduce((sum, item) => sum + Number(item?.lineTotalExGst || 0), 0),
+// Maps one row of GET /accountService/api/procurement-payment-requests/
+// approved-or-released (either the approvedPayments or releasedPayments
+// list) into the shape this table and PurchaseInvoiceView.jsx expect.
+// The endpoint doesn't return vendor address/GSTIN/bank details or line
+// items, so those are left blank — PurchaseInvoiceView already renders
+// "NA" for anything missing.
+const mapPaymentRequestToRow = (row = {}) => {
+  const amount = round2(row?.amount);
+  const cgstAmount = round2(row?.cgstAmount);
+  const sgstAmount = round2(row?.sgstAmount);
+  const igstAmount = round2(row?.igstAmount);
+  const totalGstAmount = round2(
+    row?.totalGstAmount ?? cgstAmount + sgstAmount + igstAmount,
   );
-
-  const cgstAmount = round2(
-    items.reduce((sum, item) => sum + Number(item?.cgstAmount || 0), 0),
+  const invoiceAmount = round2(row?.invoiceAmount ?? amount + totalGstAmount);
+  const tdsAmount = round2(row?.tdsAmount);
+  const payableAmount = round2(
+    row?.payableAmount ?? invoiceAmount - tdsAmount,
   );
-
-  const sgstAmount = round2(
-    items.reduce((sum, item) => sum + Number(item?.sgstAmount || 0), 0),
-  );
-
-  const igstAmount = round2(
-    items.reduce((sum, item) => sum + Number(item?.igstAmount || 0), 0),
-  );
-
-  const totalGstAmount = round2(cgstAmount + sgstAmount + igstAmount);
-  const gstPercentage = items[0]?.gstRate || 0;
-  const invoiceAmount = round2(amount + totalGstAmount);
-  const gstType = igstAmount > 0 ? "IGST" : "CGST/SGST";
-
-  // Simple flat 2% TDS applied on the pre-GST amount for the dummy dataset.
-  const tdsPercentage = 2;
-  const tdsAmount = round2((amount * tdsPercentage) / 100);
-  const payableAmount = round2(invoiceAmount - tdsAmount);
 
   return {
-    ...row,
+    id: row?.id,
+    rowKey: `${row?.status || "row"}-${row?.id}`,
+    invoiceNo: row?.invoiceNumber || row?.poNumber || `PR-${row?.id}`,
+    invoiceDate: row?.invoiceDate || row?.paymentDate || row?.submissionDate,
+    poNumber: row?.poNumber || "",
+    projectName: row?.projectName || "",
+    projectNo: row?.projectNo || "",
+    vendorName: row?.vendorName || "",
     amount,
     cgstAmount,
     sgstAmount,
     igstAmount,
     totalGstAmount,
-    gstPercentage,
-    gstType,
-    gstActive: totalGstAmount > 0,
+    gstPercentage: row?.gstPercentage || 0,
+    gstType: row?.gstType || (igstAmount > 0 ? "IGST" : "CGST_SGST"),
+    gstActive: Boolean(row?.gstActive),
     invoiceAmount,
-    tdsPercentage,
+    tdsPercentage: row?.tdsPercentage || 0,
     tdsAmount,
-    tdsActive: true,
+    tdsActive: Boolean(row?.tdsActive),
     payableAmount,
-    proofAttachmentUrls: [],
+    status: row?.status || "",
+    proofAttachmentUrls: Array.isArray(row?.proofAttachmentUrls)
+      ? row.proofAttachmentUrls
+      : [],
+    lineItems: [],
   };
 };
 
-const PURCHASE_INVOICES = DUMMY_PURCHASE_INVOICES.map(withDerivedTotals);
-
 const PurchaseInvoices = () => {
+  const dispatch = useDispatch();
   const viewModal = useDisclosure();
+
+  const approvedOrReleasedProcurementPayments = useSelector(
+    (state) => state.account.approvedOrReleasedProcurementPayments,
+  );
+  const loading = useSelector(
+    (state) => state.account.approvedOrReleasedProcurementPaymentsLoading,
+  );
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [filterValue, setFilterValue] = useState("");
@@ -476,6 +173,24 @@ const PurchaseInvoices = () => {
 
   const hasSearchFilter = Boolean(filterValue);
 
+  useEffect(() => {
+    dispatch(
+      getApprovedOrReleasedProcurementPayments({ page: 1, size: 100 }),
+    );
+  }, [dispatch]);
+
+  // Both approved and released payments come back as two independently
+  // paginated lists in one payload — flatten them into a single table,
+  // each row keeping its own status so the status filter still works.
+  const purchaseInvoices = useMemo(() => {
+    const approved =
+      approvedOrReleasedProcurementPayments?.approvedPayments?.content || [];
+    const released =
+      approvedOrReleasedProcurementPayments?.releasedPayments?.content || [];
+
+    return [...approved, ...released].map(mapPaymentRequestToRow);
+  }, [approvedOrReleasedProcurementPayments]);
+
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
 
@@ -484,11 +199,8 @@ const PurchaseInvoices = () => {
     );
   }, [visibleColumns]);
 
-  // TODO: once a real API exists, move this filtering server-side
-  // (searchPurchaseInvoices / getPurchaseInvoiceList with query params)
-  // instead of filtering the in-memory dummy list.
   const filteredItems = useMemo(() => {
-    let items = [...PURCHASE_INVOICES];
+    let items = [...purchaseInvoices];
 
     if (statusFilter !== "ALL") {
       items = items.filter((item) => item?.status === statusFilter);
@@ -504,7 +216,13 @@ const PurchaseInvoices = () => {
     }
 
     return items;
-  }, [statusFilter, hasSearchFilter, filterValue, searchType]);
+  }, [
+    purchaseInvoices,
+    statusFilter,
+    hasSearchFilter,
+    filterValue,
+    searchType,
+  ]);
 
   const count = filteredItems.length;
   const pages = Math.max(1, Math.ceil(count / rowsPerPage));
@@ -592,7 +310,7 @@ const PurchaseInvoices = () => {
       case "gstType":
         return rowData?.gstActive ? (
           <Chip size="sm" variant="flat" color="secondary">
-            {rowData?.gstType}
+            {rowData?.gstType?.replaceAll("_", "/")}
           </Chip>
         ) : (
           <span className="text-[12.5px] text-default-400">-</span>
@@ -886,6 +604,8 @@ const PurchaseInvoices = () => {
         Purchase invoices
       </h1>
 
+      {loading === "pending" && <LoadingSpinner />}
+
       <Table
         isHeaderSticky
         removeWrapper={false}
@@ -920,7 +640,7 @@ const PurchaseInvoices = () => {
           items={paginatedItems}
         >
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item.rowKey}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}

@@ -47,7 +47,7 @@ import {
   mapDesignationWithDepartmentInOperations,
   updateOperationDepartment,
 } from "../../toolkit/slices/operationSlice";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const formSchema = z.object({
   name: z.string().min(1, "please enter the name."),
@@ -384,7 +384,15 @@ const Department = () => {
         return <span>{rowData?.id}</span>;
 
       case "name":
-        return <span className="font-medium">{rowData?.name}</span>;
+        return (
+          <Link
+            className="font-medium text-blue-600 hover:underline"
+            to={`${rowData?.id}/subDepartment`}
+            state={{ departmentName: rowData?.name }}
+          >
+            {rowData?.name}
+          </Link>
+        );
 
       case "designations":
         return (

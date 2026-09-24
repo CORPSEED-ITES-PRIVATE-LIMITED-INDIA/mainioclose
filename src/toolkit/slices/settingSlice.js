@@ -413,13 +413,17 @@ export const convertUrlsToProduct = createAsyncThunk(
 export const getAllLeadAssignmentTeams = createAsyncThunk(
   "getAllLeadAssignmentTeams",
   async (params = {}) => {
-    const { search, active, page = 0, size = 10, sort } = params;
+    const { search, active, subDepartmentId, page = 0, size = 10, sort } =
+      params;
 
     const query = new URLSearchParams();
 
     if (search) query.append("search", search);
     if (active !== undefined && active !== null && active !== "") {
       query.append("active", active);
+    }
+    if (subDepartmentId !== undefined && subDepartmentId !== null) {
+      query.append("subDepartmentId", subDepartmentId);
     }
     query.append("page", page);
     query.append("size", size);
@@ -431,6 +435,38 @@ export const getAllLeadAssignmentTeams = createAsyncThunk(
       `/leadService/api/v1/lead-assignment/admin/teams?${query.toString()}`,
     );
     return response.data;
+  },
+);
+
+// Read-only list of Sales Work Functions (Settings -> Work Functions tab),
+// and the endpoint that maps a team member (sales_team_member.id, not
+// User ID) to the work functions they can perform.
+export const getWorkFunctions = createAsyncThunk(
+  "getWorkFunctions",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/lead-assignment/admin/work-functions`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const assignTeamMemberWorkFunctions = createAsyncThunk(
+  "assignTeamMemberWorkFunctions",
+  async ({ teamId, memberId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/lead-assignment/admin/teams/${teamId}/members/${memberId}/work-functions`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
   },
 );
 
@@ -537,6 +573,70 @@ export const updateDesignationDepartment = createAsyncThunk(
       return rejectWithValue(
         error?.response?.data || "Failed to update designation department",
       );
+    }
+  },
+);
+
+// Sub-departments (Department.jsx -> SubDepartment.jsx). Uses the newer
+// /organization/ base path, unlike the legacy /designation/ department APIs
+// above.
+export const getSubDepartmentList = createAsyncThunk(
+  "getSubDepartmentList",
+  async (
+    { departmentId, search, active, page = 1, size = 50 } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const params = new URLSearchParams();
+
+      if (departmentId !== undefined && departmentId !== null) {
+        params.set("departmentId", departmentId);
+      }
+      if (search) {
+        params.set("search", search);
+      }
+      if (active !== undefined && active !== null && active !== "") {
+        params.set("active", active);
+      }
+      params.set("page", page - 1);
+      params.set("size", size);
+
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments?${params.toString()}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const createSubDepartment = createAsyncThunk(
+  "createSubDepartment",
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/organization/sub-departments`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateSubDepartment = createAsyncThunk(
+  "updateSubDepartment",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/organization/sub-departments/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
     }
   },
 );
@@ -1083,6 +1183,12 @@ export const SettingSlice = createSlice({
     urlsList: [],
     urlCount: 0,
     departmentList: [],
+    subDepartmentList: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+    },
+    workFunctionsList: [],
     designationList: [],
     leadAssignmentTeamsList: {
       content: [],
@@ -1324,6 +1430,18 @@ export const SettingSlice = createSlice({
       state.leadAssignmentTeamDetail = null;
     });
 
+    builder.addCase(getWorkFunctions.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getWorkFunctions.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.workFunctionsList = action.payload || [];
+    });
+    builder.addCase(getWorkFunctions.rejected, (state) => {
+      state.loading = "rejected";
+      state.workFunctionsList = [];
+    });
+
     builder.addCase(getAllSalesManagers.pending, (state) => {
       state.loading = "pending";
     });
@@ -1345,6 +1463,26 @@ export const SettingSlice = createSlice({
     });
     builder.addCase(getAllDepartment.rejected, (state) => {
       state.loading = "rejected";
+    });
+
+    builder.addCase(getSubDepartmentList.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getSubDepartmentList.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.subDepartmentList = action.payload || {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+      };
+    });
+    builder.addCase(getSubDepartmentList.rejected, (state) => {
+      state.loading = "rejected";
+      state.subDepartmentList = {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+      };
     });
 
     builder.addCase(getAllDesiginations.pending, (state) => {
