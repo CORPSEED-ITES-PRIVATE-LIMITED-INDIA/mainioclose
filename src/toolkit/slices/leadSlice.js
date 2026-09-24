@@ -944,6 +944,46 @@ export const approveRejectLead = createAsyncThunk(
   },
 );
 
+export const addLeadChatComment = createAsyncThunk(
+  "addLeadChatComment",
+  async ({data}, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/lead/addLeadChatComment`,data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+export const getAllLeadChatComment = createAsyncThunk(
+  "getAllLeadChatComment",
+  async ({leadId}, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/lead/getLeadChatHistory?leadId=${leadId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+export const deleteLeadChatComment = createAsyncThunk(
+  "deleteLeadChatComment",
+  async ({userId,chatId}, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/lead/deleteLeadChatComment?chatId=${chatId}&userId=${userId}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 
 
 export const LeadSlice = createSlice({
@@ -993,6 +1033,7 @@ export const LeadSlice = createSlice({
     childLeadList: [],
     proposalListByLeadId: [],
     companyLegalVerificationList: [],
+    leadChatComments:[],
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -1517,6 +1558,36 @@ export const LeadSlice = createSlice({
       state.loading = "rejected";
       state.companyLegalVerificationList = [];
     });
+    builder.addCase(getAllLeadChatComment.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLeadChatComment.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.leadChatComments = action?.payload;
+    });
+    builder.addCase(getAllLeadChatComment.rejected, (state) => {
+      state.loading = "rejected";
+      state.leadChatComments = [];
+    });
+    builder.addCase(addLeadChatComment.pending, (state) => {
+  state.loading = "pending";
+});
+builder.addCase(addLeadChatComment.fulfilled, (state) => {
+  state.loading = "success";
+});
+builder.addCase(addLeadChatComment.rejected, (state) => {
+  state.loading = "rejected";
+});
+
+builder.addCase(deleteLeadChatComment.pending, (state) => {
+  state.loading = "pending";
+});
+builder.addCase(deleteLeadChatComment.fulfilled, (state) => {
+  state.loading = "success";
+});
+builder.addCase(deleteLeadChatComment.rejected, (state) => {
+  state.loading = "rejected";
+});
   },
 });
 

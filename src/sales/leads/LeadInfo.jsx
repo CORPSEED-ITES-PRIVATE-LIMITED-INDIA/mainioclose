@@ -35,12 +35,13 @@ import {
   Phone,
   Plus,
   Podcast,
+  Send,
   Smartphone,
   Trash,
   User2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -51,11 +52,14 @@ import {
   getSolutionDetailByName,
 } from "../../toolkit/slices/settingSlice";
 import {
+  addLeadChatComment,
   changeLeadAssigneeLeads,
   createLeadContacts,
   createRemakWithFile,
+  deleteLeadChatComment,
   deleteLeadContact,
   deleteRemarks,
+  getAllLeadChatComment,
   getAllLeadUser,
   getAllRemarkAndCommnts,
   getSingleLeadDataByLeadId,
@@ -196,6 +200,7 @@ const LeadInfo = () => {
   const statusList = useSelector((state) => state.setting.statusList);
   const allComments = useSelector((state) => state.setting.allComments);
   const remarkData = useSelector((state) => state.leads.remarkData);
+  const leadChatComments = useSelector((state) => state.leads.leadChatComments);
   const countryList = useSelector((state) => state.common.countriesList);
   const statesList = useSelector((state) => state.common.statesList);
   const citiesList = useSelector((state) => state.common.citiesList);
@@ -229,6 +234,10 @@ const LeadInfo = () => {
   const [assigneeLoading, setAssigneeLoading] = useState("");
   const [contactLoading, setContactLoading] = useState("");
   const [assignLoading, setAssignLoading] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatLoading, setChatLoading] = useState("");
+  const [chatDeleteLoading, setChatDeleteLoading] = useState("");
+  const chatBottomRef = useRef(null);
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -239,7 +248,12 @@ const LeadInfo = () => {
     dispatch(getAllComments());
     dispatch(getAllLeadUser(userId));
     dispatch(getAllRemarkAndCommnts(leadId));
+    dispatch(getAllLeadChatComment({ leadId }));
   }, [dispatch, leadId, userId]);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [leadChatComments]);
 
   // Resolve the lead's solution so the assignee dropdown can be scoped to
   // only the users eligible for that particular service/product, instead of
@@ -255,7 +269,10 @@ const LeadInfo = () => {
   useEffect(() => {
     if (solutionDetail?.id) {
       dispatch(
-        getLeadAssignmentSolutionUsers({ solutionId: solutionDetail.id, userId }),
+        getLeadAssignmentSolutionUsers({
+          solutionId: solutionDetail.id,
+          userId,
+        }),
       );
     }
   }, [dispatch, solutionDetail?.id, userId]);
@@ -334,6 +351,79 @@ const LeadInfo = () => {
       addToast({ title: "Select comment to proceed", color: "warning" });
     }
   }, [files, leadId, userId, selectedComment, customComment, dispatch]);
+
+  // ─── Lead Chat History: add / view / delete ───
+  const handleSendChatComment = () => {
+    if (!chatMessage?.trim()) {
+      addToast({ title: "Please enter a message", color: "warning" });
+      return;
+    }
+    setChatLoading("pending");
+    dispatch(
+      addLeadChatComment({
+        data: {
+          leadId: Number(leadId),
+          userId: Number(userId),
+          message: chatMessage.trim(),
+          attachments: [],
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          setChatMessage("");
+          setChatLoading("success");
+          dispatch(getAllLeadChatComment({ leadId }));
+        } else {
+          setChatLoading("rejected");
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
+        }
+      })
+      .catch((err) => {
+        setChatLoading("rejected");
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
+      });
+  };
+
+  const handleDeleteChatComment = (chatId) => {
+    if (!window.confirm("Are you sure you want to delete this message?"))
+      return;
+    setChatDeleteLoading("pending");
+    dispatch(deleteLeadChatComment({ chatId, userId }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Message deleted successfully !.",
+            color: "success",
+          });
+          setChatDeleteLoading("success");
+          dispatch(getAllLeadChatComment({ leadId }));
+        } else {
+          setChatDeleteLoading("rejected");
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
+        }
+      })
+      .catch((err) => {
+        setChatDeleteLoading("rejected");
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
+      });
+  };
 
   const changeLeadAssignee = (assigneeId) => {
     setAssigneeLoading("pending");
@@ -814,6 +904,8 @@ const LeadInfo = () => {
         assigneeLoading === "pending" ||
         contactLoading === "pending" ||
         sourceLoading === "pending" ||
+        chatLoading === "pending" ||
+        chatDeleteLoading === "pending" ||
         assignLoading === "pending") && <LoadingSpinner />}
       {leadDetailLoading === "pending" ? (
         <LoadingSpinner />
@@ -1328,6 +1420,91 @@ const LeadInfo = () => {
                   </Button>
                 </CardFooter>
               </Card>
+
+              {/* ─── Lead Chat History ─── */}
+              <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
+                <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <MessageSquareMore className={iconClass} />
+                    <p className="text-sm font-semibold">Lead Chat History</p>
+                  </div>
+                </CardHeader>
+
+                <CardBody className="flex max-h-[320px] flex-col gap-2 overflow-auto p-3">
+                  {leadChatComments?.length ? (
+                    leadChatComments?.map((chat) => {
+                      const isOwn = String(chat?.senderId) === String(userId);
+                      return (
+                        <div
+                          key={`chat${chat?.id}`}
+                          className="rounded-xl border border-default-200 bg-default-50/60 p-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <User
+                              description={dayjs(chat?.createDate)?.format(
+                                "DD-MM-YYYY, HH:mm A",
+                              )}
+                              name={chat?.senderName}
+                            />
+                            {(isOwn || adminRole) && (
+                              <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                className="h-7 w-7 min-w-7 rounded-full"
+                                onPress={() =>
+                                  handleDeleteChatComment(chat?.id)
+                                }
+                              >
+                                <Trash className={iconClass} color="red" />
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="mt-2 rounded-lg bg-white px-2.5 py-2 shadow-sm">
+                            <p className="whitespace-pre-wrap break-words text-sm text-default-700">
+                              {chat?.message}
+                            </p>
+                          </div>
+
+                          {chat?.attachments?.length > 0 && (
+                            <div className="mt-2 flex items-center">
+                              <ImageGroup images={chat?.attachments} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="py-4 text-center text-xs text-default-400">
+                      No comments yet
+                    </p>
+                  )}
+                  <div ref={chatBottomRef} />
+                </CardBody>
+
+                <CardFooter className="flex flex-col items-end gap-2 border-t border-default-200 px-3 py-2.5">
+                  <Textarea
+                    className="w-full"
+                    minRows={2}
+                    maxRows={4}
+                    placeholder="Add a comment..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                  />
+                  <Button
+                    color="primary"
+                    isDisabled={
+                      chatLoading === "pending" || !chatMessage?.trim()
+                    }
+                    isLoading={chatLoading === "pending"}
+                    onPress={handleSendChatComment}
+                  >
+                    Submit
+                  </Button>
+                </CardFooter>
+              </Card>
+
               <Card className="my-1.5 overflow-hidden border border-default-200 shadow-sm">
                 <CardHeader className="border-b border-default-200 bg-gradient-to-r from-default-50 to-white px-3 py-2">
                   <div className="flex items-center gap-2">
