@@ -560,7 +560,11 @@ const SalesUnbill = () => {
           return (
             <div className="flex flex-col gap-1">
               <p className="text-[12.5px] capitalize">
-                {dayjs(rowData?.date).format("DD-MM-YYYY")}
+                {new Date(rowData.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </p>
               <Chip
                 size="sm"

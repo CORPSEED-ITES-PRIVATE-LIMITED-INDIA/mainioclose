@@ -91,6 +91,31 @@ import BasicCompany from "../company/BasicCompany";
 import CompanyAndUnitsInLead from "../company/CompanyAndUnitsInLead";
 const iconClass = "h-4 w-4";
 
+// Pulls the backend's own error message out of a failed thunk's `resp`
+// (used in `.then((resp) => { if (fulfilled) ... else <here> })` branches).
+// Falls back to a generic message only if the API didn't send one.
+const getApiErrorMessage = (
+  resp,
+  fallback = "Something went wrong. Please try again.",
+) => {
+  const apiData = resp?.payload?.response?.data;
+  return (
+    apiData?.message ||
+    resp?.payload?.message ||
+    resp?.error?.message ||
+    fallback
+  );
+};
+
+// Same, but for `.catch((err) => { ... })` branches where the thrown error
+// carries the axios response shape directly on `err`.
+const getApiErrorMessageFromCatch = (
+  err,
+  fallback = "Something went wrong. Please try again.",
+) => {
+  return err?.response?.data?.message || err?.message || fallback;
+};
+
 const addressFormSchema = z.object({
   address: z.string().min(1, "Please enter a address"),
   country: z.string().min(1, "Please select country"),
@@ -161,7 +186,9 @@ const LeadInfo = () => {
     (state) => state.leads.leadDetailLoading,
   );
   const allUsers = useSelector((state) => state.leads.leadUsersList);
-  const solutionDetail = useSelector((state) => state.setting.solutionDetailById);
+  const solutionDetail = useSelector(
+    (state) => state.setting.solutionDetailById,
+  );
   const solutionEligibleUsers = useSelector(
     (state) => state.setting.leadAssignmentSolutionUsers,
   );
@@ -246,15 +273,17 @@ const LeadInfo = () => {
         } else {
           setLeadLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "Error",
+            description: getApiErrorMessage(resp),
             color: "danger",
           });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setLeadLoading("rejected");
         addToast({
-          title: "Something went wrong !.",
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
           color: "danger",
         });
       });
@@ -284,12 +313,20 @@ const LeadInfo = () => {
             dispatch(getAllRemarkAndCommnts(leadId));
           } else {
             setRemarkLoading("reject");
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title: "Error",
+              description: getApiErrorMessage(resp),
+              color: "danger",
+            });
           }
         })
-        .catch(() => {
+        .catch((err) => {
           setRemarkLoading("reject");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessageFromCatch(err),
+            color: "danger",
+          });
         });
     } else {
       addToast({ title: "Select comment to proceed", color: "warning" });
@@ -314,16 +351,18 @@ const LeadInfo = () => {
           console.log("resp in changeLeadAssigneeLeads 2222", resp);
           setAssigneeLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "Error",
+            description: getApiErrorMessage(resp),
             color: "danger",
           });
         }
       })
-      .catch(() => {
-        console.log("resp in changeLeadAssigneeLeads 33333", resp);
+      .catch((err) => {
+        console.log("resp in changeLeadAssigneeLeads 33333", err);
         setAssigneeLoading("rejected");
         addToast({
-          title: "Something went wrong !.",
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
           color: "danger",
         });
       });
@@ -345,16 +384,17 @@ const LeadInfo = () => {
         } else {
           setStatusLoading("rejected");
           addToast({
-            title: "ERROR",
-            description: resp?.payload?.response?.data,
+            title: "Error",
+            description: getApiErrorMessage(resp),
             color: "danger",
           });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setStatusLoading("rejected");
         addToast({
-          title: "Something went wrong !.",
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
           color: "danger",
         });
       });
@@ -375,15 +415,17 @@ const LeadInfo = () => {
         } else {
           setSourceLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "Error",
+            description: getApiErrorMessage(resp),
             color: "danger",
           });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setSourceLoading("rejected");
         addToast({
-          title: "Something went wrong !.",
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
           color: "danger",
         });
       });
@@ -447,12 +489,20 @@ const LeadInfo = () => {
           setRemarkDataItem(null);
         } else {
           setRemarkLoading("rejected");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setRemarkLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
       });
   };
 
@@ -480,12 +530,20 @@ const LeadInfo = () => {
           remarkForm.reset(remarkFormDefault);
         } else {
           setRemarkLoading("rejected");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setRemarkLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
       });
   };
 
@@ -521,12 +579,20 @@ const LeadInfo = () => {
           setEditContact(null);
         } else {
           setContactLoading("rejected");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setContactLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
       });
   };
 
@@ -545,12 +611,20 @@ const LeadInfo = () => {
           addressModal.onOpenChange(false);
         } else {
           setAddressLoading("rejected");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setAddressLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
       });
   };
 
@@ -569,12 +643,20 @@ const LeadInfo = () => {
           industryModal.onOpenChange(false);
         } else {
           setIndustryLoading("rejected");
-          addToast({ title: "Something went wrong !.", color: "danger" });
+          addToast({
+            title: "Error",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setIndustryLoading("rejected");
-        addToast({ title: "Something went wrong !.", color: "danger" });
+        addToast({
+          title: "Error",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
       });
   };
 
@@ -599,15 +681,17 @@ const LeadInfo = () => {
           } else {
             setContactLoading("rejected");
             addToast({
-              title: "Something went wrong !.",
+              title: "Error",
+              description: getApiErrorMessage(resp),
               color: "danger",
             });
           }
         })
-        .catch(() => {
+        .catch((err) => {
           setContactLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "Error",
+            description: getApiErrorMessageFromCatch(err),
             color: "danger",
           });
         });
@@ -627,15 +711,17 @@ const LeadInfo = () => {
           } else {
             setContactLoading("rejected");
             addToast({
-              title: "Something went wrong !.",
+              title: "Error",
+              description: getApiErrorMessage(resp),
               color: "danger",
             });
           }
         })
-        .catch(() => {
+        .catch((err) => {
           setContactLoading("rejected");
           addToast({
-            title: "Something went wrong !.",
+            title: "Error",
+            description: getApiErrorMessageFromCatch(err),
             color: "danger",
           });
         });
@@ -659,12 +745,20 @@ const LeadInfo = () => {
             setAssignLoading("success");
             dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title: "Error",
+              description: getApiErrorMessage(resp),
+              color: "danger",
+            });
             setAssignLoading("rejected");
           }
         })
-        .catch(() => {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+        .catch((err) => {
+          addToast({
+            title: "Error",
+            description: getApiErrorMessageFromCatch(err),
+            color: "danger",
+          });
           setAssignLoading("rejected");
         });
     }
@@ -689,12 +783,20 @@ const LeadInfo = () => {
             setAssignLoading("success");
             dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           } else {
-            addToast({ title: "Something went wrong !.", color: "danger" });
+            addToast({
+              title: "Error",
+              description: getApiErrorMessage(resp),
+              color: "danger",
+            });
             setAssignLoading("rejected");
           }
         })
-        .catch(() => {
-          addToast({ title: "Something went wrong !.", color: "danger" });
+        .catch((err) => {
+          addToast({
+            title: "Error",
+            description: getApiErrorMessageFromCatch(err),
+            color: "danger",
+          });
           setAssignLoading("rejected");
         });
     }
