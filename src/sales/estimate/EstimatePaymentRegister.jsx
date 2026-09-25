@@ -527,6 +527,20 @@ const EstimatePaymentRegister = ({
       estimateItem?.paymentTypeId !== null
     ) {
       setValue("paymentTypeId", String(estimateItem.paymentTypeId));
+    } else if (estimateItem?.paymentTerm) {
+      // Fallback: no explicit paymentTypeId on the estimate yet — match the
+      // Payment Type by name against the paymentTerm coming from the proposal.
+      const matchedPaymentType = safePaymentTypeList.find(
+        (item) =>
+          String(item?.name || "")
+            .trim()
+            .toLowerCase() ===
+          String(estimateItem.paymentTerm).trim().toLowerCase(),
+      );
+
+      if (matchedPaymentType?.id !== undefined) {
+        setValue("paymentTypeId", String(matchedPaymentType.id));
+      }
     }
 
     if (estimateItem?.paymentTerms) {
@@ -574,7 +588,7 @@ const EstimatePaymentRegister = ({
         );
       }
     }
-  }, [estimateItem, setValue]);
+  }, [estimateItem, setValue, safePaymentTypeList]); // ← added safePaymentTypeList
 
   useEffect(() => {
     if (!isForcedPurchaseOrderRegularPayment || !purchaseOrderPaymentType?.id) {

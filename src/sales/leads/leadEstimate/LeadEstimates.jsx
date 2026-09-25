@@ -588,8 +588,14 @@ const LeadEstimates = () => {
       solutionType: solutionDetail?.type,
       solutionId: solutionDetail?.id,
       solutionName: solutionDetail?.name,
+<<<<<<< Updated upstream
       createdByUserId: Number(userId),
       leadId: Number(leadId),
+=======
+      createdByUserId: userId,
+      leadId,
+      paymentTerm: approvedProposal?.paymentTerm,
+>>>>>>> Stashed changes
     };
 
     console.log("Estimate form values:", data);

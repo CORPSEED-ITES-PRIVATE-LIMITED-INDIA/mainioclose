@@ -30,6 +30,7 @@ const MilestoneStatusModal = ({
   userId,
   onStatusChange,
   isCompletedStatus,
+  isTechnicalMilestone, // ADDED: gate for showing Acknowledgement (only Technical milestones)
   isCertificationCompleted,
   isReworkSelected,
   documentChecklist,
@@ -94,7 +95,13 @@ const MilestoneStatusModal = ({
                 }}
               />
 
-              {isCompletedStatus && (
+              {/*
+                UPDATED: Acknowledgement is now shown only when the milestone
+                is COMPLETED *and* it is a Technical milestone
+                (isTechnicalMilestone). Non-Technical milestones no longer
+                show/require this block.
+              */}
+              {isCompletedStatus && isTechnicalMilestone && (
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-success-200 bg-success-50/40 p-4 md:grid-cols-2">
                   <div className="md:col-span-2">
                     <p className="text-sm font-semibold text-foreground">

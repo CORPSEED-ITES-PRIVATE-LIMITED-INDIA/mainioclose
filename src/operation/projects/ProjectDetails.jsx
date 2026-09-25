@@ -378,6 +378,12 @@ const ProjectDetails = () => {
   const isCertificationMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "certification";
 
+  // ADDED: derives whether the currently selected milestone is "Technical".
+  // Follows the same string-match pattern used for isProcurementMilestone /
+  // isCertificationMilestone above.
+  const isTechnicalMilestone =
+    selectedMilestone?.milestoneName?.toLowerCase() === "technical";
+
   const isCompletedStatus =
     statusObj?.newStatusName?.toUpperCase() === "COMPLETED";
 
@@ -824,7 +830,9 @@ const ProjectDetails = () => {
       return;
     }
 
-    if (isCompletedStatus) {
+    // UPDATED: Acknowledgement is required only when the milestone is
+    // COMPLETED *and* it is a Technical milestone (isTechnicalMilestone).
+    if (isCompletedStatus && isTechnicalMilestone) {
       if (!statusObj.acknowledgementAttachmentUrl) {
         addToast({
           title: "REQUIRED",
@@ -964,11 +972,15 @@ const ProjectDetails = () => {
         statusReason: statusObj.statusReason.trim(),
         changedById: Number(userId),
 
-        ...(isCompletedStatus && {
-          acknowledgementAttachmentUrl: statusObj.acknowledgementAttachmentUrl,
-          acknowledgementAttachmentName:
-            statusObj.acknowledgementAttachmentName,
-        }),
+        // UPDATED: Acknowledgement fields are only included in the payload
+        // when the milestone is COMPLETED *and* it is a Technical milestone.
+        ...(isCompletedStatus &&
+          isTechnicalMilestone && {
+            acknowledgementAttachmentUrl:
+              statusObj.acknowledgementAttachmentUrl,
+            acknowledgementAttachmentName:
+              statusObj.acknowledgementAttachmentName,
+          }),
 
         ...(isCertificationCompleted && {
           certificateValidityType: statusObj.certificateValidityType,
@@ -2782,6 +2794,7 @@ const ProjectDetails = () => {
           }
         }}
         isCompletedStatus={isCompletedStatus}
+        isTechnicalMilestone={isTechnicalMilestone}
         isCertificationCompleted={isCertificationCompleted}
         isReworkSelected={isReworkSelected}
         documentChecklist={documentChecklist}
