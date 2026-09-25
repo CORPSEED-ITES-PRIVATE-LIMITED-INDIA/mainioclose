@@ -209,7 +209,7 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      {isPendingApproval ? (
+      {isPendingApproval && department === "Sales" ? (
         <>
           <Card className="border border-warning-300 bg-warning-50 shadow-sm">
             <CardBody className="flex flex-col items-center gap-2 px-4 py-6 text-center">
