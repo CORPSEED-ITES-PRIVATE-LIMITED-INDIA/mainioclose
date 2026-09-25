@@ -130,6 +130,69 @@ const contactModalSchema = z.object({
   companyUnitId: z.string().optional().or(z.literal("")),
 });
 
+// The estimate API returns the seller/buyer as nested `organization`, `company`,
+// `unit` and `client` objects, but TaxInvoice and NewEstimatePreview both read a
+// flat `organizationX` / `companyUnitX` shape. Flatten it, preferring any flat
+// value the payload already carries so other estimate sources keep working.
+const toPreviewDetails = (estimate) => {
+  if (!estimate) return estimate;
+
+  const { organization: org, company, unit, client } = estimate;
+
+  return {
+    ...estimate,
+
+    organizationName: estimate.organizationName ?? org?.name,
+    organizationAddressLine1:
+      estimate.organizationAddressLine1 ?? org?.addressLine1,
+    organizationAddressLine2:
+      estimate.organizationAddressLine2 ?? org?.addressLine2,
+    organizationCity: estimate.organizationCity ?? org?.city,
+    organizationState: estimate.organizationState ?? org?.state,
+    organizationCountry: estimate.organizationCountry ?? org?.country,
+    organizationPinCode: estimate.organizationPinCode ?? org?.pinCode,
+    organizationGstNo: estimate.organizationGstNo ?? org?.gstNo,
+    organizationPanNo: estimate.organizationPanNo ?? org?.panNo,
+    organizationCinNumber: estimate.organizationCinNumber ?? org?.cinNumber,
+    organizationEmail: estimate.organizationEmail ?? org?.email,
+    organizationPhone: estimate.organizationPhone ?? org?.phone,
+    organizationWebsite: estimate.organizationWebsite ?? org?.website,
+    organizationLogoUrl: estimate.organizationLogoUrl ?? org?.logoUrl,
+    organizationPaymentPageLink:
+      estimate.organizationPaymentPageLink ?? org?.paymentPageLink,
+
+    organizationBankName: estimate.organizationBankName ?? org?.bankName,
+    organizationAccountNo: estimate.organizationAccountNo ?? org?.accountNo,
+    organizationAccountHolderName:
+      estimate.organizationAccountHolderName ?? org?.accountHolderName,
+    organizationIfscCode: estimate.organizationIfscCode ?? org?.ifscCode,
+    organizationSwiftCode: estimate.organizationSwiftCode ?? org?.swiftCode,
+    organizationUpiId: estimate.organizationUpiId ?? org?.upiId,
+    // TaxInvoice reads organizationBranchName, NewEstimatePreview reads
+    // organizationBankBranch — the API sends one `branch`.
+    organizationBranchName: estimate.organizationBranchName ?? org?.branch,
+    organizationBankBranch: estimate.organizationBankBranch ?? org?.branch,
+
+    companyName: estimate.companyName ?? company?.name,
+    companyUnitName: estimate.companyUnitName ?? unit?.unitName,
+    companyUnitAddressLine1:
+      estimate.companyUnitAddressLine1 ?? unit?.addressLine1,
+    companyUnitAddressLine2:
+      estimate.companyUnitAddressLine2 ?? unit?.addressLine2,
+    companyUnitCity: estimate.companyUnitCity ?? unit?.city,
+    companyUnitState: estimate.companyUnitState ?? unit?.state,
+    companyUnitPinCode: estimate.companyUnitPinCode ?? unit?.pinCode,
+    // The unit has no country of its own; fall back to the company's.
+    companyUnitCountry:
+      estimate.companyUnitCountry ?? unit?.country ?? company?.country,
+    companyUnitGstNo: estimate.companyUnitGstNo ?? unit?.gstNo,
+    buyerGstin: estimate.buyerGstin ?? unit?.gstNo,
+
+    contactName: estimate.contactName ?? client?.name,
+    contactEmail: estimate.contactEmail ?? client?.email,
+  };
+};
+
 const LeadEstimates = () => {
   const { userId, leadId } = useParams();
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
@@ -238,6 +301,11 @@ const LeadEstimates = () => {
       })),
     });
   }, [form, approvedProposalLineItems]);
+
+  const previewDetails = useMemo(
+    () => toPreviewDetails(selectedEstimate),
+    [selectedEstimate],
+  );
 
   const openEstimatePreview = (estimate, type) => {
     setSelectedEstimate(estimate);
@@ -520,9 +588,11 @@ const LeadEstimates = () => {
       solutionType: solutionDetail?.type,
       solutionId: solutionDetail?.id,
       solutionName: solutionDetail?.name,
-      createdByUserId: userId,
-      leadId,
+      createdByUserId: Number(userId),
+      leadId: Number(leadId),
     };
+
+    console.log("Estimate form values:", data);
 
     dispatch(
       createCompanyAndUnitsForAccountsViaLeadEstimate({
@@ -610,10 +680,11 @@ const LeadEstimates = () => {
 
     form.setFieldsValue({
       lineItems: getMappedLineItems(),
-      customerNotes: "",
-      internalRemarks: "",
-      estimateDate: undefined,
-      validUntil: undefined,
+      customerNotes: "Thank you for your business.",
+      internalRemarks: "Created from ERP.",
+      estimateDate: dayjs(),
+      validUntil: dayjs().add(7, "day"),
+      clientPoNumber: "",
     });
 
     if (hasEstimates) {
@@ -996,8 +1067,11 @@ const LeadEstimates = () => {
           onFinish={onEstimateFinish}
           initialValues={{
             lineItems: [],
-            customerNotes: "",
-            internalRemarks: "",
+            estimateDate: dayjs(),
+            validUntil: dayjs().add(7, "day"),
+            clientPoNumber: "",
+            customerNotes: "Thank you for your business.",
+            internalRemarks: "Created from ERP.",
           }}
         >
           <Card className="shadow-xl max-h-[68vh] overflow-auto">
@@ -1100,91 +1174,68 @@ const LeadEstimates = () => {
               {/* )} */}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Form
-                  initialValues={{
-                    estimateDate: dayjs(),
-                  }}
-                  className="flex flex-col"
+                <Form.Item
+                  label="Order Date"
+                  name="estimateDate"
+                  rules={[
+                    { required: true, message: "Please select order date" },
+                  ]}
+                  className="mb-0"
                 >
-                  <Form.Item
-                    label="Order Date"
-                    name="estimateDate"
-                    rules={[
-                      { required: true, message: "Please select order date" },
-                    ]}
-                    className="mb-0"
-                  >
-                    <DtPicker
-                      className="w-full"
-                      disabledDate={(current) =>
-                        current && current > dayjs().endOf("day")
-                      }
-                      format="YYYY-MM-DD"
-                    />
-                  </Form.Item>
-                </Form>
+                  <DtPicker
+                    className="w-full"
+                    disabledDate={(current) =>
+                      current && current > dayjs().endOf("day")
+                    }
+                    format="YYYY-MM-DD"
+                  />
+                </Form.Item>
 
-                <Form
-                  initialValues={{
-                    validUntil: dayjs().add(7, "day"),
-                  }}
+                <Form.Item
+                  label="Valid till date"
+                  name="validUntil"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please select valid till date",
+                    },
+                  ]}
+                  className="mb-0"
                 >
-                  <Form.Item
-                    label="Valid till date"
-                    name="validUntil"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Please select valid till date",
-                      },
-                    ]}
-                    className="mb-0"
-                  >
-                    <DtPicker
-                      className="w-full"
-                      disabledDate={(current) =>
-                        current && current < dayjs().startOf("day")
-                      }
-                      format="YYYY-MM-DD"
-                    />
-                  </Form.Item>
-                </Form>
+                  <DtPicker
+                    className="w-full"
+                    disabledDate={(current) =>
+                      current && current < dayjs().startOf("day")
+                    }
+                    format="YYYY-MM-DD"
+                  />
+                </Form.Item>
 
-                <Form>
-                  <Form.Item
-                    label="Client PO Number"
-                    name="clientPoNumber"
-                    className="mb-0"
-                  >
-                    <AntInput placeholder="Client PO Number" />
-                  </Form.Item>
-                </Form>
+                <Form.Item
+                  label="Client PO Number"
+                  name="clientPoNumber"
+                  className="mb-0"
+                >
+                  <AntInput placeholder="Client PO Number" />
+                </Form.Item>
               </div>
 
-              <div>
-                <Form
-                  initialValues={{
-                    customerNotes: "Thank you for your business.",
-                    internalRemarks: "Created from ERP.",
-                  }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Form.Item
+                  label="Notes"
+                  name="customerNotes"
+                  className="mb-0"
                 >
-                  <Form.Item
-                    label="Notes"
-                    name="customerNotes"
-                    className="mb-0"
-                  >
-                    <AntInput.TextArea rows={3} placeholder="Notes" />
-                  </Form.Item>
+                  <AntInput.TextArea rows={3} placeholder="Notes" />
+                </Form.Item>
 
-                  <Form.Item
-                    label="Remarks"
-                    name="internalRemarks"
-                    className="mb-0"
-                  >
-                    <AntInput.TextArea rows={3} placeholder="Remarks" />
-                  </Form.Item>
-                </Form>
+                <Form.Item
+                  label="Remarks"
+                  name="internalRemarks"
+                  className="mb-0"
+                >
+                  <AntInput.TextArea rows={3} placeholder="Remarks" />
+                </Form.Item>
               </div>
             </CardBody>
           </Card>
@@ -1449,22 +1500,20 @@ const LeadEstimates = () => {
 
             <div className="h-[calc(92vh-3rem)] overflow-auto">
               {viewType === "PI" ? (
-                // PI is previewed on the same Tax Invoice shell used across
-                // the app (see TaxInvoice.jsx) — the estimate already carries
-                // the same organization/company-unit/lineItems fields that
-                // component expects, we only need to map the PI-specific
+                // PI is previewed on the same Tax Invoice shell used across the
+                // app (see TaxInvoice.jsx); we only map the PI-specific
                 // number/date onto the invoice fields it reads.
                 <TaxInvoice
                   invoiceData={{
-                    ...selectedEstimate,
-                    invoiceNumber: selectedEstimate?.performanceInvoiceNumber,
-                    invoiceDate: selectedEstimate?.estimateDate,
+                    ...previewDetails,
+                    invoiceNumber: previewDetails?.performanceInvoiceNumber,
+                    invoiceDate: previewDetails?.estimateDate,
                   }}
                   heading="PROFORMA INVOICE"
                 />
               ) : (
                 <NewEstimatePreview
-                  details={selectedEstimate}
+                  details={previewDetails}
                   viewType={viewType}
                 />
               )}

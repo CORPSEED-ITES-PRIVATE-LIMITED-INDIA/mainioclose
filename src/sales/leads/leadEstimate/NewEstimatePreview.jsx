@@ -1,9 +1,11 @@
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import logo from "../../../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import { inrCurrency, numberToWords } from "../../../common";
+import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice";
 
 const toNumber = (value) => {
   if (value === null || value === undefined || value === "") return 0;
@@ -167,8 +169,21 @@ const buildTaxSummaryRows = (items, taxMode) => {
 };
 
 const NewEstimatePreview = ({ details = {}, due, viewType }) => {
+  const dispatch = useDispatch();
   const contentRef = useRef(null);
   const [copyText, setCopyText] = useState("Copy URL");
+
+  const organizationDetail = useSelector(
+    (state) => state.organization.organizationDetail,
+  );
+
+  // The estimate/PI API response doesn't carry an organization snapshot at
+  // all (see getEstimateById), unlike a posted invoice — fetch Corpseed's
+  // own org record so the letterhead (GSTIN, PAN, address, bank details)
+  // isn't left blank.
+  useEffect(() => {
+    dispatch(getOrganizationByName());
+  }, [dispatch]);
 
   const lineItems = useMemo(() => {
     const items = Array.isArray(details?.lineItems) ? details.lineItems : [];
@@ -214,37 +229,55 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
     [lineItems],
   );
 
-  const seller = useMemo(
-    () => ({
-      name: details?.organizationName || "Corpseed ITES Private Limited",
-      cinNumber: details?.organizationCinNumber || "",
-      gstNo: details?.organizationGstNo || "",
-      panNo: details?.organizationPanNo || "",
-      email: details?.organizationEmail || "",
-      phone: details?.organizationPhone || "",
+  const seller = useMemo(() => {
+    const address = [
+      details?.organizationAddressLine1,
+      details?.organizationAddressLine2,
+      details?.organizationCity,
+      details?.organizationState,
+      details?.organizationCountry,
+      details?.organizationPinCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const fallbackAddress = [
+      organizationDetail?.addressLine1,
+      organizationDetail?.city,
+      organizationDetail?.state,
+      organizationDetail?.country,
+      organizationDetail?.pinCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return {
+      name:
+        details?.organizationName ||
+        organizationDetail?.name ||
+        "Corpseed ITES Private Limited",
+      cinNumber:
+        details?.organizationCinNumber || organizationDetail?.cinNumber || "",
+      gstNo: details?.organizationGstNo || organizationDetail?.gstNo || "",
+      panNo: details?.organizationPanNo || organizationDetail?.panNo || "",
+      email: details?.organizationEmail || organizationDetail?.email || "",
+      phone: details?.organizationPhone || organizationDetail?.phone || "",
       website: details?.organizationWebsite || "",
-      logoUrl: details?.organizationLogoUrl || logo,
-      address: [
-        details?.organizationAddressLine1,
-        details?.organizationAddressLine2,
-        details?.organizationCity,
-        details?.organizationState,
-        details?.organizationCountry,
-        details?.organizationPinCode,
-      ]
-        .filter(Boolean)
-        .join(", "),
-      bankName: details?.organizationBankName || "",
+      logoUrl: details?.organizationLogoUrl || organizationDetail?.logoUrl || logo,
+      address: address || fallbackAddress,
+      bankName: details?.organizationBankName || organizationDetail?.bankName || "",
       accountHolderName: details?.organizationAccountHolderName || "",
-      accountNo: details?.organizationAccountNo || "",
-      ifscCode: details?.organizationIfscCode || "",
-      bankBranch: details?.organizationBankBranch || "",
+      accountNo:
+        details?.organizationAccountNo || organizationDetail?.accountNo || "",
+      ifscCode:
+        details?.organizationIfscCode || organizationDetail?.ifscCode || "",
+      bankBranch:
+        details?.organizationBankBranch || organizationDetail?.branchName || "",
       swiftCode: details?.organizationSwiftCode || "",
       upiId: details?.organizationUpiId || "",
       paymentPageLink: details?.organizationPaymentPageLink || "",
-    }),
-    [details],
-  );
+    };
+  }, [details, organizationDetail]);
 
   const buyer = useMemo(() => {
     const unit = details?.unit || {};

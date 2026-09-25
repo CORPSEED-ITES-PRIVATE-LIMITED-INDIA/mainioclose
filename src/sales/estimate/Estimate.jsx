@@ -56,7 +56,7 @@ import {
 import FullCompanyDetailsForm from "../company/FullCompanyDetailsForm";
 import { parseDate, parseZonedDateTime } from "@internationalized/date";
 import NewEstimatePreview from "../leads/leadEstimate/NewEstimatePreview";
-import TaxInvoice from "../../components/TaxInvoice";
+import ProformaInvoiceView from "../../components/ProformaInvoiceView";
 import { getAllStatusData } from "../../toolkit/slices/settingSlice";
 
 const bankRequiredPaymentModes = ["UPI", "ONLINE", "BANK_TRANSFER"];
@@ -1305,17 +1305,16 @@ const Estimate = () => {
             <>
               <ModalBody className="max-h-[70vh] overflow-auto">
                 {viewType === "PI" ? (
-                  // PI is previewed on the same Tax Invoice shell used across
-                  // the app (see TaxInvoice.jsx) — the estimate already
-                  // carries the same organization/company-unit/lineItems
-                  // fields that component expects, we only need to map the
-                  // PI-specific number/date onto the invoice fields it reads.
-                  <TaxInvoice
-                    invoiceData={{
-                      ...estimateDetail,
-                      invoiceNumber: estimateDetail?.performanceInvoiceNumber,
-                      invoiceDate: estimateDetail?.estimateDate,
-                    }}
+                  // PI is previewed with the same Tax Invoice look (see
+                  // TaxInvoice.jsx) via ProformaInvoiceView.jsx — a separate
+                  // component because TaxInvoice.jsx itself is shared by
+                  // real, posted invoices that get flat
+                  // organizationXxx/companyUnitXxx fields, while the
+                  // estimate/PI response nests buyer details under
+                  // company/unit and carries no organization snapshot at
+                  // all.
+                  <ProformaInvoiceView
+                    invoiceData={estimateDetail}
                     heading="PROFORMA INVOICE"
                   />
                 ) : (

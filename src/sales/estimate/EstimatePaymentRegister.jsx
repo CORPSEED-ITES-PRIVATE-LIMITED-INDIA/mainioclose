@@ -610,7 +610,6 @@ const EstimatePaymentRegister = ({
       setValue("bankLedgerId", "");
       setValue("transactionReference", "");
       setValue("paymentProof", "");
-      setValue("governmentFeeActive", false);
       setValue("tdsActive", false);
       setValue("tds.tdsPercentage", "");
       return;
@@ -1383,30 +1382,6 @@ const EstimatePaymentRegister = ({
                               </p>
                             )}
                           </div>
-                        )}
-                      />
-
-                      <Controller
-                        name="governmentFeeActive"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Government Fee Active"
-                            isDisabled={
-                              estimateItem?.governmentFeeActive === false ||
-                              estimateItem?.governmentFeeActive === true
-                            }
-                            selectedKeys={
-                              new Set([field.value ? "true" : "false"])
-                            }
-                            onSelectionChange={(keys) => {
-                              const selectedValue = Array.from(keys)?.[0];
-                              field.onChange(selectedValue === "true");
-                            }}
-                          >
-                            <SelectItem key="true">Yes</SelectItem>
-                            <SelectItem key="false">No</SelectItem>
-                          </Select>
                         )}
                       />
                     </>

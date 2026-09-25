@@ -283,7 +283,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Lead name updated successfully !.",
+            title: "SUCCESS",
+            description: "Lead name updated successfully !.",
             color: "success",
           });
           setLeadLoading("success");
@@ -322,7 +323,8 @@ const LeadInfo = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Remark added successfully !.",
+              title: "SUCCESS",
+              description: "Remark added successfully !.",
               color: "success",
             });
             setFiles([]);
@@ -348,7 +350,11 @@ const LeadInfo = () => {
           });
         });
     } else {
-      addToast({ title: "Select comment to proceed", color: "warning" });
+      addToast({
+        title: "Warning",
+        description: "Select comment to proceed",
+        color: "warning",
+      });
     }
   }, [files, leadId, userId, selectedComment, customComment, dispatch]);
 
@@ -433,7 +439,8 @@ const LeadInfo = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           console.log("resp in changeLeadAssigneeLeads 1111", resp);
           addToast({
-            title: "Assignee updated successfully !.",
+            title: "SUCCESS",
+            description: "Assignee updated successfully !.",
             color: "success",
           });
           setAssigneeLoading("success");
@@ -460,14 +467,31 @@ const LeadInfo = () => {
       });
   };
 
-  const changeLeadStatus = (statusId) => {
+  const changeLeadStatus = (item) => {
+    let statusId = item?.id;
+    let statusName = item?.name;
+    if (
+      (leadData?.proposalStatus === "APPROVED" ||
+        leadData?.proposalStatus === "INITIATED" ||
+        leadData?.proposalStatus === "DRAFT") &&
+      statusName !== "Deal Lost"
+    ) {
+      addToast({
+        title: "RESTRICTED",
+        color: "danger",
+        description:
+          "Status cannot be changed as proposal is already approved or initiated or draft. only deal lost you can do.",
+      });
+      return;
+    }
     setStatusLoading("pending");
     dispatch(updateLeadStatus({ leadId, userId, statusId }))
       .then((resp) => {
         console.log("kjhfgjhfjhj", resp);
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Status updated successfully",
+            title: "SUCCESS",
+            description: "Status updated successfully",
             color: "success",
           });
           setStatusLoading("success");
@@ -498,7 +522,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Source updated successfully !.",
+            title: "SUCCESS",
+            description: "Source updated successfully !.",
             color: "success",
           });
           setSourceLoading("success");
@@ -572,7 +597,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Remark deleted successfully !.",
+            title: "SUCCESS",
+            description: "Remark deleted successfully !.",
             color: "success",
           });
           setRemarkLoading("success");
@@ -612,7 +638,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Remark updated successfully !.",
+            title: "SUCCESS",
+            description: "Remark updated successfully !.",
             color: "success",
           });
           setRemarkLoading("success");
@@ -662,7 +689,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Contact deleted successfully !.",
+            title: "SUCCESS",
+            description: "Contact deleted successfully !.",
             color: "success",
           });
           setContactLoading("success");
@@ -695,7 +723,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Address updated successfully !.",
+            title: "SUCCESS",
+            description: "Address updated successfully !.",
             color: "success",
           });
           setAddressLoading("success");
@@ -727,7 +756,8 @@ const LeadInfo = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Industries updated successfully !.",
+            title: "SUCCESS",
+            description: "Industries updated successfully !.",
             color: "success",
           });
           setIndustryLoading("success");
@@ -762,7 +792,8 @@ const LeadInfo = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Contact details updated successfully !.",
+              title: "SUCCESS",
+              description: "Contact details updated successfully !.",
               color: "success",
             });
             setContactLoading("success");
@@ -793,7 +824,8 @@ const LeadInfo = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Contact details created successfully.",
+              title: "SUCCESS",
+              description: "Contact details created successfully.",
               color: "success",
             });
             setContactLoading("success");
@@ -833,7 +865,11 @@ const LeadInfo = () => {
       )
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
-            addToast({ title: "Assigned to same person", color: "success" });
+            addToast({
+              title: "SUCCESS",
+              description: "Assigned to same person",
+              color: "success",
+            });
             setAssignLoading("success");
             dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
           } else {
@@ -869,7 +905,8 @@ const LeadInfo = () => {
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
-              title: "Not Assigned to same person",
+              title: "SUCCESS",
+              description: "Not Assigned to same person",
               color: "success",
             });
             setAssignLoading("success");
@@ -1152,7 +1189,7 @@ const LeadInfo = () => {
                                     title: "RESTRICTED",
                                     color: "danger",
                                     description:
-                                      "Service name cannot be changed as proposal is already approved or initiated or draft.",
+                                      "Assignee cannot be changed as proposal is already approved or initiated or draft.",
                                   });
                                   return;
                                 }
@@ -1210,19 +1247,6 @@ const LeadInfo = () => {
                               <Button
                                 variant="light"
                                 onPress={() => {
-                                  if (
-                                    leadData?.proposalStatus === "APPROVED" ||
-                                    leadData?.proposalStatus === "INITIATED" ||
-                                    leadData?.proposalStatus === "DRAFT"
-                                  ) {
-                                    addToast({
-                                      title: "RESTRICTED",
-                                      color: "danger",
-                                      description:
-                                        "Service name cannot be changed as proposal is already approved or initiated or draft.",
-                                    });
-                                    return;
-                                  }
                                   if (toggleStatus)
                                     dispatch(getAllStatusData());
                                   setToggleStatus(!toggleStatus);
@@ -1253,7 +1277,7 @@ const LeadInfo = () => {
                                 label="Select status"
                                 className={"w-"}
                                 value={String(leadData?.status?.id)}
-                                onChange={(e) => changeLeadStatus(e)}
+                                onItemSelect={(e) => changeLeadStatus(e)}
                               />
                             )}
                           </div>
@@ -1282,7 +1306,7 @@ const LeadInfo = () => {
                                         title: "RESTRICTED",
                                         color: "danger",
                                         description:
-                                          "Service name cannot be changed as proposal is already approved or initiated or draft.",
+                                          "Source cannot be changed as proposal is already approved or initiated or draft.",
                                       });
                                       return;
                                     }
@@ -1359,7 +1383,7 @@ const LeadInfo = () => {
                 <CardBody className="flex flex-col gap-3 p-3">
                   <NewSelect
                     placeholder="Select comment..."
-                    data={[...allComments]}
+                    data={[{ name: "Other" }, ...allComments]}
                     valueKey={"name"}
                     labelKey={"name"}
                     label={"Comments"}
@@ -1374,7 +1398,7 @@ const LeadInfo = () => {
                           title: "RESTRICTED",
                           color: "danger",
                           description:
-                            "Service name cannot be changed as proposal is already approved or initiated.",
+                            "Comment cannot be changed as proposal is already approved or initiated.",
                         });
                         return;
                       }
@@ -1395,7 +1419,7 @@ const LeadInfo = () => {
                             title: "RESTRICTED",
                             color: "danger",
                             description:
-                              "Service name cannot be changed as proposal is already approved or initiated.",
+                              "Comment cannot be written as proposal is already approved or initiated.",
                           });
                           return;
                         }
