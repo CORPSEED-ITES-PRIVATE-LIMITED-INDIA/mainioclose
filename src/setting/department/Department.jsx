@@ -383,16 +383,24 @@ const Department = () => {
       case "id":
         return <span>{rowData?.id}</span>;
 
-      case "name":
+      case "name": {
+        const isQualityTeamDepartment =
+          String(rowData?.name || "").trim().toLowerCase() === "quality team";
+
         return (
           <Link
             className="font-medium text-blue-600 hover:underline"
-            to={`${rowData?.id}/subDepartment`}
+            to={
+              isQualityTeamDepartment
+                ? `${rowData?.id}/assignmentConfiguration`
+                : `${rowData?.id}/subDepartment`
+            }
             state={{ departmentName: rowData?.name }}
           >
             {rowData?.name}
           </Link>
         );
+      }
 
       case "designations":
         return (

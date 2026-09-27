@@ -944,6 +944,24 @@ export const approveRejectLead = createAsyncThunk(
   },
 );
 
+// Hands a qualified lead over to sales: the backend picks the sales owner
+// itself from the solution, which is why the caller only supplies the service
+// and who is submitting it.
+export const qualitySubmitLead = createAsyncThunk(
+  "qualitySubmitLead",
+  async ({ leadId, solutionId, qualityUserId, remarks = "" }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/lead-assignments/leads/${leadId}/quality-submit`,
+        { solutionId, qualityUserId, remarks },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+
 export const addLeadChatComment = createAsyncThunk(
   "addLeadChatComment",
   async ({data}, { rejectWithValue }) => {

@@ -641,6 +641,115 @@ export const updateSubDepartment = createAsyncThunk(
   },
 );
 
+// Department assignment configuration (Department.jsx -> Quality Team row ->
+// DepartmentAssignmentConfiguration.jsx). One GET/PUT for the full
+// configuration, plus one PATCH per individual configuration item so a
+// single toggle can be changed (with its own reason) without resubmitting
+// the whole form.
+export const getDepartmentAssignmentConfiguration = createAsyncThunk(
+  "getDepartmentAssignmentConfiguration",
+  async (departmentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/configuration`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentAssignmentConfiguration = createAsyncThunk(
+  "updateDepartmentAssignmentConfiguration",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/configuration`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentAssignmentStrategy = createAsyncThunk(
+  "updateDepartmentAssignmentStrategy",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/strategy`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentManualAssignmentStatus = createAsyncThunk(
+  "updateDepartmentManualAssignmentStatus",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/manual-assignment-status`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentLoginCheckStatus = createAsyncThunk(
+  "updateDepartmentLoginCheckStatus",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/login-check-status`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentFeatureStatus = createAsyncThunk(
+  "updateDepartmentFeatureStatus",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/feature-status`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const updateDepartmentAutoAssignmentStatus = createAsyncThunk(
+  "updateDepartmentAutoAssignmentStatus",
+  async ({ departmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(
+        `/leadService/api/v1/department-assignment/departments/${departmentId}/auto-assignment-status`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
 export const getAllDesiginations = createAsyncThunk(
   "allDesiginations",
   async () => {
@@ -1183,6 +1292,8 @@ export const SettingSlice = createSlice({
     urlsList: [],
     urlCount: 0,
     departmentList: [],
+    departmentAssignmentConfiguration: null,
+    departmentAssignmentConfigLoading: "",
     subDepartmentList: {
       content: [],
       totalElements: 0,
@@ -1484,6 +1595,58 @@ export const SettingSlice = createSlice({
         totalPages: 0,
       };
     });
+
+    builder.addCase(getDepartmentAssignmentConfiguration.pending, (state) => {
+      state.departmentAssignmentConfigLoading = "pending";
+    });
+    builder.addCase(
+      getDepartmentAssignmentConfiguration.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfigLoading = "success";
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(getDepartmentAssignmentConfiguration.rejected, (state) => {
+      state.departmentAssignmentConfigLoading = "rejected";
+      state.departmentAssignmentConfiguration = null;
+    });
+
+    builder.addCase(
+      updateDepartmentAssignmentConfiguration.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(
+      updateDepartmentAssignmentStrategy.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(
+      updateDepartmentManualAssignmentStatus.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(
+      updateDepartmentLoginCheckStatus.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(
+      updateDepartmentFeatureStatus.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
+    builder.addCase(
+      updateDepartmentAutoAssignmentStatus.fulfilled,
+      (state, action) => {
+        state.departmentAssignmentConfiguration = action.payload;
+      },
+    );
 
     builder.addCase(getAllDesiginations.pending, (state) => {
       state.loading = "pending";

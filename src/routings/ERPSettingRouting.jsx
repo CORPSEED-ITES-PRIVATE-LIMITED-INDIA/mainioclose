@@ -14,6 +14,9 @@ const Department = lazy(() => import("../setting/department/Department"));
 const SubDepartment = lazy(
   () => import("../setting/department/SubDepartment"),
 );
+const DepartmentAssignmentConfiguration = lazy(
+  () => import("../setting/department/DepartmentAssignmentConfiguration"),
+);
 const Designation = lazy(() => import("../setting/designation/Designation"));
 const WorkFunctions = lazy(
   () => import("../setting/leadAssignment/WorkFunctions"),
@@ -127,6 +130,10 @@ const ERPSettingRouting = () => {
       <Route
         path="settings/department/:departmentId/subDepartment"
         element={<SubDepartment />}
+      />
+      <Route
+        path="settings/department/:departmentId/assignmentConfiguration"
+        element={<DepartmentAssignmentConfiguration />}
       />
       <Route path="settings/designation" element={<Designation />} />
       <Route path="settings/workFunctions" element={<WorkFunctions />} />

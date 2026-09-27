@@ -24,20 +24,24 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import DotIcon from "../../components/DotIcon";
+import NewSelect from "../../components/NewSelect";
 import RoundedTabs from "../../components/RoundedTabs";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import {
   approveRejectLead,
   getSingleLeadDataByLeadId,
 } from "../../toolkit/slices/leadSlice";
+import { LEAD_REJECTION_REASONS } from "./leadOptionRules";
 
 const iconClass = "h-4 w-4";
 
 const rejectLeadFormSchema = z.object({
+  reason: z.string().min(1, "Please select a reason for rejection"),
   remarks: z.string().min(1, "Please enter a reason for rejection"),
 });
 
 const rejectLeadFormDefault = {
+  reason: "",
   remarks: "",
 };
 
@@ -140,7 +144,10 @@ const LeadDetail = () => {
         leadId,
         userId,
         isApproved: false,
-        remarks: values?.remarks,
+        // The category is what reporting slices rejections by, so it leads the
+        // remark rather than travelling as a separate field the API has no
+        // place for.
+        remarks: [values?.reason, values?.remarks].filter(Boolean).join(" - "),
       }),
     )
       .then((resp) => {
@@ -312,6 +319,28 @@ const LeadDetail = () => {
                       This lead will be reassigned to the admin. Please share
                       the reason for rejecting it.
                     </p>
+                    <Controller
+                      name="reason"
+                      control={rejectLeadForm.control}
+                      render={({ field }) => (
+                        <NewSelect
+                          isRequired
+                          label="Reason"
+                          placeholder="Select a reason..."
+                          data={LEAD_REJECTION_REASONS}
+                          valueKey="name"
+                          labelKey="name"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                          isInvalid={
+                            !!rejectLeadForm.formState.errors?.reason?.message
+                          }
+                          errorMessage={
+                            rejectLeadForm.formState.errors?.reason?.message
+                          }
+                        />
+                      )}
+                    />
                     <Controller
                       name="remarks"
                       control={rejectLeadForm.control}

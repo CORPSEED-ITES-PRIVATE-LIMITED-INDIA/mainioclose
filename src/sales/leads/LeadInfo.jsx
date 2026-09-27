@@ -41,9 +41,13 @@ import {
   User2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NewSelect from "../../components/NewSelect";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  filterCommentsByDepartment,
+  filterStatusesByDepartment,
+} from "./leadOptionRules";
 import {
   getAllComments,
   getAllSlugList,
@@ -63,6 +67,7 @@ import {
   getAllLeadUser,
   getAllRemarkAndCommnts,
   getSingleLeadDataByLeadId,
+  qualitySubmitLead,
   updateAddressInLeads,
   updateAutoAssignnee,
   updateIndustriesInLeads,
@@ -216,6 +221,9 @@ const LeadInfo = () => {
   );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const adminRole = userRole?.includes("ADMIN");
+  const department = useSelector(
+    (state) => state.auth.getDepartmentDetail?.department,
+  );
   const [toggleSlug, setToggleSlug] = useState(true);
   const [toggleAssignee, setToggleAssignee] = useState(true);
   const [customComment, setCustomComment] = useState("");
@@ -234,10 +242,23 @@ const LeadInfo = () => {
   const [assigneeLoading, setAssigneeLoading] = useState("");
   const [contactLoading, setContactLoading] = useState("");
   const [assignLoading, setAssignLoading] = useState("");
+  const [qualitySubmitLoading, setQualitySubmitLoading] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [chatLoading, setChatLoading] = useState("");
   const [chatDeleteLoading, setChatDeleteLoading] = useState("");
   const chatBottomRef = useRef(null);
+
+  // Sales and quality work the same lead but own different parts of its
+  // journey, so each only gets the statuses and comments that belong to them.
+  const departmentStatusList = useMemo(
+    () => filterStatusesByDepartment(statusList, department, adminRole),
+    [statusList, department, adminRole],
+  );
+
+  const departmentComments = useMemo(
+    () => filterCommentsByDepartment(allComments, department, adminRole),
+    [allComments, department, adminRole],
+  );
 
   useEffect(() => {
     dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
@@ -276,6 +297,55 @@ const LeadInfo = () => {
       );
     }
   }, [dispatch, solutionDetail?.id, userId]);
+
+  // The solution is resolved from the slug the lead is sitting on, so no slug
+  // means there is nothing to submit — the API would only reject it anyway.
+  const handleAutoQualitySubmit = () => {
+    if (!solutionDetail?.id) {
+      addToast({
+        title: "SLUG REQUIRED",
+        description: "Please select a slug before submitting to quality.",
+        color: "danger",
+      });
+      return;
+    }
+
+    setQualitySubmitLoading("pending");
+    dispatch(
+      qualitySubmitLead({
+        leadId,
+        solutionId: solutionDetail.id,
+        qualityUserId: userId,
+        remarks: "",
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Lead submitted successfully !.",
+            color: "success",
+          });
+          setQualitySubmitLoading("success");
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+        } else {
+          setQualitySubmitLoading("rejected");
+          addToast({
+            title: "ERROR",
+            description: getApiErrorMessage(resp),
+            color: "danger",
+          });
+        }
+      })
+      .catch((err) => {
+        setQualitySubmitLoading("rejected");
+        addToast({
+          title: "ERROR",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
+      });
+  };
 
   const handleUpdateLeadName = (leadName) => {
     setLeadLoading("pending");
@@ -943,7 +1013,8 @@ const LeadInfo = () => {
         sourceLoading === "pending" ||
         chatLoading === "pending" ||
         chatDeleteLoading === "pending" ||
-        assignLoading === "pending") && <LoadingSpinner />}
+        assignLoading === "pending" ||
+        qualitySubmitLoading === "pending") && <LoadingSpinner />}
       {leadDetailLoading === "pending" ? (
         <LoadingSpinner />
       ) : Object.keys(leadData)?.length > 0 &&
@@ -959,30 +1030,43 @@ const LeadInfo = () => {
                         <h6 className="text-sm font-medium">
                           {leadData?.lead?.name}
                         </h6>
-                        <Button
-                          onPress={() => {
-                            if (
-                              leadData?.proposalStatus === "INITIATED" ||
-                              leadData?.proposalStatus === "APPROVED" ||
-                              leadData?.proposalStatus === "DRAFT" ||
-                              leadData?.proposalSendOrNot
-                            ) {
-                              addToast({
-                                title: "RESTRICTED",
-                                color: "danger",
-                                description: `Service name cannot be changed as proposal is already approved or ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or Draft or initiated.`,
-                              });
-                              return;
-                            }
-                            setToggleSlug(false);
-                          }}
-                          size="sm"
-                          isIconOnly
-                          variant="light"
-                          className="w-6 h-6 rounded-full bg-none"
-                        >
-                          <Pencil className={iconClass} />
-                        </Button>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            color="primary"
+                            variant="flat"
+                            className="h-7 px-2.5 text-xs"
+                            isDisabled={qualitySubmitLoading === "pending"}
+                            isLoading={qualitySubmitLoading === "pending"}
+                            onPress={handleAutoQualitySubmit}
+                          >
+                            Auto quality submit
+                          </Button>
+                          <Button
+                            onPress={() => {
+                              if (
+                                leadData?.proposalStatus === "INITIATED" ||
+                                leadData?.proposalStatus === "APPROVED" ||
+                                leadData?.proposalStatus === "DRAFT" ||
+                                leadData?.proposalSendOrNot
+                              ) {
+                                addToast({
+                                  title: "RESTRICTED",
+                                  color: "danger",
+                                  description: `Service name cannot be changed as proposal is already approved or ${leadData?.proposalSendOrNot ? ", sent to the client" : ""} or Draft or initiated.`,
+                                });
+                                return;
+                              }
+                              setToggleSlug(false);
+                            }}
+                            size="sm"
+                            isIconOnly
+                            variant="light"
+                            className="w-6 h-6 rounded-full bg-none"
+                          >
+                            <Pencil className={iconClass} />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex justify-between items-center">
@@ -1271,7 +1355,7 @@ const LeadInfo = () => {
                               </div>
                             ) : (
                               <NewSelect
-                                data={statusList || []}
+                                data={departmentStatusList}
                                 labelKey="name"
                                 valueKey="id"
                                 label="Select status"
@@ -1383,7 +1467,7 @@ const LeadInfo = () => {
                 <CardBody className="flex flex-col gap-3 p-3">
                   <NewSelect
                     placeholder="Select comment..."
-                    data={[{ name: "Other" }, ...allComments]}
+                    data={departmentComments}
                     valueKey={"name"}
                     labelKey={"name"}
                     label={"Comments"}
@@ -1933,7 +2017,7 @@ const LeadInfo = () => {
                             render={({ field }) => (
                               <NewSelect
                                 placeholder="Select comment..."
-                                data={[{ name: "Other" }, ...allComments]}
+                                data={departmentComments}
                                 valueKey={"name"}
                                 labelKey={"name"}
                                 label={"Comments"}

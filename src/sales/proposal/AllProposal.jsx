@@ -54,6 +54,7 @@ const columns = [
   { name: "ID", uid: "id" },
   { name: "DATE", uid: "date" },
   { name: "PROPOSAL NO.", uid: "proposalNumber" },
+  { name: "COMPANY NAME", uid: "companyName" },
   { name: "SOLUTION NAME", uid: "solutionName" },
   { name: "CREATED BY", uid: "createdBy" },
   { name: "EMAIL TO", uid: "mailTo" },
@@ -135,6 +136,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "id",
   "date",
   "proposalNumber",
+  "companyName",
   "createdBy",
   "solutionName",
   "mailTo",
@@ -697,22 +699,15 @@ const AllProposal = () => {
 
   const pages = Math.ceil(count / filteration?.size) || 1;
 
-  const items = useMemo(() => {
-    const start = (filteration?.page - 1) * filteration?.size;
-    const end = start + filteration?.size;
-
-    return filteredItems.slice(start, end);
-  }, [filteration, filteredItems]);
-
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    return [...filteredItems].sort((a, b) => {
       const first = a[sortDescriptor.column];
       const second = b[sortDescriptor.column];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]);
+  }, [sortDescriptor, filteredItems]);
 
   const handleActionsClick = (e, rowData) => {
     if (e === "view") {
@@ -909,6 +904,17 @@ const AllProposal = () => {
   const renderCell = useCallback(
     (rowData, columnKey) => {
       switch (columnKey) {
+        case "companyName":
+          return (
+            <div className="flex items-start gap-2">
+              <div className="flex flex-col">
+                <p className="font-normal text-[12.5px]">
+                  {rowData?.companyName || "-"}
+                </p>
+              </div>
+            </div>
+          );
+
         case "solutionName":
           return (
             <div className="flex items-start gap-2">
