@@ -49,6 +49,7 @@ const getNavItemsByDepartment = (department, admin) => {
     legal: legalNavItems,
     technical: isManager ? operationHeadItems : operationNavItems,
     operations: isManager ? operationHeadItems : operationNavItems,
+    liaisoning: isManager ? operationHeadItems : operationNavItems,
   };
 
   return items[trimmed];

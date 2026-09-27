@@ -224,7 +224,7 @@ function ProjectEscalations() {
                 : "Unable to issue refund. Legal request was not resolved.",
             color: "danger",
           });
-          return; // Abort — legal request resolution does not proceed.
+          return;
         }
       }
 

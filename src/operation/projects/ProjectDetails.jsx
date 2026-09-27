@@ -287,6 +287,10 @@ const ProjectDetails = () => {
     acknowledgementAttachmentUrl: "",
     acknowledgementAttachmentName: "",
 
+    // For Liaisoning, when completing
+    completionSource: "",
+    completionRemark: "",
+
     // For REWORK
     reworkDocuments: [],
     additionalReworkDocuments: [],
@@ -384,11 +388,21 @@ const ProjectDetails = () => {
   const isTechnicalMilestone =
     selectedMilestone?.milestoneName?.toLowerCase() === "technical";
 
+  // ADDED: derives whether the currently selected milestone is "Liaisoning".
+  // Same string-match pattern as the other milestone-name flags above.
+  const isLiaisoningMilestone =
+    selectedMilestone?.milestoneName?.toLowerCase() === "liaisoning";
+
   const isCompletedStatus =
     statusObj?.newStatusName?.toUpperCase() === "COMPLETED";
 
   const isCertificationCompleted =
     isCertificationMilestone && isCompletedStatus;
+
+  // ADDED: gates the (optional) completionSource / completionRemark fields
+  // and the Completion Details block — shown only when a Liaisoning
+  // milestone is being marked COMPLETED.
+  const isLiaisoningCompleted = isLiaisoningMilestone && isCompletedStatus;
 
   const userDetailById = useSelector((state) => state.common.userDetailById);
 
@@ -972,15 +986,33 @@ const ProjectDetails = () => {
         statusReason: statusObj.statusReason.trim(),
         changedById: Number(userId),
 
-        // UPDATED: Acknowledgement fields are only included in the payload
-        // when the milestone is COMPLETED *and* it is a Technical milestone.
+        // UPDATED: Acknowledgement applies when the milestone is COMPLETED
+        // and is either Technical (required — validated above) or
+        // Liaisoning (optional). Fields are only sent when actually
+        // provided, since they're no longer mandatory for Liaisoning.
         ...(isCompletedStatus &&
-          isTechnicalMilestone && {
-            acknowledgementAttachmentUrl:
-              statusObj.acknowledgementAttachmentUrl,
-            acknowledgementAttachmentName:
-              statusObj.acknowledgementAttachmentName,
+          (isTechnicalMilestone || isLiaisoningMilestone) && {
+            ...(statusObj.acknowledgementAttachmentUrl && {
+              acknowledgementAttachmentUrl:
+                statusObj.acknowledgementAttachmentUrl,
+            }),
+            ...(statusObj.acknowledgementAttachmentName?.trim() && {
+              acknowledgementAttachmentName:
+                statusObj.acknowledgementAttachmentName.trim(),
+            }),
           }),
+
+        // ADDED: completionSource / completionRemark are optional fields for
+        // a Liaisoning milestone being marked COMPLETED — only sent when the
+        // user actually filled them in.
+        ...(isLiaisoningCompleted && {
+          ...(statusObj.completionSource && {
+            completionSource: statusObj.completionSource,
+          }),
+          ...(statusObj.completionRemark?.trim() && {
+            completionRemark: statusObj.completionRemark.trim(),
+          }),
+        }),
 
         ...(isCertificationCompleted && {
           certificateValidityType: statusObj.certificateValidityType,
@@ -1027,6 +1059,8 @@ const ProjectDetails = () => {
             certificationTenureUnit: "",
             acknowledgementAttachmentUrl: "",
             acknowledgementAttachmentName: "",
+            completionSource: "",
+            completionRemark: "",
           });
 
           statusModal.onClose();
@@ -2795,6 +2829,8 @@ const ProjectDetails = () => {
         }}
         isCompletedStatus={isCompletedStatus}
         isTechnicalMilestone={isTechnicalMilestone}
+        isLiaisoningMilestone={isLiaisoningMilestone}
+        isLiaisoningCompleted={isLiaisoningCompleted}
         isCertificationCompleted={isCertificationCompleted}
         isReworkSelected={isReworkSelected}
         documentChecklist={documentChecklist}

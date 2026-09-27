@@ -30,7 +30,9 @@ const MilestoneStatusModal = ({
   userId,
   onStatusChange,
   isCompletedStatus,
-  isTechnicalMilestone, // ADDED: gate for showing Acknowledgement (only Technical milestones)
+  isTechnicalMilestone, // ADDED: gate for showing Acknowledgement (Technical milestones — required)
+  isLiaisoningMilestone, // ADDED: also shows Acknowledgement (Liaisoning milestones — optional)
+  isLiaisoningCompleted, // ADDED: gate for the Completion Details block (Liaisoning, COMPLETED)
   isCertificationCompleted,
   isReworkSelected,
   documentChecklist,
@@ -96,49 +98,108 @@ const MilestoneStatusModal = ({
               />
 
               {/*
-                UPDATED: Acknowledgement is now shown only when the milestone
-                is COMPLETED *and* it is a Technical milestone
-                (isTechnicalMilestone). Non-Technical milestones no longer
-                show/require this block.
+                UPDATED: Acknowledgement is shown when the milestone is
+                COMPLETED and is either Technical (required) or Liaisoning
+                (optional). Other milestones don't show this block.
               */}
-              {isCompletedStatus && isTechnicalMilestone && (
-                <div className="grid grid-cols-1 gap-4 rounded-xl border border-success-200 bg-success-50/40 p-4 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <p className="text-sm font-semibold text-foreground">
-                      Acknowledgement
-                    </p>
-                    <p className="text-xs text-default-500">
-                      Upload the acknowledgement attachment before marking this
-                      milestone as completed.
-                    </p>
-                  </div>
+              {isCompletedStatus &&
+                (isTechnicalMilestone || isLiaisoningMilestone) && (
+                  <div className="grid grid-cols-1 gap-4 rounded-xl border border-success-200 bg-success-50/40 p-4 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        Acknowledgement
+                      </p>
+                      <p className="text-xs text-default-500">
+                        {isTechnicalMilestone
+                          ? "Upload the acknowledgement attachment before marking this milestone as completed."
+                          : "Optionally upload an acknowledgement attachment for this milestone."}
+                      </p>
+                    </div>
 
-                  <div className="md:col-span-2">
-                    <SingleFileUploader
-                      label="Acknowledgement Attachment"
-                      value={statusObj.acknowledgementAttachmentUrl}
-                      onChange={(url, fileName) =>
+                    <div className="md:col-span-2">
+                      <SingleFileUploader
+                        label="Acknowledgement Attachment"
+                        value={statusObj.acknowledgementAttachmentUrl}
+                        onChange={(url, fileName) =>
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            acknowledgementAttachmentUrl: url || "",
+                            acknowledgementAttachmentName: url
+                              ? fileName || prev.acknowledgementAttachmentName
+                              : "",
+                          }))
+                        }
+                        isRequired={isTechnicalMilestone}
+                      />
+                    </div>
+
+                    <Input
+                      label="Acknowledgement Attachment Name"
+                      placeholder="Enter attachment name"
+                      isRequired={isTechnicalMilestone}
+                      value={statusObj.acknowledgementAttachmentName}
+                      onChange={(e) =>
                         setStatusObj((prev) => ({
                           ...prev,
-                          acknowledgementAttachmentUrl: url || "",
-                          acknowledgementAttachmentName: url
-                            ? fileName || prev.acknowledgementAttachmentName
-                            : "",
+                          acknowledgementAttachmentName: e.target.value,
                         }))
                       }
-                      isRequired
                     />
                   </div>
+                )}
 
-                  <Input
-                    label="Acknowledgement Attachment Name"
-                    placeholder="Enter attachment name"
-                    isRequired
-                    value={statusObj.acknowledgementAttachmentName}
+              {/*
+                ADDED: optional completion details for a Liaisoning
+                milestone being marked COMPLETED. Neither field is
+                mandatory.
+              */}
+              {isLiaisoningCompleted && (
+                <div className="grid grid-cols-1 gap-4 rounded-xl border border-secondary-200 bg-secondary-50/40 p-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      Completion Details
+                    </p>
+                    <p className="text-xs text-default-500">
+                      Optional details about how this milestone was
+                      completed.
+                    </p>
+                  </div>
+
+                  <Select
+                    className="max-w-xs"
+                    items={[
+                      { label: "Internal", value: "INTERNAL" },
+                      { label: "Client End", value: "CLIENT_END" },
+                    ]}
+                    label="Completion Source"
+                    placeholder="Select completion source"
+                    selectedKeys={
+                      statusObj.completionSource
+                        ? [statusObj.completionSource]
+                        : []
+                    }
+                    onSelectionChange={(keys) => {
+                      const temp = Array.from(keys)[0];
+                      setStatusObj((prev) => ({
+                        ...prev,
+                        completionSource: temp || "",
+                      }));
+                    }}
+                  >
+                    {(item) => (
+                      <SelectItem key={item?.value}>{item.label}</SelectItem>
+                    )}
+                  </Select>
+
+                  <Textarea
+                    className="md:col-span-2"
+                    label="Completion Remark"
+                    placeholder="Enter completion remark (optional)"
+                    value={statusObj.completionRemark}
                     onChange={(e) =>
                       setStatusObj((prev) => ({
                         ...prev,
-                        acknowledgementAttachmentName: e.target.value,
+                        completionRemark: e.target.value,
                       }))
                     }
                   />
