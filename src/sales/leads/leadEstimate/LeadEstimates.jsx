@@ -588,14 +588,9 @@ const LeadEstimates = () => {
       solutionType: solutionDetail?.type,
       solutionId: solutionDetail?.id,
       solutionName: solutionDetail?.name,
-<<<<<<< Updated upstream
-      createdByUserId: Number(userId),
-      leadId: Number(leadId),
-=======
       createdByUserId: userId,
       leadId,
       paymentTerm: approvedProposal?.paymentTerm,
->>>>>>> Stashed changes
     };
 
     console.log("Estimate form values:", data);
@@ -1227,11 +1222,7 @@ const LeadEstimates = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Form.Item
-                  label="Notes"
-                  name="customerNotes"
-                  className="mb-0"
-                >
+                <Form.Item label="Notes" name="customerNotes" className="mb-0">
                   <AntInput.TextArea rows={3} placeholder="Notes" />
                 </Form.Item>
 

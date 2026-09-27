@@ -853,7 +853,7 @@ Corpseed Team`,
             <div className="grid grid-cols-2 border-b border-gray-300">
               <div className="border-r border-gray-300 p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Consignee (Ship to)
+                  Consignee (Bill to)
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">
@@ -874,7 +874,7 @@ Corpseed Team`,
 
               <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Buyer (Bill to)
+                  Buyer (Ship to)
                 </div>
                 <div className="text-[11px]">{inv?.companyName || "NA"}</div>
                 <div className="text-[11px]">
@@ -1085,8 +1085,7 @@ Corpseed Team`,
                     <TableTh className="text-center">Amount (₹)</TableTh>
                   </tr>
                 </thead>
- 
- 
+
                 <tbody>
                   {taxSummaryRows.map((row, index) => (
                     <tr key={`${row.hsn}-${row.cgstRate}-${index}`}>
