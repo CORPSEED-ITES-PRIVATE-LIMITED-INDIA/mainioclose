@@ -79,10 +79,8 @@ const AddExpenseModal = ({
                     isInvalid={!!errors.expenseCategory}
                     errorMessage={errors.expenseCategory?.message}
                   >
-                    <SelectItem key="GOVERNMENT_FEE">
-                      Government Fee
-                    </SelectItem>
-                    <SelectItem key="PORTAL_FEE">Portal Fee</SelectItem>
+                    <SelectItem key="GOVERNMENT_FEE">Government Fee</SelectItem>
+                    {/* <SelectItem key="PORTAL_FEE">Portal Fee</SelectItem>
                     <SelectItem key="PROFESSIONAL_FEE">
                       Profesional Fee
                     </SelectItem>
@@ -96,7 +94,7 @@ const AddExpenseModal = ({
                       Inspection Fee
                     </SelectItem>
                     <SelectItem key="TESTING_FEE">Testing Fee</SelectItem>
-                    <SelectItem key="OTHER">Other Fee</SelectItem>
+                    <SelectItem key="OTHER">Other Fee</SelectItem> */}
                   </Select>
                 )}
               />
