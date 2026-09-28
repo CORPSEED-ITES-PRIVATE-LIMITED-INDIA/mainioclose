@@ -16,6 +16,20 @@ import {
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { statusColorCode } from "../../common";
 
+// Accepts only http/https URLs, e.g. https://example.com or
+// http://portal.example.com/login. Adjust the protocol check if you also
+// need to allow other schemes.
+const isValidPortalUrl = (value) => {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const ClientPortalCredentialsModal = ({
   isOpen,
   onOpenChange,
@@ -107,10 +121,22 @@ const ClientPortalCredentialsModal = ({
                     <Input
                       label="Portal URL"
                       name="portalUrl"
+                      type="url"
                       isRequired
-                      errorMessage="Please enter portal URL"
+                      placeholder="https://example.com"
                       value={credentials?.portalUrl}
                       onChange={onChange}
+                      validate={(value) => {
+                        if (!value?.trim()) {
+                          return "Please enter portal URL";
+                        }
+
+                        if (!isValidPortalUrl(value)) {
+                          return "Please enter a valid URL, e.g. https://example.com";
+                        }
+
+                        return true;
+                      }}
                     />
 
                     <Input

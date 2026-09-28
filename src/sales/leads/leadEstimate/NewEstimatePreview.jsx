@@ -263,9 +263,11 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
       email: details?.organizationEmail || organizationDetail?.email || "",
       phone: details?.organizationPhone || organizationDetail?.phone || "",
       website: details?.organizationWebsite || "",
-      logoUrl: details?.organizationLogoUrl || organizationDetail?.logoUrl || logo,
+      logoUrl:
+        details?.organizationLogoUrl || organizationDetail?.logoUrl || logo,
       address: address || fallbackAddress,
-      bankName: details?.organizationBankName || organizationDetail?.bankName || "",
+      bankName:
+        details?.organizationBankName || organizationDetail?.bankName || "",
       accountHolderName: details?.organizationAccountHolderName || "",
       accountNo:
         details?.organizationAccountNo || organizationDetail?.accountNo || "",
@@ -630,6 +632,14 @@ Corpseed Team`,
                     <p className="whitespace-nowrap">
                       <span className="font-semibold">Unbilled No.:</span>{" "}
                       {details.unbilledNumber}
+                    </p>
+                  )}
+
+                  {/* Client PO Number */}
+                  {details?.clientPoNumber && (
+                    <p className="whitespace-nowrap">
+                      <span className="font-semibold">Client PO No.:</span>{" "}
+                      {details.clientPoNumber}
                     </p>
                   )}
                 </div>

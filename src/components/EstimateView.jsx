@@ -115,6 +115,7 @@ const EstimateView = ({ details, due }) => {
                       ?.filter(Boolean)
                       .join(", ")}
                   </p>
+                  <p>{details?.clientPoNumber}</p>
                 </div>
                 <div>
                   <p className="font-semibold text-gray-800 mb-1">Ship To ,</p>

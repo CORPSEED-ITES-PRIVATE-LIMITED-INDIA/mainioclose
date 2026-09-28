@@ -4,6 +4,9 @@ import {
   Button,
   Chip,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
   Pagination,
   Select,
   SelectItem,
@@ -14,14 +17,21 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Tooltip,
+  useDisclosure,
 } from "@heroui/react";
 
-import { Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { getAllAdvanceTaxInvoiceRequests } from "../../toolkit/slices/accountSlice";
+
+// Adjust this import path to wherever AdvanceTaxInvoiceView actually lives
+// relative to this file (e.g. "../AdvanceTaxInvoiceView" or
+// "../../components/AdvanceTaxInvoiceView").
+import AdvanceTaxInvoiceView from "../../accounts/AdvanceTaxInvoiceView.jsx";
 
 const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 
@@ -45,6 +55,7 @@ const columns = [
   { name: "REVIEWED BY", uid: "reviewedBy" },
   { name: "REVIEWED AT", uid: "reviewedAt" },
   { name: "MESSAGE", uid: "message" },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
 const getLoggedInUserId = () => {
@@ -183,6 +194,15 @@ const SalesAdvanceInvoice = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
+  // Selected row for the "view tax invoice" modal
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  const {
+    isOpen: isInvoiceOpen,
+    onOpen: onInvoiceOpen,
+    onOpenChange: onInvoiceOpenChange,
+  } = useDisclosure();
+
   const userId = useMemo(() => {
     return Number(params?.userId || params?.id || getLoggedInUserId());
   }, [params?.userId, params?.id]);
@@ -255,6 +275,16 @@ const SalesAdvanceInvoice = () => {
 
   const onNextPage = () => {
     if (page < totalPages) setPage(page + 1);
+  };
+
+  // Opens the tax invoice preview modal for the given row.
+  // Assumes the row already carries the invoice snapshot fields consumed by
+  // AdvanceTaxInvoiceView (organization/unit snapshot, lineItems, totals...).
+  // If your API returns that snapshot under a nested key (e.g. item.invoice),
+  // pass that nested object instead of `item` below.
+  const handleViewTaxInvoice = (item) => {
+    setSelectedInvoice(item);
+    onInvoiceOpen();
   };
 
   const renderCell = (item, columnKey) => {
@@ -371,6 +401,29 @@ const SalesAdvanceInvoice = () => {
             {item?.message || "-"}
           </p>
         );
+      case "actions":
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <Tooltip
+              content={
+                item?.invoiceNumber
+                  ? "View Tax Invoice"
+                  : "Invoice not generated yet"
+              }
+            >
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                isDisabled={!item?.invoiceNumber}
+                onPress={() => handleViewTaxInvoice(item)}
+                aria-label="View Tax Invoice"
+              >
+                <Eye className="w-4 h-4 text-default-500" />
+              </Button>
+            </Tooltip>
+          </div>
+        );
       default:
         return item?.[columnKey] ?? "-";
     }
@@ -482,7 +535,7 @@ const SalesAdvanceInvoice = () => {
           base: "gap-2.5",
           wrapper:
             "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
-          table: "w-full min-w-[1850px]",
+          table: "w-full min-w-[1900px]",
           thead: "[&>tr]:first:rounded-none",
           th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
           td: "py-1.5 text-[12.5px]",
@@ -490,7 +543,12 @@ const SalesAdvanceInvoice = () => {
       >
         <TableHeader columns={columns}>
           {(column) => (
-            <TableColumn key={column.uid}>{column.name}</TableColumn>
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
           )}
         </TableHeader>
 
@@ -518,6 +576,28 @@ const SalesAdvanceInvoice = () => {
           )}
         </TableBody>
       </Table>
+
+      {/* View Tax Invoice modal */}
+      <Modal
+        isOpen={isInvoiceOpen}
+        onOpenChange={onInvoiceOpenChange}
+        size="5xl"
+        scrollBehavior="inside"
+        placement="center"
+      >
+        <ModalContent>
+          {() => (
+            <ModalBody className="p-0">
+              {selectedInvoice ? (
+                <AdvanceTaxInvoiceView
+                  invoiceData={selectedInvoice}
+                  heading="Tax Invoice"
+                />
+              ) : null}
+            </ModalBody>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

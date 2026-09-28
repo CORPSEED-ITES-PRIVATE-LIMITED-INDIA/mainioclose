@@ -291,13 +291,15 @@ const ProjectSummaryHeader = ({
                 Milestone Acknowledgements
               </DropdownItem>
 
-              <DropdownItem
-                key="documents"
-                startContent={<FileText className="h-3.5 w-3.5" />}
-                onPress={onOpenDocuments}
-              >
-                Documents
-              </DropdownItem>
+              {(department === "Documentation" || adminRole) && (
+                <DropdownItem
+                  key="documents"
+                  startContent={<FileText className="h-3.5 w-3.5" />}
+                  onPress={onOpenDocuments}
+                >
+                  Documents
+                </DropdownItem>
+              )}
 
               <DropdownItem
                 key="clientLoginCredentials"

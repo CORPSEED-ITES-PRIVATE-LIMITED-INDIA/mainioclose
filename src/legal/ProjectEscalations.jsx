@@ -18,6 +18,11 @@ import {
   ModalHeader,
   ModalFooter,
   ModalBody,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
   Select,
   SelectItem,
   Textarea,
@@ -25,10 +30,24 @@ import {
   addToast,
   Chip,
   Tooltip,
+  Divider,
 } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { ChevronDown, EllipsisVertical, Scale, Info } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Scale,
+  Info,
+  Eye,
+  CheckCircle2,
+  Circle,
+  Building2,
+  User,
+  CalendarClock,
+  Receipt,
+  FileText,
+} from "lucide-react";
 import dayjs from "dayjs";
 import {
   getAllLegalRequestOperations,
@@ -97,11 +116,110 @@ const RESOLVE_ERROR_DEFAULTS = {
   refundAmount: "",
 };
 
+const currencyFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+function formatCurrency(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  return currencyFormatter.format(Number(value));
+}
+
+/**
+ * Vertical line-and-point milestone timeline, built for the legal detail
+ * view. Purely presentational — takes the `milestones` array as-is.
+ */
+function MilestoneTimeline({ milestones }) {
+  if (!Array.isArray(milestones) || milestones.length === 0) {
+    return (
+      <p className="text-[12.5px] text-default-400">
+        No milestones recorded for this project.
+      </p>
+    );
+  }
+
+  return (
+    <ol className="relative flex flex-col">
+      {milestones.map((milestone, index) => {
+        const isCompleted = milestone?.status === "COMPLETED";
+        const isLast = index === milestones.length - 1;
+
+        return (
+          <li
+            key={milestone?.id ?? index}
+            className="relative pb-6 pl-8 last:pb-0"
+          >
+            {!isLast && (
+              <span
+                aria-hidden="true"
+                className={`absolute left-[9px] top-5 h-[calc(100%-4px)] w-px ${
+                  isCompleted ? "bg-primary/40" : "bg-gray-200 dark:bg-white/10"
+                }`}
+              />
+            )}
+
+            <span
+              aria-hidden="true"
+              className={`absolute left-0 top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full ${
+                isCompleted
+                  ? "bg-primary text-white"
+                  : "bg-white dark:bg-neutral-900 text-default-300 border-2 border-gray-200 dark:border-white/15"
+              }`}
+            >
+              {isCompleted ? (
+                <CheckCircle2 className="h-[13px] w-[13px]" strokeWidth={2.5} />
+              ) : (
+                <Circle className="h-[7px] w-[7px] fill-current" />
+              )}
+            </span>
+
+            <div className="flex flex-col gap-0.5">
+              <span
+                className={`text-[12.5px] font-medium ${
+                  isCompleted ? "text-foreground" : "text-default-400"
+                }`}
+              >
+                {milestone?.name || "Untitled milestone"}
+              </span>
+              <span className="text-[11px] uppercase tracking-wide text-default-400">
+                {isCompleted ? "Completed" : "Pending"}
+              </span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gray-50 dark:bg-white/5 text-default-400">
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <span className="text-[11px] uppercase tracking-wide text-default-400">
+          {label}
+        </span>
+        <span className="text-[12.5px] font-medium text-foreground truncate">
+          {value || "-"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function ProjectEscalations() {
   const dispatch = useDispatch();
   const { userId } = useParams();
 
   const resolveModal = useDisclosure();
+  const detailDrawer = useDisclosure();
 
   const legalRequestsResponse = useSelector(
     (state) => state.operation.legalRequestsOperations,
@@ -115,6 +233,9 @@ function ProjectEscalations() {
   const [resolveData, setResolveData] = useState(RESOLVE_FORM_DEFAULTS);
   const [resolveErrors, setResolveErrors] = useState(RESOLVE_ERROR_DEFAULTS);
   const [isResolving, setIsResolving] = useState(false);
+
+  // Row currently shown in the read-only legal detail drawer.
+  const [viewedRequest, setViewedRequest] = useState(null);
 
   const list = useMemo(() => {
     return Array.isArray(legalRequestsResponse?.content)
@@ -158,6 +279,11 @@ function ProjectEscalations() {
     setResolveData(RESOLVE_FORM_DEFAULTS);
     setResolveErrors(RESOLVE_ERROR_DEFAULTS);
     resolveModal.onOpen();
+  };
+
+  const openDetailDrawer = (request) => {
+    setViewedRequest(request);
+    detailDrawer.onOpen();
   };
 
   const handleResolveSubmit = async (event) => {
@@ -407,6 +533,15 @@ function ProjectEscalations() {
 
               <DropdownMenu aria-label="Legal request actions">
                 <DropdownItem
+                  key="view"
+                  description="Open the professional summary for legal"
+                  startContent={<Eye className="w-3.5 h-3.5" />}
+                  onPress={() => openDetailDrawer(rowData)}
+                >
+                  View Details
+                </DropdownItem>
+
+                <DropdownItem
                   key="resolve"
                   description={
                     isResolvable
@@ -543,6 +678,7 @@ function ProjectEscalations() {
         </TableBody>
       </Table>
 
+      {/* Resolve modal — unchanged */}
       <Modal
         isOpen={resolveModal.isOpen}
         onOpenChange={resolveModal.onOpenChange}
@@ -683,6 +819,166 @@ function ProjectEscalations() {
           )}
         </ModalContent>
       </Modal>
+
+      {/* Legal-facing read-only detail drawer with milestone timeline */}
+      <Drawer
+        isOpen={detailDrawer.isOpen}
+        onOpenChange={detailDrawer.onOpenChange}
+        size="md"
+        placement="right"
+        classNames={{
+          base: "border-l border-gray-200 dark:border-white/10",
+        }}
+      >
+        <DrawerContent>
+          {(onClose) => (
+            <>
+              <DrawerHeader className="flex flex-col gap-1 border-b border-gray-200 dark:border-white/10 px-5 py-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-[13.5px] font-semibold">
+                    <Scale className="w-4 h-4 text-default-500" />
+                    Legal Request Summary
+                  </span>
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color={
+                      LEGAL_STATUS_COLOR[viewedRequest?.legalRequestStatus] ||
+                      "default"
+                    }
+                  >
+                    {formatLegalStatus(viewedRequest?.legalRequestStatus)}
+                  </Chip>
+                </div>
+                <span className="text-[11.5px] font-normal text-default-400">
+                  {viewedRequest?.projectNo || "-"}
+                </span>
+              </DrawerHeader>
+
+              <DrawerBody className="px-5 py-4 gap-6">
+                {/* Project / company snapshot */}
+                <section className="flex flex-col gap-3">
+                  <span className="text-[11px] uppercase tracking-wide text-default-400 font-medium">
+                    Project
+                  </span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <DetailRow
+                      icon={FileText}
+                      label="Project"
+                      value={viewedRequest?.name}
+                    />
+                    <DetailRow
+                      icon={Building2}
+                      label="Company"
+                      value={viewedRequest?.companyName}
+                    />
+                    <DetailRow
+                      icon={User}
+                      label="Contact"
+                      value={viewedRequest?.contactName}
+                    />
+                    <DetailRow
+                      icon={Receipt}
+                      label="Total Value"
+                      value={formatCurrency(viewedRequest?.totalAmount)}
+                    />
+                  </div>
+                </section>
+
+                <Divider />
+
+                {/* Legal request details */}
+                <section className="flex flex-col gap-3">
+                  <span className="text-[11px] uppercase tracking-wide text-default-400 font-medium">
+                    Escalation
+                  </span>
+
+                  <div className="rounded-lg bg-gray-50 dark:bg-white/5 p-3 flex flex-col gap-2">
+                    <span className="text-[12.5px] font-medium">
+                      {viewedRequest?.legalRequestTitle || "-"}
+                    </span>
+                    {viewedRequest?.legalRequestNotes && (
+                      <p className="text-[12px] text-default-500 leading-relaxed">
+                        {viewedRequest.legalRequestNotes}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <DetailRow
+                      icon={User}
+                      label="Assigned To"
+                      value={viewedRequest?.legalRequestAssignedToLegalName}
+                    />
+                    <DetailRow
+                      icon={CalendarClock}
+                      label="Raised On"
+                      value={
+                        viewedRequest?.legalRequestCreatedDate
+                          ? dayjs(viewedRequest.legalRequestCreatedDate).format(
+                              "DD MMM YYYY, hh:mm A",
+                            )
+                          : "-"
+                      }
+                    />
+                  </div>
+
+                  {isLegalRequestActive(viewedRequest?.legalRequestStatus) &&
+                    viewedRequest?.legalRequestStatus !== "RAISED" && (
+                      <div className="rounded-lg border border-gray-200 dark:border-white/10 p-3 flex flex-col gap-2 mt-1">
+                        <span className="text-[11px] uppercase tracking-wide text-default-400 font-medium">
+                          Resolution
+                        </span>
+                        {viewedRequest?.legalRequestStatusReason && (
+                          <p className="text-[12px] text-default-600 leading-relaxed">
+                            {viewedRequest.legalRequestStatusReason}
+                          </p>
+                        )}
+                        {viewedRequest?.legalRequestResolvedDate && (
+                          <span className="text-[11.5px] text-default-400">
+                            Resolved{" "}
+                            {dayjs(
+                              viewedRequest.legalRequestResolvedDate,
+                            ).format("DD MMM YYYY, hh:mm A")}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                </section>
+
+                <Divider />
+
+                {/* Milestone timeline */}
+                <section className="flex flex-col gap-3">
+                  <span className="text-[11px] uppercase tracking-wide text-default-400 font-medium">
+                    Project Milestones
+                  </span>
+                  <MilestoneTimeline milestones={viewedRequest?.milestones} />
+                </section>
+              </DrawerBody>
+
+              <DrawerFooter className="border-t border-gray-200 dark:border-white/10 px-5 py-3">
+                <Button variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                {isLegalRequestResolvable(
+                  viewedRequest?.legalRequestStatus,
+                ) && (
+                  <Button
+                    color="primary"
+                    onPress={() => {
+                      onClose();
+                      openResolveModal(viewedRequest);
+                    }}
+                  >
+                    Resolve Request
+                  </Button>
+                )}
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

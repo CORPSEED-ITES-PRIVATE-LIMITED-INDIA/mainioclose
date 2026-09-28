@@ -520,9 +520,7 @@ const ProformaInvoiceView = ({ invoiceData, heading }) => {
 Please find the ${heading || "Proforma Invoice"} details below:
 
 Invoice No.: ${invoiceNumber || "NA"}
-Invoice Date: ${
-        invoiceDate ? dayjs(invoiceDate).format("DD-MM-YYYY") : "NA"
-      }
+Invoice Date: ${invoiceDate ? dayjs(invoiceDate).format("DD-MM-YYYY") : "NA"}
 Amount: ${inrCurrency(grandTotal)}
 URL: ${getShareUrl()}
 
@@ -700,9 +698,7 @@ Corpseed Team`,
               <div className="grid auto-rows-min">
                 <div className="grid grid-cols-2 border-b border-gray-300">
                   <div className="border-r border-gray-300 p-2.5">
-                    <div className="text-[10px] text-gray-500">
-                      Invoice no.
-                    </div>
+                    <div className="text-[10px] text-gray-500">Invoice no.</div>
                     <div className="text-[11px] font-bold">
                       {invoiceNumber || "NA"}
                     </div>
@@ -725,9 +721,7 @@ Corpseed Team`,
                     <div className="h-4 text-[11px] font-bold">&nbsp;</div>
                   </div>
                   <div className="p-2.5">
-                    <div className="text-[10px] text-gray-500">
-                      Valid Until
-                    </div>
+                    <div className="text-[10px] text-gray-500">Valid Until</div>
                     <div className="text-[11px] font-bold">
                       {inv?.validUntil
                         ? dayjs(inv.validUntil).format("DD-MM-YYYY")
@@ -770,9 +764,7 @@ Corpseed Team`,
                 </div>
                 <div className="text-[11px]">{shipTo.name}</div>
                 {shipTo.gstin ? (
-                  <div className="text-[11px]">
-                    GSTIN/UIN : {shipTo.gstin}
-                  </div>
+                  <div className="text-[11px]">GSTIN/UIN : {shipTo.gstin}</div>
                 ) : null}
                 {shipTo.address ? (
                   <div className="text-[11px]">
@@ -782,8 +774,7 @@ Corpseed Team`,
                 ) : null}
                 {shipTo.stateName ? (
                   <div className="text-[11px]">
-                    State name : {shipTo.stateName} , code :{" "}
-                    {shipTo.stateCode}
+                    State name : {shipTo.stateName} , code : {shipTo.stateCode}
                   </div>
                 ) : null}
               </div>
@@ -794,9 +785,7 @@ Corpseed Team`,
                 </div>
                 <div className="text-[11px]">{billTo.name}</div>
                 {billTo.gstin ? (
-                  <div className="text-[11px]">
-                    GSTIN/UIN : {billTo.gstin}
-                  </div>
+                  <div className="text-[11px]">GSTIN/UIN : {billTo.gstin}</div>
                 ) : null}
                 {billTo.address ? (
                   <div className="text-[11px]">Address : {billTo.address}</div>

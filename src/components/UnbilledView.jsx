@@ -397,7 +397,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
                       Mode/Terms of Payment
                     </div>
                     <div className="h-4 text-[11px] font-bold">
-                      {inv?.paymentTypeCode || <>&nbsp;</>}
+                      {inv.paymentTerm || "-"}
                     </div>
                   </div>
                   <div className="p-2.5">
