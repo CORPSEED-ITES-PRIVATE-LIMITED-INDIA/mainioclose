@@ -378,7 +378,15 @@ const SubDepartmentTeams = () => {
         return <span>{rowData?.teamId}</span>;
 
       case "teamName":
-        return <span className="font-medium">{rowData?.teamName}</span>;
+        return (
+          <Link
+            className="font-medium text-blue-600 hover:underline"
+            to={`${rowData?.teamId}/members`}
+            state={{ teamName: rowData?.teamName, subDepartmentName }}
+          >
+            {rowData?.teamName}
+          </Link>
+        );
 
       case "managerName":
         return <span>{rowData?.managerName || "-"}</span>;

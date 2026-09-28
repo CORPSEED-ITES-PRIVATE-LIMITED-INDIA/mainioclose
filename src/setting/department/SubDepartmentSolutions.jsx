@@ -6,11 +6,6 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
   Pagination,
   Spinner,
   Table,
@@ -19,21 +14,13 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-  addToast,
-  useDisclosure,
 } from "@heroui/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Search } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import dayjs from "dayjs";
-import NewSelect from "../../components/NewSelect";
-import {
-  getSolutionMembers,
-  getSolutionsBySubDepartmentId,
-  updateSolutionMembers,
-} from "../../toolkit/slices/settingSlice";
-import { getAllUsers } from "../../toolkit/slices/commonSlice";
+import { getSolutionsBySubDepartmentId } from "../../toolkit/slices/settingSlice";
 
 // Matches SubDepartmentSolutionResponseDto.
 const columns = [
@@ -43,16 +30,6 @@ const columns = [
   { name: "SLUG", uid: "solutionSlug" },
   { name: "STATUS", uid: "active" },
   { name: "MAPPED ON", uid: "createdAt" },
-  { name: "MEMBERS", uid: "members" },
-];
-
-// Matches SolutionMemberMappingResponseDto.
-const memberColumns = [
-  { name: "MEMBER", uid: "userName" },
-  { name: "EMAIL", uid: "userEmail" },
-  { name: "TEAM", uid: "salesTeamName" },
-  { name: "WORK FUNCTION", uid: "workFunction" },
-  { name: "STATUS", uid: "active" },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -71,10 +48,6 @@ const SubDepartmentSolutions = () => {
   const dispatch = useDispatch();
   const { subDepartmentId } = useParams();
   const location = useLocation();
-  const membersModal = useDisclosure();
-
-  const currentUser = useSelector((state) => state.auth.currentUser);
-  const currentUserId = currentUser?.id || currentUser?.userId;
 
   const solutionsList = useSelector(
     (state) => state.setting.subDepartmentSolutionsList,
@@ -83,43 +56,17 @@ const SubDepartmentSolutions = () => {
     useSelector((state) => state.setting.subDepartmentSolutionsLoading) ===
     "pending";
 
-  const usersList = useSelector((state) => state.common.usersList);
-
-  const solutionMembersList = useSelector(
-    (state) => state.setting.solutionMembersList,
-  );
-  const isSolutionMembersLoading =
-    useSelector((state) => state.setting.solutionMembersLoading) ===
-    "pending";
-
   const subDepartmentName =
     location?.state?.subDepartmentName || solutionsList?.[0]?.subDepartmentName;
 
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [filteration, setFilteration] = useState({ page: 1, size: 50 });
-  const [selectedSolution, setSelectedSolution] = useState(null);
-  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-
   useEffect(() => {
     if (subDepartmentId) {
       dispatch(getSolutionsBySubDepartmentId(subDepartmentId));
-      dispatch(getAllUsers());
     }
   }, [dispatch, subDepartmentId]);
-
-  // Pick-list: every user. The PUT's memberIds are sent as user ids.
-  const memberOptions = useMemo(
-    () =>
-      (usersList || []).map((user) => ({
-        id: user?.id,
-        displayLabel: user?.email
-          ? `${user?.fullName} (${user?.email})`
-          : user?.fullName,
-      })),
-    [usersList],
-  );
 
   const filteredItems = useMemo(() => {
     let filtered = [...(solutionsList || [])];
@@ -152,69 +99,6 @@ const SubDepartmentSolutions = () => {
     return filteredItems.slice(start, start + filteration.size);
   }, [filteredItems, filteration]);
 
-  const handleOpenMembersModal = (solution) => {
-    setSelectedSolution(solution);
-    setSelectedMemberIds([]);
-    dispatch(
-      getSolutionMembers({
-        subDepartmentId,
-        solutionId: solution?.solutionId,
-      }),
-    ).then((resp) => {
-      if (resp.meta.requestStatus === "fulfilled") {
-        setSelectedMemberIds(
-          (resp.payload || [])
-            .filter((mapping) => mapping?.active !== false)
-            .map((mapping) => String(mapping.userId)),
-        );
-      }
-    });
-    membersModal.onOpen();
-  };
-
-  const handleCloseMembersModal = () => {
-    setSelectedSolution(null);
-    setSelectedMemberIds([]);
-  };
-
-  const handleSaveMembers = () => {
-    setIsSaving(true);
-    dispatch(
-      updateSolutionMembers({
-        subDepartmentId,
-        solutionId: selectedSolution?.solutionId,
-        data: {
-          memberIds: selectedMemberIds.map(Number),
-          updatedByUserId: Number(currentUserId),
-        },
-      }),
-    )
-      .then((resp) => {
-        if (resp.meta.requestStatus === "fulfilled") {
-          addToast({
-            title: "Members mapped successfully !.",
-            color: "success",
-          });
-          dispatch(
-            getSolutionMembers({
-              subDepartmentId,
-              solutionId: selectedSolution?.solutionId,
-            }),
-          );
-        } else {
-          addToast({
-            title: "Something went wrong !.",
-            description: resp?.payload?.message,
-            color: "danger",
-          });
-        }
-      })
-      .catch(() =>
-        addToast({ title: "Something went wrong !.", color: "danger" }),
-      )
-      .finally(() => setIsSaving(false));
-  };
-
   const renderCell = (item, columnKey) => {
     switch (columnKey) {
       case "solutionName":
@@ -232,26 +116,10 @@ const SubDepartmentSolutions = () => {
           </span>
         );
 
-      case "members":
-        return (
-          <Button
-            size="sm"
-            variant="flat"
-            onPress={() => handleOpenMembersModal(item)}
-          >
-            Map Members
-          </Button>
-        );
-
       default:
         return <span>{item?.[columnKey] ?? "-"}</span>;
     }
   };
-
-  const renderMemberCell = useCallback((member, columnKey) => {
-    if (columnKey === "active") return <StatusChip active={member?.active} />;
-    return <span>{member?.[columnKey] || "-"}</span>;
-  }, []);
 
   const topContent = (
     <div className="flex flex-col gap-2">
@@ -433,112 +301,6 @@ const SubDepartmentSolutions = () => {
           )}
         </TableBody>
       </Table>
-
-      <Modal
-        size="3xl"
-        isDismissable={false}
-        isKeyboardDismissDisabled={true}
-        isOpen={membersModal.isOpen}
-        onOpenChange={(open) => {
-          membersModal.onOpenChange(open);
-          if (!open) handleCloseMembersModal();
-        }}
-        placement="top-center"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>
-                Members — {selectedSolution?.solutionName || "-"}
-              </ModalHeader>
-
-              <ModalBody>
-                <div className="flex flex-col gap-5">
-                  {isSolutionMembersLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner size="sm" label="Loading members..." />
-                    </div>
-                  ) : (
-                    // Plain <table>: HeroUI's Table inside a Modal throws
-                    // "No key found for item" in this setup.
-                    <div className="max-h-[35vh] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10">
-                      <table className="w-full text-[12.5px]">
-                        <thead className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
-                          <tr>
-                            {memberColumns.map((column) => (
-                              <th
-                                key={column.uid}
-                                className="h-8 px-3 text-left text-[11.5px] tracking-wide text-default-500 border-b border-gray-200 dark:border-white/10"
-                              >
-                                {column.name}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {solutionMembersList?.length ? (
-                            solutionMembersList.map((mapping) => (
-                              <tr
-                                key={mapping.mappingId}
-                                className="border-b border-gray-100 dark:border-white/5 last:border-b-0"
-                              >
-                                {memberColumns.map((column) => (
-                                  <td key={column.uid} className="px-3 py-1.5">
-                                    {renderMemberCell(mapping, column.uid)}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={memberColumns.length}
-                                className="px-3 py-6 text-center text-default-400"
-                              >
-                                No members mapped to this solution yet.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  <div>
-                    <NewSelect
-                      selectionMode="multiple"
-                      label="Users"
-                      placeholder="Select users to map"
-                      data={memberOptions}
-                      labelKey="displayLabel"
-                      valueKey="id"
-                      value={selectedMemberIds}
-                      onChange={(value) => setSelectedMemberIds(value || [])}
-                    />
-                    <p className="text-xs text-default-400 mt-1.5">
-                      Saving replaces the mapped users with this selection.
-                    </p>
-                  </div>
-                </div>
-              </ModalBody>
-
-              <ModalFooter>
-                <Button onPress={onClose}>Close</Button>
-                <Button
-                  color="primary"
-                  isLoading={isSaving}
-                  isDisabled={isSolutionMembersLoading}
-                  onPress={handleSaveMembers}
-                >
-                  Save
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
     </div>
   );
 };

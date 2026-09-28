@@ -725,16 +725,15 @@ export const addSalesTeamMember = createAsyncThunk(
   },
 );
 
-// Every sales-team member of one sub-department, grouped by team
-// ({ subDepartmentId, subDepartmentName, teams: [{ teamId, teamName, members }] }).
-// Used as the pick-list for mapping members to a sub-department solution, so
-// only this sub-department's members can be chosen.
-export const getSubDepartmentTeamMembers = createAsyncThunk(
-  "getSubDepartmentTeamMembers",
-  async (subDepartmentId, { rejectWithValue }) => {
+// Solutions mapped to one sales-team member (SubDepartmentTeamMembers.jsx ->
+// "Map Solutions"). A member can hold several of the sub-department's
+// solutions. memberId is the sales-team member id, not the user id.
+export const getMemberSolutions = createAsyncThunk(
+  "getMemberSolutions",
+  async ({ subDepartmentId, memberId }, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams/members`,
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/members/${memberId}/solutions`,
       );
       return response.data;
     } catch (error) {
@@ -743,30 +742,14 @@ export const getSubDepartmentTeamMembers = createAsyncThunk(
   },
 );
 
-// Members mapped to one solution of a sub-department
-// (SubDepartmentSolutions.jsx -> "Map Members").
-export const getSolutionMembers = createAsyncThunk(
-  "getSolutionMembers",
-  async ({ subDepartmentId, solutionId }, { rejectWithValue }) => {
-    try {
-      const response = await api.get(
-        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions/${solutionId}/members`,
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error?.response?.data || error.message);
-    }
-  },
-);
-
-// Body: { memberIds, updatedByUserId } — memberIds are sent as user ids
-// (picked from the full user list). Full replace of the mapped set.
-export const updateSolutionMembers = createAsyncThunk(
-  "updateSolutionMembers",
-  async ({ subDepartmentId, solutionId, data }, { rejectWithValue }) => {
+// Body: { solutionIds, updatedByUserId }. Full replace of the member's
+// mapped solutions, so the caller resends every id it wants kept.
+export const updateMemberSolutions = createAsyncThunk(
+  "updateMemberSolutions",
+  async ({ subDepartmentId, memberId, data }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions/${solutionId}/members`,
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/members/${memberId}/solutions`,
         data,
       );
       return response.data;
@@ -1508,10 +1491,8 @@ export const SettingSlice = createSlice({
     approvedCompaniesLoading: "",
     subDepartmentCompaniesList: [],
     subDepartmentCompaniesLoading: "",
-    subDepartmentTeamMembers: null,
-    subDepartmentTeamMembersLoading: "",
-    solutionMembersList: [],
-    solutionMembersLoading: "",
+    memberSolutionsList: [],
+    memberSolutionsLoading: "",
     workFunctionsList: [],
     designationList: [],
     leadAssignmentTeamsList: {
@@ -1843,28 +1824,16 @@ export const SettingSlice = createSlice({
       state.salesTeamMembersList = [];
     });
 
-    builder.addCase(getSubDepartmentTeamMembers.pending, (state) => {
-      state.subDepartmentTeamMembersLoading = "pending";
+    builder.addCase(getMemberSolutions.pending, (state) => {
+      state.memberSolutionsLoading = "pending";
     });
-    builder.addCase(getSubDepartmentTeamMembers.fulfilled, (state, action) => {
-      state.subDepartmentTeamMembersLoading = "success";
-      state.subDepartmentTeamMembers = action.payload || null;
+    builder.addCase(getMemberSolutions.fulfilled, (state, action) => {
+      state.memberSolutionsLoading = "success";
+      state.memberSolutionsList = action.payload || [];
     });
-    builder.addCase(getSubDepartmentTeamMembers.rejected, (state) => {
-      state.subDepartmentTeamMembersLoading = "rejected";
-      state.subDepartmentTeamMembers = null;
-    });
-
-    builder.addCase(getSolutionMembers.pending, (state) => {
-      state.solutionMembersLoading = "pending";
-    });
-    builder.addCase(getSolutionMembers.fulfilled, (state, action) => {
-      state.solutionMembersLoading = "success";
-      state.solutionMembersList = action.payload || [];
-    });
-    builder.addCase(getSolutionMembers.rejected, (state) => {
-      state.solutionMembersLoading = "rejected";
-      state.solutionMembersList = [];
+    builder.addCase(getMemberSolutions.rejected, (state) => {
+      state.memberSolutionsLoading = "rejected";
+      state.memberSolutionsList = [];
     });
 
     builder.addCase(getApprovedCompaniesList.pending, (state) => {
