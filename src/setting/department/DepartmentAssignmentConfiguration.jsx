@@ -321,7 +321,8 @@ const DepartmentAssignmentConfiguration = () => {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <Link
-            to=".."
+            to="../.."
+            relative="path"
             className="text-xs text-blue-600 hover:underline"
           >
             &larr; Back to departments

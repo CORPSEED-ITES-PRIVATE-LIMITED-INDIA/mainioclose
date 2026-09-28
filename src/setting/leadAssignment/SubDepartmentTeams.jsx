@@ -623,11 +623,11 @@ const SubDepartmentTeams = () => {
     <>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5 text-[12.5px] text-default-400">
-          <Link className="hover:underline" to="../../../department">
+          <Link className="hover:underline" to="../../../.." relative="path">
             Departments
           </Link>
           <span>/</span>
-          <Link className="hover:underline" to="..">
+          <Link className="hover:underline" to="../.." relative="path">
             Sub departments
           </Link>
           <span>/</span>

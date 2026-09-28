@@ -11,7 +11,6 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -57,19 +56,6 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-// Columns for the "Solutions" modal — mirrors the fields the
-// GET /organization/sub-departments/{id}/solutions mapping rows actually
-// return (solutionId/solutionName/solutionType/solutionSlug/active), rather
-// than the sub-department's own id/name.
-const solutionColumns = [
-  { name: "ID", uid: "solutionId" },
-  { name: "SOLUTION NAME", uid: "solutionName" },
-  { name: "TYPE", uid: "solutionType" },
-  { name: "SLUG", uid: "solutionSlug" },
-  { name: "STATUS", uid: "active" },
-  { name: "MAPPED ON", uid: "createdAt" },
-];
-
 const STATUS_FILTER_OPTIONS = [
   { label: "ALL", value: "" },
   { label: "ACTIVE", value: "true" },
@@ -113,7 +99,6 @@ const SubDepartment = () => {
   const navigate = useNavigate();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const mapCompaniesModal = useDisclosure();
-  const solutionsModal = useDisclosure();
   const mapSolutionsModal = useDisclosure();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
@@ -142,16 +127,6 @@ const SubDepartment = () => {
   const userListByDepartment = useSelector(
     (state) => state.common.userListByDepartment,
   );
-
-  // Solutions mapped to whichever sub-department row's "Solutions" button was
-  // last pressed (GET /organization/sub-departments/{id}/solutions) — fetched
-  // on demand per row instead of once per row on page load.
-  const subDepartmentSolutionsList = useSelector(
-    (state) => state.setting.subDepartmentSolutionsList,
-  );
-  const isSolutionsLoading =
-    useSelector((state) => state.setting.subDepartmentSolutionsLoading) ===
-    "pending";
 
   // Company-wide solution list, used as the pick-list for "Map Solutions" —
   // a sub-department can be mapped to any solution, not just ones it
@@ -251,10 +226,10 @@ const SubDepartment = () => {
     onOpen();
   };
 
-  const handleOpenSolutionsModal = (rowData) => {
-    setViewingSubDepartment(rowData);
-    dispatch(getSolutionsBySubDepartmentId(rowData?.id));
-    solutionsModal.onOpen();
+  const handleViewSolutions = (rowData) => {
+    navigate(`${rowData?.id}/solutions`, {
+      state: { subDepartmentName: rowData?.fullName },
+    });
   };
 
   const handleOpenMapSolutionsModal = (rowData) => {
@@ -387,7 +362,7 @@ const SubDepartment = () => {
           <Button
             size="sm"
             variant="flat"
-            onPress={() => handleOpenSolutionsModal(rowData)}
+            onPress={() => handleViewSolutions(rowData)}
           >
             View Solutions
           </Button>
@@ -479,36 +454,6 @@ const SubDepartment = () => {
         : solution?.name,
     }));
   }, [allSolutionList]);
-
-  const renderSolutionCell = useCallback((mapping, columnKey) => {
-    switch (columnKey) {
-      case "active":
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={mapping?.active ? "success" : "default"}
-          >
-            {mapping?.active ? "Active" : "Inactive"}
-          </Chip>
-        );
-
-      case "createdAt":
-        return (
-          <span>
-            {mapping?.createdAt
-              ? dayjs(mapping.createdAt).format("DD-MM-YYYY, hh:mm a")
-              : "-"}
-          </span>
-        );
-
-      case "solutionSlug":
-        return <span>{mapping?.solutionSlug || "-"}</span>;
-
-      default:
-        return <span>{mapping?.[columnKey] ?? "-"}</span>;
-    }
-  }, []);
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -856,85 +801,6 @@ const SubDepartment = () => {
                     </Button>
                   </ModalFooter>
                 </form>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        size="3xl"
-        isOpen={solutionsModal.isOpen}
-        onOpenChange={(open) => {
-          solutionsModal.onOpenChange(open);
-          if (!open) {
-            setViewingSubDepartment(null);
-          }
-        }}
-        placement="top-center"
-        scrollBehavior="inside"
-      >
-        <ModalContent>
-          {() => (
-            <>
-              <ModalHeader>
-                Solutions — {viewingSubDepartment?.fullName || "-"}
-              </ModalHeader>
-
-              <ModalBody className="pb-6">
-                {isSolutionsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Spinner size="sm" label="Loading solutions..." />
-                  </div>
-                ) : (
-                  // NOTE: plain <table>, not HeroUI's <Table> — nesting
-                  // HeroUI's react-aria-backed Table inside a Modal throws
-                  // "No key found for item" from @react-stately's collection
-                  // builder in this HeroUI v2.8.2 setup (no other screen in
-                  // this codebase nests <Table> inside a Modal either).
-                  <div className="max-h-[50vh] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10">
-                    <table className="w-full text-[12.5px]">
-                      <thead className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
-                        <tr>
-                          {solutionColumns.map((column) => (
-                            <th
-                              key={column.uid}
-                              className="h-8 px-3 text-left text-[11.5px] tracking-wide text-default-500 border-b border-gray-200 dark:border-white/10"
-                            >
-                              {column.name}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {subDepartmentSolutionsList?.length ? (
-                          subDepartmentSolutionsList.map((mapping) => (
-                            <tr
-                              key={mapping.mappingId}
-                              className="border-b border-gray-100 dark:border-white/5 last:border-b-0"
-                            >
-                              {solutionColumns.map((column) => (
-                                <td key={column.uid} className="px-3 py-1.5">
-                                  {renderSolutionCell(mapping, column.uid)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={solutionColumns.length}
-                              className="px-3 py-6 text-center text-default-400"
-                            >
-                              No solutions mapped to this sub department.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </ModalBody>
             </>
           )}

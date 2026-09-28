@@ -725,6 +725,57 @@ export const addSalesTeamMember = createAsyncThunk(
   },
 );
 
+// Every sales-team member of one sub-department, grouped by team
+// ({ subDepartmentId, subDepartmentName, teams: [{ teamId, teamName, members }] }).
+// Used as the pick-list for mapping members to a sub-department solution, so
+// only this sub-department's members can be chosen.
+export const getSubDepartmentTeamMembers = createAsyncThunk(
+  "getSubDepartmentTeamMembers",
+  async (subDepartmentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams/members`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Members mapped to one solution of a sub-department
+// (SubDepartmentSolutions.jsx -> "Map Members").
+export const getSolutionMembers = createAsyncThunk(
+  "getSolutionMembers",
+  async ({ subDepartmentId, solutionId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions/${solutionId}/members`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Body: { memberIds, updatedByUserId } — memberIds are sent as user ids
+// (picked from the full user list). Full replace of the mapped set.
+export const updateSolutionMembers = createAsyncThunk(
+  "updateSolutionMembers",
+  async ({ subDepartmentId, solutionId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions/${solutionId}/members`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
 // Company assignments (SubDepartment.jsx -> "Map Companies",
 // SubDepartmentCompanies.jsx, SubDepartmentTeams.jsx -> member "Map
 // Companies"). The approved-company list is only used as a pick-list, so it
@@ -1457,6 +1508,10 @@ export const SettingSlice = createSlice({
     approvedCompaniesLoading: "",
     subDepartmentCompaniesList: [],
     subDepartmentCompaniesLoading: "",
+    subDepartmentTeamMembers: null,
+    subDepartmentTeamMembersLoading: "",
+    solutionMembersList: [],
+    solutionMembersLoading: "",
     workFunctionsList: [],
     designationList: [],
     leadAssignmentTeamsList: {
@@ -1786,6 +1841,30 @@ export const SettingSlice = createSlice({
     builder.addCase(getSalesTeamMembers.rejected, (state) => {
       state.salesTeamMembersLoading = "rejected";
       state.salesTeamMembersList = [];
+    });
+
+    builder.addCase(getSubDepartmentTeamMembers.pending, (state) => {
+      state.subDepartmentTeamMembersLoading = "pending";
+    });
+    builder.addCase(getSubDepartmentTeamMembers.fulfilled, (state, action) => {
+      state.subDepartmentTeamMembersLoading = "success";
+      state.subDepartmentTeamMembers = action.payload || null;
+    });
+    builder.addCase(getSubDepartmentTeamMembers.rejected, (state) => {
+      state.subDepartmentTeamMembersLoading = "rejected";
+      state.subDepartmentTeamMembers = null;
+    });
+
+    builder.addCase(getSolutionMembers.pending, (state) => {
+      state.solutionMembersLoading = "pending";
+    });
+    builder.addCase(getSolutionMembers.fulfilled, (state, action) => {
+      state.solutionMembersLoading = "success";
+      state.solutionMembersList = action.payload || [];
+    });
+    builder.addCase(getSolutionMembers.rejected, (state) => {
+      state.solutionMembersLoading = "rejected";
+      state.solutionMembersList = [];
     });
 
     builder.addCase(getApprovedCompaniesList.pending, (state) => {
