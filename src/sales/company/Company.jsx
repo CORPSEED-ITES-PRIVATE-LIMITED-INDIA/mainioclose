@@ -53,6 +53,7 @@ import dayjs from "dayjs";
 import CreateCompanyForm from "./CreateCompanyForm";
 import { inrCurrency, maskEmail, maskMobileNumber } from "../../common";
 import { getAllLeadUser } from "../../toolkit/slices/leadSlice";
+import { getDashboardUsersByHeirarchy } from "../../toolkit/slices/dashboardSlice";
 
 export const columns = [
   { name: "ID", uid: "companyId", sortable: true },
@@ -281,6 +282,18 @@ const Company = () => {
     (state) => state.company.companyHistoryList,
   );
   const allLeadUser = useSelector((state) => state.leads.leadUsersList);
+
+  // Assignee options come from the logged-in user's lower hierarchy (same
+  // list the sales dashboard's user picker uses), not every user.
+  const dashboardUsers = useSelector((state) => state.dashboard.dashboardUsers);
+  const assigneeOptions = useMemo(
+    () =>
+      (dashboardUsers || []).map((user) => ({
+        ...user,
+        displayLabel: user?.name ?? user?.fullName,
+      })),
+    [dashboardUsers],
+  );
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
 
   const countryList = useSelector(
@@ -351,6 +364,7 @@ const Company = () => {
 
   useEffect(() => {
     dispatch(getAllLeadUser(userId));
+    dispatch(getDashboardUsersByHeirarchy(userId));
   }, [dispatch, userId]);
 
   const headerColumns = useMemo(() => {
@@ -1327,10 +1341,10 @@ const Company = () => {
               <ModalBody>
                 <NewSelect
                   isRequired={true}
-                  data={allLeadUser || []}
+                  data={assigneeOptions}
                   label="Select users"
                   name="assigneeId"
-                  labelKey="fullName"
+                  labelKey="displayLabel"
                   valueKey="id"
                   value={assigneeIds}
                   onChange={(selectedValue) => {

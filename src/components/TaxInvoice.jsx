@@ -1209,8 +1209,21 @@ Corpseed Team`,
 
             {/* Footer */}
             <div className="grid grid-cols-2 gap-3 border-t border-gray-300 p-2.5">
-              <div className="text-[11px]">
-                <b>Remark :</b>
+              <div className="flex flex-col gap-1.5 text-[11px]">
+                {(inv?.customerNotes || inv?.notes) && (
+                  <div>
+                    <b>Notes :</b>{" "}
+                    <span className="whitespace-pre-line">
+                      {inv?.customerNotes || inv?.notes}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <b>Remark :</b>{" "}
+                  <span className="whitespace-pre-line">
+                    {inv?.internalRemarks || inv?.remarks || ""}
+                  </span>
+                </div>
               </div>
 
               <div className="text-[11px]">

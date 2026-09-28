@@ -604,6 +604,12 @@ Corpseed Team`,
                   <p className="font-medium text-gray-700 text-sm text-end">
                     {documentMeta.number || "NA"}
                   </p>
+                  {details?.clientPoNumber && (
+                    <p className="text-xs text-gray-700 text-end whitespace-nowrap">
+                      <span className="font-semibold">Client PO No.:</span>{" "}
+                      {details.clientPoNumber}
+                    </p>
+                  )}
                 </div>
 
                 <div className="text-xs space-y-1 mt-2.5 text-end">

@@ -316,7 +316,6 @@ const LeadInfo = () => {
         leadId,
         solutionId: solutionDetail.id,
         qualityUserId: userId,
-        remarks: "",
       }),
     )
       .then((resp) => {

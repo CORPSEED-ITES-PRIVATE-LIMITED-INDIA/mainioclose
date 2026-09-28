@@ -413,8 +413,14 @@ export const convertUrlsToProduct = createAsyncThunk(
 export const getAllLeadAssignmentTeams = createAsyncThunk(
   "getAllLeadAssignmentTeams",
   async (params = {}) => {
-    const { search, active, subDepartmentId, page = 0, size = 10, sort } =
-      params;
+    const {
+      search,
+      active,
+      subDepartmentId,
+      page = 0,
+      size = 10,
+      sort,
+    } = params;
 
     const query = new URLSearchParams();
 
@@ -580,29 +586,24 @@ export const updateDesignationDepartment = createAsyncThunk(
 // Sub-departments (Department.jsx -> SubDepartment.jsx). Uses the newer
 // /organization/ base path, unlike the legacy /designation/ department APIs
 // above.
+// GET /organization/sub-departments/department/{departmentId} — the only
+// listing endpoint this resource actually exposes (verified against the
+// running backend's OpenAPI spec). It takes no search/active/page/size query
+// params, so the caller filters and paginates the returned array client-side
+// (see SubDepartment.jsx's filteredItems/pagedItems).
+// GET /organization/sub-departments/department/{departmentId} — lists the
+// sub-departments themselves. NOT the same resource as
+// /organization/sub-departments/{subDepartmentId}/solutions (that one lists
+// the solutions mapped to ONE sub-department — see
+// getSolutionsBySubDepartmentId below). Confirmed against the running
+// backend's own OpenAPI spec; this is the only sub-department listing
+// endpoint that exists.
 export const getSubDepartmentList = createAsyncThunk(
   "getSubDepartmentList",
-  async (
-    { departmentId, search, active, page = 1, size = 50 } = {},
-    { rejectWithValue },
-  ) => {
+  async ({ departmentId } = {}, { rejectWithValue }) => {
     try {
-      const params = new URLSearchParams();
-
-      if (departmentId !== undefined && departmentId !== null) {
-        params.set("departmentId", departmentId);
-      }
-      if (search) {
-        params.set("search", search);
-      }
-      if (active !== undefined && active !== null && active !== "") {
-        params.set("active", active);
-      }
-      params.set("page", page - 1);
-      params.set("size", size);
-
       const response = await api.get(
-        `/leadService/api/v1/organization/sub-departments?${params.toString()}`,
+        `/leadService/api/v1/organization/sub-departments/department/${departmentId}`,
       );
       return response.data;
     } catch (error) {
@@ -632,6 +633,157 @@ export const updateSubDepartment = createAsyncThunk(
     try {
       const response = await api.put(
         `/leadService/api/v1/organization/sub-departments/${id}`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Solutions scoped to one sub-department (SubDepartmentTeams.jsx -> "Map to
+// solution" modal). Replaces the old company-wide getAllSolutionList /
+// searchSolutionsByName combo there — since this list is already scoped to a
+// single sub-department it stays small, so the modal filters it client-side
+// instead of round-tripping a debounced search.
+export const getSolutionsBySubDepartmentId = createAsyncThunk(
+  "getSolutionsBySubDepartmentId",
+  async (subDepartmentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Full-replace mapping of a sub-department's solutions (SubDepartment.jsx ->
+// "Map Solutions" action). PUT, not PATCH — the given solutionIds become the
+// complete mapped set, so the caller must resend every id it wants kept.
+export const updateSubDepartmentSolutions = createAsyncThunk(
+  "updateSubDepartmentSolutions",
+  async ({ subDepartmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/solutions`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Sales teams (SubDepartmentTeams.jsx). Teams themselves are backend-managed
+// ("come by default") — there is no create/update-team endpoint, only
+// listing a sub-department's teams and managing each team's members.
+export const getSalesTeamsBySubDepartmentId = createAsyncThunk(
+  "getSalesTeamsBySubDepartmentId",
+  async (subDepartmentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const getSalesTeamMembers = createAsyncThunk(
+  "getSalesTeamMembers",
+  async ({ subDepartmentId, teamId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams/${teamId}/members`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+export const addSalesTeamMember = createAsyncThunk(
+  "addSalesTeamMember",
+  async ({ subDepartmentId, teamId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams/${teamId}/members`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Company assignments (SubDepartment.jsx -> "Map Companies",
+// SubDepartmentCompanies.jsx, SubDepartmentTeams.jsx -> member "Map
+// Companies"). The approved-company list is only used as a pick-list, so it
+// is trimmed to id/name here instead of keeping the full company payload.
+export const getApprovedCompaniesList = createAsyncThunk(
+  "getApprovedCompaniesList",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/leadService/api/companies/approved`);
+      return (response.data || []).map((company) => ({
+        id: company?.id,
+        name: company?.name,
+      }));
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Companies already allocated to one sub-department. Also the pick-list for
+// mapping companies to a team member — a member can only get companies that
+// are mapped to their sub-department.
+export const getSubDepartmentCompanies = createAsyncThunk(
+  "getSubDepartmentCompanies",
+  async ({ subDepartmentId, requestingUserId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/company-assignments/sub-departments/${subDepartmentId}/companies?requestingUserId=${requestingUserId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Body: { companyIds, adminUserId, reason }
+export const allocateCompaniesToSubDepartment = createAsyncThunk(
+  "allocateCompaniesToSubDepartment",
+  async ({ subDepartmentId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/company-assignments/sub-departments/${subDepartmentId}/admin-allocation`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || error.message);
+    }
+  },
+);
+
+// Body: { companyIds, assignedByUserId, reason }
+export const assignCompaniesToTeamMember = createAsyncThunk(
+  "assignCompaniesToTeamMember",
+  async ({ subDepartmentId, salesTeamMemberId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/company-assignments/sub-departments/${subDepartmentId}/members/${salesTeamMemberId}/companies`,
         data,
       );
       return response.data;
@@ -1294,11 +1446,17 @@ export const SettingSlice = createSlice({
     departmentList: [],
     departmentAssignmentConfiguration: null,
     departmentAssignmentConfigLoading: "",
-    subDepartmentList: {
-      content: [],
-      totalElements: 0,
-      totalPages: 0,
-    },
+    subDepartmentList: [],
+    subDepartmentSolutionsList: [],
+    subDepartmentSolutionsLoading: "",
+    salesTeamsList: [],
+    salesTeamsLoading: "",
+    salesTeamMembersList: [],
+    salesTeamMembersLoading: "",
+    approvedCompaniesList: [],
+    approvedCompaniesLoading: "",
+    subDepartmentCompaniesList: [],
+    subDepartmentCompaniesLoading: "",
     workFunctionsList: [],
     designationList: [],
     leadAssignmentTeamsList: {
@@ -1581,19 +1739,77 @@ export const SettingSlice = createSlice({
     });
     builder.addCase(getSubDepartmentList.fulfilled, (state, action) => {
       state.loading = "success";
-      state.subDepartmentList = action.payload || {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-      };
+      state.subDepartmentList = action.payload;
     });
     builder.addCase(getSubDepartmentList.rejected, (state) => {
       state.loading = "rejected";
-      state.subDepartmentList = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-      };
+      state.subDepartmentList = [];
+    });
+
+    builder.addCase(getSolutionsBySubDepartmentId.pending, (state) => {
+      state.subDepartmentSolutionsLoading = "pending";
+    });
+    builder.addCase(
+      getSolutionsBySubDepartmentId.fulfilled,
+      (state, action) => {
+        state.subDepartmentSolutionsLoading = "success";
+        state.subDepartmentSolutionsList = action.payload || [];
+      },
+    );
+    builder.addCase(getSolutionsBySubDepartmentId.rejected, (state) => {
+      state.subDepartmentSolutionsLoading = "rejected";
+      state.subDepartmentSolutionsList = [];
+    });
+
+    builder.addCase(getSalesTeamsBySubDepartmentId.pending, (state) => {
+      state.salesTeamsLoading = "pending";
+    });
+    builder.addCase(
+      getSalesTeamsBySubDepartmentId.fulfilled,
+      (state, action) => {
+        state.salesTeamsLoading = "success";
+        state.salesTeamsList = action.payload || [];
+      },
+    );
+    builder.addCase(getSalesTeamsBySubDepartmentId.rejected, (state) => {
+      state.salesTeamsLoading = "rejected";
+      state.salesTeamsList = [];
+    });
+
+    builder.addCase(getSalesTeamMembers.pending, (state) => {
+      state.salesTeamMembersLoading = "pending";
+    });
+    builder.addCase(getSalesTeamMembers.fulfilled, (state, action) => {
+      state.salesTeamMembersLoading = "success";
+      state.salesTeamMembersList = action.payload || [];
+    });
+    builder.addCase(getSalesTeamMembers.rejected, (state) => {
+      state.salesTeamMembersLoading = "rejected";
+      state.salesTeamMembersList = [];
+    });
+
+    builder.addCase(getApprovedCompaniesList.pending, (state) => {
+      state.approvedCompaniesLoading = "pending";
+    });
+    builder.addCase(getApprovedCompaniesList.fulfilled, (state, action) => {
+      state.approvedCompaniesLoading = "success";
+      state.approvedCompaniesList = action.payload || [];
+    });
+    builder.addCase(getApprovedCompaniesList.rejected, (state) => {
+      state.approvedCompaniesLoading = "rejected";
+      state.approvedCompaniesList = [];
+    });
+
+    builder.addCase(getSubDepartmentCompanies.pending, (state) => {
+      state.subDepartmentCompaniesLoading = "pending";
+    });
+    builder.addCase(getSubDepartmentCompanies.fulfilled, (state, action) => {
+      state.subDepartmentCompaniesLoading = "success";
+      state.subDepartmentCompaniesList = action.payload || [];
+    });
+    builder.addCase(getSubDepartmentCompanies.rejected, (state) => {
+      state.subDepartmentCompaniesLoading = "rejected";
+      state.subDepartmentCompaniesList = [];
     });
 
     builder.addCase(getDepartmentAssignmentConfiguration.pending, (state) => {
@@ -1868,12 +2084,9 @@ export const SettingSlice = createSlice({
     builder.addCase(updateLeadAssignmentSolutionPolicy.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      updateLeadAssignmentSolutionPolicy.fulfilled,
-      (state) => {
-        state.loading = "success";
-      },
-    );
+    builder.addCase(updateLeadAssignmentSolutionPolicy.fulfilled, (state) => {
+      state.loading = "success";
+    });
     builder.addCase(updateLeadAssignmentSolutionPolicy.rejected, (state) => {
       state.loading = "rejected";
     });
@@ -1881,12 +2094,9 @@ export const SettingSlice = createSlice({
     builder.addCase(updateLeadAssignmentAutoAssignment.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(
-      updateLeadAssignmentAutoAssignment.fulfilled,
-      (state) => {
-        state.loading = "success";
-      },
-    );
+    builder.addCase(updateLeadAssignmentAutoAssignment.fulfilled, (state) => {
+      state.loading = "success";
+    });
     builder.addCase(updateLeadAssignmentAutoAssignment.rejected, (state) => {
       state.loading = "rejected";
     });
@@ -1904,10 +2114,13 @@ export const SettingSlice = createSlice({
     builder.addCase(getLeadAssignmentTeamSolutions.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getLeadAssignmentTeamSolutions.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.leadAssignmentTeamSolutions = action.payload;
-    });
+    builder.addCase(
+      getLeadAssignmentTeamSolutions.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.leadAssignmentTeamSolutions = action.payload;
+      },
+    );
     builder.addCase(getLeadAssignmentTeamSolutions.rejected, (state) => {
       state.loading = "rejected";
       state.leadAssignmentTeamSolutions = [];
@@ -1922,17 +2135,23 @@ export const SettingSlice = createSlice({
         state.loading = "success";
       },
     );
-    builder.addCase(mapLeadAssignmentTeamMemberToSolutions.rejected, (state) => {
-      state.loading = "rejected";
-    });
+    builder.addCase(
+      mapLeadAssignmentTeamMemberToSolutions.rejected,
+      (state) => {
+        state.loading = "rejected";
+      },
+    );
 
     builder.addCase(getLeadAssignmentSolutionUsers.pending, (state) => {
       state.loading = "pending";
     });
-    builder.addCase(getLeadAssignmentSolutionUsers.fulfilled, (state, action) => {
-      state.loading = "success";
-      state.leadAssignmentSolutionUsers = action.payload;
-    });
+    builder.addCase(
+      getLeadAssignmentSolutionUsers.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.leadAssignmentSolutionUsers = action.payload;
+      },
+    );
     builder.addCase(getLeadAssignmentSolutionUsers.rejected, (state) => {
       state.loading = "rejected";
       state.leadAssignmentSolutionUsers = [];

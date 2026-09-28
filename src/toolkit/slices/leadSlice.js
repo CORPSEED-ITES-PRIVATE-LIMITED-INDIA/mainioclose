@@ -949,11 +949,11 @@ export const approveRejectLead = createAsyncThunk(
 // and who is submitting it.
 export const qualitySubmitLead = createAsyncThunk(
   "qualitySubmitLead",
-  async ({ leadId, solutionId, qualityUserId, remarks = "" }, { rejectWithValue }) => {
+  async ({ leadId, solutionId, qualityUserId }, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/leadService/api/v1/lead-assignments/leads/${leadId}/quality-submit`,
-        { solutionId, qualityUserId, remarks },
+        `/leadService/api/v1/quality/leads/${leadId}/submit-to-sales`,
+        { solutionId, qualityUserId },
       );
       return response.data;
     } catch (err) {

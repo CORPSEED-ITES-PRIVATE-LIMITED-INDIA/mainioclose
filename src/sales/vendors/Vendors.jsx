@@ -45,6 +45,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import FileUploader from "../../components/FileUploader";
 import dayjs from "dayjs";
+import { allowOnlyNumbers } from "../../common";
 
 const columns = [
   { name: "ID", uid: "id" },

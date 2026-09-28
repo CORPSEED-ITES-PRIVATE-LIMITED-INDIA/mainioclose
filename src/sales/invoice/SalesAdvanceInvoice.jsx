@@ -7,6 +7,8 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   Select,
   SelectItem,
@@ -27,11 +29,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { getAllAdvanceTaxInvoiceRequests } from "../../toolkit/slices/accountSlice";
+import AdvanceTaxInvoiceView from "../../accounts/AdvanceTaxInvoiceView";
 
 // Adjust this import path to wherever AdvanceTaxInvoiceView actually lives
 // relative to this file (e.g. "../AdvanceTaxInvoiceView" or
 // "../../components/AdvanceTaxInvoiceView").
-import AdvanceTaxInvoiceView from "../../accounts/AdvanceTaxInvoiceView.jsx";
 
 const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 
@@ -55,8 +57,28 @@ const columns = [
   { name: "REVIEWED BY", uid: "reviewedBy" },
   { name: "REVIEWED AT", uid: "reviewedAt" },
   { name: "MESSAGE", uid: "message" },
-  { name: "ACTIONS", uid: "actions" },
 ];
+
+const actionsColumn = { name: "ACTIONS", uid: "actions" };
+
+/**
+ * The list API returns the full invoice snapshot, but the invoice view reads
+ * `grandTotal`/`status`/`paymentStatus`, so map the row's invoice* fields.
+ */
+const buildTaxInvoiceData = (item) => {
+  if (!item) return null;
+
+  return {
+    ...item,
+    id: item?.invoiceId ?? item?.id ?? null,
+    publicUuid: item?.invoicePublicUuid ?? item?.publicUuid ?? null,
+    status: item?.invoiceStatus ?? item?.status ?? null,
+    paymentStatus: item?.invoicePaymentStatus ?? item?.paymentStatus ?? null,
+    grandTotal:
+      item?.invoiceGrandTotal ?? item?.grandTotal ?? item?.approvedAmount ?? 0,
+    lineItems: Array.isArray(item?.lineItems) ? item.lineItems : [],
+  };
+};
 
 const getLoggedInUserId = () => {
   try {
@@ -193,6 +215,26 @@ const SalesAdvanceInvoice = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [selectedTaxInvoice, setSelectedTaxInvoice] = useState(null);
+  const taxInvoiceModal = useDisclosure();
+
+  // The tax invoice only exists once a request is approved.
+  const isApprovedFilter = status === "APPROVED";
+
+  const tableColumns = useMemo(
+    () => (isApprovedFilter ? [...columns, actionsColumn] : columns),
+    [isApprovedFilter],
+  );
+
+  const openTaxInvoiceModal = (item) => {
+    setSelectedTaxInvoice(buildTaxInvoiceData(item));
+    taxInvoiceModal.onOpen();
+  };
+
+  const closeTaxInvoiceModal = () => {
+    setSelectedTaxInvoice(null);
+    taxInvoiceModal.onClose();
+  };
 
   // Selected row for the "view tax invoice" modal
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -401,29 +443,25 @@ const SalesAdvanceInvoice = () => {
             {item?.message || "-"}
           </p>
         );
-      case "actions":
+      case "actions": {
+        const canViewTaxInvoice =
+          Boolean(item?.invoiceGenerated) && Boolean(item?.invoiceNumber);
+
         return (
-          <div className="flex items-center justify-center gap-1">
-            <Tooltip
-              content={
-                item?.invoiceNumber
-                  ? "View Tax Invoice"
-                  : "Invoice not generated yet"
-              }
+          <Tooltip content="View Tax Invoice">
+            <Button
+              isIconOnly
+              size="sm"
+              variant="light"
+              isDisabled={!canViewTaxInvoice}
+              aria-label="View tax invoice"
+              onPress={() => openTaxInvoiceModal(item)}
             >
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                isDisabled={!item?.invoiceNumber}
-                onPress={() => handleViewTaxInvoice(item)}
-                aria-label="View Tax Invoice"
-              >
-                <Eye className="w-4 h-4 text-default-500" />
-              </Button>
-            </Tooltip>
-          </div>
+              <Eye className="w-4 h-4" />
+            </Button>
+          </Tooltip>
         );
+      }
       default:
         return item?.[columnKey] ?? "-";
     }
@@ -541,7 +579,7 @@ const SalesAdvanceInvoice = () => {
           td: "py-1.5 text-[12.5px]",
         }}
       >
-        <TableHeader columns={columns}>
+        <TableHeader columns={tableColumns}>
           {(column) => (
             <TableColumn
               key={column.uid}
@@ -577,24 +615,59 @@ const SalesAdvanceInvoice = () => {
         </TableBody>
       </Table>
 
-      {/* View Tax Invoice modal */}
       <Modal
-        isOpen={isInvoiceOpen}
-        onOpenChange={onInvoiceOpenChange}
-        size="5xl"
+        size="full"
+        isOpen={taxInvoiceModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeTaxInvoiceModal();
+          }
+        }}
         scrollBehavior="inside"
         placement="center"
+        classNames={{
+          base: "bg-slate-100",
+          body: "p-0",
+        }}
       >
         <ModalContent>
-          {() => (
-            <ModalBody className="p-0">
-              {selectedInvoice ? (
-                <AdvanceTaxInvoiceView
-                  invoiceData={selectedInvoice}
-                  heading="Tax Invoice"
-                />
-              ) : null}
-            </ModalBody>
+          {(onClose) => (
+            <>
+              <ModalHeader className="text-base border-b border-slate-200 bg-white">
+                Tax Invoice
+                {selectedTaxInvoice?.invoiceNumber
+                  ? ` - ${selectedTaxInvoice.invoiceNumber}`
+                  : ""}
+              </ModalHeader>
+
+              <ModalBody className="overflow-auto bg-slate-100 p-0 sm:p-3">
+                {selectedTaxInvoice ? (
+                  <div className="min-w-fit">
+                    <AdvanceTaxInvoiceView
+                      invoiceData={selectedTaxInvoice}
+                      heading="TAX INVOICE"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[300px] items-center justify-center">
+                    <Spinner label="Loading tax invoice..." />
+                  </div>
+                )}
+              </ModalBody>
+
+              <ModalFooter className="border-t border-slate-200 bg-white">
+                <Button
+                  size="sm"
+                  variant="flat"
+                  onPress={() => {
+                    closeTaxInvoiceModal();
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+              </ModalFooter>
+            </>
           )}
         </ModalContent>
       </Modal>

@@ -11,6 +11,7 @@ import {
   ModalFooter,
   ModalHeader,
   Pagination,
+  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -18,6 +19,7 @@ import {
   TableHeader,
   TableRow,
   Input,
+  Textarea,
   addToast,
   useDisclosure,
 } from "@heroui/react";
@@ -27,12 +29,18 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
+  allocateCompaniesToSubDepartment,
   createSubDepartment,
+  getAllSolutionList,
+  getApprovedCompaniesList,
+  getSubDepartmentCompanies,
+  getSolutionsBySubDepartmentId,
   getSubDepartmentList,
   updateSubDepartment,
+  updateSubDepartmentSolutions,
 } from "../../toolkit/slices/settingSlice";
 import { getUsersListByDepartmentId } from "../../toolkit/slices/commonSlice";
 import NewSelect from "../../components/NewSelect";
@@ -41,10 +49,25 @@ const columns = [
   { name: "ID", uid: "id" },
   { name: "SUB DEPARTMENT", uid: "fullName" },
   { name: "DESCRIPTION", uid: "description" },
+  { name: "SOLUTIONS", uid: "solutions" },
+  { name: "COMPANIES", uid: "companies" },
   { name: "HEAD", uid: "head" },
   { name: "STATUS", uid: "active" },
   { name: "CREATED BY", uid: "createdBy" },
   { name: "ACTIONS", uid: "actions" },
+];
+
+// Columns for the "Solutions" modal — mirrors the fields the
+// GET /organization/sub-departments/{id}/solutions mapping rows actually
+// return (solutionId/solutionName/solutionType/solutionSlug/active), rather
+// than the sub-department's own id/name.
+const solutionColumns = [
+  { name: "ID", uid: "solutionId" },
+  { name: "SOLUTION NAME", uid: "solutionName" },
+  { name: "TYPE", uid: "solutionType" },
+  { name: "SLUG", uid: "solutionSlug" },
+  { name: "STATUS", uid: "active" },
+  { name: "MAPPED ON", uid: "createdAt" },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -65,11 +88,33 @@ const defaultValues = {
   headUserId: "",
 };
 
+const mapSolutionsFormSchema = z.object({
+  solutionIds: z.array(z.string()),
+});
+
+const mapSolutionsDefaultValues = {
+  solutionIds: [],
+};
+
+const mapCompaniesFormSchema = z.object({
+  companyIds: z.array(z.string()).min(1, "please select at least one company"),
+  reason: z.string().optional(),
+});
+
+const mapCompaniesDefaultValues = {
+  companyIds: [],
+  reason: "",
+};
+
 const SubDepartment = () => {
   const dispatch = useDispatch();
   const { departmentId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const mapCompaniesModal = useDisclosure();
+  const solutionsModal = useDisclosure();
+  const mapSolutionsModal = useDisclosure();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
   const createdByUserId = currentUser?.id || currentUser?.userId;
@@ -77,8 +122,20 @@ const SubDepartment = () => {
   const subDepartmentList = useSelector(
     (state) => state.setting.subDepartmentList,
   );
-  const data = subDepartmentList?.content || [];
-  const count = subDepartmentList?.totalElements || 0;
+
+  // Normalized here, once, so every row is guaranteed an `id` and `fullName`
+  // regardless of whether the backend sends those or subDepartmentId/
+  // subDepartmentName — everything below just uses `.id`/`.fullName`.
+  const data = useMemo(
+    () =>
+      (subDepartmentList || []).map((item) => ({
+        ...item,
+        id: item?.id ?? item?.subDepartmentId,
+        fullName: item?.fullName ?? item?.subDepartmentName,
+      })),
+    [subDepartmentList],
+  );
+
   const departmentName =
     location?.state?.departmentName || data?.[0]?.departmentName;
 
@@ -86,9 +143,32 @@ const SubDepartment = () => {
     (state) => state.common.userListByDepartment,
   );
 
+  // Solutions mapped to whichever sub-department row's "Solutions" button was
+  // last pressed (GET /organization/sub-departments/{id}/solutions) — fetched
+  // on demand per row instead of once per row on page load.
+  const subDepartmentSolutionsList = useSelector(
+    (state) => state.setting.subDepartmentSolutionsList,
+  );
+  const isSolutionsLoading =
+    useSelector((state) => state.setting.subDepartmentSolutionsLoading) ===
+    "pending";
+
+  // Company-wide solution list, used as the pick-list for "Map Solutions" —
+  // a sub-department can be mapped to any solution, not just ones it
+  // already has.
+  const allSolutionList = useSelector((state) => state.setting.allSolutionList);
+
+  const approvedCompaniesList = useSelector(
+    (state) => state.setting.approvedCompaniesList,
+  );
+  const isCompaniesLoading =
+    useSelector((state) => state.setting.approvedCompaniesLoading) ===
+    "pending";
+
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [rowItem, setRowItem] = useState(null);
+  const [viewingSubDepartment, setViewingSubDepartment] = useState(null);
   const [filteration, setFilteration] = useState({
     page: 1,
     size: 50,
@@ -99,23 +179,61 @@ const SubDepartment = () => {
     defaultValues,
   });
 
+  const mapSolutionsForm = useForm({
+    resolver: zodResolver(mapSolutionsFormSchema),
+    defaultValues: mapSolutionsDefaultValues,
+  });
+
+  const mapCompaniesForm = useForm({
+    resolver: zodResolver(mapCompaniesFormSchema),
+    defaultValues: mapCompaniesDefaultValues,
+  });
+
   useEffect(() => {
     dispatch(getUsersListByDepartmentId(departmentId));
   }, [dispatch, departmentId]);
 
   useEffect(() => {
-    dispatch(
-      getSubDepartmentList({
-        departmentId,
-        search: filterValue,
-        active: statusFilter,
-        page: filteration?.page,
-        size: filteration?.size,
-      }),
-    );
-  }, [dispatch, departmentId, filterValue, statusFilter, filteration]);
+    dispatch(getSubDepartmentList({ departmentId }));
+  }, [dispatch, departmentId]);
 
+  const hasSearchFilter = Boolean(filterValue);
+
+  // The backend endpoint has no search/active/page/size query params, so
+  // filtering and pagination happen client-side over the full array it
+  // returns.
+  const filteredItems = useMemo(() => {
+    let filtered = [...data];
+
+    if (hasSearchFilter) {
+      const needle = filterValue.toLowerCase();
+
+      filtered = filtered.filter((item) =>
+        Object.values(item || {}).some((val) => {
+          if (val === null || typeof val === "object") return false;
+          return String(val).toLowerCase().includes(needle);
+        }),
+      );
+    }
+
+    if (statusFilter !== "") {
+      const wantActive = statusFilter === "true";
+      filtered = filtered.filter(
+        (item) => Boolean(item?.active) === wantActive,
+      );
+    }
+
+    return filtered;
+  }, [data, filterValue, hasSearchFilter, statusFilter]);
+
+  const count = filteredItems.length;
   const pages = Math.ceil(count / filteration?.size) || 1;
+
+  const pagedItems = useMemo(() => {
+    const start = (filteration?.page - 1) * filteration?.size;
+    const end = start + filteration?.size;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, filteration]);
 
   const handleOpenCreateModal = () => {
     setRowItem(null);
@@ -131,6 +249,117 @@ const SubDepartment = () => {
       headUserId: rowData?.head?.id ? String(rowData.head.id) : "",
     });
     onOpen();
+  };
+
+  const handleOpenSolutionsModal = (rowData) => {
+    setViewingSubDepartment(rowData);
+    dispatch(getSolutionsBySubDepartmentId(rowData?.id));
+    solutionsModal.onOpen();
+  };
+
+  const handleOpenMapSolutionsModal = (rowData) => {
+    setViewingSubDepartment(rowData);
+    mapSolutionsForm.reset(mapSolutionsDefaultValues);
+    dispatch(getAllSolutionList(createdByUserId));
+    dispatch(getSolutionsBySubDepartmentId(rowData?.id)).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        mapSolutionsForm.reset({
+          solutionIds: (resp.payload || []).map((mapping) =>
+            String(mapping.solutionId),
+          ),
+        });
+      }
+    });
+    mapSolutionsModal.onOpen();
+  };
+
+  const handleViewCompanies = (rowData) => {
+    navigate(`${rowData?.id}/companies`, {
+      state: { subDepartmentName: rowData?.fullName },
+    });
+  };
+
+  // Pre-selects the companies already allocated to this sub-department so the
+  // admin edits the current set instead of starting from empty.
+  const handleOpenMapCompaniesModal = (rowData) => {
+    setViewingSubDepartment(rowData);
+    mapCompaniesForm.reset(mapCompaniesDefaultValues);
+    dispatch(getApprovedCompaniesList());
+    dispatch(
+      getSubDepartmentCompanies({
+        subDepartmentId: rowData?.id,
+        requestingUserId: createdByUserId,
+      }),
+    ).then((resp) => {
+      if (resp.meta.requestStatus === "fulfilled") {
+        mapCompaniesForm.reset({
+          ...mapCompaniesDefaultValues,
+          companyIds: (resp.payload || [])
+            .filter((assignment) => assignment?.active !== false)
+            .map((assignment) => String(assignment.companyId)),
+        });
+      }
+    });
+    mapCompaniesModal.onOpen();
+  };
+
+  const handleMapCompanies = (values) => {
+    dispatch(
+      allocateCompaniesToSubDepartment({
+        subDepartmentId: viewingSubDepartment?.id,
+        data: {
+          companyIds: (values?.companyIds || []).map(Number),
+          adminUserId: Number(createdByUserId),
+          reason: values?.reason || "",
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Companies mapped successfully !.",
+            color: "success",
+          });
+          mapCompaniesModal.onOpenChange(false);
+          mapCompaniesForm.reset(mapCompaniesDefaultValues);
+        } else {
+          addToast({
+            title: "Something went wrong !.",
+            description: resp?.payload?.message,
+            color: "danger",
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  };
+
+  const handleMapSolutions = (values) => {
+    dispatch(
+      updateSubDepartmentSolutions({
+        subDepartmentId: viewingSubDepartment?.id,
+        data: {
+          solutionIds: (values?.solutionIds || []).map(Number),
+          updatedByUserId: Number(createdByUserId),
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Solutions mapped successfully !.",
+            color: "success",
+          });
+          mapSolutionsModal.onOpenChange(false);
+          dispatch(getSolutionsBySubDepartmentId(viewingSubDepartment?.id));
+        } else {
+          addToast({ title: "Something went wrong !.", color: "danger" });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
   };
 
   const renderCell = useCallback((rowData, columnKey) => {
@@ -151,6 +380,28 @@ const SubDepartment = () => {
           <span className="text-default-500">
             {rowData?.description || "-"}
           </span>
+        );
+
+      case "solutions":
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => handleOpenSolutionsModal(rowData)}
+          >
+            View Solutions
+          </Button>
+        );
+
+      case "companies":
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={() => handleViewCompanies(rowData)}
+          >
+            View Companies
+          </Button>
         );
 
       case "head":
@@ -197,9 +448,17 @@ const SubDepartment = () => {
                   if (key === "edit") {
                     handleOpenUpdateModal(rowData);
                   }
+                  if (key === "mapSolutions") {
+                    handleOpenMapSolutionsModal(rowData);
+                  }
+                  if (key === "mapCompanies") {
+                    handleOpenMapCompaniesModal(rowData);
+                  }
                 }}
               >
-                <DropdownItem key="edit">Edit</DropdownItem>
+                {/* <DropdownItem key="edit">Edit</DropdownItem> */}
+                <DropdownItem key="mapSolutions">Map Solutions</DropdownItem>
+                <DropdownItem key="mapCompanies">Map Companies</DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -207,6 +466,47 @@ const SubDepartment = () => {
 
       default:
         return rowData?.[columnKey] || "-";
+    }
+  }, []);
+
+  // Options for the "Map Solutions" multi-select — normalizes
+  // getAllSolutionList's id/name/type into the displayLabel NewSelect wants.
+  const solutionOptions = useMemo(() => {
+    return (allSolutionList || []).map((solution) => ({
+      ...solution,
+      displayLabel: solution?.type
+        ? `${solution?.name} (${solution?.type})`
+        : solution?.name,
+    }));
+  }, [allSolutionList]);
+
+  const renderSolutionCell = useCallback((mapping, columnKey) => {
+    switch (columnKey) {
+      case "active":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={mapping?.active ? "success" : "default"}
+          >
+            {mapping?.active ? "Active" : "Inactive"}
+          </Chip>
+        );
+
+      case "createdAt":
+        return (
+          <span>
+            {mapping?.createdAt
+              ? dayjs(mapping.createdAt).format("DD-MM-YYYY, hh:mm a")
+              : "-"}
+          </span>
+        );
+
+      case "solutionSlug":
+        return <span>{mapping?.solutionSlug || "-"}</span>;
+
+      default:
+        return <span>{mapping?.[columnKey] ?? "-"}</span>;
     }
   }, []);
 
@@ -260,15 +560,7 @@ const SubDepartment = () => {
               color: "success",
             });
             onOpenChange(false);
-            dispatch(
-              getSubDepartmentList({
-                departmentId,
-                search: filterValue,
-                active: statusFilter,
-                page: filteration?.page,
-                size: filteration?.size,
-              }),
-            );
+            dispatch(getSubDepartmentList({ departmentId }));
             setRowItem(null);
             reset(defaultValues);
           } else {
@@ -297,15 +589,7 @@ const SubDepartment = () => {
               color: "success",
             });
             onOpenChange(false);
-            dispatch(
-              getSubDepartmentList({
-                departmentId,
-                search: filterValue,
-                active: statusFilter,
-                page: filteration?.page,
-                size: filteration?.size,
-              }),
-            );
+            dispatch(getSubDepartmentList({ departmentId }));
             reset(defaultValues);
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
@@ -449,20 +733,9 @@ const SubDepartment = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-[12.5px] text-default-400">
-        <Link className="hover:underline" to="../../department">
-          Departments
-        </Link>
-        <span>/</span>
-        <span className="text-default-600">
-          {departmentName || "Sub departments"}
-        </span>
-      </div>
-
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Sub departments
       </h1>
-
       <Table
         isHeaderSticky
         removeWrapper={false}
@@ -492,7 +765,7 @@ const SubDepartment = () => {
           )}
         </TableHeader>
 
-        <TableBody emptyContent={"No data found"} items={data}>
+        <TableBody emptyContent={"No data found"} items={pagedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -571,6 +844,221 @@ const SubDepartment = () => {
                           isClearable
                           value={field.value}
                           onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="3xl"
+        isOpen={solutionsModal.isOpen}
+        onOpenChange={(open) => {
+          solutionsModal.onOpenChange(open);
+          if (!open) {
+            setViewingSubDepartment(null);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>
+                Solutions — {viewingSubDepartment?.fullName || "-"}
+              </ModalHeader>
+
+              <ModalBody className="pb-6">
+                {isSolutionsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Spinner size="sm" label="Loading solutions..." />
+                  </div>
+                ) : (
+                  // NOTE: plain <table>, not HeroUI's <Table> — nesting
+                  // HeroUI's react-aria-backed Table inside a Modal throws
+                  // "No key found for item" from @react-stately's collection
+                  // builder in this HeroUI v2.8.2 setup (no other screen in
+                  // this codebase nests <Table> inside a Modal either).
+                  <div className="max-h-[50vh] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10">
+                    <table className="w-full text-[12.5px]">
+                      <thead className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
+                        <tr>
+                          {solutionColumns.map((column) => (
+                            <th
+                              key={column.uid}
+                              className="h-8 px-3 text-left text-[11.5px] tracking-wide text-default-500 border-b border-gray-200 dark:border-white/10"
+                            >
+                              {column.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {subDepartmentSolutionsList?.length ? (
+                          subDepartmentSolutionsList.map((mapping) => (
+                            <tr
+                              key={mapping.mappingId}
+                              className="border-b border-gray-100 dark:border-white/5 last:border-b-0"
+                            >
+                              {solutionColumns.map((column) => (
+                                <td key={column.uid} className="px-3 py-1.5">
+                                  {renderSolutionCell(mapping, column.uid)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={solutionColumns.length}
+                              className="px-3 py-6 text-center text-default-400"
+                            >
+                              No solutions mapped to this sub department.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={mapSolutionsModal.isOpen}
+        onOpenChange={(open) => {
+          mapSolutionsModal.onOpenChange(open);
+          if (!open) {
+            mapSolutionsForm.reset(mapSolutionsDefaultValues);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                Map Solutions — {viewingSubDepartment?.fullName || "-"}
+              </ModalHeader>
+
+              <ModalBody>
+                <form
+                  onSubmit={mapSolutionsForm.handleSubmit(handleMapSolutions)}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
+                    <Controller
+                      name="solutionIds"
+                      control={mapSolutionsForm.control}
+                      render={({ field }) => (
+                        <NewSelect
+                          selectionMode="multiple"
+                          label="Solutions"
+                          placeholder="Select solutions to map"
+                          data={solutionOptions}
+                          labelKey="displayLabel"
+                          valueKey="id"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <ModalFooter className="flex justify-end">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Submit
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        size="xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={mapCompaniesModal.isOpen}
+        onOpenChange={(open) => {
+          mapCompaniesModal.onOpenChange(open);
+          if (!open) {
+            mapCompaniesForm.reset(mapCompaniesDefaultValues);
+          }
+        }}
+        placement="top-center"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                Map Companies — {viewingSubDepartment?.fullName || "-"}
+              </ModalHeader>
+
+              <ModalBody>
+                <form
+                  onSubmit={mapCompaniesForm.handleSubmit(handleMapCompanies)}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
+                    <Controller
+                      name="companyIds"
+                      control={mapCompaniesForm.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <NewSelect
+                          isRequired
+                          selectionMode="multiple"
+                          label="Companies"
+                          placeholder={
+                            isCompaniesLoading
+                              ? "Loading companies..."
+                              : "Select companies to map"
+                          }
+                          data={approvedCompaniesList || []}
+                          labelKey="name"
+                          valueKey="id"
+                          isInvalid={!!error}
+                          errorMessage={error?.message}
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                        />
+                      )}
+                    />
+
+                    <Controller
+                      name="reason"
+                      control={mapCompaniesForm.control}
+                      render={({ field }) => (
+                        <Textarea
+                          label="Reason"
+                          minRows={2}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       )}
                     />
