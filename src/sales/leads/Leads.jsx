@@ -1171,7 +1171,10 @@ const Leads = () => {
                 >
                   All task
                 </DropdownItem>
-                {(department?.department === "Quality Team" || adminRole) && (
+                {(department?.department === "Quality Team" ||
+                  adminRole ||
+                  department?.department === "KAM" ||
+                  department?.department === "MAM") && (
                   <DropdownItem key="add" endContent={<Plus />}>
                     Add lead
                   </DropdownItem>

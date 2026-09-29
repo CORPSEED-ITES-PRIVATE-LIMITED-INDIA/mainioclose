@@ -250,6 +250,13 @@ const ProjectSummaryHeader = ({
               </Button>
             </DropdownTrigger>
             <DropdownMenu aria-label="Project actions">
+              <DropdownItem
+                key="documents"
+                startContent={<FileText className="h-3.5 w-3.5" />}
+                onPress={onOpenDocuments}
+              >
+                Documents
+              </DropdownItem>
               {isProcurementMilestone &&
                 (department === "Procurement" || adminRole) && (
                   <DropdownItem
@@ -290,16 +297,6 @@ const ProjectSummaryHeader = ({
               >
                 Milestone Acknowledgements
               </DropdownItem>
-
-              {(department === "Documentation" || adminRole) && (
-                <DropdownItem
-                  key="documents"
-                  startContent={<FileText className="h-3.5 w-3.5" />}
-                  onPress={onOpenDocuments}
-                >
-                  Documents
-                </DropdownItem>
-              )}
 
               {
                 <DropdownItem
