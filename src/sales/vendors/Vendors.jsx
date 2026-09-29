@@ -35,6 +35,8 @@ import {
   getSingleCategoryDataById,
   getVendorDetailList,
 } from "../../toolkit/slices/vendorsSlice";
+// ADDED: adjust this path to the slice where getAllProposalByLeadId is defined
+import { getAllProposalByLeadId } from "../../toolkit/slices/leadSlice";
 import {
   ChevronDown,
   EllipsisVertical,
@@ -98,6 +100,28 @@ const defaultValues = {
   description: "",
 };
 
+// ADDED: total = sum of (unitPriceExGst * quantity) + GST (gstRate %) for every line item
+const calculateProposalBudget = (lineItems = []) => {
+  const total = lineItems.reduce((sum, item) => {
+    const base =
+      Number(item?.unitPriceExGst || 0) * Number(item?.quantity || 1);
+    return sum + base;
+  }, 0);
+  return String(Math.round(total * 100) / 100);
+};
+
+// ADDED: build the form prefill values from the latest proposal
+const getPrefillFromProposal = (proposal) => {
+  if (!proposal) return {};
+  return {
+    clientName: proposal?.contact?.name || "",
+    clientMailId: proposal?.contact?.emails || "",
+    companyName: proposal?.companyName || "",
+    clientMobileNumber: proposal?.contact?.contactNo || "",
+    clientBudgetPrice: calculateProposalBudget(proposal?.lineItems || []),
+  };
+};
+
 const Vendors = () => {
   const dispatch = useDispatch();
   const { userId, leadId } = useParams();
@@ -110,6 +134,11 @@ const Vendors = () => {
   );
   const count = useSelector((state) => state.vendors.vendorsList?.length);
   const data = useSelector((state) => state.vendors.vendorsList);
+  // ADDED: proposals of this lead (adjust "proposal" to the slice name in your store)
+  const proposalListByLeadId = useSelector(
+    (state) => state.leads?.proposalListByLeadId,
+  );
+  console.log("Proposal List:", proposalListByLeadId);
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = useState(
@@ -128,7 +157,23 @@ const Vendors = () => {
   useEffect(() => {
     dispatch(allVendorsCategory());
     dispatch(getVendorDetailList({ userId, leadId }));
+    // ADDED: fetch proposals of this lead
+    dispatch(getAllProposalByLeadId(leadId));
   }, [dispatch]);
+
+  // ADDED: latest proposal (isLatest first, else the newest by createDate)
+  const latestProposal = useMemo(() => {
+    const list = Array.isArray(proposalListByLeadId)
+      ? proposalListByLeadId
+      : [];
+    if (list.length === 0) return null;
+    return (
+      list.find((p) => p?.isLatest) ||
+      [...list].sort(
+        (a, b) => new Date(b?.createDate) - new Date(a?.createDate),
+      )[0]
+    );
+  }, [proposalListByLeadId]);
 
   const {
     control,
@@ -139,6 +184,12 @@ const Vendors = () => {
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues,
   });
+
+  // ADDED: open the modal with the form prefilled from the latest proposal
+  const handleOpenAddModal = useCallback(() => {
+    reset({ ...defaultValues, ...getPrefillFromProposal(latestProposal) });
+    onOpen();
+  }, [latestProposal, reset, onOpen]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -401,7 +452,7 @@ const Vendors = () => {
             <Button
               size="sm"
               color="primary"
-              onPress={onOpen}
+              onPress={handleOpenAddModal}
               endContent={<Plus className="w-4 h-4" />}
             >
               Add Research request
@@ -430,7 +481,14 @@ const Vendors = () => {
         </div>
       </div>
     );
-  }, [filterValue, visibleColumns, onRowsPerPageChange, count, onSearchChange]);
+  }, [
+    filterValue,
+    visibleColumns,
+    onRowsPerPageChange,
+    count,
+    onSearchChange,
+    handleOpenAddModal,
+  ]);
 
   const bottomContent = useMemo(() => {
     return (
