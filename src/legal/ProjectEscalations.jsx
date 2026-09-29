@@ -47,6 +47,7 @@ import {
   CalendarClock,
   Receipt,
   FileText,
+  Search,
 } from "lucide-react";
 import dayjs from "dayjs";
 import {
@@ -229,6 +230,10 @@ function ProjectEscalations() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [pagination, setPagination] = useState({ page: 1, size: 10 });
 
+  // Frontend-only search: filters whatever rows are currently loaded on
+  // this page (backend has no search/keyword param yet).
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [resolveData, setResolveData] = useState(RESOLVE_FORM_DEFAULTS);
   const [resolveErrors, setResolveErrors] = useState(RESOLVE_ERROR_DEFAULTS);
@@ -238,10 +243,29 @@ function ProjectEscalations() {
   const [viewedRequest, setViewedRequest] = useState(null);
 
   const list = useMemo(() => {
-    return Array.isArray(legalRequestsResponse?.content)
+    const rows = Array.isArray(legalRequestsResponse?.content)
       ? legalRequestsResponse.content
       : [];
-  }, [legalRequestsResponse]);
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return rows;
+
+    return rows.filter((row) => {
+      const haystack = [
+        row?.projectNo,
+        row?.name,
+        row?.companyName,
+        row?.contactName,
+        row?.legalRequestTitle,
+        row?.legalRequestAssignedToLegalName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [legalRequestsResponse, searchQuery]);
 
   const totalPages = legalRequestsResponse?.totalPages || 1;
   const totalElements = legalRequestsResponse?.totalElements || 0;
@@ -567,47 +591,60 @@ function ProjectEscalations() {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex justify-between items-center flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Scale className="w-5 h-5 text-default-500" />
-          <h1 className="font-sans text-lg font-semibold">
-            Project Legal Escalations
-          </h1>
-        </div>
+      <div className="flex flex-col gap-2.5">
+        <Input
+          size="sm"
+          placeholder="Search acc. to project, company, title, assignee"
+          startContent={<Search className="w-3.5 h-3.5 text-default-400" />}
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          className="max-w-xs"
+        />
 
-        <Dropdown>
-          <DropdownTrigger>
-            <Button
-              size="sm"
-              variant="flat"
-              endContent={<ChevronDown className="w-3.5 h-3.5" />}
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Scale className="w-5 h-5 text-default-500" />
+            <h1 className="font-sans text-lg font-semibold">
+              Project Legal Escalations
+            </h1>
+          </div>
+
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                size="sm"
+                variant="flat"
+                endContent={<ChevronDown className="w-3.5 h-3.5" />}
+              >
+                {statusFilter === "ALL"
+                  ? "All Statuses"
+                  : formatLegalStatus(statusFilter)}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Status filter"
+              selectionMode="single"
+              selectedKeys={[statusFilter]}
+              onSelectionChange={(keys) => {
+                const key = Array.from(keys)[0];
+                setStatusFilter(key);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
             >
-              {statusFilter === "ALL"
-                ? "All Statuses"
-                : formatLegalStatus(statusFilter)}
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            disallowEmptySelection
-            aria-label="Status filter"
-            selectionMode="single"
-            selectedKeys={[statusFilter]}
-            onSelectionChange={(keys) => {
-              const key = Array.from(keys)[0];
-              setStatusFilter(key);
-              setPagination((prev) => ({ ...prev, page: 1 }));
-            }}
-          >
-            {STATUS_FILTER_OPTIONS.map((status) => (
-              <DropdownItem key={status}>
-                {status === "ALL" ? "All Statuses" : formatLegalStatus(status)}
-              </DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
+              {STATUS_FILTER_OPTIONS.map((status) => (
+                <DropdownItem key={status}>
+                  {status === "ALL"
+                    ? "All Statuses"
+                    : formatLegalStatus(status)}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
+        </div>
       </div>
     );
-  }, [statusFilter]);
+  }, [statusFilter, searchQuery]);
 
   const bottomContent = useMemo(() => {
     return (

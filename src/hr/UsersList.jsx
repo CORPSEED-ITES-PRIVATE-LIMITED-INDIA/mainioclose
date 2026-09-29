@@ -293,10 +293,7 @@ const UsersList = () => {
     defaultValues,
   });
 
-  useEffect(() => {
-    console.log("Current form values:", watch());
-    console.log("Form errors:", errors);
-  }, [watch, errors]);
+  // FIX: removed the console.log effect that ran watch() on every render.
 
   useEffect(() => {
     reset(getValues());
@@ -345,7 +342,8 @@ const UsersList = () => {
         permanentAddress: data?.permanentAddress,
         residentialAddress: data?.residentialAddress,
         backupTeam: data?.backupTeam,
-        master: String(data?.master),
+        // FIX: schema expects a boolean, not the string "true"/"false"
+        master: Boolean(data?.master),
         maritalStatus: data?.maritalStatus,
         personalEmail: data?.personalEmail,
         companyMobile: data?.companyMobile,
@@ -371,6 +369,15 @@ const UsersList = () => {
       managerFlag,
       managerId,
     };
+
+    // FIX: names from the form's own selections, used as a fallback when the
+    // HR response doesn't include userDesignation / userDepartment.
+    const designationName = allDesiginationListById.find(
+      (d) => String(d.id) === String(values.designationId),
+    )?.name;
+    const departmentName = departmentList.find(
+      (d) => String(d.id) === String(values.departmentId),
+    )?.name;
 
     try {
       if (rowItem) {
@@ -401,9 +408,10 @@ const UsersList = () => {
             id: rowItem.id,
             fullName: values.userName,
             email: values.email,
-            designation: updatedUser?.userDesignation?.name,
-            department: updatedUser?.userDepartment?.name,
-            role: updatedUser?.role,
+            // FIX: fallback so designation/department are never undefined
+            designation: updatedUser?.userDesignation?.name ?? designationName,
+            department: updatedUser?.userDepartment?.name ?? departmentName,
+            role: updatedUser?.role ?? values.role,
             isManager: values.managerFlag,
             bucketSize: Number(values.lockerSize),
             lockerSize: Number(values.lockerSize),
@@ -486,8 +494,9 @@ const UsersList = () => {
             id: createdUser.id,
             username: createdUser.fullName,
             email: createdUser.email,
-            designation: createdUser?.userDesignation?.name,
-            department: createdUser?.userDepartment?.name,
+            // FIX: this was the cause of the "User.designation not-null" error
+            designation: createdUser?.userDesignation?.name ?? designationName,
+            department: createdUser?.userDepartment?.name ?? departmentName,
             role: createdUser.role,
             isManager: values.managerFlag,
             bucketSize: Number(values.lockerSize),
@@ -504,7 +513,11 @@ const UsersList = () => {
             contactNo: createdUser.contactNo,
             designationId: values.designationId,
             departmentIds: [values.departmentId],
-            roleIds: authUser?.role?.map((role) => role.id) || [],
+            // FIX: use the accounts response (resolved Role entities), same as update flow
+            roleIds:
+              accountsResponse?.payload?.userRole?.map((role) => role.id) ||
+              authUser?.role?.map((role) => role.id) ||
+              [],
             managerId: createdUser?.managers?.id || values.managerId,
             managerFlag: values.managerFlag,
             bucketSize: Number(values.lockerSize),
@@ -1117,7 +1130,10 @@ const UsersList = () => {
                           >
                             {departmentList?.length > 0 ? (
                               departmentList.map((ele) => (
-                                <SelectItem key={ele.id} value={ele.id}>
+                                <SelectItem
+                                  key={String(ele.id)}
+                                  value={String(ele.id)}
+                                >
                                   {ele.name}
                                 </SelectItem>
                               ))
@@ -1151,7 +1167,10 @@ const UsersList = () => {
                           >
                             {allDesiginationListById?.length > 0 ? (
                               allDesiginationListById.map((ele) => (
-                                <SelectItem key={ele.id} value={ele.id}>
+                                <SelectItem
+                                  key={String(ele.id)}
+                                  value={String(ele.id)}
+                                >
                                   {ele.name}
                                 </SelectItem>
                               ))

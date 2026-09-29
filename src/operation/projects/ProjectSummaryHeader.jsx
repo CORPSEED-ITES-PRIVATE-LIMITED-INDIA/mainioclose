@@ -301,13 +301,15 @@ const ProjectSummaryHeader = ({
                 </DropdownItem>
               )}
 
-              <DropdownItem
-                key="clientLoginCredentials"
-                startContent={<UserCog className="h-3.5 w-3.5" />}
-                onPress={onOpenClientCredentials}
-              >
-                Client login credentials
-              </DropdownItem>
+              {
+                <DropdownItem
+                  key="clientLoginCredentials"
+                  startContent={<UserCog className="h-3.5 w-3.5" />}
+                  onPress={onOpenClientCredentials}
+                >
+                  Client login credentials
+                </DropdownItem>
+              }
 
               <DropdownItem
                 key="comment"
