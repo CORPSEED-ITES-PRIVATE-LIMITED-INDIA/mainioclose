@@ -1030,17 +1030,19 @@ const LeadInfo = () => {
                           {leadData?.lead?.name}
                         </h6>
                         <div className="flex shrink-0 items-center gap-1.5">
-                          <Button
-                            size="sm"
-                            color="primary"
-                            variant="flat"
-                            className="h-7 px-2.5 text-xs"
-                            isDisabled={qualitySubmitLoading === "pending"}
-                            isLoading={qualitySubmitLoading === "pending"}
-                            onPress={handleAutoQualitySubmit}
-                          >
-                            Auto quality submit
-                          </Button>
+                          {(adminRole || department === "Quality Team") && (
+                            <Button
+                              size="sm"
+                              color="primary"
+                              variant="flat"
+                              className="h-7 px-2.5 text-xs"
+                              isDisabled={qualitySubmitLoading === "pending"}
+                              isLoading={qualitySubmitLoading === "pending"}
+                              onPress={handleAutoQualitySubmit}
+                            >
+                              Auto quality submit
+                            </Button>
+                          )}
                           <Button
                             onPress={() => {
                               if (
