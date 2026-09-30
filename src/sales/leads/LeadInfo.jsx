@@ -330,8 +330,8 @@ const LeadInfo = () => {
         } else {
           setQualitySubmitLoading("rejected");
           addToast({
-            title: "ERROR",
-            description: getApiErrorMessage(resp),
+            title: resp?.payload?.data?.errorCode,
+            description: resp?.payload?.data?.message,
             color: "danger",
           });
         }

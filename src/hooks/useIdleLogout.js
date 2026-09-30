@@ -133,7 +133,10 @@ export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) 
       if (document.hidden) {
         stopSuspendTicks();
         hiddenAt = Date.now();
-        if (!detectorActive) hiddenTimer = setTimeout(doLogout, graceMs);
+        // Disabled: logging out when the tab merely stays hidden also fired on
+        // switching windows/tabs. Logout now only follows a real screen lock
+        // (IdleDetector), a machine suspend (tick check) or a browser close.
+        // if (!detectorActive) hiddenTimer = setTimeout(doLogout, graceMs);
         return;
       }
 
@@ -141,10 +144,10 @@ export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) 
 
       // The timer above is frozen while the machine sleeps and fires late (or
       // not at all) on wake, so settle the elapsed time against the wall clock.
-      if (!detectorActive && hiddenAt && Date.now() - hiddenAt >= graceMs) {
-        doLogout();
-        return;
-      }
+      // if (!detectorActive && hiddenAt && Date.now() - hiddenAt >= graceMs) {
+      //   doLogout();
+      //   return;
+      // }
 
       hiddenAt = 0;
       startSuspendTicks();
