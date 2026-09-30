@@ -17,6 +17,7 @@ const Vendors = lazy(() => import("../sales/vendors/Vendors"));
 const Proposal = lazy(() => import("../sales/proposal/Proposal"));
 const LeadEstimate = lazy(() => import("../sales/leads/LeadEstimate"));
 const LeadSearch = lazy(() => import("../quality/LeadSearch"));
+const RejectedLeads = lazy(() => import("../quality/RejectedLeads"));
 const LeadHistory = lazy(() => import("../sales/leads/LeadHistory"));
 const LeadTask = lazy(() => import("../sales/leads/LeadTask"));
 
@@ -49,6 +50,11 @@ const QualityRouting = () => {
         <Route path="leadEstimate" element={<LeadEstimate />} />
         <Route path="leadHistory" element={<LeadHistory />} />
         {/* <Route path="leadTasks" element={<LeadTask />} /> */}
+      </Route>
+      <Route path="quality/rejectedLeads" element={<RejectedLeads />} />
+      <Route path="quality/rejectedLeads/:leadId" element={<LeadDetail />}>
+        <Route index path="leadDetail" element={<LeadInfo />} />
+        <Route path="leadHistory" element={<LeadHistory />} />
       </Route>
       <Route path="quality/ivr" element={<IVR />} />
       <Route path="quality/report" element={<IVRReport />} />

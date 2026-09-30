@@ -19,6 +19,16 @@ export const searchLeads = createAsyncThunk("searchLeads", async (data) => {
   return response.data;
 });
 
+export const getRejectedLeads = createAsyncThunk(
+  "getRejectedLeads",
+  async (data) => {
+    const response = await api.get(
+      `/leadService/api/v1/lead/getRejectedLeads?page=${data?.page}&size=${data?.size}`,
+    );
+    return response.data;
+  },
+);
+
 export const getAllLeadCount = createAsyncThunk(
   "getAllLeadCount",
   async (data) => {
@@ -1035,6 +1045,9 @@ export const LeadSlice = createSlice({
     getSingleLeadTask: [],
     autoStatusList: [],
     leadSearchList: [],
+    rejectedLeads: [],
+    rejectedLeadsCount: 0,
+    rejectedLeadsLoading: "",
     salesReportList: [],
     salesReportListForExport: [],
     salesReportCount: 0,
@@ -1372,6 +1385,26 @@ export const LeadSlice = createSlice({
     builder.addCase(searchIvrLeads.rejected, (state) => {
       state.loading = "rejected";
       state.leadSearchList = [];
+    });
+
+    builder.addCase(getRejectedLeads.pending, (state) => {
+      state.rejectedLeadsLoading = "pending";
+    });
+    builder.addCase(getRejectedLeads.fulfilled, (state, action) => {
+      // Accepts a bare array or a Spring-style page ({ content, totalElements })
+      const payload = action.payload?.data ?? action.payload;
+      const list = Array.isArray(payload)
+        ? payload
+        : payload?.content || payload?.leads || [];
+      state.rejectedLeadsLoading = "success";
+      state.rejectedLeads = list;
+      state.rejectedLeadsCount =
+        payload?.totalElements ?? payload?.totalCount ?? payload?.count ?? list.length;
+    });
+    builder.addCase(getRejectedLeads.rejected, (state) => {
+      state.rejectedLeadsLoading = "rejected";
+      state.rejectedLeads = [];
+      state.rejectedLeadsCount = 0;
     });
 
     builder.addCase(getSalesReportByFilterForExport.pending, (state) => {

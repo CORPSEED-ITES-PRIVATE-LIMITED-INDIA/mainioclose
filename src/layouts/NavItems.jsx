@@ -12,6 +12,11 @@ export const navItems = [
     key: "sales",
     children: [
       { title: "Leads", icon: "", url: "sales/leads", key: "leads" },
+      {
+        title: "Rejected leads",
+        url: "quality/rejectedLeads",
+        key: "rejectedLeads",
+      },
       { title: "Company", icon: "", url: "sales/company", key: "company" },
       // { title: "Lead form", icon: "", url: "sales/leadForm", key: "leadForm" },
       { title: "Estimate", icon: "", url: "sales/estimate", key: "estimate" },
@@ -329,6 +334,11 @@ export const navItems = [
     children: [
       { title: "IVR", icon: "", url: "quality/ivr", key: "ivr" },
       { title: "Report", icon: "", url: "quality/report", key: "report" },
+      {
+        title: "Rejected leads",
+        url: "quality/rejectedLeads",
+        key: "rejectedLeads",
+      },
       {
         title: "Lead search",
         url: "quality/leadsSearch",
@@ -786,6 +796,12 @@ export const salesNavItems = [
     url: "sales/leads",
     key: "leads",
   },
+  {
+    title: "Rejected leads",
+    icon: "FileX2",
+    url: "quality/rejectedLeads",
+    key: "rejectedLeads",
+  },
   { title: "Company", icon: "Building", url: "sales/company", key: "company" },
   // {
   //   title: "Lead form",
@@ -861,6 +877,12 @@ export const qualityNavItems = [
     icon: "PanelBottomClose",
     url: "quality/leads",
     key: "leads",
+  },
+  {
+    title: "Rejected leads",
+    icon: "FileX2",
+    url: "quality/rejectedLeads",
+    key: "rejectedLeads",
   },
   {
     title: "Lead search",
