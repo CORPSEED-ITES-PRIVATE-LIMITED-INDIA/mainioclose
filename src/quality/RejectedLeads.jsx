@@ -24,7 +24,8 @@ const columns = [
   { name: "STATUS", uid: "status" },
   { name: "ASSIGNEE", uid: "assignee" },
   { name: "SOURCE", uid: "source" },
-  { name: "UPDATED BY", uid: "updatedBy" },
+  { name: "REJECTED BY", uid: "rejectedBy" },
+  { name: "REASON", uid: "reason" },
 ];
 
 const RejectedLeads = () => {
@@ -35,8 +36,8 @@ const RejectedLeads = () => {
   const [paginationData, setPaginationData] = useState({ page: 1, size: 25 });
 
   useEffect(() => {
-    dispatch(getRejectedLeads(paginationData));
-  }, [dispatch, paginationData]);
+    dispatch(getRejectedLeads({ userId, ...paginationData }));
+  }, [dispatch, userId, paginationData]);
 
   const pages = Math.ceil(count / paginationData.size) || 1;
   const leadBasePath = `/erp/${userId}/quality/rejectedLeads`;
@@ -48,10 +49,10 @@ const RejectedLeads = () => {
           return (
             <div className="flex flex-col min-w-0">
               <Link
-                to={`${leadBasePath}/${lead?.id}/leadDetail`}
+                to={`${leadBasePath}/${lead?.leadId}/leadDetail`}
                 className="font-semibold text-[12.5px] truncate"
                 onClick={() =>
-                  dispatch(handleViewHistory({ leadId: lead?.id, userId }))
+                  dispatch(handleViewHistory({ leadId: lead?.leadId, userId }))
                 }
               >
                 {lead?.originalName || lead?.leadName || "-"}
@@ -67,7 +68,7 @@ const RejectedLeads = () => {
           return (
             <div className="flex flex-col min-w-0">
               <span className="font-normal text-[12.5px]">
-                {lead?.name || "-"}
+                {lead?.clientName || "-"}
               </span>
               {lead?.email && (
                 <span className="text-default-500 text-[11.5px] truncate">
@@ -96,27 +97,33 @@ const RejectedLeads = () => {
           return (
             <div className="flex flex-col min-w-0">
               <span className="font-semibold text-[12.5px] truncate">
-                {lead?.assignee?.fullName || "-"}
+                {lead?.currentAssignee?.fullName || "-"}
               </span>
               <span className="text-[11.5px] text-default-500 truncate">
-                {lead?.assignee?.email || "-"}
+                {lead?.currentAssignee?.email || "-"}
               </span>
             </div>
           );
         case "source":
           return <p className="text-[12.5px]">{lead?.source || "-"}</p>;
-        case "updatedBy":
+        case "rejectedBy":
           return (
             <div className="flex flex-col gap-0.5">
               <span className="font-normal text-[12.5px]">
-                {lead?.updatedBy?.fullName || "-"}
+                {lead?.rejectedBy?.name || "-"}
               </span>
               <span className="font-normal text-[11.5px] text-default-500">
-                {lead?.updatedDate
-                  ? dayjs(lead.updatedDate).format("DD-MM-YYYY")
+                {lead?.rejectedDate
+                  ? dayjs(lead.rejectedDate).format("DD-MM-YYYY")
                   : "-"}
               </span>
             </div>
+          );
+        case "reason":
+          return (
+            <p className="text-[12.5px] max-w-[260px] whitespace-normal">
+              {lead?.rejectionReason || "-"}
+            </p>
           );
         default:
           return lead?.[columnKey] || "-";
@@ -219,7 +226,7 @@ const RejectedLeads = () => {
         </TableHeader>
         <TableBody emptyContent="No rejected leads found" items={data}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item.rejectionHistoryId}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
