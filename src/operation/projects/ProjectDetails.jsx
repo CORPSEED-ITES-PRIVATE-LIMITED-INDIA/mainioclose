@@ -2652,73 +2652,73 @@ const ProjectDetails = () => {
                         Assignment ID: {selectedMilestone?.id || "-"}
                       </p> */}
                     </div>
-                    {!isCertificationMilestone && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex min-w-[210px] items-center justify-between gap-2.5 rounded-lg bg-content1 px-2.5 py-1.5 shadow-sm ring-1 ring-default-200">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Avatar
-                              size="sm"
-                              name={getInitials(
-                                selectedMilestone?.assignedUser?.fullName ||
-                                  "Unassigned",
-                              )}
-                              className="bg-primary-100 text-primary"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-[12.5px] font-semibold text-foreground">
-                                {selectedMilestone?.assignedUser?.fullName ||
-                                  "Select Assignee"}
-                              </p>
-                              <p className="truncate text-[11px] text-default-500">
-                                {selectedMilestone?.assignedUser?.email ||
-                                  "No assignee selected"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <Button
-                            isIconOnly
+                    {/* {!isCertificationMilestone && ( */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex min-w-[210px] items-center justify-between gap-2.5 rounded-lg bg-content1 px-2.5 py-1.5 shadow-sm ring-1 ring-default-200">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar
                             size="sm"
-                            variant="light"
-                            radius="full"
-                            onPress={() => {
-                              assigneeModal.onOpen();
-
-                              dispatch(
-                                getUsersListByDepartmentId(
-                                  selectedMilestone?.departmentId,
-                                ),
-                              );
-
-                              setAssigneeObj((prev) => ({
-                                ...prev,
-                                assignmentId: selectedMilestone?.id,
-                                changedById: userId,
-                              }));
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                            name={getInitials(
+                              selectedMilestone?.assignedUser?.fullName ||
+                                "Unassigned",
+                            )}
+                            className="bg-primary-100 text-primary"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-[12.5px] font-semibold text-foreground">
+                              {selectedMilestone?.assignedUser?.fullName ||
+                                "Select Assignee"}
+                            </p>
+                            <p className="truncate text-[11px] text-default-500">
+                              {selectedMilestone?.assignedUser?.email ||
+                                "No assignee selected"}
+                            </p>
+                          </div>
                         </div>
 
                         <Button
+                          isIconOnly
                           size="sm"
-                          color="primary"
-                          radius="md"
+                          variant="light"
+                          radius="full"
                           onPress={() => {
-                            legalSupportModal.onOpen();
+                            assigneeModal.onOpen();
+
                             dispatch(
-                              getRequiredDocumentsByProductId({
-                                userId,
-                                projectId,
-                              }),
+                              getUsersListByDepartmentId(
+                                selectedMilestone?.departmentId,
+                              ),
                             );
+
+                            setAssigneeObj((prev) => ({
+                              ...prev,
+                              assignmentId: selectedMilestone?.id,
+                              changedById: userId,
+                            }));
                           }}
                         >
-                          Legal Request
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                    )}
+
+                      <Button
+                        size="sm"
+                        color="primary"
+                        radius="md"
+                        onPress={() => {
+                          legalSupportModal.onOpen();
+                          dispatch(
+                            getRequiredDocumentsByProductId({
+                              userId,
+                              projectId,
+                            }),
+                          );
+                        }}
+                      >
+                        Legal Request
+                      </Button>
+                    </div>
+                    {/* )} */}
                   </div>
                 </div>
                 <div className="p-3.5">
