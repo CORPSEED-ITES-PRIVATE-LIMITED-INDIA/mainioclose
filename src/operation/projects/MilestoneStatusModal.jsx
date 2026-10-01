@@ -160,8 +160,7 @@ const MilestoneStatusModal = ({
                       Completion Details
                     </p>
                     <p className="text-xs text-default-500">
-                      Optional details about how this milestone was
-                      completed.
+                      Optional details about how this milestone was completed.
                     </p>
                   </div>
 
@@ -214,6 +213,8 @@ const MilestoneStatusModal = ({
                 - tenure / tenureUnit / expiryDate are shown ONLY for FIXED_TERM,
                   since the backend nulls them out entirely for LIFETIME
                 - certificationAttachmentUrl remains required in both cases
+                ADDED: Certificate Return (YES / NO). Only when YES do we show
+                Return Tenure + Tenure Expiration Date.
               */}
               {isCertificationCompleted && (
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-primary-200 bg-primary-50/40 p-4 md:grid-cols-2">
@@ -343,6 +344,92 @@ const MilestoneStatusModal = ({
                           setStatusObj((prev) => ({
                             ...prev,
                             certificateExpiryDate: date ? date.toString() : "",
+                          }))
+                        }
+                      />
+                    </>
+                  )}
+
+                  {/* ADDED: Certificate Return (Yes / No) */}
+                  <Select
+                    className="max-w-xs"
+                    isRequired
+                    items={[
+                      { label: "Yes", value: "YES" },
+                      { label: "No", value: "NO" },
+                    ]}
+                    label="Certificate Return"
+                    placeholder="Select Yes or No"
+                    selectedKeys={
+                      statusObj.certificateReturn
+                        ? [statusObj.certificateReturn]
+                        : []
+                    }
+                    onSelectionChange={(keys) => {
+                      const temp = Array.from(keys)[0] || "";
+                      setStatusObj((prev) => ({
+                        ...prev,
+                        certificateReturn: temp,
+                        // Return tenure fields only apply when Return = YES
+                        returnTenure: temp === "YES" ? prev.returnTenure : "",
+                        returnTenureExpirationDate:
+                          temp === "YES" ? prev.returnTenureExpirationDate : "",
+                      }));
+                    }}
+                  >
+                    {(item) => (
+                      <SelectItem key={item?.value}>{item.label}</SelectItem>
+                    )}
+                  </Select>
+
+                  {/* ADDED: shown only when Certificate Return = YES */}
+                  {statusObj.certificateReturn === "YES" && (
+                    <>
+                      <Select
+                        className="max-w-xs"
+                        isRequired
+                        items={[
+                          { label: "Weekly", value: "WEEKLY" },
+                          { label: "Monthly", value: "MONTHLY" },
+                          { label: "Quarterly", value: "QUARTERLY" },
+                          { label: "Yearly", value: "YEARLY" },
+                        ]}
+                        label="Return Tenure"
+                        placeholder="Select return tenure"
+                        selectedKeys={
+                          statusObj.returnTenure ? [statusObj.returnTenure] : []
+                        }
+                        onSelectionChange={(keys) => {
+                          const temp = Array.from(keys)[0] || "";
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            returnTenure: temp,
+                          }));
+                        }}
+                      >
+                        {(item) => (
+                          <SelectItem key={item?.value}>
+                            {item.label}
+                          </SelectItem>
+                        )}
+                      </Select>
+
+                      <DatePicker
+                        label="Tenure Expiration Date"
+                        isRequired
+                        showMonthAndYearPickers
+                        minValue={today(getLocalTimeZone())}
+                        value={
+                          statusObj.returnTenureExpirationDate
+                            ? parseDate(statusObj.returnTenureExpirationDate)
+                            : null
+                        }
+                        onChange={(date) =>
+                          setStatusObj((prev) => ({
+                            ...prev,
+                            returnTenureExpirationDate: date
+                              ? date.toString()
+                              : "",
                           }))
                         }
                       />

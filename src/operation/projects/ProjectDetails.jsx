@@ -283,6 +283,11 @@ const ProjectDetails = () => {
     certificationAttachmentUrl: "",
     certificationTenureUnit: "",
 
+    // ADDED: Certificate Return
+    certificateReturn: "",
+    returnTenure: "",
+    returnTenureExpirationDate: "",
+
     // Common for all milestones when completing
     acknowledgementAttachmentUrl: "",
     acknowledgementAttachmentName: "",
@@ -922,6 +927,36 @@ const ProjectDetails = () => {
         }
       }
 
+      // ADDED: Certificate Return validation
+      if (!statusObj.certificateReturn) {
+        addToast({
+          title: "REQUIRED",
+          description: "Certificate return (Yes/No) is required",
+          color: "danger",
+        });
+        return;
+      }
+
+      if (statusObj.certificateReturn === "YES") {
+        if (!statusObj.returnTenure) {
+          addToast({
+            title: "REQUIRED",
+            description: "Return tenure is required",
+            color: "danger",
+          });
+          return;
+        }
+
+        if (!statusObj.returnTenureExpirationDate) {
+          addToast({
+            title: "REQUIRED",
+            description: "Tenure expiration date is required",
+            color: "danger",
+          });
+          return;
+        }
+      }
+
       if (!statusObj.certificationAttachmentUrl) {
         addToast({
           title: "REQUIRED",
@@ -1024,6 +1059,13 @@ const ProjectDetails = () => {
             certificationTenureUnit: statusObj.certificationTenureUnit,
             certificateExpiryDate: statusObj.certificateExpiryDate,
           }),
+
+          // ADDED: always sent ("YES" / "NO"); tenure fields only for YES
+          certificateReturn: statusObj.certificateReturn,
+          ...(statusObj.certificateReturn === "YES" && {
+            returnTenure: statusObj.returnTenure,
+            returnTenureExpirationDate: statusObj.returnTenureExpirationDate,
+          }),
         }),
       };
 
@@ -1057,6 +1099,10 @@ const ProjectDetails = () => {
             certificateExpiryDate: "",
             certificationAttachmentUrl: "",
             certificationTenureUnit: "",
+            // ADDED: Certificate Return
+            certificateReturn: "",
+            returnTenure: "",
+            returnTenureExpirationDate: "",
             acknowledgementAttachmentUrl: "",
             acknowledgementAttachmentName: "",
             completionSource: "",
