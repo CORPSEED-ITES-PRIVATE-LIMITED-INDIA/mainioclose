@@ -38,6 +38,7 @@ import {
   getSalesTeamMembers,
   getSalesTeamsBySubDepartmentId,
   getSubDepartmentCompanies,
+  unMapUserFromTeam, // CHANGE 1: unmap thunk
 } from "../../toolkit/slices/settingSlice";
 import { getAllUsers } from "../../toolkit/slices/commonSlice";
 
@@ -125,8 +126,7 @@ const SubDepartmentTeams = () => {
     (state) => state.setting.salesTeamMembersList,
   );
   const isMembersLoading =
-    useSelector((state) => state.setting.salesTeamMembersLoading) ===
-    "pending";
+    useSelector((state) => state.setting.salesTeamMembersLoading) === "pending";
 
   const usersList = useSelector((state) => state.common.usersList);
 
@@ -179,6 +179,11 @@ const SubDepartmentTeams = () => {
   const membersModal = useDisclosure();
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [mappingMember, setMappingMember] = useState(null);
+
+  // CHANGE 2: unmap confirmation state
+  const unmapModal = useDisclosure();
+  const [unmappingMember, setUnmappingMember] = useState(null);
+  const [isUnmapping, setIsUnmapping] = useState(false);
 
   const [filterValue, setFilterValue] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -263,9 +268,7 @@ const SubDepartmentTeams = () => {
     mapCompaniesForm.reset(mapCompaniesFormDefaultValues);
     dispatch(getAllUsers());
     refreshSubDepartmentCompanies();
-    dispatch(
-      getSalesTeamMembers({ subDepartmentId, teamId: rowData?.teamId }),
-    );
+    dispatch(getSalesTeamMembers({ subDepartmentId, teamId: rowData?.teamId }));
     membersModal.onOpen();
   };
 
@@ -280,6 +283,69 @@ const SubDepartmentTeams = () => {
   const handleCloseMapCompanies = () => {
     setMappingMember(null);
     mapCompaniesForm.reset(mapCompaniesFormDefaultValues);
+  };
+
+  // CHANGE 3: unmap handlers
+  const handleOpenUnmap = (member) => {
+    setUnmappingMember(member);
+    unmapModal.onOpen();
+  };
+
+  const handleCloseUnmap = () => {
+    setUnmappingMember(null);
+    unmapModal.onClose();
+  };
+
+  const handleConfirmUnmap = () => {
+    setIsUnmapping(true);
+
+    dispatch(
+      unMapUserFromTeam({
+        subDepartmentId,
+        teamId: selectedTeam?.teamId,
+        salesUserId: unmappingMember?.userId,
+        userId: Number(currentUserId),
+      }),
+    )
+      .then((response) => {
+        if (response.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Member removed from the team successfully !.",
+            color: "success",
+          });
+
+          if (mappingMember?.memberId === unmappingMember?.memberId) {
+            handleCloseMapCompanies();
+          }
+
+          handleCloseUnmap();
+          dispatch(
+            getSalesTeamMembers({
+              subDepartmentId,
+              teamId: selectedTeam?.teamId,
+            }),
+          );
+          refreshSubDepartmentCompanies();
+        } else {
+          addToast({
+            title: response?.payload?.status || "ERROR",
+            description:
+              response?.payload?.data?.message ||
+              response?.payload?.message ||
+              "Something went wrong while removing the member.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
+      })
+      .finally(() => setIsUnmapping(false));
   };
 
   const handleMapCompanies = (values) => {
@@ -446,20 +512,32 @@ const SubDepartmentTeams = () => {
       case "companies":
         return <span>{getMemberCompanyIds(member).length}</span>;
 
+      // CHANGE 4: Unmap button added next to Map Companies
       case "actions":
         return (
-          <Button
-            size="sm"
-            variant="flat"
-            color={
-              mappingMember?.memberId === member?.memberId
-                ? "primary"
-                : "default"
-            }
-            onPress={() => handleOpenMapCompanies(member)}
-          >
-            Map Companies
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="flat"
+              color={
+                mappingMember?.memberId === member?.memberId
+                  ? "primary"
+                  : "default"
+              }
+              onPress={() => handleOpenMapCompanies(member)}
+            >
+              Map Companies
+            </Button>
+
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              onPress={() => handleOpenUnmap(member)}
+            >
+              Remove
+            </Button>
+          </div>
         );
 
       case "autoAssignmentEnabled":
@@ -649,8 +727,8 @@ const SubDepartmentTeams = () => {
         </h1>
 
         <p className="text-xs text-default-400 -mt-1 mb-1">
-          Teams are set up on the backend — this page manages team members
-          only. Solutions are mapped at the sub-department level.
+          Teams are set up on the backend — this page manages team members only.
+          Solutions are mapped at the sub-department level.
         </p>
 
         <Table
@@ -753,10 +831,7 @@ const SubDepartmentTeams = () => {
                                 className="border-b border-gray-100 dark:border-white/5 last:border-b-0"
                               >
                                 {memberColumns.map((column) => (
-                                  <td
-                                    key={column.uid}
-                                    className="px-3 py-1.5"
-                                  >
+                                  <td key={column.uid} className="px-3 py-1.5">
                                     {renderMemberCell(member, column.uid)}
                                   </td>
                                 ))}
@@ -783,8 +858,7 @@ const SubDepartmentTeams = () => {
                         Map companies — {mappingMember?.userName || "-"}
                       </p>
                       <p className="text-xs text-default-400 mb-3">
-                        Only companies mapped to this sub department are
-                        listed.
+                        Only companies mapped to this sub department are listed.
                       </p>
 
                       <form
@@ -951,6 +1025,50 @@ const SubDepartmentTeams = () => {
                   </div>
                 </div>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* CHANGE 5: Unmap confirmation modal */}
+      <Modal
+        isOpen={unmapModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseUnmap();
+        }}
+        isDismissable={!isUnmapping}
+        placement="center"
+      >
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>Remove member from team</ModalHeader>
+
+              <ModalBody>
+                <p className="text-sm">
+                  Remove <b>{unmappingMember?.userName || "this user"}</b> from{" "}
+                  <b>{selectedTeam?.teamName || "this team"}</b>? They will no
+                  longer receive assignments from this team. You can add them
+                  back later.
+                </p>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={handleCloseUnmap}
+                  isDisabled={isUnmapping}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="danger"
+                  onPress={handleConfirmUnmap}
+                  isLoading={isUnmapping}
+                >
+                  Unmap
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>

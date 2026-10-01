@@ -96,6 +96,7 @@ import {
   Space,
   Button as AntButton,
   Input as AntInput,
+  InputNumber, // CHANGE 1: added for quantity input
 } from "antd";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import Section from "../../../components/Section";
@@ -1082,7 +1083,8 @@ const LeadEstimates = () => {
                   approvedProposalLineItems.map((item, idx) => (
                     <div
                       key={item?.id || idx}
-                      className="grid grid-cols-4 gap-3 my-2"
+                      // CHANGE 2: grid-cols-4 -> grid-cols-6 (Quantity + Total added)
+                      className="grid grid-cols-6 gap-3 my-2"
                     >
                       <Form.Item
                         label="Fee name"
@@ -1092,16 +1094,35 @@ const LeadEstimates = () => {
                         <AntInput readOnly placeholder="Fee name" />
                       </Form.Item>
 
+                      {/* CHANGE 3: label "Amount" -> "Unit price" (per-unit price) */}
                       <Form.Item
-                        label="Amount"
+                        label="Unit price"
                         name={["lineItems", idx, "unitPriceExGst"]}
                         className="mb-0"
                       >
                         <AntInput
                           type="number"
                           readOnly
-                          placeholder="Amount"
+                          placeholder="Unit price"
                           prefix={<IndianRupee className="h-4 w-4" />}
+                        />
+                      </Form.Item>
+
+                      {/* CHANGE 4: new editable Quantity field
+                          (replaces the old hidden quantity field) */}
+                      <Form.Item
+                        label="Quantity"
+                        name={["lineItems", idx, "quantity"]}
+                        className="mb-0"
+                        rules={[
+                          { required: true, message: "Quantity is required" },
+                        ]}
+                      >
+                        <InputNumber
+                          min={1}
+                          max={10000}
+                          precision={0}
+                          className="w-full"
                         />
                       </Form.Item>
 
@@ -1126,6 +1147,41 @@ const LeadEstimates = () => {
                         />
                       </Form.Item>
 
+                      {/* CHANGE 5: read-only line total (qty x unit price), live */}
+                      <Form.Item
+                        label="Total (ex GST)"
+                        className="mb-0"
+                        shouldUpdate={(prev, cur) =>
+                          prev.lineItems !== cur.lineItems
+                        }
+                      >
+                        {() => {
+                          const qty =
+                            Number(
+                              form.getFieldValue([
+                                "lineItems",
+                                idx,
+                                "quantity",
+                              ]),
+                            ) || 1;
+                          const price =
+                            Number(
+                              form.getFieldValue([
+                                "lineItems",
+                                idx,
+                                "unitPriceExGst",
+                              ]),
+                            ) || 0;
+                          return (
+                            <AntInput
+                              readOnly
+                              value={(qty * price).toFixed(2)}
+                              prefix={<IndianRupee className="h-4 w-4" />}
+                            />
+                          );
+                        }}
+                      </Form.Item>
+
                       <Form.Item
                         name={["lineItems", idx, "sourceItemId"]}
                         hidden
@@ -1140,9 +1196,8 @@ const LeadEstimates = () => {
                         <AntInput />
                       </Form.Item>
 
-                      <Form.Item name={["lineItems", idx, "quantity"]} hidden>
-                        <AntInput />
-                      </Form.Item>
+                      {/* CHANGE 6: old hidden quantity Form.Item removed
+                          (now rendered above as editable field) */}
 
                       <Form.Item name={["lineItems", idx, "unit"]} hidden>
                         <AntInput />

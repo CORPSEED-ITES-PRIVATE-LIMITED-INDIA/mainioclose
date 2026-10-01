@@ -1459,6 +1459,23 @@ export const getLeadAssignmentSolutionUsers = createAsyncThunk(
     }
   },
 );
+export const unMapUserFromTeam = createAsyncThunk(
+  "unMapUserFromTeam",
+  async (
+    { subDepartmentId, teamId, salesUserId, userId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.delete(
+        `/leadService/api/v1/organization/sub-departments/${subDepartmentId}/sales-teams/${teamId}/members/${salesUserId}`,
+        { params: { updatedByUserId: userId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 export const SettingSlice = createSlice({
   name: "setting",
