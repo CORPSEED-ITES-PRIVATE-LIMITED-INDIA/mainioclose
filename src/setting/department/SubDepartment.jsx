@@ -259,7 +259,16 @@ const SubDepartment = () => {
   const handleOpenMapCompaniesModal = (rowData) => {
     setViewingSubDepartment(rowData);
     mapCompaniesForm.reset(mapCompaniesDefaultValues);
-    dispatch(getApprovedCompaniesList());
+    // CHANGE 1: surface a failed fetch instead of leaving the list silently empty
+    dispatch(getApprovedCompaniesList()).then((resp) => {
+      if (resp.meta.requestStatus !== "fulfilled") {
+        addToast({
+          title: "Could not load companies",
+          description: resp?.payload?.data?.message || resp?.payload?.message,
+          color: "danger",
+        });
+      }
+    });
     dispatch(
       getSubDepartmentCompanies({
         subDepartmentId: rowData?.id,
@@ -454,6 +463,20 @@ const SubDepartment = () => {
         : solution?.name,
     }));
   }, [allSolutionList]);
+
+  // CHANGE 2: approvedCompaniesList may be the raw API body
+  // ({ success, data: [...] }) or a plain array, depending on how the slice
+  // stores it, so handle both. Labels come from `companyName`.
+  const companyOptions = useMemo(() => {
+    const list = Array.isArray(approvedCompaniesList)
+      ? approvedCompaniesList
+      : approvedCompaniesList?.data || [];
+
+    return list.map((company) => ({
+      ...company,
+      displayLabel: company?.companyName ?? company?.name ?? "-",
+    }));
+  }, [approvedCompaniesList]);
 
   const onNextPage = useCallback(() => {
     if (filteration?.page < pages) {
@@ -905,8 +928,9 @@ const SubDepartment = () => {
                               ? "Loading companies..."
                               : "Select companies to map"
                           }
-                          data={approvedCompaniesList || []}
-                          labelKey="name"
+                          // CHANGE 3: use the normalized options + companyName label
+                          data={companyOptions}
+                          labelKey="displayLabel"
                           valueKey="id"
                           isInvalid={!!error}
                           errorMessage={error?.message}

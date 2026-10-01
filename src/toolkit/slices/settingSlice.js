@@ -768,9 +768,16 @@ export const getApprovedCompaniesList = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get(`/leadService/api/companies/approved`);
-      return (response.data || []).map((company) => ({
+
+      // API now returns { success, message, count, data: [...] };
+      // older shape was a plain array. Handle both.
+      const list = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      return list.map((company) => ({
         id: company?.id,
-        name: company?.name,
+        name: company?.companyName ?? company?.name,
       }));
     } catch (error) {
       return rejectWithValue(error?.response?.data || error.message);

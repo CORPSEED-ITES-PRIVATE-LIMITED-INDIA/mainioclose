@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  createKamMamLead,
   createLeads,
   deleteMultipleLeads,
   getAllLeadCount,
@@ -79,6 +80,11 @@ import { toggleAutoOnFeature } from "../../toolkit/slices/authSlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import FileUploader from "../../components/FileUploader";
 import { getAllSolutionsByUserId } from "../../toolkit/slices/productSlice";
+// CHANGE 2: company + unit loaders for the KAM/MAM form
+import {
+  getAllCompanyByUserId,
+  getAllUnitListByCompanyId,
+} from "../../toolkit/slices/companySlice";
 
 const getRowClassName = (item) => {
   if (!item.view) {
@@ -133,6 +139,14 @@ const Leads = () => {
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
   const department = useSelector((state) => state.auth.getDepartmentDetail);
   const adminRole = userRole.includes("ADMIN");
+
+  // CHANGE 3: KAM / MAM users create leads through a different API
+  const companyList = useSelector((state) => state.company.basicCompanyList);
+  const unitList = useSelector((state) => state.company.basicUnitList);
+  const isKamMam = ["KAM", "MAM"].includes(
+    String(department?.workFunction || "").toUpperCase(),
+  );
+
   const [filterValue, setFilterValue] = useState("");
   const [selectedKeys, setSelectedKeys] = useState(new Set([]));
   const [expandedLeadKeys, setExpandedLeadKeys] = useState(new Set([]));
@@ -177,6 +191,7 @@ const Leads = () => {
   const [loading, setLoading] = useState("");
   const [leadsFileUploadingUrl, setLeadsFileUploadingUrl] = useState(null);
   const [leadFormSubmitted, setLeadFormSubmitted] = useState(false);
+  // CHANGE 4: companyId / companyUnitId / solutionId added for KAM/MAM form
   const leadFormValues = {
     leadName: "",
     name: "",
@@ -185,6 +200,9 @@ const Leads = () => {
     assigneeId: "",
     source: "",
     leadDescription: "",
+    companyId: "",
+    companyUnitId: "",
+    solutionId: "",
   };
   const [leadFormData, setLeadFormData] = useState(leadFormValues);
 
@@ -202,6 +220,13 @@ const Leads = () => {
     dispatch(getAllStatusData());
     dispatch(getAllUrlList());
   }, [dispatch, userId]);
+
+  // CHANGE 5: load companies for KAM / MAM users
+  useEffect(() => {
+    if (isKamMam && userId) {
+      dispatch(getAllCompanyByUserId(userId));
+    }
+  }, [dispatch, isKamMam, userId]);
 
   const headerColumns = useMemo(() => {
     const cols = columns || [];
@@ -1171,10 +1196,10 @@ const Leads = () => {
                 >
                   All task
                 </DropdownItem>
+                {/* CHANGE 6: menu item follows workFunction (KAM / MAM) */}
                 {(department?.department === "Quality Team" ||
                   adminRole ||
-                  department?.salesTeamName === "KAM" ||
-                  department?.salesTeamName === "MAM") && (
+                  isKamMam) && (
                   <DropdownItem key="add" endContent={<Plus />}>
                     Add lead
                   </DropdownItem>
@@ -1246,6 +1271,8 @@ const Leads = () => {
     sortedItems,
     data,
     multiDeleteModal,
+    isKamMam,
+    department,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -1334,6 +1361,90 @@ const Leads = () => {
           addToast({
             title: "ERROR",
             description: "Something went wrong !.",
+            color: "danger",
+          });
+          setLoading("rejected");
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        });
+        setLoading("rejected");
+      });
+  };
+
+  // CHANGE 7: KAM / MAM lead creation (POST /leads/kam-mam/create)
+  const handleKamMamFinish = () => {
+    setLeadFormSubmitted(true);
+
+    const {
+      companyUnitId,
+      solutionId,
+      name,
+      email,
+      mobileNo,
+      leadDescription,
+    } = leadFormData;
+
+    if (!companyUnitId || !solutionId || !name?.trim()) {
+      addToast({
+        title: "RESTRICTED",
+        description: "Company unit, solution and client name are required.",
+        color: "danger",
+      });
+      return;
+    }
+
+    if (!email && !mobileNo) {
+      addToast({
+        title: "RESTRICTED",
+        description: "Either email or phone number is required.",
+        color: "danger",
+      });
+      return;
+    }
+
+    const solution = (solutionList || []).find(
+      (item) => String(item?.id) === String(solutionId),
+    );
+
+    setLoading("pending");
+
+    dispatch(
+      createKamMamLead({
+        data: {
+          userId: Number(userId),
+          companyUnitId: Number(companyUnitId),
+          solutionId: Number(solutionId),
+          leadName: solution?.name || "",
+          clientName: name.trim(),
+          email: email || "",
+          mobileNo: mobileNo || "",
+          leadDescription: leadDescription || "",
+        },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Lead created successfully !.",
+            color: "success",
+          });
+          dispatch(getAllLeadsByFilter(allMultiFilterData));
+          dispatch(getAllLeadCount(allMultiFilterData));
+          onOpenChange(false);
+          setLoading("success");
+          setLeadFormData(leadFormValues);
+          setLeadFormSubmitted(false);
+        } else {
+          addToast({
+            title: "ERROR",
+            description:
+              resp?.payload?.data?.message || "Something went wrong !.",
             color: "danger",
           });
           setLoading("rejected");
@@ -1711,6 +1822,11 @@ const Leads = () => {
                   className="w-full flex flex-col gap-4 "
                   onSubmit={(e) => {
                     e.preventDefault();
+                    // CHANGE 8: KAM / MAM submit through their own API
+                    if (isKamMam) {
+                      handleKamMamFinish();
+                      return;
+                    }
                     let data = Object.fromEntries(
                       new FormData(e.currentTarget),
                     );
@@ -1718,26 +1834,95 @@ const Leads = () => {
                   }}
                 >
                   <div className="w-full grid grid-cols-2 gap-4 max-h-[60vh] overflow-auto px-2 py-1">
-                    <NewSelect
-                      name="leadName"
-                      data={solutionList || []}
-                      label={
-                        <div>
-                          Select service<span className="text-red-500">*</span>
-                        </div>
-                      }
-                      labelKey="name"
-                      valueKey="name"
-                      value={leadFormData?.leadName}
-                      onChange={(value) => {
-                        setLeadFormData((prev) => ({
-                          ...prev,
-                          leadName: value,
-                        }));
-                      }}
-                      isInvalid={leadFormSubmitted && !leadFormData?.leadName}
-                      errorMessage="please select service"
-                    />
+                    {/* CHANGE 9: company -> unit -> service for KAM / MAM */}
+                    {isKamMam && (
+                      <>
+                        <NewSelect
+                          isRequired
+                          data={companyList || []}
+                          label="Select company"
+                          labelKey="name"
+                          valueKey="id"
+                          value={leadFormData?.companyId}
+                          onChange={(value) => {
+                            setLeadFormData((prev) => ({
+                              ...prev,
+                              companyId: value,
+                              companyUnitId: "",
+                            }));
+                            if (value) {
+                              dispatch(getAllUnitListByCompanyId(value));
+                            }
+                          }}
+                          isInvalid={
+                            leadFormSubmitted && !leadFormData?.companyId
+                          }
+                          errorMessage="please select company"
+                        />
+
+                        <NewSelect
+                          isRequired
+                          data={leadFormData?.companyId ? unitList || [] : []}
+                          label="Select company unit"
+                          labelKey="unitName"
+                          valueKey="id"
+                          value={leadFormData?.companyUnitId}
+                          onChange={(value) =>
+                            setLeadFormData((prev) => ({
+                              ...prev,
+                              companyUnitId: value,
+                            }))
+                          }
+                          isInvalid={
+                            leadFormSubmitted && !leadFormData?.companyUnitId
+                          }
+                          errorMessage="please select company unit"
+                        />
+
+                        <NewSelect
+                          isRequired
+                          data={solutionList || []}
+                          label="Select service"
+                          labelKey="name"
+                          valueKey="id"
+                          value={leadFormData?.solutionId}
+                          onChange={(value) =>
+                            setLeadFormData((prev) => ({
+                              ...prev,
+                              solutionId: value,
+                            }))
+                          }
+                          isInvalid={
+                            leadFormSubmitted && !leadFormData?.solutionId
+                          }
+                          errorMessage="please select service"
+                        />
+                      </>
+                    )}
+
+                    {!isKamMam && (
+                      <NewSelect
+                        name="leadName"
+                        data={solutionList || []}
+                        label={
+                          <div>
+                            Select service
+                            <span className="text-red-500">*</span>
+                          </div>
+                        }
+                        labelKey="name"
+                        valueKey="name"
+                        value={leadFormData?.leadName}
+                        onChange={(value) => {
+                          setLeadFormData((prev) => ({
+                            ...prev,
+                            leadName: value,
+                          }));
+                        }}
+                        isInvalid={leadFormSubmitted && !leadFormData?.leadName}
+                        errorMessage="please select service"
+                      />
+                    )}
                     <Input
                       isRequired
                       name="name"
@@ -1781,7 +1966,7 @@ const Leads = () => {
                       }
                     />
 
-                    {adminRole && (
+                    {adminRole && !isKamMam && (
                       <NewSelect
                         isRequired
                         data={allLeadUser || []}
@@ -1803,26 +1988,28 @@ const Leads = () => {
                       />
                     )}
 
-                    <Select
-                      isRequired
-                      errorMessage={"please select source"}
-                      label="Source"
-                      name="source"
-                      selectedKeys={[leadFormData?.source]}
-                      onSelectionChange={(e) => {
-                        const selectedValue = Array.from(e)[0];
-                        setLeadFormData((prev) => ({
-                          ...prev,
-                          source: selectedValue,
-                        }));
-                      }}
-                    >
-                      {leadSource.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
-                        </SelectItem>
-                      ))}
-                    </Select>
+                    {!isKamMam && (
+                      <Select
+                        isRequired
+                        errorMessage={"please select source"}
+                        label="Source"
+                        name="source"
+                        selectedKeys={[leadFormData?.source]}
+                        onSelectionChange={(e) => {
+                          const selectedValue = Array.from(e)[0];
+                          setLeadFormData((prev) => ({
+                            ...prev,
+                            source: selectedValue,
+                          }));
+                        }}
+                      >
+                        {leadSource.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
 
                     <Textarea
                       isRequired
