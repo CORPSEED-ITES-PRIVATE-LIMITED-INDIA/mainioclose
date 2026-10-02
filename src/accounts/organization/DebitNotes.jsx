@@ -44,6 +44,7 @@ export const columns = [
   { name: "VOUCHER TYPE", uid: "voucherType" },
   { name: "VOUCHER DATE", uid: "voucherDate" },
   { name: "PROJECT", uid: "project" },
+  { name: "SOLUTION", uid: "solutionName" },
   { name: "SOURCE", uid: "sourceType" },
   { name: "AMOUNT", uid: "amount" },
   { name: "STATUS", uid: "status" },
@@ -57,6 +58,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "voucherType",
   "voucherDate",
   "project",
+  "solutionName",
   "sourceType",
   "amount",
   "status",
@@ -242,6 +244,10 @@ const DebitNotes = () => {
 
       case "project":
         return <span className="text-[12.5px]">{rowData?.project || "-"}</span>;
+      case "solutionName":
+        return (
+          <span className="text-[12.5px]">{rowData?.solutionName || "-"}</span>
+        );
 
       case "voucherType":
         return (

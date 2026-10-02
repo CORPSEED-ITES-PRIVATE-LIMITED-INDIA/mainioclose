@@ -725,12 +725,21 @@ Corpseed Team`,
                     </div>
                   </div>
                 </div>
-
-                <div className="p-2.5">
-                  <div className="text-[10px] text-gray-500">
-                    Terms of Delivery
+                <div className="grid grid-cols-2 border-b border-gray-300">
+                  <div className="border-r border-gray-300 p-2.5">
+                    <div className="text-[10px] text-gray-500">
+                      Terms of Delivery
+                    </div>
+                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
                   </div>
-                  <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                  <div className="p-2.5">
+                    <div className="text-[10px] text-gray-500">
+                      Solution Name
+                    </div>
+                    <div className="text-[11px] font-bold">
+                      {inv?.projectName || "NA"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -483,16 +483,16 @@ Corpseed Team`,
 
             {/* Invoice-style Ship To and Bill To blocks; both show vendor details */}
             <div className="grid grid-cols-2 border-b border-gray-300">
-              <div className="border-r border-gray-300 p-2.5">
+              <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Consignee (Ship to)
+                  Buyer (Bill to)
                 </div>
                 <VendorDetails />
               </div>
 
-              <div className="p-2.5">
+              <div className="border-r border-gray-300 p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Buyer (Bill to)
+                  Consignee (Ship to)
                 </div>
                 <VendorDetails />
               </div>
