@@ -917,6 +917,19 @@ export const issueUnbilledInvoiceRefund = createAsyncThunk(
     }
   },
 );
+export const issueUnbilledInvoiceRefundV2 = createAsyncThunk(
+  "issueUnbilledInvoiceRefundV2",
+  async ({ userId, page,size }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/unbilled-invoices/cancel/requests?adminUserId=${userId}&page=${page}&size=${size}`
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 
 const AccountSlice = createSlice({
   name: "accounts",
@@ -924,6 +937,7 @@ const AccountSlice = createSlice({
     loading: "",
     approvalCompanyList: [],
     paymentApprovalList: [],
+    unbillCancelRequests:[],
     estimatePaymentList: [],
     vendorsPaymentList: [],
     allAdvanceTaxInvoices:[],
@@ -1518,6 +1532,17 @@ const AccountSlice = createSlice({
   builder.addCase(getAllInvoiceFeed.rejected, (state) => {
     state.loading = false;
     state.invoiceFeed = [];
+  });
+  builder.addCase(issueUnbilledInvoiceRefundV2.pending, (state) => {
+    state.loading = true;
+  })
+  builder.addCase(issueUnbilledInvoiceRefundV2.fulfilled, (state,action) => {
+    state.loading = false;
+    state.unbillCancelRequests = action.payload;
+  })
+  builder.addCase(issueUnbilledInvoiceRefundV2.rejected, (state) => {
+    state.loading = false;
+    state.unbillCancelRequests = [];
   });
   },
 });

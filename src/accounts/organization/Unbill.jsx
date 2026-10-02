@@ -49,11 +49,7 @@ import {
 import { inrCurrency, splitTextIntoTwoLines } from "../../common";
 import dayjs from "dayjs";
 import {
-  approveUnBilledInvoiceByAdmin,
   cancelUnBilledInvoice,
-  cancelUnBilledInvoiceByAdmin,
-  createCreditNotes,
-  getInvoicesByUnbilledId, // CHANGED: added (same as sales)
   getTdsDetailByEstimateId,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
@@ -113,47 +109,6 @@ const INITIAL_VISIBLE_COLUMNS = [
   "addedBy",
   "actions",
 ];
-
-// CHANGED: credit note defaults / helpers copied from Sales (module level so
-// they are stable references).
-const initialCreditNoteData = {
-  refundAmount: "",
-  reason: "",
-  attachment: "",
-  invoiceIds: [],
-
-  bankName: "",
-  bankAccountNumber: "",
-  confirmBankAccountNumber: "",
-  ifscCode: "",
-  swiftCode: "",
-  accountHolderName: "",
-  cancelledChequeAttachment: "",
-};
-
-// Returns true for a value worth pre-filling — excludes null, undefined,
-// and empty strings, but allows 0 (a valid, if unusual, refund amount).
-const isValidRefundValue = (value) =>
-  value !== null && value !== undefined && value !== "";
-
-// Pre-fills the credit note form from whatever refund data already exists
-// on the unbilled row (refundAmount / refundReason / refundAttachment),
-// falling back to the blank defaults for any field that isn't valid.
-const buildCreditNoteDataFromRow = (rowData, defaults) => ({
-  ...defaults,
-  // CHANGED: refund = what was actually received (not the total amount)
-  refundAmount: isValidRefundValue(rowData?.refundAmount)
-    ? String(rowData.refundAmount)
-    : Number(rowData?.receivedAmount) > 0
-      ? String(rowData.receivedAmount)
-      : defaults.refundAmount,
-  reason: isValidRefundValue(rowData?.refundReason)
-    ? rowData.refundReason
-    : defaults.reason,
-  attachment: isValidRefundValue(rowData?.refundAttachment)
-    ? rowData.refundAttachment
-    : defaults.attachment,
-});
 
 const getAttachmentFileName = (attachmentUrl = "") => {
   if (!attachmentUrl) return "Attachment";
@@ -320,7 +275,6 @@ const Unbill = () => {
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
-  // CHANGED: removed creditNoteModal (credit note now lives inside statusModal)
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
@@ -336,8 +290,6 @@ const Unbill = () => {
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
-  // CHANGED: invoices list for credit note invoice selector (same as sales)
-  const invoices = useSelector((state) => state.account.invoicesByUnbilled);
   const statusList = useSelector((state) => state?.setting?.statusList);
   const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const [filterValue, setFilterValue] = React.useState("");
@@ -371,18 +323,6 @@ const Unbill = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
   const [tdsDetail, setTdsDetail] = useState();
-  // CHANGED: credit note state now matches sales
-  const [creditNoteData, setCreditNoteData] = useState(initialCreditNoteData);
-
-  const [isCreditNoteAttachmentUploading, setIsCreditNoteAttachmentUploading] =
-    useState(false);
-  const [isCancelledChequeUploading, setIsCancelledChequeUploading] =
-    useState(false);
-  // CHANGED: account users only REQUEST cancellation (no credit note form).
-  // Whenever an ADMIN selects CANCELLED, the whole credit note flow runs:
-  // form (missing data asked in the modal) -> credit note -> cancellation.
-  const requiresCreditNote =
-    updatedStatusData?.approvalRemarks === "CANCELLED" && adminRole;
   const [reportFilters, setReportFilters] = useState({
     fromDate: "",
     toDate: "",
@@ -438,13 +378,6 @@ const Unbill = () => {
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
     dispatch(getAllUnbillCount({ userId, status }));
   }, [dispatch, page, rowsPerPage, userId, status, filterValue, searchBy]);
-
-  // CHANGED: whenever the status modal closes, clear the credit note section
-  useEffect(() => {
-    if (!statusModal.isOpen) {
-      setCreditNoteData(initialCreditNoteData);
-    }
-  }, [statusModal.isOpen]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -538,209 +471,6 @@ const Unbill = () => {
           color: "danger",
         }),
       );
-  };
-
-  // CHANGED: credit note validation copied from sales. Returns true when valid.
-  // Runs BEFORE any API call so cancellation + credit note are only attempted
-  // when everything is valid.
-  const validateCreditNote = () => {
-    if (
-      !creditNoteData.refundAmount ||
-      Number(creditNoteData.refundAmount) <= 0
-    ) {
-      addToast({
-        title: "Refund amount is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (
-      Number(rowItem?.receivedAmount) > 0 &&
-      Number(creditNoteData.refundAmount) > Number(rowItem?.receivedAmount)
-    ) {
-      addToast({
-        title: "Refund amount exceeds received amount",
-        description: `Refund cannot be more than the received amount (${rowItem?.receivedAmount}).`,
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.reason?.trim()) {
-      addToast({
-        title: "Reason is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.invoiceIds?.length) {
-      addToast({
-        title: "Invoice is required",
-        description: "Please select at least one invoice.",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (isCreditNoteAttachmentUploading) {
-      addToast({
-        title: "Credit note attachment upload in progress",
-        description: "Please wait until upload is completed.",
-        color: "warning",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.attachment) {
-      addToast({
-        title: "Credit note attachment is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.bankName?.trim()) {
-      addToast({
-        title: "Bank name is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.accountHolderName?.trim()) {
-      addToast({
-        title: "Account holder name is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.bankAccountNumber?.trim()) {
-      addToast({
-        title: "Bank account number is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!/^[0-9]{9,18}$/.test(creditNoteData.bankAccountNumber.trim())) {
-      addToast({
-        title: "Invalid bank account number",
-        description: "Bank account number must be 9 to 18 digits.",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.confirmBankAccountNumber?.trim()) {
-      addToast({
-        title: "Confirm bank account number is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (
-      creditNoteData.bankAccountNumber.trim() !==
-      creditNoteData.confirmBankAccountNumber.trim()
-    ) {
-      addToast({
-        title: "Bank account number mismatch",
-        description:
-          "Bank account number and confirm account number must match.",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.ifscCode?.trim()) {
-      addToast({
-        title: "IFSC code is required",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (
-      creditNoteData.swiftCode?.trim() &&
-      !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(
-        creditNoteData.swiftCode.trim().toUpperCase(),
-      )
-    ) {
-      addToast({
-        title: "Invalid SWIFT code",
-        description: "SWIFT code must be 8 or 11 characters.",
-        color: "danger",
-      });
-      return false;
-    }
-
-    if (isCancelledChequeUploading) {
-      addToast({
-        title: "Cancelled cheque upload in progress",
-        description: "Please wait until upload is completed.",
-        color: "warning",
-      });
-      return false;
-    }
-
-    if (!creditNoteData.cancelledChequeAttachment) {
-      addToast({
-        title: "Cancelled cheque is required",
-        description: "Please upload cancelled cheque attachment.",
-        color: "danger",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  // CHANGED: creates the credit note for the selected row (payload copied from
-  // sales). Returns { ok, message } instead of toasting so the caller decides
-  // whether to continue with the cancellation.
-  const submitCreditNote = async () => {
-    const payload = {
-      unbilledId: rowItem?.id,
-      estimateNumber: rowItem?.estimateNumber,
-      createdByUserId: Number(userId),
-      refundAmount: Number(creditNoteData.refundAmount),
-      reason: creditNoteData.reason.trim(),
-      attachment: creditNoteData.attachment,
-      invoiceIds: creditNoteData.invoiceIds || [],
-
-      bankName: creditNoteData.bankName.trim(),
-      bankAccountNumber: creditNoteData.bankAccountNumber.trim(),
-      ifscCode: creditNoteData.ifscCode.trim().toUpperCase(),
-      swiftCode: creditNoteData.swiftCode?.trim()
-        ? creditNoteData.swiftCode.trim().toUpperCase()
-        : null,
-      accountHolderName: creditNoteData.accountHolderName.trim(),
-      cancelledChequeAttachment: creditNoteData.cancelledChequeAttachment,
-    };
-
-    try {
-      const resp = await dispatch(createCreditNotes(payload));
-
-      if (resp.meta.requestStatus === "fulfilled") {
-        return { ok: true };
-      }
-
-      return {
-        ok: false,
-        message:
-          resp?.payload?.data?.message ||
-          resp?.payload?.message ||
-          "Failed to create credit note",
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        message: error?.message || "Failed to create credit note",
-      };
-    }
   };
 
   const handlePaymentProofPreview = (paymentProofUrl) => {
@@ -1097,25 +827,6 @@ const Unbill = () => {
                         rejectionReason: "",
                         attachment: "",
                       });
-                      // CHANGED: for admins on APPROVED / CANCEL_REQUESTED rows, load invoices and
-                      // pre-fill credit note data from the row (same as sales).
-                      // Any missing data point is asked in the modal.
-                      setCreditNoteData(
-                        buildCreditNoteDataFromRow(
-                          rowData,
-                          initialCreditNoteData,
-                        ),
-                      );
-                      if (adminRole) {
-                        dispatch(
-                          getInvoicesByUnbilledId({
-                            userId: Number(userId),
-                            unbilledId: rowData?.id,
-                            page: 1,
-                            size: 100,
-                          }),
-                        );
-                      }
                       statusModal.onOpen();
                     }}
                   >
@@ -1129,8 +840,7 @@ const Unbill = () => {
           return cellValue;
       }
     },
-    // CHANGED: was [] — now has the values the action handler uses
-    [dispatch, userId, adminRole],
+    [dispatch, userId],
   );
 
   const onNextPage = React.useCallback(() => {
@@ -1179,6 +889,17 @@ const Unbill = () => {
       return;
     }
 
+    // Admin cancellation approve/reject lives on the Cancellation Requests page
+    if (adminRole && selectedStatus === "CANCELLED") {
+      addToast({
+        title: "Use Cancellation Requests",
+        description:
+          "Cancellation requests are approved or rejected from the Cancellation Requests page.",
+        color: "warning",
+      });
+      return;
+    }
+
     // if (selectedStatus === "APPROVED" && !updatedStatusData?.registrationType) {
     //   addToast({
     //     title: "Registration type is required",
@@ -1222,55 +943,13 @@ const Unbill = () => {
       return;
     }
 
-    // CHANGED: when an admin approves a cancellation, the credit note is
-    // generated in the same step. Validate it fully BEFORE any API call.
-    const shouldRaiseCreditNote = requiresCreditNote;
-
-    if (shouldRaiseCreditNote && !validateCreditNote()) {
-      return;
-    }
-
     /* =========================
      START FULL-SCREEN LOADER
   ========================= */
 
     setUpdateStatusLoading(true);
 
-    // CHANGED: tracks whether the credit note was created, so that a later
-    // cancellation failure can tell the user exactly what happened.
-    let creditNoteCreated = false;
-    const withCreditNoteNote = (message) =>
-      creditNoteCreated
-        ? `${message} The credit note was already generated — please retry approving the cancellation.`
-        : message;
-
     try {
-      /* ==========================================
-       CHANGED: STEP 1 — AUTO-GENERATE CREDIT NOTE (runs first)
-       If it fails, the cancellation is NOT approved.
-    ========================================== */
-
-      if (shouldRaiseCreditNote) {
-        const creditNoteResult = await submitCreditNote();
-
-        if (!creditNoteResult.ok) {
-          addToast({
-            title: "Credit note failed — cancellation not approved",
-            description: creditNoteResult.message,
-            color: "danger",
-          });
-          return;
-        }
-
-        creditNoteCreated = true;
-
-        addToast({
-          title: "Credit note generated",
-          description: "Credit note was generated for this cancellation.",
-          color: "success",
-        });
-      }
-
       /* ==========================================
        NON-ADMIN CANCELLATION REQUEST
     ========================================== */
@@ -1288,144 +967,18 @@ const Unbill = () => {
         if (response.meta.requestStatus !== "fulfilled") {
           addToast({
             title: "ERROR",
-            description: withCreditNoteNote(
+            description:
               response?.payload?.data?.message ||
-                response?.payload?.message ||
-                "Failed to cancel unbill.",
-            ),
+              response?.payload?.message ||
+              "Failed to cancel unbill.",
             color: "danger",
           });
-          if (creditNoteCreated) {
-            dispatch(
-              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-          }
           return;
         }
 
         addToast({
           title: "SUCCESS",
           description: "Unbill cancellation requested successfully.",
-          color: "success",
-        });
-
-        setRowItem(null);
-        setUpdatedStatusData({
-          approverUserId: userId,
-          approvalRemarks: "",
-          registrationType: "",
-          rejectionReason: "",
-          attachment: "",
-        });
-
-        statusModal.onClose();
-
-        dispatch(
-          getAllUnbillList({
-            page,
-            size: rowsPerPage,
-            userId,
-            status,
-          }),
-        );
-        dispatch(getAllUnbillCount({ userId, status }));
-
-        return;
-      }
-
-      /* ==========================================
-       ADMIN REJECTS CANCELLATION
-    ========================================== */
-
-      if (adminRole && selectedStatus === "REJECTED") {
-        const response = await dispatch(
-          cancelUnBilledInvoiceByAdmin({
-            id: rowItem?.id,
-            userId,
-            reason: updatedStatusData?.rejectionReason?.trim(),
-          }),
-        );
-
-        if (response.meta.requestStatus !== "fulfilled") {
-          addToast({
-            title: "ERROR",
-            description:
-              response?.payload?.data?.message ||
-              response?.payload?.message ||
-              "Failed to reject cancellation request.",
-            color: "danger",
-          });
-          return;
-        }
-
-        addToast({
-          title: "SUCCESS",
-          description: "Cancellation request rejected successfully by Admin.",
-          color: "success",
-        });
-
-        setRowItem(null);
-        setUpdatedStatusData({
-          approverUserId: userId,
-          approvalRemarks: "",
-          registrationType: "",
-          rejectionReason: "",
-          attachment: "",
-        });
-
-        statusModal.onClose();
-
-        dispatch(
-          getAllUnbillList({
-            page,
-            size: rowsPerPage,
-            userId,
-            status,
-          }),
-        );
-        dispatch(getAllUnbillCount({ userId, status }));
-
-        return;
-      }
-
-      /* ==========================================
-       ADMIN APPROVES CANCELLATION
-    ========================================== */
-
-      if (adminRole && selectedStatus === "CANCELLED") {
-        const response = await dispatch(
-          approveUnBilledInvoiceByAdmin({
-            id: rowItem?.id,
-            userId,
-            reason: updatedStatusData?.rejectionReason?.trim(),
-          }),
-        );
-
-        if (response.meta.requestStatus !== "fulfilled") {
-          addToast({
-            title: "ERROR",
-            description: withCreditNoteNote(
-              response?.payload?.data?.message ||
-                response?.payload?.message ||
-                "Failed to approve cancellation request.",
-            ),
-            color: "danger",
-          });
-          if (creditNoteCreated) {
-            dispatch(
-              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
-            );
-            dispatch(getAllUnbillCount({ userId, status }));
-          }
-          return;
-        }
-
-        addToast({
-          title: "SUCCESS",
-          description: creditNoteCreated
-            ? "Cancellation approved and credit note generated successfully."
-            : "Cancellation request approved successfully by Admin.",
           color: "success",
         });
 
@@ -1569,9 +1122,8 @@ const Unbill = () => {
 
       addToast({
         title: "ERROR",
-        description: withCreditNoteNote(
+        description:
           error?.message || "Something went wrong while updating status.",
-        ),
         color: "danger",
       });
     } finally {
@@ -2093,8 +1645,6 @@ const Unbill = () => {
         onOpenChange={statusModal.onOpenChange}
         placement="top-center"
         backdrop="blur"
-        // CHANGED: wider modal when the credit note form is shown
-        size={requiresCreditNote ? "4xl" : "md"}
       >
         <ModalContent>
           {(onClose) => (
@@ -2132,9 +1682,12 @@ const Unbill = () => {
                     { key: "APPROVED", label: "APPROVED" },
                     { key: "REJECTED", label: "REJECTED" },
                     { key: "CANCELLED", label: "CANCELLED" },
-                  ].map((item) => (
-                    <SelectItem key={item.key}>{item.label}</SelectItem>
-                  ))}
+                  ]
+                    // admins decide cancellations on the Cancellation Requests page
+                    .filter((item) => !(adminRole && item.key === "CANCELLED"))
+                    .map((item) => (
+                      <SelectItem key={item.key}>{item.label}</SelectItem>
+                    ))}
                 </Select>
 
                 {/* {updatedStatusData?.approvalRemarks === "APPROVED" && (
@@ -2189,242 +1742,6 @@ const Unbill = () => {
                       isRequired
                     />
                   )}
-
-                {/* CHANGED: credit note form for ADMIN approving a cancellation.
-                    Fields copied from sales. */}
-                {requiresCreditNote && (
-                  <div className="flex flex-col gap-3 rounded-xl border border-default-200 p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-semibold text-default-900">
-                        Credit Note
-                      </p>
-                      <p className="text-xs text-default-500">
-                        A credit note will be generated automatically when you
-                        approve this cancellation. If it fails, the cancellation
-                        will not be approved.
-                      </p>
-                    </div>
-
-                    {rowItem?.refundIssued && (
-                      <div className="flex items-center justify-between gap-3 rounded-xl border border-success-200 bg-success-50 px-4 py-3">
-                        <div className="flex flex-col gap-0.5">
-                          <p className="text-[12.5px] font-semibold text-success-700">
-                            A refund is already recorded for this unbilled
-                            invoice.
-                          </p>
-                          <p className="text-[11.5px] text-success-600">
-                            Amount, reason and attachment have been pre-filled
-                            below — review before submitting.
-                          </p>
-                        </div>
-                        <Chip size="sm" variant="flat" color="success">
-                          Refund Issued
-                        </Chip>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <Input
-                        type="number"
-                        label={
-                          isValidRefundValue(rowItem?.refundAmount)
-                            ? "Refund Amount (Excluding Taxes)"
-                            : "Refund Amount (Received Amount)"
-                        }
-                        placeholder="Enter refund amount"
-                        isRequired
-                        min={0}
-                        // CHANGED: sales has this always read-only; here it is
-                        // read-only only when the amount came from the row,
-                        // otherwise the user could never enter one.
-                        readOnly={
-                          isValidRefundValue(rowItem?.refundAmount) ||
-                          Number(rowItem?.receivedAmount) > 0
-                        }
-                        value={creditNoteData.refundAmount}
-                        onChange={(e) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            refundAmount: e.target.value,
-                          }))
-                        }
-                      />
-
-                      <NewSelect
-                        data={invoices || []}
-                        labelKey="invoiceNumber"
-                        label="Invoice Ids"
-                        placeholder="Select Invoice Ids"
-                        isRequired
-                        selectionMode="multiple"
-                        valueKey="id"
-                        value={creditNoteData.invoiceIds}
-                        onChange={(value) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            invoiceIds: Array.isArray(value)
-                              ? value.map(Number)
-                              : value
-                                ? [Number(value)]
-                                : [],
-                          }))
-                        }
-                      />
-
-                      <Input
-                        label="Bank Name"
-                        placeholder="Enter client bank name"
-                        isRequired
-                        value={creditNoteData.bankName}
-                        onChange={(e) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            bankName: e.target.value,
-                          }))
-                        }
-                      />
-
-                      <Input
-                        label="Company Name"
-                        placeholder="Enter company name"
-                        isRequired
-                        value={creditNoteData.accountHolderName}
-                        onChange={(e) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            accountHolderName: e.target.value,
-                          }))
-                        }
-                      />
-
-                      <Input
-                        type="text"
-                        label="Bank Account Number"
-                        placeholder="Enter bank account number"
-                        isRequired
-                        value={creditNoteData.bankAccountNumber}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "");
-
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            bankAccountNumber: value,
-                          }));
-                        }}
-                      />
-
-                      <Input
-                        type="text"
-                        label="Confirm Bank Account Number"
-                        placeholder="Re-enter bank account number"
-                        isRequired
-                        value={creditNoteData.confirmBankAccountNumber}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "");
-
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            confirmBankAccountNumber: value,
-                          }));
-                        }}
-                        color={
-                          creditNoteData.confirmBankAccountNumber &&
-                          creditNoteData.bankAccountNumber !==
-                            creditNoteData.confirmBankAccountNumber
-                            ? "danger"
-                            : "default"
-                        }
-                        errorMessage={
-                          creditNoteData.confirmBankAccountNumber &&
-                          creditNoteData.bankAccountNumber !==
-                            creditNoteData.confirmBankAccountNumber
-                            ? "Account number does not match"
-                            : ""
-                        }
-                        isInvalid={
-                          Boolean(creditNoteData.confirmBankAccountNumber) &&
-                          creditNoteData.bankAccountNumber !==
-                            creditNoteData.confirmBankAccountNumber
-                        }
-                      />
-
-                      <Input
-                        label="IFSC Code"
-                        placeholder="Example: HDFC0001234"
-                        isRequired
-                        maxLength={11}
-                        value={creditNoteData.ifscCode}
-                        onChange={(e) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            ifscCode: e.target.value.toUpperCase(),
-                          }))
-                        }
-                      />
-
-                      <Input
-                        label="SWIFT Code"
-                        placeholder="Optional"
-                        maxLength={11}
-                        value={creditNoteData.swiftCode}
-                        onChange={(e) =>
-                          setCreditNoteData((prev) => ({
-                            ...prev,
-                            swiftCode: e.target.value.toUpperCase(),
-                          }))
-                        }
-                      />
-
-                      <div className="md:col-span-2">
-                        <Textarea
-                          label="Reason"
-                          placeholder="Enter reason for credit note"
-                          isRequired
-                          minRows={4}
-                          value={creditNoteData.reason}
-                          onChange={(e) =>
-                            setCreditNoteData((prev) => ({
-                              ...prev,
-                              reason: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <FileUploader
-                          value={creditNoteData.attachment}
-                          onChange={(value) =>
-                            setCreditNoteData((prev) => ({
-                              ...prev,
-                              attachment: value,
-                            }))
-                          }
-                          onUploadingChange={setIsCreditNoteAttachmentUploading}
-                          label="Escalation Team Approval Attachment"
-                          placeholder="Upload credit note attachment"
-                          isRequired
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <FileUploader
-                          value={creditNoteData.cancelledChequeAttachment}
-                          onChange={(value) =>
-                            setCreditNoteData((prev) => ({
-                              ...prev,
-                              cancelledChequeAttachment: value,
-                            }))
-                          }
-                          onUploadingChange={setIsCancelledChequeUploading}
-                          label="Cancelled Cheque Attachment"
-                          placeholder="Upload cancelled cheque"
-                          isRequired
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </ModalBody>
 
               <ModalFooter>
@@ -2450,12 +1767,7 @@ const Unbill = () => {
                   color="primary"
                   isLoading={updateStatusLoading}
                   isDisabled={
-                    updateStatusLoading ||
-                    isCancelAttachmentUploading ||
-                    // CHANGED: also wait for credit note uploads
-                    (requiresCreditNote &&
-                      (isCreditNoteAttachmentUploading ||
-                        isCancelledChequeUploading))
+                    updateStatusLoading || isCancelAttachmentUploading
                   }
                   onPress={handleUpdateStatus}
                 >
@@ -2969,10 +2281,6 @@ const Unbill = () => {
           )}
         </ModalContent>
       </Modal>
-
-      {/* CHANGED: the old standalone "Credit Note" modal was removed — it was
-          never opened from the UI, and credit note now lives inside the
-          Update Status modal above. */}
 
       <Modal
         size="5xl"
