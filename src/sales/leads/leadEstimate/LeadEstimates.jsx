@@ -290,7 +290,7 @@ const LeadEstimates = () => {
         itemName: item?.itemName || "",
         description: item?.description || "",
         hsnSacCode: item?.hsnSacCode || "",
-        quantity: item?.quantity || 1,
+        quantity: 1,
         unit: item?.unit || "Nos",
         unitPriceExGst: item?.unitPriceExGst || 0,
         originalAmount: item?.unitPriceExGst || 0,
@@ -551,6 +551,10 @@ const LeadEstimates = () => {
 
     const formattedValues = {
       ...values,
+      lineItems: (values?.lineItems || []).map((item) => ({
+        ...item,
+        quantity: 1,
+      })),
       proposalId: approvedProposal?.id,
       estimateDate: values?.estimateDate
         ? dayjs(values.estimateDate).format("YYYY-MM-DD")
@@ -665,7 +669,7 @@ const LeadEstimates = () => {
           itemName: item?.itemName || "",
           description: item?.description || "",
           hsnSacCode: item?.hsnSacCode || "",
-          quantity: item?.quantity || 1,
+          quantity: 1,
           unit: item?.unit || "Nos",
           unitPriceExGst: item?.unitPriceExGst || 0,
           originalAmount: item?.unitPriceExGst || 0,
@@ -1118,12 +1122,7 @@ const LeadEstimates = () => {
                           { required: true, message: "Quantity is required" },
                         ]}
                       >
-                        <InputNumber
-                          min={1}
-                          max={10000}
-                          precision={0}
-                          className="w-full"
-                        />
+                        <AntInput readOnly />
                       </Form.Item>
 
                       <Form.Item

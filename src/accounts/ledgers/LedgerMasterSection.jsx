@@ -203,6 +203,7 @@ const normalizeTransaction = (transaction = {}) => {
     date: formatDate(transaction.voucherDate),
     entryDate: transaction.voucherDate,
     particulars: transaction.particulars,
+    serviceName: transaction.serviceName || transaction.solutionName || null,
     debit: Number(transaction.debitAmount || 0),
     credit: Number(transaction.creditAmount || 0),
     balance: `${formatCurrency(transaction.runningBalanceAmount)} ${toUiBalanceType(
@@ -339,7 +340,7 @@ const getVoucherDetails = (entry, ledger) => {
     email: ledger.raw?.email || null,
     mobile: ledger.raw?.mobile || null,
 
-    serviceName: raw.serviceName || null,
+    serviceName: raw.serviceName || raw.solutionName || null,
     gstDetails:
       raw.gstDetails && typeof raw.gstDetails === "object"
         ? raw.gstDetails
@@ -1075,6 +1076,7 @@ const LedgerMasterSection = () => {
                     <TableColumn>Voucher No.</TableColumn>
                     <TableColumn>Voucher Type</TableColumn>
                     <TableColumn>Particulars</TableColumn>
+                    <TableColumn>Solution</TableColumn>
                     <TableColumn>Debit</TableColumn>
                     <TableColumn>Credit</TableColumn>
                     <TableColumn>Balance</TableColumn>
@@ -1110,6 +1112,8 @@ const LedgerMasterSection = () => {
                         </TableCell>
 
                         <TableCell>{entry.particulars}</TableCell>
+
+                        <TableCell>{entry.serviceName || "-"}</TableCell>
 
                         <TableCell>{formatCurrency(entry.debit)}</TableCell>
 
@@ -1790,6 +1794,12 @@ const VoucherDetailsDrawer = ({
                       value={details.particulars}
                       multiline
                     />
+                    {details.serviceName && (
+                      <VoucherInfoItem
+                        label="Solution / Service"
+                        value={details.serviceName}
+                      />
+                    )}
                     {details.createdBy && (
                       <VoucherInfoItem
                         label="Created By"

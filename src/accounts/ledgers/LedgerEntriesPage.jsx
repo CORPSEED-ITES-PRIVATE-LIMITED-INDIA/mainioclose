@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   Button,
   Card,
@@ -18,6 +19,7 @@ import {
   TableRow,
   addToast,
 } from "@heroui/react";
+
 import {
   ArrowLeft,
   ArrowDownRight,
@@ -30,8 +32,11 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+
 import { Controller, useForm } from "react-hook-form";
+
 import { useDispatch, useSelector } from "react-redux";
+
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -47,47 +52,69 @@ const PAGE_SIZE = 50;
 
 const voucherTypeOptions = [
   "ALL",
+
   "Sales Invoice",
+
   "Purchase",
+
   "Receipt",
+
   "Payment",
+
   "Credit Note",
+
   "Journal",
 ];
 
 const defaultFilterValues = {
   fromDate: "",
+
   toDate: "",
+
   voucherType: "ALL",
+
   search: "",
 };
 
 const LedgerEntriesPage = () => {
   const dispatch = useDispatch();
+
   const navigate = useNavigate();
+
   const location = useLocation();
+
   const { ledgerId } = useParams();
 
   const ledgerStatement = useSelector(selectLedgerStatement);
+
   const transactions = useSelector(selectLedgerTransactions);
+
   const loading = useSelector(selectLedgerTransactionsLoading);
+
   const error = useSelector(selectLedgerTransactionsError);
 
   const [expandedEntryId, setExpandedEntryId] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [appliedFilters, setAppliedFilters] = useState({
     fromDate: "",
+
     toDate: "",
   });
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: defaultFilterValues,
+
     mode: "onTouched",
   });
 
   const fromDate = watch("fromDate");
+
   const toDate = watch("toDate");
+
   const voucherType = watch("voucherType");
+
   const search = watch("search");
 
   useEffect(() => {
@@ -96,9 +123,13 @@ const LedgerEntriesPage = () => {
     dispatch(
       getLedgerTransactions({
         ledgerId,
+
         fromDate: appliedFilters.fromDate,
+
         toDate: appliedFilters.toDate,
+
         page: currentPage,
+
         size: PAGE_SIZE,
       }),
     );
@@ -114,6 +145,7 @@ const LedgerEntriesPage = () => {
     if (error) {
       addToast({
         title: error,
+
         color: "danger",
       });
     }
@@ -121,37 +153,47 @@ const LedgerEntriesPage = () => {
 
   const ledger = useMemo(() => {
     const stateLedger = location?.state?.ledger || {};
+
     const rawLedgerType =
       ledgerStatement?.ledgerType || stateLedger.ledgerType || "";
 
     return {
       id: ledgerStatement?.ledgerId || stateLedger.id || ledgerId,
+
       ledgerCode: ledgerStatement?.ledgerCode || stateLedger.ledgerCode || "-",
+
       name:
         ledgerStatement?.ledgerName ||
         stateLedger.ledgerName ||
         stateLedger.name ||
         "Ledger",
+
       ledgerType: rawLedgerType || "-",
+
       ledgerCategory: resolveLedgerCategory(
         rawLedgerType,
+
         stateLedger.ledgerCategory,
       ),
+
       groupName:
         stateLedger.groupName ||
         stateLedger.ledgerGroupName ||
         stateLedger.ledgerGroup?.name ||
         "-",
+
       currentBalance:
         ledgerStatement?.closingBalanceAmount ??
         stateLedger.currentBalance ??
         stateLedger.currentBalanceAmount ??
         0,
+
       currentBalanceType: formatBalanceType(
         ledgerStatement?.closingBalanceType ||
           stateLedger.currentBalanceType ||
           "",
       ),
+
       entries: transactions.map(mapApiTransactionToEntry),
     };
   }, [ledgerStatement, transactions, location?.state?.ledger, ledgerId]);
@@ -170,12 +212,15 @@ const LedgerEntriesPage = () => {
         return (
           String(entry.voucherNo || "")
             .toLowerCase()
+
             .includes(keyword) ||
           String(entry.voucherType || "")
             .toLowerCase()
+
             .includes(keyword) ||
           String(entry.particulars || "")
             .toLowerCase()
+
             .includes(keyword)
         );
       });
@@ -189,7 +234,9 @@ const LedgerEntriesPage = () => {
       const rows = [
         {
           rowType: "ENTRY",
+
           rowKey: `entry-${entry.id}`,
+
           entry,
         },
       ];
@@ -201,7 +248,9 @@ const LedgerEntriesPage = () => {
       ) {
         rows.push({
           rowType: "GST",
+
           rowKey: `gst-${entry.id}`,
+
           entry,
         });
       }
@@ -223,22 +272,28 @@ const LedgerEntriesPage = () => {
     if (!hasLocalFilter) {
       return {
         totalDebit: Number(ledgerStatement?.totalDebit || 0),
+
         totalCredit: Number(ledgerStatement?.totalCredit || 0),
+
         closingBalance: Number(ledgerStatement?.closingBalanceAmount || 0),
+
         closingBalanceType: formatBalanceType(
           ledgerStatement?.closingBalanceType,
         ),
+
         totalEntries: Number(ledgerStatement?.totalElements || 0),
       };
     }
 
     const totalDebit = filteredEntries.reduce(
       (sum, item) => sum + Number(item.debit || 0),
+
       0,
     );
 
     const totalCredit = filteredEntries.reduce(
       (sum, item) => sum + Number(item.credit || 0),
+
       0,
     );
 
@@ -246,23 +301,30 @@ const LedgerEntriesPage = () => {
 
     return {
       totalDebit,
+
       totalCredit,
+
       closingBalance: closingEntry?.balance ?? ledger?.currentBalance ?? 0,
+
       closingBalanceType:
         closingEntry?.balanceType ?? ledger?.currentBalanceType ?? "",
+
       totalEntries: filteredEntries.length,
     };
   }, [filteredEntries, ledger, ledgerStatement, voucherType, search]);
 
   const onApplyFilter = (values) => {
     setCurrentPage(1);
+
     setAppliedFilters({
       fromDate: values.fromDate || "",
+
       toDate: values.toDate || "",
     });
 
     addToast({
       title: "Filter applied",
+
       color: "success",
     });
   };
@@ -270,48 +332,71 @@ const LedgerEntriesPage = () => {
   const onInvalid = () => {
     addToast({
       title: "Please correct date range filter",
+
       color: "danger",
     });
   };
 
   const handleClearFilter = () => {
     reset(defaultFilterValues);
+
     setCurrentPage(1);
+
     setAppliedFilters({
       fromDate: "",
+
       toDate: "",
     });
   };
 
   const totalPages = Math.max(Number(ledgerStatement?.totalPages || 1), 1);
+
   const totalElements = Number(ledgerStatement?.totalElements || 0);
 
   return (
     <div className="h-[calc(100vh-120px)] min-h-0 w-full overflow-hidden p-4 text-sm">
       <style>
         {`
+
     @keyframes tallyOpen {
+
       from {
+
         opacity: 0;
+
         max-height: 0;
+
         transform: translateY(-4px);
+
       }
+
       to {
+
         opacity: 1;
+
         max-height: 56px;
+
         transform: translateY(0);
+
       }
+
     }
 
+
+
     .animate-tally-open {
+
       animation: tallyOpen 220ms ease-out;
+
     }
+
   `}
       </style>
 
       <Card className="h-full border border-slate-200" shadow="none">
         <CardBody className="flex h-full min-h-0 flex-col p-0">
           {/* Header */}
+
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
               <div className="flex min-w-0 items-start gap-3">
@@ -330,11 +415,17 @@ const LedgerEntriesPage = () => {
                     <span className="font-semibold text-slate-800">
                       {ledger.name}
                     </span>
+
                     <span className="h-1 w-1 rounded-full bg-emerald-500" />
+
                     <span>{ledger.ledgerType}</span>
+
                     <span className="h-1 w-1 rounded-full bg-emerald-500" />
+
                     <span>{ledger.groupName}</span>
+
                     <span className="h-1 w-1 rounded-full bg-emerald-500" />
+
                     <span>{ledger.ledgerCode}</span>
                   </div>
                 </div>
@@ -350,6 +441,7 @@ const LedgerEntriesPage = () => {
             </div>
 
             {/* Filters */}
+
             <form onSubmit={handleSubmit(onApplyFilter, onInvalid)}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[180px_180px_220px_minmax(240px,1fr)_auto]">
                 <Controller
@@ -358,6 +450,7 @@ const LedgerEntriesPage = () => {
                   rules={{
                     validate: (value) => {
                       if (!value || !toDate) return true;
+
                       return (
                         value <= toDate || "From date cannot be after To date"
                       );
@@ -384,6 +477,7 @@ const LedgerEntriesPage = () => {
                   rules={{
                     validate: (value) => {
                       if (!value || !fromDate) return true;
+
                       return (
                         value >= fromDate ||
                         "To date cannot be before From date"
@@ -433,7 +527,7 @@ const LedgerEntriesPage = () => {
                       size="sm"
                       isClearable
                       label="Search"
-                      placeholder="Voucher no, type, particulars..."
+                      placeholder="Voucher no, type, particulars, solution..."
                       startContent={
                         <Search size={15} className="text-slate-400" />
                       }
@@ -466,6 +560,7 @@ const LedgerEntriesPage = () => {
           </div>
 
           {/* Summary */}
+
           <div className="grid grid-cols-1 gap-3 border-b border-slate-200 px-5 py-4 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
               label="Total Entries"
@@ -495,6 +590,7 @@ const LedgerEntriesPage = () => {
           </div>
 
           {/* Table */}
+
           <ScrollShadow className="min-h-0 flex-1 overflow-auto px-5 py-4">
             <Table
               isHeaderSticky
@@ -502,17 +598,27 @@ const LedgerEntriesPage = () => {
               aria-label="Ledger entries table"
               classNames={{
                 th: "bg-emerald-50 text-emerald-900 text-xs font-semibold",
+
                 td: "text-xs text-slate-700",
-                table: "min-w-[1000px]",
+
+                table: "min-w-[1120px]",
               }}
             >
               <TableHeader>
                 <TableColumn>Date</TableColumn>
+
                 <TableColumn>Voucher No.</TableColumn>
+
                 <TableColumn>Voucher Type</TableColumn>
+
                 <TableColumn>Particulars</TableColumn>
+
+                <TableColumn>Solution</TableColumn>
+
                 <TableColumn align="end">Debit</TableColumn>
+
                 <TableColumn align="end">Credit</TableColumn>
+
                 <TableColumn align="end">Balance</TableColumn>
               </TableHeader>
 
@@ -535,6 +641,7 @@ const LedgerEntriesPage = () => {
                         </TableCell>
 
                         <TableCell />
+
                         <TableCell />
 
                         <TableCell className="py-0">
@@ -542,7 +649,11 @@ const LedgerEntriesPage = () => {
                         </TableCell>
 
                         <TableCell />
+
                         <TableCell />
+
+                        <TableCell />
+
                         <TableCell />
                       </TableRow>
                     );
@@ -599,6 +710,8 @@ const LedgerEntriesPage = () => {
 
                       <TableCell>{entry.particulars || "-"}</TableCell>
 
+                      <TableCell>{entry.serviceName || "-"}</TableCell>
+
                       <TableCell className="whitespace-nowrap text-right font-semibold">
                         {Number(entry.debit || 0)
                           ? formatCurrency(entry.debit)
@@ -622,6 +735,7 @@ const LedgerEntriesPage = () => {
           </ScrollShadow>
 
           {/* Pagination */}
+
           <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-5 py-3 sm:flex-row">
             <p className="text-xs text-slate-500">
               Showing page {currentPage} of {totalPages} | Total:{" "}
@@ -645,25 +759,42 @@ const LedgerEntriesPage = () => {
 
 const mapApiTransactionToEntry = (entry) => {
   const formattedVoucherType = formatVoucherType(entry.voucherType);
+
   const isSalesInvoice = isSalesInvoiceVoucher(entry.voucherType);
+
   const gstDetails = getSalesInvoiceGstDetails(entry);
 
   return {
     id:
       entry.entryId ||
       `${entry.voucherId || "voucher"}-${entry.sourceId || ""}`,
+
     entryDate: entry.voucherDate,
+
     voucherNo: entry.voucherNumber,
+
     voucherType: formattedVoucherType,
+
     rawVoucherType: entry.voucherType,
+
     particulars: entry.particulars || "-",
+
+    serviceName: entry.serviceName || entry.solutionName || null,
+
     debit: entry.debitAmount,
+
     credit: entry.creditAmount,
+
     balance: entry.runningBalanceAmount,
+
     balanceType: formatBalanceType(entry.runningBalanceType),
+
     isSalesInvoice,
+
     gstDetails,
+
     hasGstDetails: hasPositiveGstAmount(gstDetails),
+
     raw: entry,
   };
 };
@@ -672,8 +803,11 @@ const resolveLedgerCategory = (ledgerType, fallbackCategory) => {
   const type = String(ledgerType || fallbackCategory || "").toUpperCase();
 
   if (type.includes("BANK")) return "BANK";
+
   if (type.includes("VENDOR") || type.includes("SUPPLIER")) return "VENDOR";
+
   if (type.includes("CUSTOMER")) return "CUSTOMER";
+
   if (type.includes("SALES") || type.includes("INCOME")) return "INCOME";
 
   return fallbackCategory || "CUSTOMER";
@@ -700,6 +834,7 @@ const SummaryCard = ({ label, value, icon: Icon }) => {
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500">{label}</p>
+
             <p className="mt-1 whitespace-nowrap text-base font-bold text-slate-950">
               {value}
             </p>
@@ -733,7 +868,9 @@ const formatDate = (date) => {
 
   return parsedDate.toLocaleDateString("en-IN", {
     day: "2-digit",
+
     month: "short",
+
     year: "numeric",
   });
 };
@@ -744,6 +881,7 @@ const formatBalanceType = (type) => {
   const normalized = String(type).toUpperCase();
 
   if (normalized === "DEBIT") return "DR";
+
   if (normalized === "CREDIT") return "CR";
 
   return normalized;
@@ -754,25 +892,33 @@ const formatVoucherType = (type) => {
 
   return String(type)
     .replace(/_/g, " ")
+
     .toLowerCase()
+
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 const TallyGstNestedLine = ({ entry }) => {
   const gstDetails = entry?.gstDetails || {};
+
   const suffix = Number(entry?.debit || 0) > 0 ? "Dr" : "Cr";
 
   const gstRows = [
     {
       label: "CGST",
+
       amount: Number(gstDetails.cgstAmount || 0),
     },
+
     {
       label: "SGST",
+
       amount: Number(gstDetails.sgstAmount || 0),
     },
+
     {
       label: "IGST",
+
       amount: Number(gstDetails.igstAmount || 0),
     },
   ].filter((item) => item.amount > 0);
@@ -790,6 +936,7 @@ const TallyGstNestedLine = ({ entry }) => {
             className="mt-0.5 flex max-w-[360px] items-center justify-between gap-8 pl-7 font-semibold"
           >
             <span>{item.label}</span>
+
             <span className="whitespace-nowrap">
               {formatCurrency(item.amount)} {suffix}
             </span>
@@ -803,7 +950,9 @@ const TallyGstNestedLine = ({ entry }) => {
 const isSalesInvoiceVoucher = (type) => {
   const normalized = String(type || "")
     .trim()
+
     .toUpperCase()
+
     .replace(/\s+/g, "_");
 
   return normalized === "SALES_INVOICE";
@@ -818,11 +967,17 @@ const getSalesInvoiceGstDetails = (entry = {}) => {
 
   return {
     gstNo: gstDetails.gstNo || null,
+
     subTotalExGst: Number(gstDetails.subTotalExGst || 0),
+
     totalGstAmount: Number(gstDetails.totalGstAmount || 0),
+
     cgstAmount: Number(gstDetails.cgstAmount || 0),
+
     sgstAmount: Number(gstDetails.sgstAmount || 0),
+
     igstAmount: Number(gstDetails.igstAmount || 0),
+
     grandTotal: Number(gstDetails.grandTotal || 0),
   };
 };
@@ -832,7 +987,9 @@ const hasPositiveGstAmount = (gstDetails) => {
 
   return [
     gstDetails.cgstAmount,
+
     gstDetails.sgstAmount,
+
     gstDetails.igstAmount,
   ].some((amount) => Number(amount || 0) > 0);
 };

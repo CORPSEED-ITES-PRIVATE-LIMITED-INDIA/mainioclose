@@ -22,14 +22,11 @@ import {
   Textarea,
   Select,
   SelectItem,
-  RadioGroup,
-  Radio,
   addToast,
   Chip,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  input,
 } from "@heroui/react";
 import {
   ChevronDown,
@@ -55,15 +52,13 @@ import {
   approveUnBilledInvoiceByAdmin,
   cancelUnBilledInvoice,
   cancelUnBilledInvoiceByAdmin,
-  convertUnbillToAdvanceInvoice,
   createCreditNotes,
+  getInvoicesByUnbilledId, // CHANGED: added (same as sales)
   getTdsDetailByEstimateId,
   getUnBilledDetailById,
 } from "../../toolkit/slices/accountSlice";
 import { Link, useParams } from "react-router-dom";
 import UnbilledView from "../../components/UnbilledView";
-import { cancelProjectByUnbilledNumberInOperations } from "../../toolkit/slices/operationSlice";
-import { set } from "zod";
 import {
   getAllLeadUser,
   getEstimateByEstimateId,
@@ -118,6 +113,47 @@ const INITIAL_VISIBLE_COLUMNS = [
   "addedBy",
   "actions",
 ];
+
+// CHANGED: credit note defaults / helpers copied from Sales (module level so
+// they are stable references).
+const initialCreditNoteData = {
+  refundAmount: "",
+  reason: "",
+  attachment: "",
+  invoiceIds: [],
+
+  bankName: "",
+  bankAccountNumber: "",
+  confirmBankAccountNumber: "",
+  ifscCode: "",
+  swiftCode: "",
+  accountHolderName: "",
+  cancelledChequeAttachment: "",
+};
+
+// Returns true for a value worth pre-filling — excludes null, undefined,
+// and empty strings, but allows 0 (a valid, if unusual, refund amount).
+const isValidRefundValue = (value) =>
+  value !== null && value !== undefined && value !== "";
+
+// Pre-fills the credit note form from whatever refund data already exists
+// on the unbilled row (refundAmount / refundReason / refundAttachment),
+// falling back to the blank defaults for any field that isn't valid.
+const buildCreditNoteDataFromRow = (rowData, defaults) => ({
+  ...defaults,
+  // CHANGED: refund = what was actually received (not the total amount)
+  refundAmount: isValidRefundValue(rowData?.refundAmount)
+    ? String(rowData.refundAmount)
+    : Number(rowData?.receivedAmount) > 0
+      ? String(rowData.receivedAmount)
+      : defaults.refundAmount,
+  reason: isValidRefundValue(rowData?.refundReason)
+    ? rowData.refundReason
+    : defaults.reason,
+  attachment: isValidRefundValue(rowData?.refundAttachment)
+    ? rowData.refundAttachment
+    : defaults.attachment,
+});
 
 const getAttachmentFileName = (attachmentUrl = "") => {
   if (!attachmentUrl) return "Attachment";
@@ -284,20 +320,24 @@ const Unbill = () => {
   const { userId } = useParams();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const statusModal = useDisclosure();
-  const creditNoteModal = useDisclosure();
+  // CHANGED: removed creditNoteModal (credit note now lives inside statusModal)
   const viewModal = useDisclosure();
   const govtFeeModal = useDisclosure();
   const tdsModal = useDisclosure();
   const paymentProofModal = useDisclosure();
   const [selectedPaymentProof, setSelectedPaymentProof] = useState("");
   const userRole = useSelector((state) => state.auth.currentUser?.roles);
-  const adminRole = userRole.includes("ADMIN");
+  const adminRole = Array.isArray(userRole)
+    ? userRole.includes("ADMIN")
+    : userRole === "ADMIN";
   const department = useSelector(
     (state) => state?.auth?.getDepartmentDetail?.department,
   );
   const data = useSelector((state) => state.organization.unBillList);
   const count = useSelector((state) => state.organization.unBillCount);
   const invoiceDetail = useSelector((state) => state.account.unbilledDetail);
+  // CHANGED: invoices list for credit note invoice selector (same as sales)
+  const invoices = useSelector((state) => state.account.invoicesByUnbilled);
   const statusList = useSelector((state) => state?.setting?.statusList);
   const allLeadUser = useSelector((state) => state?.leads?.leadUsersList);
   const [filterValue, setFilterValue] = React.useState("");
@@ -331,16 +371,18 @@ const Unbill = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
   const [govtFeeDetail, setGovtFeeDetail] = useState();
   const [tdsDetail, setTdsDetail] = useState();
-  const [creditNoteData, setCreditNoteData] = useState({
-    refundAmount: "",
-    reason: "",
-    attachment: "",
-  });
+  // CHANGED: credit note state now matches sales
+  const [creditNoteData, setCreditNoteData] = useState(initialCreditNoteData);
 
   const [isCreditNoteAttachmentUploading, setIsCreditNoteAttachmentUploading] =
     useState(false);
-  getAllStatusData;
-  const [creditNoteRow, setCreditNoteRow] = useState(null);
+  const [isCancelledChequeUploading, setIsCancelledChequeUploading] =
+    useState(false);
+  // CHANGED: account users only REQUEST cancellation (no credit note form).
+  // Whenever an ADMIN selects CANCELLED, the whole credit note flow runs:
+  // form (missing data asked in the modal) -> credit note -> cancellation.
+  const requiresCreditNote =
+    updatedStatusData?.approvalRemarks === "CANCELLED" && adminRole;
   const [reportFilters, setReportFilters] = useState({
     fromDate: "",
     toDate: "",
@@ -376,9 +418,33 @@ const Unbill = () => {
   }, [dispatch, userId]);
 
   useEffect(() => {
+    dispatch(getAllStatusData());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const searchValue = filterValue.trim();
+
+    if (searchValue) {
+      const searchPayload = {
+        page,
+        size: rowsPerPage,
+        [searchBy]: searchValue,
+      };
+
+      dispatch(searchUnbilledByCompanyNameAndUnbilled(searchPayload));
+      return;
+    }
+
     dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
     dispatch(getAllUnbillCount({ userId, status }));
-  }, [dispatch, page, rowsPerPage, status]);
+  }, [dispatch, page, rowsPerPage, userId, status, filterValue, searchBy]);
+
+  // CHANGED: whenever the status modal closes, clear the credit note section
+  useEffect(() => {
+    if (!statusModal.isOpen) {
+      setCreditNoteData(initialCreditNoteData);
+    }
+  }, [statusModal.isOpen]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -474,7 +540,10 @@ const Unbill = () => {
       );
   };
 
-  const handleCreateCreditNote = async () => {
+  // CHANGED: credit note validation copied from sales. Returns true when valid.
+  // Runs BEFORE any API call so cancellation + credit note are only attempted
+  // when everything is valid.
+  const validateCreditNote = () => {
     if (
       !creditNoteData.refundAmount ||
       Number(creditNoteData.refundAmount) <= 0
@@ -483,7 +552,19 @@ const Unbill = () => {
         title: "Refund amount is required",
         color: "danger",
       });
-      return;
+      return false;
+    }
+
+    if (
+      Number(rowItem?.receivedAmount) > 0 &&
+      Number(creditNoteData.refundAmount) > Number(rowItem?.receivedAmount)
+    ) {
+      addToast({
+        title: "Refund amount exceeds received amount",
+        description: `Refund cannot be more than the received amount (${rowItem?.receivedAmount}).`,
+        color: "danger",
+      });
+      return false;
     }
 
     if (!creditNoteData.reason?.trim()) {
@@ -491,67 +572,174 @@ const Unbill = () => {
         title: "Reason is required",
         color: "danger",
       });
-      return;
+      return false;
+    }
+
+    if (!creditNoteData.invoiceIds?.length) {
+      addToast({
+        title: "Invoice is required",
+        description: "Please select at least one invoice.",
+        color: "danger",
+      });
+      return false;
     }
 
     if (isCreditNoteAttachmentUploading) {
       addToast({
-        title: "Upload in progress",
-        description: "Please wait until attachment upload is completed.",
+        title: "Credit note attachment upload in progress",
+        description: "Please wait until upload is completed.",
         color: "warning",
       });
-      return;
+      return false;
     }
 
     if (!creditNoteData.attachment) {
       addToast({
-        title: "Attachment is required",
-        description: "Please upload credit note attachment.",
+        title: "Credit note attachment is required",
         color: "danger",
       });
-      return;
+      return false;
     }
 
+    if (!creditNoteData.bankName?.trim()) {
+      addToast({
+        title: "Bank name is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!creditNoteData.accountHolderName?.trim()) {
+      addToast({
+        title: "Account holder name is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!creditNoteData.bankAccountNumber?.trim()) {
+      addToast({
+        title: "Bank account number is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!/^[0-9]{9,18}$/.test(creditNoteData.bankAccountNumber.trim())) {
+      addToast({
+        title: "Invalid bank account number",
+        description: "Bank account number must be 9 to 18 digits.",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!creditNoteData.confirmBankAccountNumber?.trim()) {
+      addToast({
+        title: "Confirm bank account number is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (
+      creditNoteData.bankAccountNumber.trim() !==
+      creditNoteData.confirmBankAccountNumber.trim()
+    ) {
+      addToast({
+        title: "Bank account number mismatch",
+        description:
+          "Bank account number and confirm account number must match.",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (!creditNoteData.ifscCode?.trim()) {
+      addToast({
+        title: "IFSC code is required",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (
+      creditNoteData.swiftCode?.trim() &&
+      !/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(
+        creditNoteData.swiftCode.trim().toUpperCase(),
+      )
+    ) {
+      addToast({
+        title: "Invalid SWIFT code",
+        description: "SWIFT code must be 8 or 11 characters.",
+        color: "danger",
+      });
+      return false;
+    }
+
+    if (isCancelledChequeUploading) {
+      addToast({
+        title: "Cancelled cheque upload in progress",
+        description: "Please wait until upload is completed.",
+        color: "warning",
+      });
+      return false;
+    }
+
+    if (!creditNoteData.cancelledChequeAttachment) {
+      addToast({
+        title: "Cancelled cheque is required",
+        description: "Please upload cancelled cheque attachment.",
+        color: "danger",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // CHANGED: creates the credit note for the selected row (payload copied from
+  // sales). Returns { ok, message } instead of toasting so the caller decides
+  // whether to continue with the cancellation.
+  const submitCreditNote = async () => {
     const payload = {
-      estimateNumber: creditNoteRow?.estimateNumber,
+      unbilledId: rowItem?.id,
+      estimateNumber: rowItem?.estimateNumber,
       createdByUserId: Number(userId),
       refundAmount: Number(creditNoteData.refundAmount),
-      reason: creditNoteData.reason,
+      reason: creditNoteData.reason.trim(),
       attachment: creditNoteData.attachment,
+      invoiceIds: creditNoteData.invoiceIds || [],
+
+      bankName: creditNoteData.bankName.trim(),
+      bankAccountNumber: creditNoteData.bankAccountNumber.trim(),
+      ifscCode: creditNoteData.ifscCode.trim().toUpperCase(),
+      swiftCode: creditNoteData.swiftCode?.trim()
+        ? creditNoteData.swiftCode.trim().toUpperCase()
+        : null,
+      accountHolderName: creditNoteData.accountHolderName.trim(),
+      cancelledChequeAttachment: creditNoteData.cancelledChequeAttachment,
     };
 
     try {
       const resp = await dispatch(createCreditNotes(payload));
 
       if (resp.meta.requestStatus === "fulfilled") {
-        addToast({
-          title: "Credit note created successfully!",
-          color: "success",
-        });
-
-        creditNoteModal.onClose();
-        setCreditNoteRow(null);
-        setCreditNoteData({
-          refundAmount: "",
-          reason: "",
-          attachment: "",
-        });
-
-        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
-        dispatch(getAllUnbillCount({ userId, status }));
-      } else {
-        addToast({
-          title: "RESTRICTED",
-          description:
-            resp?.payload?.data?.message || "Failed to create credit note",
-          color: "danger",
-        });
+        return { ok: true };
       }
+
+      return {
+        ok: false,
+        message:
+          resp?.payload?.data?.message ||
+          resp?.payload?.message ||
+          "Failed to create credit note",
+      };
     } catch (error) {
-      addToast({
-        title: "Something went wrong!",
-        color: "danger",
-      });
+      return {
+        ok: false,
+        message: error?.message || "Failed to create credit note",
+      };
     }
   };
 
@@ -594,237 +782,240 @@ const Unbill = () => {
     );
   };
 
-  const renderCell = React.useCallback((rowData, columnKey) => {
-    const cellValue = rowData[columnKey];
-    switch (columnKey) {
-      case "date":
-        return (
-          <div className="flex flex-col gap-1">
-            <p className="text-[12.5px] capitalize">
-              {new Date(rowData.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-            <Chip
-              size="sm"
-              variant="flat"
-              className="w-fit"
-              color={
-                rowData?.status === "APPROVED"
-                  ? "success"
-                  : rowData?.status === "REJECTED"
-                    ? "danger"
-                    : "warning"
-              }
-            >
-              {rowData?.status}
-            </Chip>
-          </div>
-        );
-      case "unbillNo":
-        return (
-          <Link
-            to={`${rowData?.id}/invoices`}
-            className="text-[12.5px] capitalize font-medium"
-          >
-            {`${rowData?.unbilledNumber}`}
-            {rowData?.advanceInvoiceFlag
-              ? ` / ${rowData?.advanceInvoiceNumber}`
-              : ``}{" "}
-          </Link>
-        );
-      case "estimateNumber":
-        return (
-          <div>
-            <p
-              className="capitalize text-[12.5px] font-medium text-blue-600 cursor-pointer"
-              onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
-            >
-              {rowData?.estimateNumber || "NA"}
-            </p>
-          </div>
-        );
-      case "governmentFee":
-        return (
-          <div>
-            <button
-              disabled={!rowData?.governmentFeeActiveFlag}
-              className={`capitalize text-[12.5px] font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
-              onClick={() => {
-                handleGovtFeePreview(rowData.id);
-              }}
-            >
-              {rowData?.governmentFeeActiveFlag === true ? "True" : "False"}
-            </button>
-          </div>
-        );
-      case "tdsActive":
-        return (
-          <div className="w-full max-w-[130px] rounded-md px-3 py-2">
-            {rowData?.tdsActiveFlag === true && (
-              <div className="mt-2 space-y-1 text-[11.5px]">
-                <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">
-                    ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="whitespace-nowrap font-semibold text-gray-600 dark:text-gray-300">
-                    {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-
-      case "service":
-        return renderTwoLineText(rowData?.solutionName, "220px");
-
-      case "companyName":
-        return (
-          <>
-            <Link
-              className="font-medium text-[12.5px]"
-              to={`/erp/${userId}/accounts/companyApprovals`}
-            >
-              {renderTwoLineText(
-                rowData?.companyName || rowData?.company,
-                "220px",
-              )}
-            </Link>
-            <Chip
-              size="sm"
-              variant="flat"
-              color={
-                rowData?.companyStatus === "APPROVED"
-                  ? "success"
-                  : rowData?.companyStatus === "REJECTED"
-                    ? "danger"
-                    : "warning"
-              }
-            >
-              {rowData?.companyStatus}
-            </Chip>
-          </>
-        );
-
-      case "client":
-        return renderTwoLineText(rowData?.contactName, "220px");
-      case "unitName":
-        return (
-          <div className="">
-            <Link
-              className="font-medium text-[12.5px]"
-              to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
-            >
-              {renderTwoLineText(rowData?.unitName, "220px")}
-            </Link>
-
-            <Chip
-              size="sm"
-              variant="flat"
-              color={
-                rowData?.unitStatus === "APPROVED"
-                  ? "success"
-                  : rowData?.unitStatus === "REJECTED"
-                    ? "danger"
-                    : "warning"
-              }
-            >
-              {rowData?.unitStatus || "NA"}
-            </Chip>
-          </div>
-        );
-      case "totalAmount":
-        return (
-          <p className="text-[12.5px] capitalize">
-            {inrCurrency(rowData?.totalAmount)}
-          </p>
-        );
-      case "receivedAmount":
-        return (
-          <p className="text-[12.5px] capitalize">
-            {inrCurrency(rowData?.receivedAmount)}
-          </p>
-        );
-      case "currentReceivedAmount":
-        return (
-          <p className="text-[12.5px] capitalize">
-            {inrCurrency(rowData?.currentReceivedAmount)}
-          </p>
-        );
-      case "outstandingAmount":
-        return (
-          <p className="text-[12.5px] capitalize">
-            {inrCurrency(rowData?.outstandingAmount)}
-          </p>
-        );
-      case "addedBy":
-        return (
-          <p className="text-[12.5px] capitalize">{rowData?.createdByName}</p>
-        );
-      case "cancelAttachment":
-        return (
-          <div className="flex items-center gap-2">
-            {rowData?.cancelAttachment ? (
-              <Button
+  const renderCell = React.useCallback(
+    (rowData, columnKey) => {
+      const cellValue = rowData[columnKey];
+      switch (columnKey) {
+        case "date":
+          return (
+            <div className="flex flex-col gap-1">
+              <p className="text-[12.5px] capitalize">
+                {new Date(rowData.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <Chip
                 size="sm"
-                color="primary"
                 variant="flat"
-                startContent={<Paperclip size={14} />}
-                onPress={() =>
-                  handlePaymentProofPreview(rowData?.cancelAttachment)
+                className="w-fit"
+                color={
+                  rowData?.status === "APPROVED"
+                    ? "success"
+                    : rowData?.status === "REJECTED"
+                      ? "danger"
+                      : "warning"
                 }
               >
-                View
-              </Button>
-            ) : (
-              <Chip size="sm" variant="flat" color="default">
-                No attachement
+                {rowData?.status}
               </Chip>
-            )}
-          </div>
-        );
-      case "paymentProof":
-        return (
-          <div className="flex items-center gap-2">
-            {rowData?.paymentProof ? (
-              <Button
-                size="sm"
-                color="primary"
-                variant="flat"
-                startContent={<Paperclip size={14} />}
-                onPress={() => handlePaymentProofPreview(rowData?.paymentProof)}
+            </div>
+          );
+        case "unbillNo":
+          return (
+            <Link
+              to={`${rowData?.id}/invoices`}
+              className="text-[12.5px] capitalize font-medium"
+            >
+              {`${rowData?.unbilledNumber}`}
+              {rowData?.advanceInvoiceFlag
+                ? ` / ${rowData?.advanceInvoiceNumber}`
+                : ``}{" "}
+            </Link>
+          );
+        case "estimateNumber":
+          return (
+            <div>
+              <p
+                className="capitalize text-[12.5px] font-medium text-blue-600 cursor-pointer"
+                onClick={() => handleViewEstimate(rowData, "ESTIMATE")}
               >
-                View
-              </Button>
-            ) : (
-              <Chip size="sm" variant="flat" color="default">
-                No Proof
+                {rowData?.estimateNumber || "NA"}
+              </p>
+            </div>
+          );
+        case "governmentFee":
+          return (
+            <div>
+              <button
+                disabled={!rowData?.governmentFeeActiveFlag}
+                className={`capitalize text-[12.5px] font-medium ${rowData?.governmentFeeActiveFlag == true ? "text-blue-600 cursor-pointer" : "text-gray-500 cursor-not-allowed"}`}
+                onClick={() => {
+                  handleGovtFeePreview(rowData.id);
+                }}
+              >
+                {rowData?.governmentFeeActiveFlag === true ? "True" : "False"}
+              </button>
+            </div>
+          );
+        case "tdsActive":
+          return (
+            <div className="w-full max-w-[130px] rounded-md px-3 py-2">
+              {rowData?.tdsActiveFlag === true && (
+                <div className="mt-2 space-y-1 text-[11.5px]">
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap font-semibold text-gray-900 dark:text-white">
+                      ₹ {rowData?.tdsResponseDto?.tdsAmount ?? 0}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap font-semibold text-gray-600 dark:text-gray-300">
+                      {rowData?.tdsResponseDto?.tdsPercentage ?? 0}%
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+
+        case "service":
+          return renderTwoLineText(rowData?.solutionName, "220px");
+
+        case "companyName":
+          return (
+            <>
+              <Link
+                className="font-medium text-[12.5px]"
+                to={`/erp/${userId}/accounts/companyApprovals`}
+              >
+                {renderTwoLineText(
+                  rowData?.companyName || rowData?.company,
+                  "220px",
+                )}
+              </Link>
+              <Chip
+                size="sm"
+                variant="flat"
+                color={
+                  rowData?.companyStatus === "APPROVED"
+                    ? "success"
+                    : rowData?.companyStatus === "REJECTED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {rowData?.companyStatus}
               </Chip>
-            )}
-          </div>
-        );
-      case "actions":
-        return (
-          <div className="relative flex justify-center items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
+            </>
+          );
+
+        case "client":
+          return renderTwoLineText(rowData?.contactName, "220px");
+        case "unitName":
+          return (
+            <div className="">
+              <Link
+                className="font-medium text-[12.5px]"
+                to={`/erp/${userId}/accounts/companyApprovals/${rowData?.companyId}/units`}
+              >
+                {renderTwoLineText(rowData?.unitName, "220px")}
+              </Link>
+
+              <Chip
+                size="sm"
+                variant="flat"
+                color={
+                  rowData?.unitStatus === "APPROVED"
+                    ? "success"
+                    : rowData?.unitStatus === "REJECTED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {rowData?.unitStatus || "NA"}
+              </Chip>
+            </div>
+          );
+        case "totalAmount":
+          return (
+            <p className="text-[12.5px] capitalize">
+              {inrCurrency(rowData?.totalAmount)}
+            </p>
+          );
+        case "receivedAmount":
+          return (
+            <p className="text-[12.5px] capitalize">
+              {inrCurrency(rowData?.receivedAmount)}
+            </p>
+          );
+        case "currentReceivedAmount":
+          return (
+            <p className="text-[12.5px] capitalize">
+              {inrCurrency(rowData?.currentReceivedAmount)}
+            </p>
+          );
+        case "outstandingAmount":
+          return (
+            <p className="text-[12.5px] capitalize">
+              {inrCurrency(rowData?.outstandingAmount)}
+            </p>
+          );
+        case "addedBy":
+          return (
+            <p className="text-[12.5px] capitalize">{rowData?.createdByName}</p>
+          );
+        case "cancelAttachment":
+          return (
+            <div className="flex items-center gap-2">
+              {rowData?.cancelAttachment ? (
                 <Button
-                  isIconOnly
                   size="sm"
-                  variant="light"
-                  onClick={handleActionMenuOpen}
+                  color="primary"
+                  variant="flat"
+                  startContent={<Paperclip size={14} />}
+                  onPress={() =>
+                    handlePaymentProofPreview(rowData?.cancelAttachment)
+                  }
                 >
-                  <EllipsisVertical className="w-4 h-4 text-default-300" />
+                  View
                 </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                {/* {!rowData?.advanceInvoiceFlag && (
+              ) : (
+                <Chip size="sm" variant="flat" color="default">
+                  No attachement
+                </Chip>
+              )}
+            </div>
+          );
+        case "paymentProof":
+          return (
+            <div className="flex items-center gap-2">
+              {rowData?.paymentProof ? (
+                <Button
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  startContent={<Paperclip size={14} />}
+                  onPress={() =>
+                    handlePaymentProofPreview(rowData?.paymentProof)
+                  }
+                >
+                  View
+                </Button>
+              ) : (
+                <Chip size="sm" variant="flat" color="default">
+                  No Proof
+                </Chip>
+              )}
+            </div>
+          );
+        case "actions":
+          return (
+            <div className="relative flex justify-center items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onClick={handleActionMenuOpen}
+                  >
+                    <EllipsisVertical className="w-4 h-4 text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  {/* {!rowData?.advanceInvoiceFlag && (
                   <DropdownItem
                     key="view"
                     onPress={() => {
@@ -871,19 +1062,19 @@ const Unbill = () => {
                   </DropdownItem>
                 )} */}
 
-                <DropdownItem
-                  key="unbilledview"
-                  onPress={() => {
-                    setIsAdvanceInvoice(false);
-                    onOpen();
-                    dispatch(
-                      getUnBilledDetailById({ id: rowData?.id, userId }),
-                    );
-                  }}
-                >
-                  Unbilled View
-                </DropdownItem>
-                {/* <DropdownItem
+                  <DropdownItem
+                    key="unbilledview"
+                    onPress={() => {
+                      setIsAdvanceInvoice(false);
+                      onOpen();
+                      dispatch(
+                        getUnBilledDetailById({ id: rowData?.id, userId }),
+                      );
+                    }}
+                  >
+                    Unbilled View
+                  </DropdownItem>
+                  {/* <DropdownItem
                   key="advanceinvoiceview"
                   onPress={() => {
                     setIsAdvanceInvoice(true);
@@ -895,30 +1086,52 @@ const Unbill = () => {
                 >
                   Advance Invoice View
                 </DropdownItem> */}
-                <DropdownItem
-                  key="status"
-                  onPress={() => {
-                    setRowItem(rowData);
-                    setUpdatedStatusData({
-                      approverUserId: userId,
-                      approvalRemarks: "",
-                      registrationType: "",
-                      rejectionReason: "",
-                      attachment: "",
-                    });
-                    statusModal.onOpen();
-                  }}
-                >
-                  Update status
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-      default:
-        return cellValue;
-    }
-  }, []);
+                  <DropdownItem
+                    key="status"
+                    onPress={() => {
+                      setRowItem(rowData);
+                      setUpdatedStatusData({
+                        approverUserId: userId,
+                        approvalRemarks: "",
+                        registrationType: "",
+                        rejectionReason: "",
+                        attachment: "",
+                      });
+                      // CHANGED: for admins on APPROVED / CANCEL_REQUESTED rows, load invoices and
+                      // pre-fill credit note data from the row (same as sales).
+                      // Any missing data point is asked in the modal.
+                      setCreditNoteData(
+                        buildCreditNoteDataFromRow(
+                          rowData,
+                          initialCreditNoteData,
+                        ),
+                      );
+                      if (adminRole) {
+                        dispatch(
+                          getInvoicesByUnbilledId({
+                            userId: Number(userId),
+                            unbilledId: rowData?.id,
+                            page: 1,
+                            size: 100,
+                          }),
+                        );
+                      }
+                      statusModal.onOpen();
+                    }}
+                  >
+                    Update status
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return cellValue;
+      }
+    },
+    // CHANGED: was [] — now has the values the action handler uses
+    [dispatch, userId, adminRole],
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) {
@@ -937,49 +1150,15 @@ const Unbill = () => {
     setPage(1);
   }, []);
 
-  const onSearchChange = React.useCallback(
-    (value) => {
-      if (value) {
-        setFilterValue(value);
-        if (searchBy === "companyName") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              companyName: value,
-            }),
-          );
-        } else if (searchBy === "unbilledNumber") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              unbilledNumber: value,
-            }),
-          );
-        } else if (searchBy === "estimateNumber") {
-          dispatch(
-            searchUnbilledByCompanyNameAndUnbilled({
-              page,
-              size: rowsPerPage,
-              estimateNumber: value,
-            }),
-          );
-        }
-        setPage(1);
-      } else {
-        setFilterValue("");
-        dispatch(getAllUnbillList({ page, size: rowsPerPage, userId, status }));
-        dispatch(getAllUnbillCount({ userId, status }));
-      }
-    },
-    [searchBy, rowsPerPage, page, status, userId],
-  );
+  const onSearchChange = React.useCallback((value) => {
+    setFilterValue(value || "");
+    setPage(1);
+  }, []);
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
     setPage(1);
-  }, [searchBy]);
+  }, []);
 
   const handleUpdateStatus = async () => {
     // Prevent duplicate submission
@@ -1043,13 +1222,55 @@ const Unbill = () => {
       return;
     }
 
+    // CHANGED: when an admin approves a cancellation, the credit note is
+    // generated in the same step. Validate it fully BEFORE any API call.
+    const shouldRaiseCreditNote = requiresCreditNote;
+
+    if (shouldRaiseCreditNote && !validateCreditNote()) {
+      return;
+    }
+
     /* =========================
      START FULL-SCREEN LOADER
   ========================= */
 
     setUpdateStatusLoading(true);
 
+    // CHANGED: tracks whether the credit note was created, so that a later
+    // cancellation failure can tell the user exactly what happened.
+    let creditNoteCreated = false;
+    const withCreditNoteNote = (message) =>
+      creditNoteCreated
+        ? `${message} The credit note was already generated — please retry approving the cancellation.`
+        : message;
+
     try {
+      /* ==========================================
+       CHANGED: STEP 1 — AUTO-GENERATE CREDIT NOTE (runs first)
+       If it fails, the cancellation is NOT approved.
+    ========================================== */
+
+      if (shouldRaiseCreditNote) {
+        const creditNoteResult = await submitCreditNote();
+
+        if (!creditNoteResult.ok) {
+          addToast({
+            title: "Credit note failed — cancellation not approved",
+            description: creditNoteResult.message,
+            color: "danger",
+          });
+          return;
+        }
+
+        creditNoteCreated = true;
+
+        addToast({
+          title: "Credit note generated",
+          description: "Credit note was generated for this cancellation.",
+          color: "success",
+        });
+      }
+
       /* ==========================================
        NON-ADMIN CANCELLATION REQUEST
     ========================================== */
@@ -1067,12 +1288,19 @@ const Unbill = () => {
         if (response.meta.requestStatus !== "fulfilled") {
           addToast({
             title: "ERROR",
-            description:
+            description: withCreditNoteNote(
               response?.payload?.data?.message ||
-              response?.payload?.message ||
-              "Failed to cancel unbill.",
+                response?.payload?.message ||
+                "Failed to cancel unbill.",
+            ),
             color: "danger",
           });
+          if (creditNoteCreated) {
+            dispatch(
+              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
+            );
+            dispatch(getAllUnbillCount({ userId, status }));
+          }
           return;
         }
 
@@ -1177,18 +1405,27 @@ const Unbill = () => {
         if (response.meta.requestStatus !== "fulfilled") {
           addToast({
             title: "ERROR",
-            description:
+            description: withCreditNoteNote(
               response?.payload?.data?.message ||
-              response?.payload?.message ||
-              "Failed to approve cancellation request.",
+                response?.payload?.message ||
+                "Failed to approve cancellation request.",
+            ),
             color: "danger",
           });
+          if (creditNoteCreated) {
+            dispatch(
+              getAllUnbillList({ page, size: rowsPerPage, userId, status }),
+            );
+            dispatch(getAllUnbillCount({ userId, status }));
+          }
           return;
         }
 
         addToast({
           title: "SUCCESS",
-          description: "Cancellation request approved successfully by Admin.",
+          description: creditNoteCreated
+            ? "Cancellation approved and credit note generated successfully."
+            : "Cancellation request approved successfully by Admin.",
           color: "success",
         });
 
@@ -1332,8 +1569,9 @@ const Unbill = () => {
 
       addToast({
         title: "ERROR",
-        description:
+        description: withCreditNoteNote(
           error?.message || "Something went wrong while updating status.",
+        ),
         color: "danger",
       });
     } finally {
@@ -1855,6 +2093,8 @@ const Unbill = () => {
         onOpenChange={statusModal.onOpenChange}
         placement="top-center"
         backdrop="blur"
+        // CHANGED: wider modal when the credit note form is shown
+        size={requiresCreditNote ? "4xl" : "md"}
       >
         <ModalContent>
           {(onClose) => (
@@ -1949,6 +2189,242 @@ const Unbill = () => {
                       isRequired
                     />
                   )}
+
+                {/* CHANGED: credit note form for ADMIN approving a cancellation.
+                    Fields copied from sales. */}
+                {requiresCreditNote && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-default-200 p-4">
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-sm font-semibold text-default-900">
+                        Credit Note
+                      </p>
+                      <p className="text-xs text-default-500">
+                        A credit note will be generated automatically when you
+                        approve this cancellation. If it fails, the cancellation
+                        will not be approved.
+                      </p>
+                    </div>
+
+                    {rowItem?.refundIssued && (
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-success-200 bg-success-50 px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-[12.5px] font-semibold text-success-700">
+                            A refund is already recorded for this unbilled
+                            invoice.
+                          </p>
+                          <p className="text-[11.5px] text-success-600">
+                            Amount, reason and attachment have been pre-filled
+                            below — review before submitting.
+                          </p>
+                        </div>
+                        <Chip size="sm" variant="flat" color="success">
+                          Refund Issued
+                        </Chip>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <Input
+                        type="number"
+                        label={
+                          isValidRefundValue(rowItem?.refundAmount)
+                            ? "Refund Amount (Excluding Taxes)"
+                            : "Refund Amount (Received Amount)"
+                        }
+                        placeholder="Enter refund amount"
+                        isRequired
+                        min={0}
+                        // CHANGED: sales has this always read-only; here it is
+                        // read-only only when the amount came from the row,
+                        // otherwise the user could never enter one.
+                        readOnly={
+                          isValidRefundValue(rowItem?.refundAmount) ||
+                          Number(rowItem?.receivedAmount) > 0
+                        }
+                        value={creditNoteData.refundAmount}
+                        onChange={(e) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            refundAmount: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <NewSelect
+                        data={invoices || []}
+                        labelKey="invoiceNumber"
+                        label="Invoice Ids"
+                        placeholder="Select Invoice Ids"
+                        isRequired
+                        selectionMode="multiple"
+                        valueKey="id"
+                        value={creditNoteData.invoiceIds}
+                        onChange={(value) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            invoiceIds: Array.isArray(value)
+                              ? value.map(Number)
+                              : value
+                                ? [Number(value)]
+                                : [],
+                          }))
+                        }
+                      />
+
+                      <Input
+                        label="Bank Name"
+                        placeholder="Enter client bank name"
+                        isRequired
+                        value={creditNoteData.bankName}
+                        onChange={(e) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            bankName: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <Input
+                        label="Company Name"
+                        placeholder="Enter company name"
+                        isRequired
+                        value={creditNoteData.accountHolderName}
+                        onChange={(e) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            accountHolderName: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <Input
+                        type="text"
+                        label="Bank Account Number"
+                        placeholder="Enter bank account number"
+                        isRequired
+                        value={creditNoteData.bankAccountNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            bankAccountNumber: value,
+                          }));
+                        }}
+                      />
+
+                      <Input
+                        type="text"
+                        label="Confirm Bank Account Number"
+                        placeholder="Re-enter bank account number"
+                        isRequired
+                        value={creditNoteData.confirmBankAccountNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            confirmBankAccountNumber: value,
+                          }));
+                        }}
+                        color={
+                          creditNoteData.confirmBankAccountNumber &&
+                          creditNoteData.bankAccountNumber !==
+                            creditNoteData.confirmBankAccountNumber
+                            ? "danger"
+                            : "default"
+                        }
+                        errorMessage={
+                          creditNoteData.confirmBankAccountNumber &&
+                          creditNoteData.bankAccountNumber !==
+                            creditNoteData.confirmBankAccountNumber
+                            ? "Account number does not match"
+                            : ""
+                        }
+                        isInvalid={
+                          Boolean(creditNoteData.confirmBankAccountNumber) &&
+                          creditNoteData.bankAccountNumber !==
+                            creditNoteData.confirmBankAccountNumber
+                        }
+                      />
+
+                      <Input
+                        label="IFSC Code"
+                        placeholder="Example: HDFC0001234"
+                        isRequired
+                        maxLength={11}
+                        value={creditNoteData.ifscCode}
+                        onChange={(e) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            ifscCode: e.target.value.toUpperCase(),
+                          }))
+                        }
+                      />
+
+                      <Input
+                        label="SWIFT Code"
+                        placeholder="Optional"
+                        maxLength={11}
+                        value={creditNoteData.swiftCode}
+                        onChange={(e) =>
+                          setCreditNoteData((prev) => ({
+                            ...prev,
+                            swiftCode: e.target.value.toUpperCase(),
+                          }))
+                        }
+                      />
+
+                      <div className="md:col-span-2">
+                        <Textarea
+                          label="Reason"
+                          placeholder="Enter reason for credit note"
+                          isRequired
+                          minRows={4}
+                          value={creditNoteData.reason}
+                          onChange={(e) =>
+                            setCreditNoteData((prev) => ({
+                              ...prev,
+                              reason: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <FileUploader
+                          value={creditNoteData.attachment}
+                          onChange={(value) =>
+                            setCreditNoteData((prev) => ({
+                              ...prev,
+                              attachment: value,
+                            }))
+                          }
+                          onUploadingChange={setIsCreditNoteAttachmentUploading}
+                          label="Escalation Team Approval Attachment"
+                          placeholder="Upload credit note attachment"
+                          isRequired
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <FileUploader
+                          value={creditNoteData.cancelledChequeAttachment}
+                          onChange={(value) =>
+                            setCreditNoteData((prev) => ({
+                              ...prev,
+                              cancelledChequeAttachment: value,
+                            }))
+                          }
+                          onUploadingChange={setIsCancelledChequeUploading}
+                          label="Cancelled Cheque Attachment"
+                          placeholder="Upload cancelled cheque"
+                          isRequired
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </ModalBody>
 
               <ModalFooter>
@@ -1974,7 +2450,12 @@ const Unbill = () => {
                   color="primary"
                   isLoading={updateStatusLoading}
                   isDisabled={
-                    updateStatusLoading || isCancelAttachmentUploading
+                    updateStatusLoading ||
+                    isCancelAttachmentUploading ||
+                    // CHANGED: also wait for credit note uploads
+                    (requiresCreditNote &&
+                      (isCreditNoteAttachmentUploading ||
+                        isCancelledChequeUploading))
                   }
                   onPress={handleUpdateStatus}
                 >
@@ -2489,96 +2970,9 @@ const Unbill = () => {
         </ModalContent>
       </Modal>
 
-      <Modal
-        isOpen={creditNoteModal.isOpen}
-        onOpenChange={creditNoteModal.onOpenChange}
-        placement="top-center"
-        backdrop="blur"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                Credit Note
-                <span className="text-xs font-normal text-gray-500">
-                  {creditNoteRow?.unbilledNumber
-                    ? `Unbilled No: ${creditNoteRow.unbilledNumber}`
-                    : ""}
-                </span>
-              </ModalHeader>
-
-              <ModalBody className="max-h-[85vh] overflow-auto">
-                <Input
-                  type="number"
-                  label="Refund Amount"
-                  placeholder="Enter refund amount"
-                  isRequired
-                  min={0}
-                  value={creditNoteData.refundAmount}
-                  onChange={(e) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      refundAmount: e.target.value,
-                    }))
-                  }
-                />
-
-                <Textarea
-                  label="Reason"
-                  placeholder="Enter reason for credit note"
-                  isRequired
-                  minRows={4}
-                  value={creditNoteData.reason}
-                  onChange={(e) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                />
-                <FileUploader
-                  value={creditNoteData.attachment}
-                  onChange={(uploadedUrl) =>
-                    setCreditNoteData((prev) => ({
-                      ...prev,
-                      attachment: uploadedUrl,
-                    }))
-                  }
-                  onUploadingChange={setIsCreditNoteAttachmentUploading}
-                  label="Attachment"
-                  placeholder="Upload Credit Note attachment"
-                  isRequired
-                />
-              </ModalBody>
-
-              <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="light"
-                  isDisabled={updateStatusLoading}
-                  onPress={() => {
-                    setUpdatedStatusData({
-                      approverUserId: userId,
-                      approvalRemarks: "",
-                      registrationType: "",
-                      rejectionReason: "",
-                      attachment: "",
-                    });
-                    setRowItem(null);
-                    onClose();
-                  }}
-                >
-                  Close
-                </Button>
-
-                <Button color="primary" onPress={handleCreateCreditNote}>
-                  Submit
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      {/* CHANGED: the old standalone "Credit Note" modal was removed — it was
+          never opened from the UI, and credit note now lives inside the
+          Update Status modal above. */}
 
       <Modal
         size="5xl"
