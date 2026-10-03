@@ -281,7 +281,7 @@ export const navItems = [
         key: "reopenCloseApproval",
       },
       {
-        title: "Unbill Cancellation",
+        title: "Service Cancellation",
         icon: "",
         url: "admin/unbillCancellation",
         key: "unbillCancellation",

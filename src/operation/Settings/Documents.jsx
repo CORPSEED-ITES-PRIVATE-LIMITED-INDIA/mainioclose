@@ -91,7 +91,7 @@ const formSchema = z.object({
   type: z.string().min(1, "Type is required"),
   country: z.string().min(1, "Country is required"),
   centralName: z.string().min(1, "Central name is required"),
-  stateName: z.string().min(1, "State name is required"),
+  stateName: z.string().optional().default(""),
   expiryType: z.enum(["FIXED", "EXPIRING", "UNKNOWN"]),
   mandatory: z.boolean(),
   maxValidityYears: z.coerce.number().min(0),
@@ -717,7 +717,6 @@ const Documents = () => {
         render={({ field }) => (
           <NewSelect
             data={statesList}
-            isRequired
             label="State"
             labelKey="name"
             valueKey="name"
