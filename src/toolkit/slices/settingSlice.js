@@ -232,14 +232,15 @@ export const addPriceInServiceTypeSolution = createAsyncThunk(
 
 export const deletePriceServiceTypeSolution = createAsyncThunk(
   "deletePriceServiceTypeSolution",
-  async ({ solutionId, feeId }, { rejectWithValue }) => {
+  async ({ solutionId, feeId, userId }, { rejectWithValue }) => {
     try {
       const response = await api.delete(
         `/leadService/api/v1/service-solutions/${solutionId}/fees/${feeId}`,
+        { params: { userId } },
       );
       return response.data;
-    } catch (err) {
-      return rejectWithValue(err.response);
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || "Failed to delete fee");
     }
   },
 );

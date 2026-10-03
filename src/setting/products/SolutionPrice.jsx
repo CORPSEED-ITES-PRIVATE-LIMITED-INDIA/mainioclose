@@ -67,8 +67,10 @@ const SolutionPrice = () => {
     dispatch(getSolutionPriceListById({ solutionId, userId }));
   }, [solutionId, userId]);
 
-  const handleDeleteItem = (feeId) => {
-    dispatch(deletePriceServiceTypeSolution({ solutionId, feeId: itemId }))
+  const handleDeleteItem = () => {
+    dispatch(
+      deletePriceServiceTypeSolution({ solutionId, feeId: itemId, userId }),
+    )
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           deleteModal.onClose();
