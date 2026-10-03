@@ -718,7 +718,9 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Mode/Terms of Payment
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inv.paymentTerm}
+                    </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">Valid Until</div>

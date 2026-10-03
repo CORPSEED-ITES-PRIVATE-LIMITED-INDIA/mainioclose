@@ -170,6 +170,7 @@ const UnbilledView = ({ invoiceData, heading }) => {
   const organizationDetail = useSelector(
     (state) => state.organization.organizationDetail,
   );
+  console.log(invoiceData);
 
   useEffect(() => {
     dispatch(getOrganizationByName());
@@ -396,8 +397,8 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     <div className="text-[10px] text-gray-500">
                       Mode/Terms of Payment
                     </div>
-                    <div className="h-4 text-[11px] font-bold">
-                      {inv.paymentTerm || "-"}
+                    <div className="text-[11px] font-bold leading-snug break-words">
+                      {inv?.paymentTerm || "-"}
                     </div>
                   </div>
                   <div className="p-2.5">
@@ -423,7 +424,9 @@ const UnbilledView = ({ invoiceData, heading }) => {
                     <div className="text-[10px] text-gray-500">
                       Buyer's Order No.
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="h-4 text-[11px] font-bold">
+                      {inv.clientPONumber}
+                    </div>
                   </div>
                 </div>
 

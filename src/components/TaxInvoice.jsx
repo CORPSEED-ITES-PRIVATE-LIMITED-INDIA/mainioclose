@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useRef, useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import html2canvas from "html2canvas-pro";
@@ -7,6 +7,8 @@ import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
 import { Image } from "@heroui/react";
+import { useDispatch, useSelector } from "react-redux";
+import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
 
 /** -------------------------
  * PDF / Layout constants
@@ -24,6 +26,12 @@ const toNumber = (v) => {
   const n = typeof v === "string" ? Number(v) : v;
   return Number.isFinite(n) ? n : 0;
 };
+
+// First non-empty value
+const pick = (...values) =>
+  values.find(
+    (v) => v !== null && v !== undefined && String(v).trim() !== "",
+  ) ?? "";
 
 const formatINR = (value) => {
   const n = toNumber(value);
@@ -176,8 +184,23 @@ const buildTaxSummaryRows = (lineItems = []) => {
  * Component
  * ------------------------- */
 const TaxInvoice = ({ invoiceData, heading }) => {
+  const dispatch = useDispatch();
   const printRef = useRef(null);
   const [copyText, setCopyText] = useState("Copy URL");
+
+  const organizationDetail = useSelector(
+    (state) => state.organization.organizationDetail,
+  );
+
+  // Always fetch when the view opens. The old `if (!organizationDetail)` guard
+  // skipped the call whenever the slice's initial state was a truthy value
+  // (e.g. {} or an object), so the API never fired.
+  useEffect(() => {
+    dispatch(getOrganizationByName());
+  }, [dispatch]);
+
+  console.log("Org Detail:", organizationDetail);
+  console.log("Invoice Data:", invoiceData);
 
   // invoiceData can be object OR JSON string
   const inv = useMemo(() => {
@@ -195,43 +218,87 @@ const TaxInvoice = ({ invoiceData, heading }) => {
     return invoiceData;
   }, [invoiceData]);
 
-  // Seller snapshot comes only from invoiceData.
-  // No organization API call is required for an already-generated invoice.
+  // Seller details:
+  // - Identity (name, address, GST, PAN, CIN): invoice snapshot if present,
+  //   otherwise the organization API. A generated invoice must not change
+  //   when the organization is edited later.
+  // - Contact, bank and logo: filled field by field (snapshot first,
+  //   then organization API), because snapshot bank fields can be null.
   const seller = useMemo(() => {
-    const addressParts = [
-      inv?.organizationAddressLine1,
-      inv?.organizationAddressLine2,
-      inv?.organizationCity,
-      inv?.organizationState,
-      inv?.organizationCountry,
-    ].filter(Boolean);
+    const org = organizationDetail || {};
+    const hasSnapshot = Boolean(inv?.organizationName);
 
-    const address = addressParts.join(", ");
-    const pinCode = inv?.organizationPinCode
-      ? ` - ${inv.organizationPinCode}`
-      : "";
+    const src = hasSnapshot
+      ? {
+          name: inv.organizationName,
+          addressLine1: inv.organizationAddressLine1,
+          addressLine2: inv.organizationAddressLine2,
+          city: inv.organizationCity,
+          state: inv.organizationState,
+          country: inv.organizationCountry,
+          pinCode: inv.organizationPinCode,
+          gstNo: inv.organizationGstNo || inv.sellerGstin,
+          panNo: inv.organizationPanNo,
+          cinNumber: inv.organizationCinNumber,
+        }
+      : {
+          name: org.name,
+          addressLine1: org.addressLine1,
+          addressLine2: org.addressLine2,
+          city: org.city,
+          state: org.state,
+          country: org.country,
+          pinCode: org.pinCode,
+          gstNo: org.gstNo,
+          panNo: org.panNo,
+          cinNumber: org.cinNumber,
+        };
 
-    const gstin = inv?.organizationGstNo || inv?.sellerGstin || "";
+    const address = [
+      src.addressLine1,
+      src.addressLine2,
+      src.city,
+      src.state,
+      src.country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const gstin = src.gstNo || "";
+
+    const branch = pick(
+      inv?.organizationBankBranch,
+      inv?.organizationBranchName,
+      org.branch,
+    );
+    const ifsc = pick(inv?.organizationIfscCode, org.ifscCode);
 
     return {
-      name: inv?.organizationName || "",
-      addressLine1: `${address}${pinCode}`,
+      name: src.name || "",
+      addressLine1: `${address}${src.pinCode ? ` - ${src.pinCode}` : ""}`,
       gstin,
-      stateName: inv?.organizationState || "",
+      stateName: src.state || "",
       stateCode: gstin.slice(0, 2),
-      email: inv?.organizationEmail || "",
-      phone: inv?.organizationPhone || "",
-      website: inv?.organizationWebsite || "",
-      panNo: inv?.organizationPanNo || "",
-      cinNumber: inv?.organizationCinNumber || "",
-      logoUrl: inv?.organizationLogoUrl || "",
-      bankName: inv?.organizationBankName || "",
-      accountNo: inv?.organizationAccountNo || "",
-      branchIfsc: [inv?.organizationBranchName, inv?.organizationIfscCode]
-        .filter(Boolean)
-        .join(" & "),
+      panNo: src.panNo || "",
+      cinNumber: src.cinNumber || "",
+
+      email: pick(inv?.organizationEmail, org.email),
+      phone: pick(inv?.organizationPhone, org.phone),
+      website: pick(inv?.organizationWebsite, org.website),
+      logoUrl: pick(inv?.organizationLogoUrl, org.logoUrl),
+
+      bankName: pick(inv?.organizationBankName, org.bankName),
+      accountNo: pick(
+        inv?.organizationAccountNumber,
+        inv?.organizationAccountNo,
+        org.accountNo,
+      ),
+      branch,
+      ifsc,
+      branchIfsc: [branch, ifsc].filter(Boolean).join(" & "),
+      upiId: pick(inv?.organizationUpiId, org.upiId),
     };
-  }, [inv]);
+  }, [inv, organizationDetail]);
 
   // lineItems safe + sort
   const items = useMemo(() => {
@@ -755,7 +822,7 @@ Corpseed Team`,
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
                   <Image
-                    src={seller.organizationLogoUrl || logo}
+                    src={seller.logoUrl || logo}
                     alt={seller.name || "Organization logo"}
                     className="h-10 max-w-[120px] object-contain"
                     crossOrigin="anonymous"
@@ -777,6 +844,9 @@ Corpseed Team`,
                 <div className="text-[11px]">E-mail : {seller.email}</div>
                 {seller.phone ? (
                   <div className="text-[11px]">Phone : {seller.phone}</div>
+                ) : null}
+                {seller.website ? (
+                  <div className="text-[11px]">Web : {seller.website}</div>
                 ) : null}
                 {seller.panNo ? (
                   <div className="text-[11px]">PAN : {seller.panNo}</div>
@@ -809,8 +879,8 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Mode/Terms of Payment
                     </div>
-                    <div className="h-4 text-[11px] font-bold">
-                      {inv?.paymentTerm}
+                    <div className="break-words text-[11px] font-bold leading-snug">
+                      {inv?.paymentTerm || "-"}
                     </div>
                   </div>
                   <div className="p-2.5">
@@ -836,7 +906,7 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Buyer's Order No.
                     </div>
-                    <div className="h-4 text-[11px] font-bold">
+                    <div className="break-words text-[11px] font-bold leading-snug">
                       {inv?.clientPoNumber || <>&nbsp;</>}
                     </div>
                   </div>
@@ -1229,24 +1299,25 @@ Corpseed Team`,
               <div className="text-[11px]">
                 <div className="mb-1 text-gray-500">Company bank detail</div>
                 <div>
-                  Bank name : <b>{seller.organizationBankName}</b>
+                  Bank name : <b>{seller.bankName}</b>
                 </div>
                 <div>
-                  A/C No. : <b>{seller.organizationAccountNo}</b>
+                  A/C No. : <b>{seller.accountNo}</b>
                 </div>
                 <div>
-                  Branch &amp; IFSC Code :{" "}
-                  <b>
-                    {seller.organizationBankBranch} &{" "}
-                    {seller.organizationIfscCode}
-                  </b>
+                  Branch &amp; IFSC Code : <b>{seller.branchIfsc}</b>
                 </div>
+                {seller.upiId ? (
+                  <div>
+                    UPI : <b>{seller.upiId}</b>
+                  </div>
+                ) : null}
               </div>
             </div>
 
             {/* ✅ Keep authorised signatory image */}
             <div className="px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {seller.name.toLowerCase()}</div>
+              <div>for {(seller.name || "").toLowerCase()}</div>
               <div className="mt-1 flex justify-end">
                 <img
                   src={signature}

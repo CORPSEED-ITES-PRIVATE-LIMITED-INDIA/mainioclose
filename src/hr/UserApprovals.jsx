@@ -35,7 +35,7 @@ const columns = [
   { name: "EXPERIENCE", uid: "experience" },
   { name: "MANAGER", uid: "managers" },
   { name: "PERMANENT ADDRESS", uid: "permanentAddress" },
-  { name: "RESIDENTIAL ADDRESS", uid: "residentialAddress" },
+  { name: "CURRENT ADDRESS", uid: "residentialAddress" },
   { name: "FATHER INFO", uid: "fatherInfo" },
   { name: "MOTHER INFO", uid: "motherInfo" },
   { name: "SPOUSE INFO", uid: "spouseInfo" },
