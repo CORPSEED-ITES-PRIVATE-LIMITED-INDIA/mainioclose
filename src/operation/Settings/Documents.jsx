@@ -125,6 +125,8 @@ const defaultValues = {
   active: true,
 };
 
+const FETCH_ALL_SIZE = 10000;
+
 const Documents = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
@@ -145,7 +147,7 @@ const Documents = () => {
     new Set(INITIAL_VISIBLE_COLUMNS),
   );
 
-  const [rowsPerPage, setRowsPerPage] = React.useState(50);
+  const [rowsPerPage, setRowsPerPage] = React.useState(15);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "id",
     direction: "ascending",
@@ -160,9 +162,11 @@ const Documents = () => {
   const isLarge = useMediaQuery({ minWidth: 1536 });
 
   useEffect(() => {
-    dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
+    dispatch(
+      getAllDocumentsForProduct({ page: 1, size: FETCH_ALL_SIZE, userId }),
+    );
     dispatch(getAllCountries());
-  }, [dispatch, page, rowsPerPage, userId]);
+  }, [dispatch, userId]);
 
   const {
     control,
@@ -226,8 +230,10 @@ const Documents = () => {
   }, [sortDescriptor, items]);
 
   const refreshDocuments = useCallback(() => {
-    dispatch(getAllDocumentsForProduct({ page, size: rowsPerPage, userId }));
-  }, [dispatch, page, rowsPerPage, userId]);
+    dispatch(
+      getAllDocumentsForProduct({ page: 1, size: FETCH_ALL_SIZE, userId }),
+    );
+  }, [dispatch, userId]);
 
   const onSubmit = useCallback(
     (values) => {
