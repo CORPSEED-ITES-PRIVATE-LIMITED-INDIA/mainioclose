@@ -40,14 +40,13 @@ import { useParams } from "react-router-dom";
 
 // Table columns — TAT values are all shown in minutes, matching what the
 // Add/Edit form collects and what the backend DTO stores/returns.
+// Only Closure, Performance and Rollback TATs are supported.
 export const columns = [
   { name: "ID", uid: "id" },
   { name: "NAME", uid: "milestoneName" },
   { name: "ORDER", uid: "order" },
-  { name: "EXECUTION TAT", uid: "executionTatMinutes" },
-  { name: "DEPARTMENT TAT", uid: "departmentTatMinutes" },
+  { name: "CLOSURE TAT", uid: "closureTatMinutes" },
   { name: "PERFORMANCE TAT", uid: "performanceTatMinutes" },
-  { name: "CUSTOMER TAT", uid: "customerTatMinutes" },
   { name: "ROLLBACK TAT", uid: "rollbackTatMinutes" },
   { name: "MAX ATTEMPTS", uid: "maxAttempts" },
   { name: "PAYMENT %", uid: "paymentPercentage" },
@@ -65,10 +64,8 @@ export function capitalize(s) {
 const INITIAL_VISIBLE_COLUMNS = [
   "milestoneName",
   "order",
-  "executionTatMinutes",
-  // "departmentTatMinutes",
+  "closureTatMinutes",
   // "performanceTatMinutes",
-  // "customerTatMinutes",
   // "rollbackTatMinutes",
   "maxAttempts",
   "paymentPercentage",
@@ -100,10 +97,8 @@ const formSchema = z.object({
   maxAttempts: requiredString("Please enter max attempts."),
   paymentPercentage: requiredString("Please enter payment percentage."),
 
-  executionTatMinutes: requiredString("Please enter execution TAT."),
-  departmentTatMinutes: requiredString("Please enter department TAT."),
+  closureTatMinutes: requiredString("Please enter closure TAT."),
   performanceTatMinutes: requiredString("Please enter performance TAT."),
-  customerTatMinutes: requiredString("Please enter customer TAT."),
   rollbackTatMinutes: requiredString("Please enter rollback TAT."),
 
   reminderBeforeDueMinutes: requiredString("Please enter reminder time."),
@@ -122,18 +117,17 @@ const defaultValues = {
   milestoneId: "",
   order: "",
 
-  maxAttempts: "",
+  maxAttempts: "2",
   paymentPercentage: "100",
 
-  executionTatMinutes: "0",
-  departmentTatMinutes: "0",
+  closureTatMinutes: "0",
   performanceTatMinutes: "0",
-  customerTatMinutes: "0",
   rollbackTatMinutes: "0",
 
-  reminderBeforeDueMinutes: "0",
-  managerEscalationAfterDueMinutes: "0",
-  hodEscalationAfterDueMinutes: "0",
+  // 24 h = 1440 min, 48 h = 2880 min, 72 h = 4320 min
+  reminderBeforeDueMinutes: "1440",
+  managerEscalationAfterDueMinutes: "2880",
+  hodEscalationAfterDueMinutes: "4320",
 
   mandatory: true,
   active: true,
@@ -286,33 +280,31 @@ const ProductMilestones = ({ details }) => {
         milestoneId: getStringValue(rowData?.milestoneId),
         order: getStringValue(rowData?.order),
 
-        maxAttempts: getStringValue(rowData?.maxAttempts),
+        maxAttempts: getStringValue(
+          rowData?.maxAttempts,
+          defaultValues.maxAttempts,
+        ),
         paymentPercentage: getStringValue(rowData?.paymentPercentage, "100"),
 
         // Response DTO already returns these in minutes — use directly.
-        executionTatMinutes: getStringValue(rowData?.executionTatMinutes, "0"),
-        departmentTatMinutes: getStringValue(
-          rowData?.departmentTatMinutes,
-          "0",
-        ),
+        closureTatMinutes: getStringValue(rowData?.closureTatMinutes, "0"),
         performanceTatMinutes: getStringValue(
           rowData?.performanceTatMinutes,
           "0",
         ),
-        customerTatMinutes: getStringValue(rowData?.customerTatMinutes, "0"),
         rollbackTatMinutes: getStringValue(rowData?.rollbackTatMinutes, "0"),
 
         reminderBeforeDueMinutes: getStringValue(
           rowData?.reminderBeforeDueMinutes,
-          "0",
+          defaultValues.reminderBeforeDueMinutes,
         ),
         managerEscalationAfterDueMinutes: getStringValue(
           rowData?.managerEscalationAfterDueMinutes,
-          "0",
+          defaultValues.managerEscalationAfterDueMinutes,
         ),
         hodEscalationAfterDueMinutes: getStringValue(
           rowData?.hodEscalationAfterDueMinutes,
-          "0",
+          defaultValues.hodEscalationAfterDueMinutes,
         ),
 
         mandatory: getBooleanValue(rowData?.mandatory, true),
@@ -362,17 +354,10 @@ const ProductMilestones = ({ details }) => {
         case "milestoneName":
           return <p className="text-[12.5px]">{rowData?.milestoneName}</p>;
 
-        case "executionTatMinutes":
+        case "closureTatMinutes":
           return (
             <p className="text-[12.5px]">
-              {rowData?.executionTatMinutes ?? 0} min
-            </p>
-          );
-
-        case "departmentTatMinutes":
-          return (
-            <p className="text-[12.5px]">
-              {rowData?.departmentTatMinutes ?? 0} min
+              {rowData?.closureTatMinutes ?? 0} min
             </p>
           );
 
@@ -380,13 +365,6 @@ const ProductMilestones = ({ details }) => {
           return (
             <p className="text-[12.5px]">
               {rowData?.performanceTatMinutes ?? 0} min
-            </p>
-          );
-
-        case "customerTatMinutes":
-          return (
-            <p className="text-[12.5px]">
-              {rowData?.customerTatMinutes ?? 0} min
             </p>
           );
 
@@ -475,10 +453,8 @@ const ProductMilestones = ({ details }) => {
   // Every other required flag is auto-populated here with a sensible default
   // so no backend field is ever left unsent.
   const buildPayload = (values) => {
-    const executionMinutes = toNumber(values.executionTatMinutes);
-    const departmentMinutes = toNumber(values.departmentTatMinutes);
+    const closureMinutes = toNumber(values.closureTatMinutes);
     const performanceMinutes = toNumber(values.performanceTatMinutes);
-    const customerMinutes = toNumber(values.customerTatMinutes);
     const rollbackMinutes = toNumber(values.rollbackTatMinutes);
 
     return {
@@ -487,17 +463,11 @@ const ProductMilestones = ({ details }) => {
 
       order: toNumber(values.order),
 
-      executionTatApplicable: executionMinutes > 0,
-      executionTatMinutes: executionMinutes,
-
-      departmentTatApplicable: departmentMinutes > 0,
-      departmentTatMinutes: departmentMinutes,
+      closureTatApplicable: closureMinutes > 0,
+      closureTatMinutes: closureMinutes,
 
       performanceTatApplicable: performanceMinutes > 0,
       performanceTatMinutes: performanceMinutes,
-
-      customerTatApplicable: customerMinutes > 0,
-      customerTatMinutes: customerMinutes,
 
       rollbackTatApplicable: rollbackMinutes > 0,
       rollbackTatMinutes: rollbackMinutes,
@@ -508,7 +478,7 @@ const ProductMilestones = ({ details }) => {
       requiresPortalDetails: true,
       allowTatResetOnReassign: true,
       businessDaysEnabled: true,
-      isAutoGenerated: false,
+      autoGenerated: false,
 
       maxAttempts: toNumber(values.maxAttempts),
       paymentPercentage: toNumber(values.paymentPercentage),
@@ -521,8 +491,10 @@ const ProductMilestones = ({ details }) => {
         values.hodEscalationAfterDueMinutes,
       ),
 
-      isMandatory: values.mandatory,
-      isActive: values.active,
+      // Jackson/Lombok binds `boolean isMandatory` / `isActive` to the JSON
+      // properties "mandatory" / "active" (not "isMandatory" / "isActive").
+      mandatory: values.mandatory,
+      active: values.active,
     };
   };
 
@@ -770,19 +742,11 @@ const ProductMilestones = ({ details }) => {
                       Turnaround Time (In minutes)
                     </h3>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {renderNumberInput(
-                        "executionTatMinutes",
-                        "Execution TAT",
-                      )}
-                      {renderNumberInput(
-                        "departmentTatMinutes",
-                        "Department TAT",
-                      )}
+                      {renderNumberInput("closureTatMinutes", "Closure TAT")}
                       {renderNumberInput(
                         "performanceTatMinutes",
                         "Performance TAT",
                       )}
-                      {renderNumberInput("customerTatMinutes", "Customer TAT")}
                       {renderNumberInput("rollbackTatMinutes", "Rollback TAT")}
                     </div>
                   </div>
