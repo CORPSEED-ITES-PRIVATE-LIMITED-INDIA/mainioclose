@@ -27,9 +27,10 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
-import { ChevronDown, FileText, Plus, Search } from "lucide-react";
+import { ChevronDown, FileText, Pencil, Plus, Search } from "lucide-react";
 import {
   createMenuCategory,
+  updateCategory,
   getAllMenus,
 } from "../../../toolkit/slices/settingSlice.js";
 import FileUploader from "../../../components/FileUploader.jsx";
@@ -41,9 +42,16 @@ const columns = [
   { name: "FILE SIZE", uid: "fileSize", sortable: true },
   { name: "UPLOADED AT", uid: "uploadedAt", sortable: true },
   { name: "STATUS", uid: "status", sortable: true },
+  { name: "ACTIONS", uid: "actions" },
 ];
 
-const INITIAL_VISIBLE_COLUMNS = ["name", "brochure", "uploadedAt", "status"];
+const INITIAL_VISIBLE_COLUMNS = [
+  "name",
+  "brochure",
+  "uploadedAt",
+  "status",
+  "actions",
+];
 
 const formSchema = z.object({
   name: z.string().trim().min(1, "Please enter category name"),
@@ -214,6 +222,28 @@ const ProposalCategory = () => {
     defaultValues,
   });
 
+  // ---------- EDIT ----------
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+    onOpenChange: onEditOpenChange,
+  } = useDisclosure();
+
+  const {
+    control: editControl,
+    handleSubmit: handleEditSubmit,
+    reset: resetEditForm,
+    setValue: setEditValue,
+  } = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
+  const [editingId, setEditingId] = useState(null);
+  const [isEditUploading, setIsEditUploading] = useState(false);
+  // --------------------------
+
   const {
     isOpen: isPreviewOpen,
     onOpen: onPreviewOpen,
@@ -323,6 +353,72 @@ const ProposalCategory = () => {
       });
     }
   };
+
+  // ---------- EDIT HANDLERS ----------
+  const openEditModal = useCallback(
+    (row) => {
+      const brochure = row?.brochure;
+
+      resetEditForm({
+        name: row?.originalData?.name || "",
+        brochure: {
+          filePath: brochure?.filePath || "",
+          fileName: brochure?.fileName || "",
+          contentType: brochure?.contentType || "",
+          fileSize: brochure?.fileSize || 0,
+          description: brochure?.description || "",
+        },
+      });
+
+      setEditingId(row?.id);
+      setIsEditUploading(false);
+      onEditOpen();
+    },
+    [onEditOpen, resetEditForm],
+  );
+
+  const closeEditModal = () => {
+    resetEditForm(defaultValues);
+    setEditingId(null);
+    setIsEditUploading(false);
+    onEditClose();
+  };
+
+  const onEditSubmit = async (values) => {
+    if (isEditUploading) {
+      addToast({
+        title: "Upload in progress",
+        description: "Please wait until the brochure upload is completed.",
+        color: "warning",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(
+        updateCategory({
+          categoryId: editingId,
+          payload: buildPayload(values),
+        }),
+      ).unwrap();
+
+      addToast({
+        title: "Category updated successfully",
+        color: "success",
+      });
+
+      closeEditModal();
+      dispatch(getAllMenus());
+    } catch (error) {
+      addToast({
+        title: "Something went wrong!",
+        description:
+          typeof error === "string" ? error : "Unable to update category.",
+        color: "danger",
+      });
+    }
+  };
+  // -----------------------------------
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -468,11 +564,24 @@ const ProposalCategory = () => {
             </Chip>
           );
 
+        case "actions":
+          return (
+            <Button
+              isIconOnly
+              size="sm"
+              variant="light"
+              aria-label="Edit category"
+              onPress={() => openEditModal(rowData)}
+            >
+              <Pencil className="w-4 h-4 text-default-500" />
+            </Button>
+          );
+
         default:
           return rowData[columnKey] || "-";
       }
     },
-    [openPreview],
+    [openPreview, openEditModal],
   );
 
   const topContent = useMemo(() => {
@@ -677,6 +786,7 @@ const ProposalCategory = () => {
         </TableBody>
       </Table>
 
+      {/* ADD MODAL */}
       <Modal
         size="3xl"
         isDismissable={false}
@@ -721,6 +831,56 @@ const ProposalCategory = () => {
                       isDisabled={isAddUploading}
                     >
                       {isAddUploading ? "Uploading..." : "Submit"}
+                    </Button>
+                  </ModalFooter>
+                </form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal
+        size="3xl"
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+        isOpen={isEditOpen}
+        onOpenChange={onEditOpenChange}
+        placement="top-center"
+      >
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>Edit Category</ModalHeader>
+
+              <ModalBody>
+                <form
+                  onSubmit={handleEditSubmit(onEditSubmit)}
+                  className="flex flex-col gap-4"
+                >
+                  <CategoryFormFields
+                    control={editControl}
+                    setValue={setEditValue}
+                    onUploadingChange={setIsEditUploading}
+                  />
+
+                  <ModalFooter className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="flat"
+                      onPress={closeEditModal}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      color="primary"
+                      type="submit"
+                      isLoading={isEditUploading}
+                      isDisabled={isEditUploading}
+                    >
+                      {isEditUploading ? "Uploading..." : "Update"}
                     </Button>
                   </ModalFooter>
                 </form>

@@ -1293,6 +1293,32 @@ export const updateMenu = createAsyncThunk(
     }
   },
 );
+export const updateCategory = createAsyncThunk(
+  "updateCategory",
+  async ({ categoryId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/leadService/api/menus/categories/${categoryId}`, payload);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || "Failed to Update Category");
+    }
+  },
+);
+
+export const updateSubCategory = createAsyncThunk(
+  "updateSubCategory",
+  async ({ subCategoryId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/menus/subcategories/${subCategoryId}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data || "Failed to Update Sub Category");
+    }
+  },
+);
 
 export const createMenuCategory = createAsyncThunk(
   "createMenuCategory",
