@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Table,
   TableHeader,
@@ -18,6 +24,7 @@ import {
   Textarea,
   addToast,
   Chip,
+  Progress,
   Spinner,
 } from "@heroui/react";
 import { ExternalLink, Eye, Loader2, Paperclip, Search } from "lucide-react";
@@ -30,6 +37,7 @@ import {
   cancelUnBilledInvoiceByAdmin,
   getUnBilledDetailById,
   issueUnbilledInvoiceRefundV2, // GET /unbilled-invoices/cancel/requests
+  getUnbilledProjectCompletion, // GET /unbilled-invoices/cancel/project-completion
 } from "../toolkit/slices/accountSlice";
 import { inrCurrency, splitTextIntoTwoLines } from "../common";
 import UnbilledView from "../components/UnbilledView";
@@ -44,6 +52,7 @@ const columns = [
   { name: "SERVICE", uid: "service" },
   { name: "TOTAL AMOUNT", uid: "totalAmount" },
   { name: "CREDIT NOTE AMOUNT", uid: "receivedAmount" },
+  { name: "PROJECT COMPLETION", uid: "projectCompletion" },
   { name: "CANCEL REASON", uid: "rejectionReason" },
   { name: "ATTACHMENT", uid: "cancelAttachment" },
   { name: "ADDED BY", uid: "addedBy" },
@@ -80,6 +89,14 @@ const UnbillCancellation = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  // project completion shown to the admin before final approval
+  const [projectCompletion, setProjectCompletion] = useState({
+    loading: false,
+    data: null,
+    error: null,
+  });
+  const completionRequestRef = useRef(0);
 
   const approveModal = useDisclosure();
   const rejectModal = useDisclosure();
@@ -146,9 +163,47 @@ const UnbillCancellation = () => {
     }
   };
 
+  const loadProjectCompletion = async (row) => {
+    const requestId = ++completionRequestRef.current;
+
+    setProjectCompletion({ loading: true, data: null, error: null });
+
+    try {
+      const resp = await dispatch(
+        getUnbilledProjectCompletion({ userId, id: row?.id }),
+      );
+
+      // ignore a stale response if the admin opened another request meanwhile
+      if (requestId !== completionRequestRef.current) return;
+
+      if (resp.meta.requestStatus === "fulfilled") {
+        setProjectCompletion({
+          loading: false,
+          data: resp.payload,
+          error: null,
+        });
+      } else {
+        setProjectCompletion({
+          loading: false,
+          data: null,
+          error: getErrorMessage(resp, "Unable to load project completion."),
+        });
+      }
+    } catch (error) {
+      if (requestId !== completionRequestRef.current) return;
+
+      setProjectCompletion({
+        loading: false,
+        data: null,
+        error: error?.message || "Unable to load project completion.",
+      });
+    }
+  };
+
   const openApprove = (row) => {
     setSelectedRow(row);
     approveModal.onOpen();
+    loadProjectCompletion(row);
   };
 
   const openReject = (row) => {
@@ -340,6 +395,42 @@ const UnbillCancellation = () => {
             {inrCurrency(row?.receivedAmount)}
           </p>
         );
+
+      case "projectCompletion": {
+        const pct = row?.projectCompletionPercentage;
+
+        // null = no project yet, or Operation could not be reached
+        if (pct === null || pct === undefined) {
+          return (
+            <Chip size="sm" variant="flat" color="default">
+              No project
+            </Chip>
+          );
+        }
+
+        const value = Number(pct) || 0;
+
+        return (
+          <div className="flex min-w-[140px] flex-col gap-1">
+            <Progress
+              aria-label="Project completion"
+              size="sm"
+              showValueLabel
+              value={value}
+              color={
+                value >= 100 ? "danger" : value >= 50 ? "warning" : "success"
+              }
+            />
+            {row?.projectCancellationAllowed === false && (
+              <span className="text-[11px] font-medium text-danger">
+                {row?.projectCertificationCompleted
+                  ? "Certification completed"
+                  : "Project complete"}
+              </span>
+            )}
+          </div>
+        );
+      }
 
       case "rejectionReason":
         return (
@@ -570,6 +661,92 @@ const UnbillCancellation = () => {
                       {selectedRow?.rejectionReason || "NA"}
                     </p>
                   </div>
+                </div>
+
+                {/* ===== PROJECT COMPLETION ===== */}
+                <div className="rounded-xl border border-default-200 p-4 text-[12.5px]">
+                  <p className="mb-2 font-semibold text-default-800">
+                    Project completion
+                  </p>
+
+                  {projectCompletion.loading ? (
+                    <Spinner size="sm" label="Checking project..." />
+                  ) : projectCompletion.error ? (
+                    <p className="text-warning-600">
+                      {projectCompletion.error}
+                    </p>
+                  ) : !projectCompletion.data?.projectFound ? (
+                    <p className="text-default-500">
+                      No project has been created for this unbilled yet.
+                    </p>
+                  ) : (
+                    <>
+                      <Progress
+                        aria-label="Project completion"
+                        size="md"
+                        showValueLabel
+                        value={
+                          Number(
+                            projectCompletion.data
+                              .milestoneCompletionPercentage,
+                          ) || 0
+                        }
+                        color={
+                          Number(
+                            projectCompletion.data
+                              .milestoneCompletionPercentage,
+                          ) >= 100
+                            ? "danger"
+                            : Number(
+                                  projectCompletion.data
+                                    .milestoneCompletionPercentage,
+                                ) >= 50
+                              ? "warning"
+                              : "success"
+                        }
+                      />
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span>
+                          {projectCompletion.data.completedMilestones ?? 0} of{" "}
+                          {projectCompletion.data.totalMilestones ?? 0}{" "}
+                          milestones completed
+                        </span>
+
+                        <Chip size="sm" variant="flat" color="default">
+                          {projectCompletion.data.projectNo || "Project"}
+                          {projectCompletion.data.projectStatus
+                            ? ` · ${projectCompletion.data.projectStatus}`
+                            : ""}
+                        </Chip>
+
+                        {projectCompletion.data
+                          .certificationMilestonePresent && (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={
+                              projectCompletion.data.certificationCompleted
+                                ? "danger"
+                                : "success"
+                            }
+                          >
+                            Certification{" "}
+                            {projectCompletion.data.certificationCompleted
+                              ? "completed"
+                              : "not completed"}
+                          </Chip>
+                        )}
+                      </div>
+
+                      {projectCompletion.data.cancellationAllowed === false && (
+                        <div className="mt-3 rounded-lg border border-danger-200 bg-danger-50 p-2 text-danger-700">
+                          {projectCompletion.data.blockReason ||
+                            "This project is complete, so cancellation should not be approved."}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <p className="text-[12.5px] text-default-600">

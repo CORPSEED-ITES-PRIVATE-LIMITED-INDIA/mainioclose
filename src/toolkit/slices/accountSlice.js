@@ -265,6 +265,20 @@ export const approveUnBilledInvoiceByAdmin = createAsyncThunk(
   },
 );
 
+export const getUnbilledProjectCompletion = createAsyncThunk(
+  "getUnbilledProjectCompletion",
+  async ({ userId, id }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/accountService/api/v1/unbilled-invoices/cancel/project-completion/${userId}/${id}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 export const convertUnbillToAdvanceInvoice = createAsyncThunk(
   "convertUnbillToAdvanceInvoice",
   async ({ unbilledId, userId }, { rejectWithValue }) => {

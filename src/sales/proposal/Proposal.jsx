@@ -237,6 +237,7 @@ const Proposal = () => {
     (state) => state.setting.serviceBrouchersDetail,
   );
   const company = useSelector((state) => state.company.basicCompanyDetail);
+  console.log("Company", company);
   const companyGstList = useSelector((state) => state.company.companyGstList);
   const paymentTerms = useSelector((state) => state.setting.paymentTermList);
 
@@ -338,22 +339,80 @@ const Proposal = () => {
   const isProposalAlreadyClosed = (status) =>
     ["CANCELLED", "INITIATED"].includes(status?.toUpperCase());
 
+  /* ============================================================
+     CHANGED: autofill helpers
+     ============================================================ */
+
+  // "a@x.com, b@x.com" -> ["a@x.com", "b@x.com"]
+  const splitEmails = (list = []) =>
+    list
+      .flatMap((e) => String(e || "").split(","))
+      .map((e) => e.trim())
+      .filter(Boolean);
+
+  const getUnitContactEmails = () =>
+    splitEmails((company?.units?.[0]?.unitContacts || []).map((c) => c.emails));
+
+  const buildCreateFormValues = () => {
+    const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+    const solutionName =
+      solutionDetail?.name || serviceBrouchersDetail?.solution?.name;
+
+    return {
+      mailTo: [
+        ...new Set([
+          ...getUnitContactEmails(),
+          ...splitEmails((leadData?.clients || []).map((c) => c.emails)),
+        ]),
+      ],
+      emailSubject:
+        emailTemplate?.emailSubject ||
+        (solutionName ? `Corpseed Proposal for - ${solutionName}` : ""),
+      emailBody: emailTemplate?.emailBody || "<p></p>",
+      scopeOfWork: emailTemplate?.scopeOfWork || "<p></p>",
+    };
+  };
+
+  // Fills only fields that are still empty, so user edits are never overwritten
+  const fillEmptyFormFields = (values) => {
+    const patch = {};
+
+    Object.entries(values).forEach(([key, next]) => {
+      const current = proposalAntForm.getFieldValue(key);
+
+      const currentEmpty =
+        current == null ||
+        current === "" ||
+        (Array.isArray(current) && current.length === 0) ||
+        (typeof current === "string" && getPlainTextLength(current) === 0);
+
+      const nextHasValue =
+        next != null &&
+        next !== "" &&
+        !(Array.isArray(next) && next.length === 0) &&
+        !(typeof next === "string" && getPlainTextLength(next) === 0);
+
+      if (currentEmpty && nextHasValue) patch[key] = next;
+    });
+
+    if (Object.keys(patch).length > 0) {
+      proposalAntForm.setFieldsValue(patch);
+      if (patch.emailBody) setMailBody(patch.emailBody);
+      if (patch.scopeOfWork) setData(patch.scopeOfWork);
+    }
+  };
+
   useEffect(() => {
     setTemplates(templateList);
   }, [templateList]);
 
+  // CHANGED: removed the two proposalAntForm.setFieldsValue(...) calls here.
+  // The form is not mounted at page load; the autofill effect below fills it
+  // once the modal is open.
   useEffect(() => {
     dispatch(getBasicCompanyDetails({ leadId, userId }));
     dispatch(getSingleLeadDataByLeadId({ leadId, userId })).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
-        if (resp?.payload?.clients?.length > 0) {
-          proposalAntForm.setFieldsValue({
-            mailTo: resp.payload.clients
-              .map((client) => client.emails)
-              .filter(Boolean),
-          });
-        }
-
         if (resp?.payload?.originalName) {
           dispatch(
             getSolutionDetailByName({
@@ -376,9 +435,6 @@ const Proposal = () => {
                   ),
                 );
               }
-              proposalAntForm.setFieldsValue({
-                emailSubject: `Corpseed Proposal for - ${res?.payload?.name}`,
-              });
             }
           });
         }
@@ -403,6 +459,8 @@ const Proposal = () => {
     }
   }, [proposalList, selectedProposal, isCreatingProposal, editProposal]);
 
+  // CHANGED: only updates the editor state here; form values are filled by
+  // the autofill effect below.
   useEffect(() => {
     if (!serviceBrouchersDetail) return;
 
@@ -410,19 +468,10 @@ const Proposal = () => {
 
     const apiMailBody = emailTemplate?.emailBody || "<p></p>";
     const apiScopeOfWork = emailTemplate?.scopeOfWork || "<p></p>";
-    const apiSubject = emailTemplate?.emailSubject || "";
 
     setMailBody(apiMailBody);
     setData(apiScopeOfWork);
-
-    const currentSubject = proposalAntForm.getFieldValue("emailSubject");
-
-    proposalAntForm.setFieldsValue({
-      emailSubject: apiSubject || currentSubject || "",
-      emailBody: apiMailBody,
-      scopeOfWork: apiScopeOfWork,
-    });
-  }, [serviceBrouchersDetail, proposalAntForm]);
+  }, [serviceBrouchersDetail]);
 
   useEffect(() => {
     dispatch(getAllPaymentTermList());
@@ -432,11 +481,37 @@ const Proposal = () => {
     dispatch(getAllCompanyDocs());
   }, [dispatch, leadId, userId]);
 
+  // CHANGED: fills the create form AFTER the modal (and form) is mounted, and
+  // again whenever late data arrives. Never overwrites what the user typed.
+  useEffect(() => {
+    if (!proposalFormModal.isOpen || editProposal) return;
+
+    const timer = setTimeout(() => {
+      const values = buildCreateFormValues();
+      console.log("Proposal autofill values:", values); // remove after debugging
+      fillEmptyFormFields(values);
+    }, 0);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    proposalFormModal.isOpen,
+    editProposal,
+    company,
+    leadData,
+    serviceBrouchersDetail,
+    solutionDetail,
+  ]);
+
   const loadProposalInForm = (proposal) => {
     const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
 
+    // CHANGED: the API returns emailBody (the view code reads emailBody first)
     const finalMailBody =
-      proposal?.mailBody || emailTemplate?.emailBody || "<p></p>";
+      proposal?.emailBody ||
+      proposal?.mailBody ||
+      emailTemplate?.emailBody ||
+      "<p></p>";
 
     const finalScopeOfWork =
       proposal?.scopeOfWork ||
@@ -533,44 +608,13 @@ const Proposal = () => {
 
     proposalAntForm.resetFields();
 
-    const existingMailTo =
-      company?.units?.[0]?.unitContacts
-        ?.map((client) => client.emails)
-        .filter(Boolean) || [];
+    // CHANGED: the form values are now filled by the autofill effect once the
+    // modal is mounted (see above), so only the editor state is set here.
+    setLockedMailTo(getUnitContactEmails());
 
     const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
-
-    const apiMailBody = emailTemplate?.emailBody || "<p></p>";
-    const apiScopeOfWork = emailTemplate?.scopeOfWork || "<p></p>";
-    const apiSubject = emailTemplate?.emailSubject || "";
-
-    setLockedMailTo(existingMailTo);
-    setMailBody(apiMailBody);
-    setData(apiScopeOfWork);
-
-    proposalAntForm.setFieldsValue({
-      mailTo: existingMailTo,
-      mailCc: [],
-      mailBcc: [],
-      emailSubject:
-        apiSubject ||
-        (solutionDetail?.name
-          ? `Corpseed Proposal for - ${solutionDetail.name}`
-          : ""),
-      paymentTerm: "",
-      paymentTermDescription: "",
-      emailBody: apiMailBody,
-      scopeOfWork: apiScopeOfWork,
-      discountApplied: false,
-      discountReason: "",
-      discountReasonAttachment: "",
-      attachmentDocumentIds: [],
-    });
-
-    proposalAntForm.setFields([
-      { name: "emailBody", errors: [] },
-      { name: "scopeOfWork", errors: [] },
-    ]);
+    setMailBody(emailTemplate?.emailBody || "<p></p>");
+    setData(emailTemplate?.scopeOfWork || "<p></p>");
 
     proposalFormModal.onOpen();
   };
@@ -816,6 +860,12 @@ const Proposal = () => {
   };
 
   const onSubmit = (values) => {
+    console.log("Proposal company check", {
+      companyId: company?.id,
+      units: company?.units,
+      firstUnit: company?.units?.[0],
+      contacts: company?.units?.[0]?.unitContacts,
+    });
     setStatusLoading("pending");
 
     if (serviceFeeList?.length === 0 || !serviceFeeList) {
@@ -1780,7 +1830,9 @@ const Proposal = () => {
         </div>
 
         <div className="bg-white">
+          {/* CHANGED: key forces the editor to reload when the template arrives */}
           <NewTextEditor
+            key={`mail-${serviceBrouchersDetail?.solution?.id || "none"}`}
             data={mailBody || "<p></p>"}
             onChange={(value) => {
               setMailBody(value);
@@ -1832,7 +1884,9 @@ const Proposal = () => {
         </div>
 
         <div className="bg-white">
+          {/* CHANGED: key forces the editor to reload when the template arrives */}
           <NewTextEditor
+            key={`scope-${serviceBrouchersDetail?.solution?.id || "none"}`}
             data={data || "<p></p>"}
             onChange={(value) => {
               setData(value);
