@@ -21,10 +21,11 @@ import {
   TableRow,
   useDisclosure,
 } from "@heroui/react";
-import { EllipsisVertical, Search } from "lucide-react";
+import { EllipsisVertical, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  createUserMailConfig,
   getAllUserMailConfigs,
   updateUserMailConfig,
 } from "../toolkit/slices/commonSlice";
@@ -40,6 +41,26 @@ const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
+const defaultFormData = {
+  userId: "",
+  fromEmail: "",
+  fromName: "",
+  smtpHost: "smtppro.zoho.in",
+  smtpPort: 465,
+  smtpUsername: "",
+  smtpPassword: "",
+  authEnabled: true,
+  starttlsEnabled: true,
+  active: true,
+};
+
+// Pulls the backend message out of a rejected thunk payload
+// (the thunks reject with `error.response.data` or a plain string).
+const getErrorMessage = (resp, fallback) =>
+  (typeof resp?.payload === "string" ? resp.payload : null) ||
+  resp?.payload?.message ||
+  fallback;
+
 const UserMailConfig = () => {
   const dispatch = useDispatch();
 
@@ -51,19 +72,9 @@ const UserMailConfig = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showPassword, setShowPassword] = useState(false);
+  const [isCreate, setIsCreate] = useState(false);
 
-  const [formData, setFormData] = useState({
-    userId: "",
-    fromEmail: "",
-    fromName: "",
-    smtpHost: "smtppro.zoho.in",
-    smtpPort: 465,
-    smtpUsername: "",
-    smtpPassword: "",
-    authEnabled: true,
-    starttlsEnabled: true,
-    active: true,
-  });
+  const [formData, setFormData] = useState(defaultFormData);
 
   useEffect(() => {
     dispatch(getAllUserMailConfigs());
@@ -99,6 +110,13 @@ const UserMailConfig = () => {
     }));
   };
 
+  const openCreateModal = () => {
+    setFormData(defaultFormData);
+    setIsCreate(true);
+    setShowPassword(false);
+    updateModal.onOpen();
+  };
+
   const openUpdateModal = (rowData) => {
     setFormData({
       userId: rowData?.userId || "",
@@ -113,8 +131,67 @@ const UserMailConfig = () => {
       active: rowData?.active ?? true,
     });
 
+    setIsCreate(false);
     setShowPassword(false);
     updateModal.onOpen();
+  };
+
+  const handleCreate = () => {
+    if (
+      !formData.userId ||
+      !formData.fromEmail ||
+      !formData.smtpUsername ||
+      !formData.smtpPassword
+    ) {
+      addToast({
+        title:
+          "User ID, From Email, SMTP Username and SMTP Password are required",
+        color: "warning",
+      });
+      return;
+    }
+
+    const payload = {
+      userId: Number(formData.userId),
+      fromEmail: formData.fromEmail,
+      fromName: formData.fromName,
+      smtpHost: formData.smtpHost,
+      smtpPort: Number(formData.smtpPort),
+      smtpUsername: formData.smtpUsername,
+      smtpPassword: formData.smtpPassword,
+      authEnabled: formData.authEnabled,
+      starttlsEnabled: formData.starttlsEnabled,
+      active: formData.active,
+    };
+
+    dispatch(createUserMailConfig(payload))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Mail configuration created successfully!",
+            color: "success",
+          });
+
+          updateModal.onClose();
+          setFormData(defaultFormData);
+          dispatch(getAllUserMailConfigs());
+        } else {
+          addToast({
+            title: "Unable to create mail configuration",
+            description: getErrorMessage(
+              resp,
+              "Something went wrong while creating mail config!",
+            ),
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({
+          title: "Something went wrong while creating mail config!",
+          color: "danger",
+        });
+      });
   };
 
   const handleUpdate = () => {
@@ -239,6 +316,15 @@ const UserMailConfig = () => {
               setPage(1);
             }}
           />
+
+          <Button
+            color="primary"
+            size="sm"
+            endContent={<Plus className="w-4 h-4" />}
+            onPress={openCreateModal}
+          >
+            Add New
+          </Button>
         </div>
 
         <div className="flex justify-between items-center">
@@ -364,15 +450,20 @@ const UserMailConfig = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Update Mail Configuration
+                {isCreate
+                  ? "Create Mail Configuration"
+                  : "Update Mail Configuration"}
               </ModalHeader>
 
               <ModalBody>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="User ID"
+                    type="number"
+                    isRequired={isCreate}
                     value={String(formData.userId)}
-                    isReadOnly
+                    isReadOnly={!isCreate}
+                    onValueChange={(value) => handleChange("userId", value)}
                   />
 
                   <Input
@@ -383,12 +474,14 @@ const UserMailConfig = () => {
 
                   <Input
                     label="From Email"
+                    isRequired={isCreate}
                     value={formData.fromEmail}
                     onValueChange={(value) => handleChange("fromEmail", value)}
                   />
 
                   <Input
                     label="SMTP Username"
+                    isRequired={isCreate}
                     value={formData.smtpUsername}
                     onValueChange={(value) =>
                       handleChange("smtpUsername", value)
@@ -410,6 +503,7 @@ const UserMailConfig = () => {
 
                   <Input
                     label="SMTP Password"
+                    isRequired={isCreate}
                     type={showPassword ? "text" : "password"}
                     value={formData.smtpPassword}
                     onValueChange={(value) =>
@@ -467,8 +561,11 @@ const UserMailConfig = () => {
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button color="primary" onPress={handleUpdate}>
-                  Update Configuration
+                <Button
+                  color="primary"
+                  onPress={isCreate ? handleCreate : handleUpdate}
+                >
+                  {isCreate ? "Create Configuration" : "Update Configuration"}
                 </Button>
               </ModalFooter>
             </>

@@ -553,12 +553,12 @@ export const navItems = [
         url: "settings/designation",
         key: "designation",
       },
-      {
-        title: "Work Functions",
-        icon: "",
-        url: "settings/workFunctions",
-        key: "workFunctions",
-      },
+      // {
+      //   title: "Work Functions",
+      //   icon: "",
+      //   url: "settings/workFunctions",
+      //   key: "workFunctions",
+      // },
       {
         title: "Procurement category",
         icon: "",

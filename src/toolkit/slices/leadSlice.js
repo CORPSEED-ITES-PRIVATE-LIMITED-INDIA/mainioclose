@@ -1031,7 +1031,7 @@ export const autoAssignHelperLead = createAsyncThunk(
   async ({leadId,solutionId,data}, { rejectWithValue }) => {
     try {
       const response = await api.post(
-        `/${leadId}/solutions/${solutionId}/helper/auto-assign`,
+        `/leadService/api/v1/leads/${leadId}/solutions/${solutionId}/helper/auto-assign`,
         data
       );
       return response.data;

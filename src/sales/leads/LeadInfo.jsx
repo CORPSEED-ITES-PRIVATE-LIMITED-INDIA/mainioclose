@@ -57,6 +57,7 @@ import {
 } from "../../toolkit/slices/settingSlice";
 import {
   addLeadChatComment,
+  autoAssignHelperLead,
   changeLeadAssigneeLeads,
   createLeadContacts,
   createRemakWithFile,
@@ -98,6 +99,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
 import BasicCompany from "../company/BasicCompany";
 import CompanyAndUnitsInLead from "../company/CompanyAndUnitsInLead";
+import { getAllSolutionsByUserId } from "../../toolkit/slices/productSlice";
 const iconClass = "h-4 w-4";
 
 // Pulls the backend's own error message out of a failed thunk's `resp`
@@ -190,6 +192,7 @@ const LeadInfo = () => {
   const deleteModal = useDisclosure();
   const remarkModal = useDisclosure();
   const deleteRemarkModal = useDisclosure();
+  const helperModal = useDisclosure();
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const leadDetailLoading = useSelector(
     (state) => state.leads.leadDetailLoading,
@@ -200,6 +203,9 @@ const LeadInfo = () => {
   );
   const solutionEligibleUsers = useSelector(
     (state) => state.setting.leadAssignmentSolutionUsers,
+  );
+  const solutionList = useSelector(
+    (state) => state.product.solutionListByUserId,
   );
   const slugList = useSelector((state) => state.setting.slugList);
   const statusList = useSelector((state) => state.setting.statusList);
@@ -243,6 +249,8 @@ const LeadInfo = () => {
   const [contactLoading, setContactLoading] = useState("");
   const [assignLoading, setAssignLoading] = useState("");
   const [qualitySubmitLoading, setQualitySubmitLoading] = useState("");
+  const [helperLoading, setHelperLoading] = useState("");
+  const [helperSolutionId, setHelperSolutionId] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [chatLoading, setChatLoading] = useState("");
   const [chatDeleteLoading, setChatDeleteLoading] = useState("");
@@ -340,6 +348,62 @@ const LeadInfo = () => {
         setQualitySubmitLoading("rejected");
         addToast({
           title: "ERROR",
+          description: getApiErrorMessageFromCatch(err),
+          color: "danger",
+        });
+      });
+  };
+
+  // ─── Auto assign helper: pick a solution in the modal, then submit ───
+  const openHelperModal = () => {
+    setHelperSolutionId("");
+    dispatch(getAllSolutionsByUserId(userId));
+    helperModal.onOpen();
+  };
+
+  const handleAutoAssignHelper = () => {
+    if (!helperSolutionId) {
+      addToast({
+        title: "Warning",
+        description: "Please select a solution to proceed",
+        color: "warning",
+      });
+      return;
+    }
+
+    setHelperLoading("pending");
+    dispatch(
+      autoAssignHelperLead({
+        leadId,
+        solutionId: helperSolutionId,
+        data: { requestedByUserId: Number(userId) },
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "SUCCESS",
+            description: "Helper assigned successfully !.",
+            color: "success",
+          });
+          setHelperLoading("success");
+          setHelperSolutionId("");
+          helperModal.onOpenChange(false);
+          dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
+        } else {
+          setHelperLoading("rejected");
+          addToast({
+            title: resp?.payload?.data?.errorCode || "Error",
+            description:
+              resp?.payload?.data?.message || getApiErrorMessage(resp),
+            color: "danger",
+          });
+        }
+      })
+      .catch((err) => {
+        setHelperLoading("rejected");
+        addToast({
+          title: "Error",
           description: getApiErrorMessageFromCatch(err),
           color: "danger",
         });
@@ -1013,6 +1077,7 @@ const LeadInfo = () => {
         chatLoading === "pending" ||
         chatDeleteLoading === "pending" ||
         assignLoading === "pending" ||
+        helperLoading === "pending" ||
         qualitySubmitLoading === "pending") && <LoadingSpinner />}
       {leadDetailLoading === "pending" ? (
         <LoadingSpinner />
@@ -1043,6 +1108,17 @@ const LeadInfo = () => {
                               Auto quality submit
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            color="secondary"
+                            variant="flat"
+                            className="h-7 px-2.5 text-xs"
+                            isDisabled={helperLoading === "pending"}
+                            isLoading={helperLoading === "pending"}
+                            onPress={openHelperModal}
+                          >
+                            Auto assign helper
+                          </Button>
                           <Button
                             onPress={() => {
                               if (
@@ -2056,6 +2132,51 @@ const LeadInfo = () => {
                         </ModalFooter>
                       </form>
                     </ModalBody>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
+            <Modal
+              isDismissable={false}
+              isKeyboardDismissDisabled={true}
+              isOpen={helperModal.isOpen}
+              onOpenChange={helperModal.onOpenChange}
+              placement="top-center"
+            >
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      Auto assign helper
+                    </ModalHeader>
+                    <ModalBody>
+                      <NewSelect
+                        isRequired={true}
+                        data={(solutionList || []).filter(
+                          (item) => item?.active,
+                        )}
+                        label="Select solution"
+                        placeholder="Select solution..."
+                        labelKey="name"
+                        valueKey="id"
+                        value={helperSolutionId}
+                        onChange={(e) => setHelperSolutionId(e)}
+                      />
+                    </ModalBody>
+                    <ModalFooter className="w-full flex justify-end">
+                      <Button onPress={onClose}>Cancel</Button>
+                      <Button
+                        color="primary"
+                        isDisabled={
+                          !helperSolutionId || helperLoading === "pending"
+                        }
+                        isLoading={helperLoading === "pending"}
+                        onPress={handleAutoAssignHelper}
+                      >
+                        Submit
+                      </Button>
+                    </ModalFooter>
                   </>
                 )}
               </ModalContent>

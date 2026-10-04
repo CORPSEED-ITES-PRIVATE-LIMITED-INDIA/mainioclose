@@ -149,9 +149,7 @@ const Solutions = () => {
   });
   const [rowItem, setRowItem] = useState(null);
   const [policyRowItem, setPolicyRowItem] = useState(null);
-  const [policyFormData, setPolicyFormData] = useState(
-    policyFormDefaultValues,
-  );
+  const [policyFormData, setPolicyFormData] = useState(policyFormDefaultValues);
   const [autoAssignmentRowItem, setAutoAssignmentRowItem] = useState(null);
   const [autoAssignmentFormData, setAutoAssignmentFormData] = useState(
     autoAssignmentFormDefaultValues,
@@ -252,7 +250,11 @@ const Solutions = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -301,7 +303,11 @@ const Solutions = () => {
         }
       })
       .catch(() =>
-        addToast({ title: "ERROR", description: "Something went wrong !.", color: "danger" }),
+        addToast({
+          title: "ERROR",
+          description: "Something went wrong !.",
+          color: "danger",
+        }),
       );
   };
 
@@ -404,7 +410,7 @@ const Solutions = () => {
         return (
           <Link
             to={
-              rowData?.type === "SERVICE"
+              rowData?.type === "SERVICE" || rowData?.type === "PLANT_SETUP"
                 ? `${rowData?.id}/detail/solutionPrice`
                 : rowData?.type === "PRODUCT"
                   ? `${rowData?.id}/businessArrangement`
@@ -1011,9 +1017,7 @@ const Solutions = () => {
                     type="number"
                     min={0}
                     label="Maximum open leads per user"
-                    value={String(
-                      policyFormData?.maximumOpenLeadsPerUser ?? 0,
-                    )}
+                    value={String(policyFormData?.maximumOpenLeadsPerUser ?? 0)}
                     onChange={(e) =>
                       setPolicyFormData((prev) => ({
                         ...prev,
