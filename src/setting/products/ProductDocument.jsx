@@ -66,7 +66,7 @@ const ProductDocument = () => {
   );
   const formValues = {
     productId: solutionId,
-    applicantTypeId: null,
+    applicantTypeIds: [],
     requiredDocumentIds: [],
     updatedBy: userId,
   };
@@ -91,7 +91,18 @@ const ProductDocument = () => {
 
   const handleSubmit = useCallback(
     (values) => {
-      dispatch(mapDocumentToProduct(formData))
+      const body = {
+        productId: Number(solutionId),
+        applicantTypeIds: Array.from(formData.applicantTypeIds || []).map(
+          Number,
+        ),
+        requiredDocumentIds: Array.from(formData.requiredDocumentIds || []).map(
+          Number,
+        ),
+        updatedBy: Number(userId),
+      };
+
+      dispatch(mapDocumentToProduct(body))
         .then((resp) => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
@@ -142,10 +153,11 @@ const ProductDocument = () => {
   const handleEditSubmit = () => {
     const body = {
       productId: Number(solutionId),
-      applicantTypeId:
+      // backend expects a list; empty list = global mapping
+      applicantTypeIds:
         editData.applicantTypeId != null
-          ? Number(editData.applicantTypeId)
-          : null,
+          ? [Number(editData.applicantTypeId)]
+          : [],
       requiredDocumentIds: Array.from(editData.requiredDocumentIds || []).map(
         Number,
       ),
@@ -417,15 +429,19 @@ const ProductDocument = () => {
                   <div className="grid gap-2 w-full">
                     <NewSelect
                       isRequired={true}
+                      selectionMode="multiple"
                       errorMessage={"please select applicant type ."}
                       data={applicantTypeList}
-                      label="Applicant type"
+                      label="Applicant types"
                       name="name"
                       labelKey="name"
                       valueKey="id"
-                      value={formData?.applicantTypeId}
+                      value={formData?.applicantTypeIds}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, applicantTypeId: e }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          applicantTypeIds: e,
+                        }))
                       }
                     />
 

@@ -1011,12 +1011,27 @@ export const deleteLeadChatComment = createAsyncThunk(
     }
   },
 );
+
 export const createKamMamLead = createAsyncThunk(
   "createKamMamLead",
   async ({data}, { rejectWithValue }) => {
     try {
       const response = await api.post(
         `/leadService/api/v1/leads/kam-mam/create`,
+        data
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
+export const autoAssignHelperLead = createAsyncThunk(
+  "autoAssignHelperLead",
+  async ({leadId,solutionId,data}, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/${leadId}/solutions/${solutionId}/helper/auto-assign`,
         data
       );
       return response.data;

@@ -38,8 +38,6 @@ import {
 import {
   createDocumentsForProduct,
   getAllDocumentsForProduct,
-
-  // dummy imports - create these in productSlice
   updateDocumentsForProduct,
   deleteDocumentsForProduct,
 } from "../../toolkit/slices/productSlice";
