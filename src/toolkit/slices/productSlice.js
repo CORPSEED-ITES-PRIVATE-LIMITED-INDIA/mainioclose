@@ -258,6 +258,21 @@ export const getAllSolutionsByUserId = createAsyncThunk(
   },
 );
 
+export const deleteDocumentFromProduct = createAsyncThunk(
+  "deleteDocumentFromProduct",
+  async ({ productId, mappingId, updatedBy }, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(
+        `/operationService/api/products/${productId}/documents/map/${mappingId}`,
+        { params: { updatedBy } },
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
+
 const ProductSlice = createSlice({
   name: "product",
   initialState: {

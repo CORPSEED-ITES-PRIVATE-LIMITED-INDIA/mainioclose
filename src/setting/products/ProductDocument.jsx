@@ -42,6 +42,7 @@ import {
 import { addDocumentsInProductsForOperation } from "../../toolkit/slices/operationSlice";
 import FileUploader from "../../components/FileUploader";
 import {
+  deleteDocumentFromProduct,
   getAllDocumentCheckListByProductId,
   getAllDocumentsForProduct,
   mapDocumentToProduct,
@@ -55,6 +56,7 @@ const ProductDocument = () => {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const uploadModal = useDisclosure();
   const editModal = useDisclosure();
+  const deleteModal = useDisclosure();
   const applicantTypeList = useSelector(
     (state) => state.setting.applicantTypeList,
   );
@@ -73,6 +75,7 @@ const ProductDocument = () => {
   const [formData, setFormData] = useState(formValues);
   const [editData, setEditData] = useState(formValues);
   const [editApplicantTypeName, setEditApplicantTypeName] = useState("");
+  const [deleteRow, setDeleteRow] = useState(null);
   const [fileUrl, setFileUrl] = useState("");
   const [applicantTypeId, setApplicatTypeId] = useState("-1");
 
@@ -172,6 +175,46 @@ const ProductDocument = () => {
             color: "success",
           });
           editModal.onClose();
+          dispatch(
+            getAllDocumentCheckListByProductId({
+              applicantTypeId,
+              productId: solutionId,
+            }),
+          );
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  };
+
+  const handleOpenDelete = (row) => {
+    setDeleteRow(row);
+    deleteModal.onOpen();
+  };
+
+  const handleDeleteConfirm = () => {
+    dispatch(
+      deleteDocumentFromProduct({
+        productId: solutionId,
+        mappingId: deleteRow?.mappingId,
+        updatedBy: userId,
+      }),
+    )
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Document removed successfully !.",
+            color: "success",
+          });
+          deleteModal.onClose();
+          setDeleteRow(null);
           dispatch(
             getAllDocumentCheckListByProductId({
               applicantTypeId,
@@ -392,7 +435,7 @@ const ProductDocument = () => {
                           <DropdownItem
                             key="delete"
                             color="danger"
-                            // onClick={modal.onOpen}
+                            onPress={() => handleOpenDelete(item)}
                           >
                             Delete
                           </DropdownItem>
@@ -562,6 +605,33 @@ const ProductDocument = () => {
                   </ModalFooter>
                 </Form>
               </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onOpenChange={deleteModal.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Delete document</ModalHeader>
+              <ModalBody>
+                <p>
+                  Remove <b>{deleteRow?.documentName}</b>
+                  {deleteRow?.applicantTypeName
+                    ? ` from ${deleteRow.applicantTypeName}`
+                    : ""}
+                  ?
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button onPress={onClose}>No</Button>
+                <Button color="danger" onPress={handleDeleteConfirm}>
+                  Yes
+                </Button>
+              </ModalFooter>
             </>
           )}
         </ModalContent>
