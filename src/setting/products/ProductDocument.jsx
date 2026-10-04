@@ -471,7 +471,6 @@ const ProductDocument = () => {
                 >
                   <div className="grid gap-2 w-full">
                     <NewSelect
-                      isRequired={true}
                       selectionMode="multiple"
                       errorMessage={"please select applicant type ."}
                       data={applicantTypeList}
