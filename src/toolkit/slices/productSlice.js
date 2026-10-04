@@ -219,6 +219,20 @@ export const mapDocumentToProduct = createAsyncThunk(
     }
   },
 );
+export const updateDocumentsInProduct = createAsyncThunk(
+  "updateDocumentsInProduct",
+  async ({ productId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/operationService/api/products/${productId}/documents/map`,
+        data,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
 
 export const getAllDocumentCheckListByProductId = createAsyncThunk(
   "getAllDocumentCheckListByProductId",

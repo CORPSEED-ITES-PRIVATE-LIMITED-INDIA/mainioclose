@@ -45,6 +45,7 @@ import {
   getAllDocumentCheckListByProductId,
   getAllDocumentsForProduct,
   mapDocumentToProduct,
+  updateDocumentsInProduct,
 } from "../../toolkit/slices/productSlice";
 const iconClass = "w-5 h-5";
 
@@ -53,6 +54,7 @@ const ProductDocument = () => {
   const { userId, solutionId } = useParams();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const uploadModal = useDisclosure();
+  const editModal = useDisclosure();
   const applicantTypeList = useSelector(
     (state) => state.setting.applicantTypeList,
   );
@@ -69,6 +71,8 @@ const ProductDocument = () => {
     updatedBy: userId,
   };
   const [formData, setFormData] = useState(formValues);
+  const [editData, setEditData] = useState(formValues);
+  const [editApplicantTypeName, setEditApplicantTypeName] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [applicantTypeId, setApplicatTypeId] = useState("-1");
 
@@ -114,8 +118,66 @@ const ProductDocument = () => {
           addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     },
-    [formData, solutionId, dispatch],
+    [formData, solutionId, dispatch, applicantTypeId],
   );
+
+  const handleOpenEdit = (row) => {
+    const typeId = row?.applicantTypeId ?? null;
+
+    // all documents currently mapped for this applicant type
+    const currentIds = data
+      .filter((d) => String(d.applicantTypeId ?? "") === String(typeId ?? ""))
+      .map((d) => String(d.requiredDocumentId));
+
+    setEditApplicantTypeName(row?.applicantTypeName || "Global");
+    setEditData({
+      productId: solutionId,
+      applicantTypeId: typeId != null ? String(typeId) : null,
+      requiredDocumentIds: currentIds,
+      updatedBy: userId,
+    });
+    editModal.onOpen();
+  };
+
+  const handleEditSubmit = () => {
+    const body = {
+      productId: Number(solutionId),
+      applicantTypeId:
+        editData.applicantTypeId != null
+          ? Number(editData.applicantTypeId)
+          : null,
+      requiredDocumentIds: Array.from(editData.requiredDocumentIds || []).map(
+        Number,
+      ),
+      updatedBy: Number(userId),
+    };
+
+    dispatch(updateDocumentsInProduct({ productId: solutionId, data: body }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          addToast({
+            title: "Product documents updated successfully !.",
+            color: "success",
+          });
+          editModal.onClose();
+          dispatch(
+            getAllDocumentCheckListByProductId({
+              applicantTypeId,
+              productId: solutionId,
+            }),
+          );
+        } else {
+          addToast({
+            title: resp?.payload?.status,
+            color: "danger",
+            description: resp?.payload?.message,
+          });
+        }
+      })
+      .catch(() =>
+        addToast({ title: "Something went wrong !.", color: "danger" }),
+      );
+  };
 
   const renderCell = useCallback((rowData, columnKey) => {
     switch (columnKey) {
@@ -309,7 +371,12 @@ const ProductDocument = () => {
                           </Button>
                         </DropdownTrigger>
                         <DropdownMenu>
-                          <DropdownItem key="edit">Edit</DropdownItem>
+                          <DropdownItem
+                            key="edit"
+                            onPress={() => handleOpenEdit(item)}
+                          >
+                            Edit
+                          </DropdownItem>
                           <DropdownItem
                             key="delete"
                             color="danger"
@@ -422,6 +489,62 @@ const ProductDocument = () => {
                     Submit
                   </Button>
                 </ModalFooter>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      <Modal
+        isOpen={editModal.isOpen}
+        onOpenChange={editModal.onOpenChange}
+        size="2xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Edit product documents
+              </ModalHeader>
+              <ModalBody className="w-full">
+                <Form
+                  className="w-full"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleEditSubmit();
+                  }}
+                >
+                  <div className="grid gap-2 w-full">
+                    <Input
+                      isReadOnly
+                      label="Applicant type"
+                      value={editApplicantTypeName}
+                    />
+
+                    <NewSelect
+                      isRequired={true}
+                      selectionMode="multiple"
+                      errorMessage={"please select documents ."}
+                      data={allDocumentList}
+                      label="Documents"
+                      name="name"
+                      labelKey="name"
+                      valueKey="id"
+                      value={editData?.requiredDocumentIds}
+                      onChange={(e) =>
+                        setEditData((prev) => ({
+                          ...prev,
+                          requiredDocumentIds: e,
+                        }))
+                      }
+                    />
+                  </div>
+                  <ModalFooter className="flex justify-end gap-2 w-full">
+                    <Button onPress={onClose}>Cancel</Button>
+                    <Button color="primary" type="submit">
+                      Update
+                    </Button>
+                  </ModalFooter>
+                </Form>
               </ModalBody>
             </>
           )}
