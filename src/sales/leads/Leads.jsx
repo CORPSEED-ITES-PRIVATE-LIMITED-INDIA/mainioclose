@@ -362,7 +362,10 @@ const Leads = () => {
     dispatch(importLeadsSheet(leadsFileUploadingUrl))
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
-          addToast({ title: "Leads uploaded successfully !.", color: "success" });
+          addToast({
+            title: "Leads uploaded successfully !.",
+            color: "success",
+          });
           dispatch(getAllLeadsByFilter(allMultiFilterData));
           dispatch(getAllLeadCount(allMultiFilterData));
           dispatch(getAllLeadsForExport(allMultiFilterData));
@@ -946,218 +949,217 @@ const Leads = () => {
                 )}
               </PopoverContent>
             </Popover>
-            {!department === "Temp Admin" && (
-              <Popover
-                showArrow
-                isOpen={filterPopOver.isOpen}
-                onOpenChange={(e) => filterPopOver.onOpenChange(e)}
-              >
-                <PopoverTrigger>
-                  <Button variant="flat" endContent={<ListFilter />}>
-                    Filter
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="min-w-[550px]">
-                  {(titleProps) => (
-                    <div className="px-1 py-2">
-                      <h3 className="my-4 font-bold text-xl" {...titleProps}>
-                        Lead filter
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4 min-w-[500px]">
-                        <NewSelect
-                          data={allLeadUser || []}
-                          selectionMode="multiple"
-                          label={"Select users"}
-                          name={"userIdFilter"}
-                          labelKey={"fullName"}
-                          valueKey={"id"}
-                          value={allMultiFilterData?.userIdFilter}
-                          onChange={(selectedSet) => {
+
+            <Popover
+              showArrow
+              isOpen={filterPopOver.isOpen}
+              onOpenChange={(e) => filterPopOver.onOpenChange(e)}
+            >
+              <PopoverTrigger>
+                <Button variant="flat" endContent={<ListFilter />}>
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="min-w-[550px]">
+                {(titleProps) => (
+                  <div className="px-1 py-2">
+                    <h3 className="my-4 font-bold text-xl" {...titleProps}>
+                      Lead filter
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 min-w-[500px]">
+                      <NewSelect
+                        data={allLeadUser || []}
+                        selectionMode="multiple"
+                        label={"Select users"}
+                        name={"userIdFilter"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={allMultiFilterData?.userIdFilter}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            userIdFilter: selectedSet,
+                          }));
+                        }}
+                      />
+                      <NewSelect
+                        data={allLeadUser || []}
+                        label={"Updated by"}
+                        name={"updatedById"}
+                        labelKey={"fullName"}
+                        valueKey={"id"}
+                        value={allMultiFilterData?.updatedById}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            updatedById: selectedSet,
+                          }));
+                        }}
+                      />
+                      <div>
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          visibleMonths={2}
+                          label="Created date"
+                          value={{
+                            start: allMultiFilterData?.toDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.toDate}[Asia/kolkata]`,
+                                )
+                              : null,
+                            end: allMultiFilterData?.fromDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.fromDate}[Asia/kolkata]`,
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                              : null;
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              userIdFilter: selectedSet,
+                              toDate: formattedStart,
+                              fromDate: formattedEnd,
                             }));
                           }}
                         />
-                        <NewSelect
-                          data={allLeadUser || []}
-                          label={"Updated by"}
-                          name={"updatedById"}
-                          labelKey={"fullName"}
-                          valueKey={"id"}
-                          value={allMultiFilterData?.updatedById}
-                          onChange={(selectedSet) => {
-                            setAllMultiFilterData((prev) => ({
-                              ...prev,
-                              updatedById: selectedSet,
-                            }));
-                          }}
-                        />
-                        <div>
-                          <DateRangePicker
-                            hideTimeZone
-                            granularity="minute"
-                            hourCycle={24}
-                            visibleMonths={2}
-                            label="Created date"
-                            value={{
-                              start: allMultiFilterData?.toDate
-                                ? parseZonedDateTime(
-                                    `${allMultiFilterData?.toDate}[Asia/kolkata]`,
-                                  )
-                                : null,
-                              end: allMultiFilterData?.fromDate
-                                ? parseZonedDateTime(
-                                    `${allMultiFilterData?.fromDate}[Asia/kolkata]`,
-                                  )
-                                : null,
-                            }}
-                            onChange={(value) => {
-                              const formattedStart = value.start
-                                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                                : null;
-                              const formattedEnd = value.end
-                                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
-                                : null;
-                              setAllMultiFilterData((prev) => ({
-                                ...prev,
-                                toDate: formattedStart,
-                                fromDate: formattedEnd,
-                              }));
-                            }}
-                          />
-                        </div>
+                      </div>
 
-                        <div>
-                          <Select
-                            label={"Status"}
-                            name={"statusId"}
-                            selectionMode="multiple"
-                            selectedKeys={
-                              new Set(allMultiFilterData?.statusId || [])
-                            }
-                            onSelectionChange={(e) => {
-                              let values = Array.from(e);
-                              setAllMultiFilterData((prev) => ({
-                                ...prev,
-                                statusId: values.length > 0 ? values : [],
-                              }));
-                            }}
-                          >
-                            {statusList.map((status) => (
-                              <SelectItem key={status?.id}>
-                                {status?.name}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                        </div>
-
-                        <NewSelect
-                          data={urlList || []}
-                          selectionMode="multiple"
-                          label={"Service"}
-                          name={"originalName"}
-                          labelKey={"urlsName"}
-                          valueKey={"urlsName"}
-                          value={allMultiFilterData?.originalName}
-                          onChange={(selectedSet) => {
-                            setAllMultiFilterData((prev) => ({
-                              ...prev,
-                              originalName: selectedSet,
-                            }));
-                          }}
-                        />
-
-                        <div>
-                          <DateRangePicker
-                            hideTimeZone
-                            granularity="minute"
-                            hourCycle={24}
-                            visibleMonths={2}
-                            label="Updated date"
-                            value={{
-                              start: allMultiFilterData?.updatedToDate
-                                ? parseZonedDateTime(
-                                    `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`,
-                                  )
-                                : null,
-                              end: allMultiFilterData?.updatedfromDate
-                                ? parseZonedDateTime(
-                                    `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`,
-                                  )
-                                : null,
-                            }}
-                            onChange={(value) => {
-                              const formattedStart = value.start
-                                ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
-                                : null;
-                              const formattedEnd = value.end
-                                ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
-                                : null;
-                              setAllMultiFilterData((prev) => ({
-                                ...prev,
-                                updatedToDate: formattedStart,
-                                updatedfromDate: formattedEnd,
-                              }));
-                            }}
-                          />
-                        </div>
-
+                      <div>
                         <Select
-                          label="Source"
+                          label={"Status"}
+                          name={"statusId"}
                           selectionMode="multiple"
-                          items={
-                            leadSource?.map((item) => ({
-                              label: item,
-                              key: item,
-                            })) || []
+                          selectedKeys={
+                            new Set(allMultiFilterData?.statusId || [])
                           }
-                          selectedKeys={allMultiFilterData?.source}
-                          onSelectionChange={(e) =>
+                          onSelectionChange={(e) => {
+                            let values = Array.from(e);
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              source: Array.from(e),
-                            }))
-                          }
+                              statusId: values.length > 0 ? values : [],
+                            }));
+                          }}
                         >
-                          {(source) => (
-                            <SelectItem key={source.key}>
-                              {source.label}
+                          {statusList.map((status) => (
+                            <SelectItem key={status?.id}>
+                              {status?.name}
                             </SelectItem>
-                          )}
+                          ))}
                         </Select>
-                        <Input
-                          label="Mobile number"
-                          value={allMultiFilterData?.contactMobileNo}
-                          onChange={(e) =>
+                      </div>
+
+                      <NewSelect
+                        data={urlList || []}
+                        selectionMode="multiple"
+                        label={"Service"}
+                        name={"originalName"}
+                        labelKey={"urlsName"}
+                        valueKey={"urlsName"}
+                        value={allMultiFilterData?.originalName}
+                        onChange={(selectedSet) => {
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            originalName: selectedSet,
+                          }));
+                        }}
+                      />
+
+                      <div>
+                        <DateRangePicker
+                          hideTimeZone
+                          granularity="minute"
+                          hourCycle={24}
+                          visibleMonths={2}
+                          label="Updated date"
+                          value={{
+                            start: allMultiFilterData?.updatedToDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.updatedToDate}[Asia/kolkata]`,
+                                )
+                              : null,
+                            end: allMultiFilterData?.updatedfromDate
+                              ? parseZonedDateTime(
+                                  `${allMultiFilterData?.updatedfromDate}[Asia/kolkata]`,
+                                )
+                              : null,
+                          }}
+                          onChange={(value) => {
+                            const formattedStart = value.start
+                              ? `${value.start.year}-${String(value.start.month).padStart(2, "0")}-${String(value.start.day).padStart(2, "0")}T${String(value.start.hour).padStart(2, "0")}:${String(value.start.minute).padStart(2, "0")}`
+                              : null;
+                            const formattedEnd = value.end
+                              ? `${value.end.year}-${String(value.end.month).padStart(2, "0")}-${String(value.end.day).padStart(2, "0")}T${String(value.end.hour).padStart(2, "0")}:${String(value.end.minute).padStart(2, "0")}` // Fixed: month -> day
+                              : null;
                             setAllMultiFilterData((prev) => ({
                               ...prev,
-                              contactMobileNo: e.target.value,
-                            }))
-                          }
-                        />
-                        <Input
-                          label="Email address"
-                          value={allMultiFilterData?.contactEmail}
-                          onChange={(e) =>
-                            setAllMultiFilterData((prev) => ({
-                              ...prev,
-                              contactEmail: e.target.value,
-                            }))
-                          }
+                              updatedToDate: formattedStart,
+                              updatedfromDate: formattedEnd,
+                            }));
+                          }}
                         />
                       </div>
-                      <div className="flex justify-end gap-2 my-2">
-                        <Button onPress={handleResetFilter}>Reset</Button>
-                        <Button color="primary" onPress={handleApplyFilter}>
-                          Apply
-                        </Button>
-                      </div>
+
+                      <Select
+                        label="Source"
+                        selectionMode="multiple"
+                        items={
+                          leadSource?.map((item) => ({
+                            label: item,
+                            key: item,
+                          })) || []
+                        }
+                        selectedKeys={allMultiFilterData?.source}
+                        onSelectionChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            source: Array.from(e),
+                          }))
+                        }
+                      >
+                        {(source) => (
+                          <SelectItem key={source.key}>
+                            {source.label}
+                          </SelectItem>
+                        )}
+                      </Select>
+                      <Input
+                        label="Mobile number"
+                        value={allMultiFilterData?.contactMobileNo}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            contactMobileNo: e.target.value,
+                          }))
+                        }
+                      />
+                      <Input
+                        label="Email address"
+                        value={allMultiFilterData?.contactEmail}
+                        onChange={(e) =>
+                          setAllMultiFilterData((prev) => ({
+                            ...prev,
+                            contactEmail: e.target.value,
+                          }))
+                        }
+                      />
                     </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            )}
+                    <div className="flex justify-end gap-2 my-2">
+                      <Button onPress={handleResetFilter}>Reset</Button>
+                      <Button color="primary" onPress={handleApplyFilter}>
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
