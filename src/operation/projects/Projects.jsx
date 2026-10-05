@@ -47,6 +47,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   createProjectLifecycleRequest,
   createProjectsForOperations,
+  getAllLegalUsers,
   getAllOperationsProject,
   getAllProjectsForOperations,
   getTotalCountForOperationProjects,
@@ -230,7 +231,7 @@ const Projects = () => {
 
   // Legal team + pending request counts, same source as Quote.jsx
   const legalDepartmentUsers = useSelector(
-    (state) => state.operation.departmentUsers || [],
+    (state) => state.operation.legalUsers || [],
   );
   const pendingLegalRequestsResponse = useSelector(
     (state) => state.vendors.pendingLegalRequests,
@@ -296,7 +297,7 @@ const Projects = () => {
 
   // Fetch legal team once, same as Quote.jsx
   useEffect(() => {
-    dispatch(getUsersByDepartment({ id: LEGAL_DEPARTMENT_ID }));
+    dispatch(getAllLegalUsers());
   }, [dispatch]);
 
   // Once we know who's in Legal, fetch each user's pending request count

@@ -1350,6 +1350,19 @@ export const getUsersByDepartment = createAsyncThunk(
     }
   },
 );
+export const getAllLegalUsers = createAsyncThunk(
+  "getAllLegalUsers",
+  async () => {
+    try {
+      const response = await api.get(
+        `/operationService/api/departments/legal/users`,
+      );
+      return response.data;
+    } catch (err) {
+      return err;
+    }
+  },
+);
 export const getAllVendorQuotationLegalRequests = createAsyncThunk(
   "getAllVendorQuotationLegalRequests",
   async () => {
@@ -2231,6 +2244,7 @@ export const OperationSlice = createSlice({
     projectTimeline: [],
     projectTimelineLoading: false,
     projectCount: 0,
+    legalUsers:[],
     activitiesByProjectId: {},
     expenseList: [],
     legalRequestList: [],
@@ -2961,6 +2975,17 @@ export const OperationSlice = createSlice({
     builder.addCase(getAllLegalRequestOperations.rejected, (state) => {
       state.loading = "rejected";
       state.legalRequestsOperations = [];
+    });
+        builder.addCase(getAllLegalUsers.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllLegalUsers.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.legalUsers = action?.payload;
+    });
+    builder.addCase(getAllLegalUsers.rejected, (state) => {
+      state.loading = "rejected";
+      state.legalUsers = [];
     });
   },
 });

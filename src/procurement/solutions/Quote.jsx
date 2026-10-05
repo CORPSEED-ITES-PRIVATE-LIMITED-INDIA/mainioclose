@@ -73,6 +73,7 @@ import NewSelect from "../../components/NewSelect";
 import { getAllPaymentType } from "../../toolkit/slices/settingSlice";
 import {
   getUsersByDepartment,
+  getAllLegalUsers,
   sendAgreementToVendor,
   getAllVendorQuotationLegalRequests,
   sendVendorDetailsToAccounts,
@@ -674,7 +675,7 @@ const Quote = () => {
   const paymentTypeList = useSelector((state) => state.setting.paymentTypeList);
   const userList = useSelector((state) => state.common.usersList);
   const legalDepartmentUsers = useSelector(
-    (state) => state.operation.departmentUsers || [],
+    (state) => state.operation.legalUsers || [],
   );
   const vendorLegalRequestsResponse = useSelector(
     (state) => state.operation.vendorLegalRequests,
@@ -975,7 +976,7 @@ const Quote = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(getUsersByDepartment({ id: 12 }));
+    dispatch(getAllLegalUsers());
   }, [dispatch]);
 
   const fetchQuotations = useCallback(() => {
