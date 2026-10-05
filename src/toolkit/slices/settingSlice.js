@@ -1493,6 +1493,19 @@ export const getLeadAssignmentSolutionUsers = createAsyncThunk(
     }
   },
 );
+export const getAllSalesAndQualityUsersForAdmin = createAsyncThunk(
+  "getAllSalesAndQualityUsersForAdmin",
+  async ({userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/users/getAllSalesAndQualityUsersForAdmin?userId=${userId}`,
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response);
+    }
+  },
+);
 export const unMapUserFromTeam = createAsyncThunk(
   "unMapUserFromTeam",
   async (
@@ -1527,6 +1540,7 @@ export const SettingSlice = createSlice({
     slugListWithPage: [],
     slugCount: 0,
     urlsList: [],
+    salesQualityAdmin:[],
     urlCount: 0,
     departmentList: [],
     departmentAssignmentConfiguration: null,
@@ -2254,6 +2268,20 @@ export const SettingSlice = createSlice({
     builder.addCase(getLeadAssignmentSolutionUsers.rejected, (state) => {
       state.loading = "rejected";
       state.leadAssignmentSolutionUsers = [];
+    });
+    builder.addCase(getAllSalesAndQualityUsersForAdmin.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(
+      getAllSalesAndQualityUsersForAdmin.fulfilled,
+      (state, action) => {
+        state.loading = "success";
+        state.salesQualityAdmin = action.payload;
+      },
+    );
+    builder.addCase(getAllSalesAndQualityUsersForAdmin.rejected, (state) => {
+      state.loading = "rejected";
+      state.salesQualityAdmin = [];
     });
   },
 });

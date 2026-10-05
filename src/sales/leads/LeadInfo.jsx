@@ -52,7 +52,7 @@ import {
   getAllComments,
   getAllSlugList,
   getAllStatusData,
-  getLeadAssignmentSolutionUsers,
+  getAllSalesAndQualityUsersForAdmin,
   getSolutionDetailByName,
 } from "../../toolkit/slices/settingSlice";
 import {
@@ -202,7 +202,7 @@ const LeadInfo = () => {
     (state) => state.setting.solutionDetailById,
   );
   const solutionEligibleUsers = useSelector(
-    (state) => state.setting.leadAssignmentSolutionUsers,
+    (state) => state.setting.salesQualityAdmin,
   );
   const solutionList = useSelector(
     (state) => state.product.solutionListByUserId,
@@ -284,9 +284,8 @@ const LeadInfo = () => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [leadChatComments]);
 
-  // Resolve the lead's solution so the assignee dropdown can be scoped to
-  // only the users eligible for that particular service/product, instead of
-  // every user in the hierarchy.
+  // The lead's solution is still needed for "Auto quality submit"
+  // (it sends solutionDetail.id), so keep resolving it.
   useEffect(() => {
     if (leadData?.originalName) {
       dispatch(
@@ -295,16 +294,10 @@ const LeadInfo = () => {
     }
   }, [dispatch, leadData?.originalName, userId]);
 
+  // Assignee dropdown: all sales and quality users, not scoped to the solution.
   useEffect(() => {
-    if (solutionDetail?.id) {
-      dispatch(
-        getLeadAssignmentSolutionUsers({
-          solutionId: solutionDetail.id,
-          userId,
-        }),
-      );
-    }
-  }, [dispatch, solutionDetail?.id, userId]);
+    dispatch(getAllSalesAndQualityUsersForAdmin({ userId }));
+  }, [dispatch, userId]);
 
   // The solution is resolved from the slug the lead is sitting on, so no slug
   // means there is nothing to submit — the API would only reject it anyway.
@@ -1380,15 +1373,11 @@ const LeadInfo = () => {
                           ) : (
                             <NewSelect
                               data={solutionEligibleUsers || []}
-                              labelKey="fullName"
+                              labelKey="name"
                               valueKey="id"
                               label="Select assignee"
-                              placeholder={
-                                solutionDetail?.id
-                                  ? "Select assignee"
-                                  : "Resolving solution..."
-                              }
-                              value={String(leadData?.assigne?.id)}
+                              placeholder="Select assignee"
+                              value={String(leadData?.assignee?.id)}
                               onChange={(e) => changeLeadAssignee(e)}
                             />
                           )}
