@@ -81,6 +81,16 @@ export const multiAssignedLeads = createAsyncThunk(
   }
 );
 
+export const importLeadsSheet = createAsyncThunk(
+  "importLeadsSheet",
+  async (url) => {
+    const response = await api.post(
+      `/leadService/api/v1/import-csv-from-s3?s3Url=${url}`
+    );
+    return response.data;
+  }
+);
+
 export const getSingleLeadDataByLeadId = createAsyncThunk(
   "getSingleLeadData",
   async ({ leadId, userId }) => {
