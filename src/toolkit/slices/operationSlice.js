@@ -2224,6 +2224,22 @@ export const getAllLegalRequestOperations = createAsyncThunk(
     }
   },
 );
+export const bulkDeleteMilestone = createAsyncThunk(
+  "bulkDeleteMilestone",
+  async ({ data }, { rejectWithValue }) => {
+    try {
+
+      const response = await api.post(
+        `/operationService/api/product-milestone-maps/bulk-delete`,data
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to Delete Milestones",
+      );
+    }
+  },
+);
 export const OperationSlice = createSlice({
   name: "operation",
   initialState: {

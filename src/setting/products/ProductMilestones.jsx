@@ -22,10 +22,17 @@ import {
   Select,
   SelectItem,
 } from "@heroui/react";
-import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  EllipsisVertical,
+  Plus,
+  Search,
+  Trash,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addMileStoneInProduct,
+  bulkDeleteMilestone,
   deleteMileStoneInProduct,
   getAllMilestones,
   getProductMileStonesListByProductId,
@@ -149,6 +156,7 @@ const ProductMilestones = ({ details }) => {
 
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
   const deleteModal = useDisclosure();
+  const bulkDeleteModal = useDisclosure();
 
   const data = useSelector((state) => state.operation.productMileStoneList);
   const mileStoneList = useSelector((state) => state.operation.mileStoneList);
@@ -164,6 +172,11 @@ const ProductMilestones = ({ details }) => {
   });
 
   const [rowItem, setRowItem] = useState(null);
+
+  // Multi-select state. Row keys are always strings (React coerces `key`),
+  // so ids are stored as strings and converted to numbers on submit.
+  const [selectedKeys, setSelectedKeys] = useState(new Set([]));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const hasSearchFilter = Boolean(filterValue);
   const isMedium = useMediaQuery({ minWidth: 768, maxWidth: 1535 });
@@ -211,6 +224,24 @@ const ProductMilestones = ({ details }) => {
   const sortedItems = React.useMemo(() => {
     return [...filteredItems];
   }, [sortDescriptor, filteredItems]);
+
+  // Only count selected rows that are currently visible, so a row hidden by
+  // the search filter can never be deleted by accident.
+  const selectedItems = React.useMemo(() => {
+    const keys = selectedKeys === "all" ? null : selectedKeys;
+    if (keys === null) return sortedItems;
+    return sortedItems.filter((item) => keys.has(String(item.id)));
+  }, [selectedKeys, sortedItems]);
+
+  const selectedCount = selectedItems.length;
+
+  const handleSelectionChange = (keys) => {
+    if (keys === "all") {
+      setSelectedKeys(new Set(sortedItems.map((item) => String(item.id))));
+    } else {
+      setSelectedKeys(new Set(Array.from(keys).map(String)));
+    }
+  };
 
   const inputSize = isMedium ? "sm" : isLarge ? "md" : "sm";
 
@@ -344,6 +375,61 @@ const ProductMilestones = ({ details }) => {
       .catch(() => {
         addToast({ title: "Something went wrong !.", color: "danger" });
       });
+  };
+
+  // Deletes every selected milestone in one request. The backend is
+  // all-or-nothing: if any one can't be deleted (for example it is already
+  // used in a project) nothing is deleted and the reason comes back as the
+  // error message.
+  const handleBulkDeleteMileStones = () => {
+    const ids = selectedItems.map((item) => Number(item.id));
+
+    if (ids.length === 0) {
+      addToast({
+        title: "Select at least one milestone to delete.",
+        color: "warning",
+      });
+      return;
+    }
+
+    setBulkDeleting(true);
+
+    dispatch(bulkDeleteMilestone({ data: { ids } }))
+      .then((resp) => {
+        if (resp.meta.requestStatus === "fulfilled") {
+          const deletedCount = resp.payload?.deletedCount ?? ids.length;
+
+          addToast({
+            title: `${deletedCount} milestone${
+              deletedCount === 1 ? "" : "s"
+            } deleted successfully !.`,
+            color: "success",
+          });
+
+          dispatch(
+            getProductMileStonesListByProductId({
+              userId,
+              productId: solutionId,
+            }),
+          );
+
+          setSelectedKeys(new Set([]));
+          bulkDeleteModal.onClose();
+        } else {
+          addToast({
+            title: "Unable to delete milestones",
+            description:
+              typeof resp.payload === "string"
+                ? resp.payload
+                : "Something went wrong !.",
+            color: "danger",
+          });
+        }
+      })
+      .catch(() => {
+        addToast({ title: "Something went wrong !.", color: "danger" });
+      })
+      .finally(() => setBulkDeleting(false));
   };
 
   const renderCell = React.useCallback(
@@ -590,6 +676,18 @@ const ProductMilestones = ({ details }) => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
+            {selectedCount > 0 && (
+              <Button
+                size="sm"
+                color="danger"
+                variant="flat"
+                startContent={<Trash className="w-3.5 h-3.5" />}
+                onPress={bulkDeleteModal.onOpen}
+              >
+                Delete selected ({selectedCount})
+              </Button>
+            )}
+
             <Button
               size="sm"
               endContent={<Plus className="w-3.5 h-3.5" />}
@@ -631,6 +729,7 @@ const ProductMilestones = ({ details }) => {
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-[12.5px]">
             Total {sortedItems.length} milestones
+            {selectedCount > 0 ? ` • ${selectedCount} selected` : ""}
           </span>
         </div>
       </div>
@@ -641,6 +740,7 @@ const ProductMilestones = ({ details }) => {
     onSearchChange,
     onClear,
     sortedItems.length,
+    selectedCount,
   ]);
 
   return (
@@ -654,6 +754,9 @@ const ProductMilestones = ({ details }) => {
         removeWrapper={false}
         aria-label="Product milestone table"
         bottomContentPlacement="outside"
+        selectionMode="multiple"
+        selectedKeys={selectedKeys}
+        onSelectionChange={handleSelectionChange}
         classNames={{
           base: "gap-2.5",
           wrapper:
@@ -818,6 +921,55 @@ const ProductMilestones = ({ details }) => {
                 <Button onPress={onClose}>No</Button>
                 <Button color="primary" onPress={handleDeleteMileStone}>
                   Yes
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* Bulk delete confirmation */}
+      <Modal
+        isOpen={bulkDeleteModal.isOpen}
+        onOpenChange={bulkDeleteModal.onOpenChange}
+        backdrop="blur"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                Delete {selectedCount} milestone
+                {selectedCount === 1 ? "" : "s"}
+              </ModalHeader>
+
+              <ModalBody>
+                <p className="text-sm">
+                  Are you sure you want to delete the selected milestones? If
+                  any of them is already used in a project, none will be
+                  deleted.
+                </p>
+
+                <ul className="list-disc pl-5 text-[13px] text-default-600 max-h-[200px] overflow-auto">
+                  {selectedItems.map((item) => (
+                    <li key={item.id}>
+                      {item.milestoneName} (order {item.order})
+                    </li>
+                  ))}
+                </ul>
+              </ModalBody>
+
+              <ModalFooter>
+                <Button onPress={onClose} isDisabled={bulkDeleting}>
+                  No
+                </Button>
+                <Button
+                  color="danger"
+                  isLoading={bulkDeleting}
+                  isDisabled={bulkDeleting || selectedCount === 0}
+                  onPress={handleBulkDeleteMileStones}
+                >
+                  Yes, delete
                 </Button>
               </ModalFooter>
             </>
