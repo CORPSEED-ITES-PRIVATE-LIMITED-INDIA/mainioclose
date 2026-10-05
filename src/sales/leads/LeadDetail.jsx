@@ -26,10 +26,9 @@ const LeadDetail = () => {
     navigate(key);
     setSelectedKey(key);
   };
-  
 
   const tabs =
-    (department === "Quality Team" || "Temp Admin") && !adminRole
+    department === "Quality Team" || adminRole
       ? [
           { id: "leadDetail", label: "Details" },
           { id: "leadHistory", label: "Lead history" },
