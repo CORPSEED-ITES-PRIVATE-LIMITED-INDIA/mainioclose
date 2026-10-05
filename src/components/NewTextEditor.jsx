@@ -115,19 +115,37 @@ const marginToIndentLevel = (el) => {
   return Math.min(Math.max(level, 0), MAX_INDENT);
 };
 
+// Typed-in list markers ("1.", "a)", "•") that ride along as plain text when a
+// list is pasted from Word, Docs or the web. A list item already gets its own
+// number/bullet, so the typed one has to go or it shows up twice.
+const TYPED_MARKER =
+  /^[\s ]*(?:(\d{1,3}|[a-zA-Z]|[ivxlcdmIVXLCDM]{2,6})[.)]|[•·▪◦§Ø➢–—-])[\s ]+/;
+
+const takeTypedMarker = (el) => {
+  const walker = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node && !node.nodeValue.trim()) node = walker.nextNode();
+  if (!node) return "";
+
+  const match = TYPED_MARKER.exec(node.nodeValue);
+  if (!match) return "";
+  node.nodeValue = node.nodeValue.slice(match[0].length);
+  return match[0].replace(/[\s ]/g, "");
+};
+
+const isNumberedMarker = (marker) => /^(\d+|[a-zA-Z]+)[.)]$/.test(marker);
+
 // Word puts each list item in a <p class="MsoListParagraph" style="mso-list:
 // l0 level1 lfo1"> with the number/bullet typed in as plain text. Rebuild
-// those as real <ul>/<ol> so they land flush left and nest by level.
+// those as real <ul>/<ol> so they land flush left and nest by level. Real
+// <ul>/<ol> lists that still carry a typed "1." in every item are cleaned up
+// too (and switched to <ol> when the markers were numbers).
 const convertWordLists = (html) => {
-  if (!/mso-list|MsoListParagraph/i.test(html)) return html;
+  if (!/mso-list|MsoListParagraph|<li/i.test(html)) return html;
 
   const doc = new DOMParser().parseFromString(html, "text/html");
   const body = doc.body;
   const stack = []; // { list, level }
-
-  const closeLists = () => {
-    stack.length = 0;
-  };
 
   Array.from(body.children).forEach((node) => {
     const style = node.getAttribute("style") || "";
@@ -136,20 +154,20 @@ const convertWordLists = (html) => {
       (/mso-list/i.test(style) || /MsoListParagraph/i.test(node.className));
 
     if (!isListPara) {
-      closeLists();
+      stack.length = 0;
       return;
     }
 
     const level = parseInt(/level(\d+)/i.exec(style)?.[1] || "1", 10);
 
-    // The typed-in marker lives in a span flagged mso-list:Ignore (or inside
-    // the supportLists conditional comment); read it, then drop it.
+    // The marker normally lives in a span flagged mso-list:Ignore; when the
+    // source didn't flag one, fall back to reading it off the text itself.
     const markerEl = Array.from(node.querySelectorAll("span")).find((el) =>
       /mso-list:\s*ignore/i.test(el.getAttribute("style") || ""),
     );
-    const marker = (markerEl?.textContent || "").replace(/ /g, " ").trim();
+    let marker = (markerEl?.textContent || "").replace(/[\s ]/g, "");
     markerEl?.remove();
-    const ordered = /^[\da-zA-Z]+[.)]$/.test(marker);
+    if (!marker) marker = takeTypedMarker(node);
 
     const li = doc.createElement("li");
     const p = doc.createElement("p");
@@ -160,7 +178,7 @@ const convertWordLists = (html) => {
 
     let top = stack[stack.length - 1];
     if (!top || top.level < level) {
-      const list = doc.createElement(ordered ? "ol" : "ul");
+      const list = doc.createElement(isNumberedMarker(marker) ? "ol" : "ul");
       if (top) top.list.lastElementChild?.appendChild(list);
       else body.insertBefore(list, node);
       top = { list, level };
@@ -169,6 +187,34 @@ const convertWordLists = (html) => {
 
     top.list.appendChild(li);
     node.remove();
+  });
+
+  // Drop the empty items Word leaves behind (the stray bullet in the editor).
+  body.querySelectorAll("li").forEach((li) => {
+    if (!li.textContent.replace(/[\s ]/g, "") && !li.querySelector("img, table, ul, ol")) {
+      li.remove();
+    }
+  });
+
+  // Already-real lists whose items still start with a typed marker.
+  body.querySelectorAll("ul, ol").forEach((list) => {
+    const items = Array.from(list.children).filter((c) => c.tagName === "LI");
+    if (!items.length) return;
+
+    const markers = items.map((li) => {
+      const probe = li.cloneNode(true);
+      return takeTypedMarker(probe);
+    });
+    // Only treat the markers as typed numbering when every item has one;
+    // otherwise a sentence that happens to start with "A. " would be eaten.
+    if (!markers.every(Boolean)) return;
+
+    items.forEach((li) => takeTypedMarker(li));
+    if (list.tagName === "UL" && markers.every(isNumberedMarker)) {
+      const ol = doc.createElement("ol");
+      ol.innerHTML = list.innerHTML;
+      list.replaceWith(ol);
+    }
   });
 
   return body.innerHTML;
