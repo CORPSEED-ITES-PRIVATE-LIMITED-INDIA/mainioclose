@@ -36,6 +36,8 @@ import {
   Unlink,
   Expand,
   Minimize2,
+  IndentIncrease,
+  IndentDecrease,
 } from "lucide-react";
 
 const FontSize = Extension.create({
@@ -84,6 +86,94 @@ const FontSize = Extension.create({
   },
 });
 
+const INDENTABLE = ["paragraph", "heading"];
+const MAX_INDENT = 10;
+
+// Converts a pasted margin-left (any CSS unit) into indent levels of 2em.
+// Word list paragraphs carry a big hanging margin (36pt per level) that only
+// exists to position their fake "1." / "•" marker, so they stay flush left.
+const marginToIndentLevel = (el) => {
+  if (/mso-list/i.test(el.getAttribute("style") || "")) return 0;
+  if (/MsoList/i.test(el.className || "")) return 0;
+
+  const match = /^(-?[\d.]+)(em|rem|px|pt|in|cm|mm)?$/.exec(
+    (el.style.marginLeft || "").trim(),
+  );
+  if (!match) return 0;
+
+  const value = parseFloat(match[1]);
+  const emPerUnit = {
+    em: 1,
+    rem: 1,
+    px: 1 / 16,
+    pt: 1 / 12,
+    in: 6,
+    cm: 2.36,
+    mm: 6 / 25.4,
+  }[match[2] || "px"];
+  const level = Math.round((value * emPerUnit) / 2);
+  return Math.min(Math.max(level, 0), MAX_INDENT);
+};
+
+// Word puts each list item in a <p class="MsoListParagraph" style="mso-list:
+// l0 level1 lfo1"> with the number/bullet typed in as plain text. Rebuild
+// those as real <ul>/<ol> so they land flush left and nest by level.
+const convertWordLists = (html) => {
+  if (!/mso-list|MsoListParagraph/i.test(html)) return html;
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const body = doc.body;
+  const stack = []; // { list, level }
+
+  const closeLists = () => {
+    stack.length = 0;
+  };
+
+  Array.from(body.children).forEach((node) => {
+    const style = node.getAttribute("style") || "";
+    const isListPara =
+      node.tagName === "P" &&
+      (/mso-list/i.test(style) || /MsoListParagraph/i.test(node.className));
+
+    if (!isListPara) {
+      closeLists();
+      return;
+    }
+
+    const level = parseInt(/level(\d+)/i.exec(style)?.[1] || "1", 10);
+
+    // The typed-in marker lives in a span flagged mso-list:Ignore (or inside
+    // the supportLists conditional comment); read it, then drop it.
+    const markerEl = Array.from(node.querySelectorAll("span")).find((el) =>
+      /mso-list:\s*ignore/i.test(el.getAttribute("style") || ""),
+    );
+    const marker = (markerEl?.textContent || "").replace(/ /g, " ").trim();
+    markerEl?.remove();
+    const ordered = /^[\da-zA-Z]+[.)]$/.test(marker);
+
+    const li = doc.createElement("li");
+    const p = doc.createElement("p");
+    p.innerHTML = node.innerHTML.replace(/^(\s|&nbsp;)+/, "");
+    li.appendChild(p);
+
+    while (stack.length && stack[stack.length - 1].level > level) stack.pop();
+
+    let top = stack[stack.length - 1];
+    if (!top || top.level < level) {
+      const list = doc.createElement(ordered ? "ol" : "ul");
+      if (top) top.list.lastElementChild?.appendChild(list);
+      else body.insertBefore(list, node);
+      top = { list, level };
+      stack.push(top);
+    }
+
+    top.list.appendChild(li);
+    node.remove();
+  });
+
+  return body.innerHTML;
+};
+
 const Indentation = Extension.create({
   name: "indentation",
 
@@ -100,10 +190,7 @@ const Indentation = Extension.create({
                 style: `margin-left: ${attrs.indent * 2}em`,
               };
             },
-            parseHTML: (el) => {
-              const margin = el.style.marginLeft;
-              return margin ? parseInt(margin, 10) / 2 : 0;
-            },
+            parseHTML: (el) => marginToIndentLevel(el),
           },
         },
       },
@@ -111,36 +198,57 @@ const Indentation = Extension.create({
   },
 
   addCommands() {
+    // Walks every paragraph/heading touched by the selection (not just the
+    // first), the way Word indents each selected paragraph.
+    const shiftIndent = (delta) => () => ({ state, tr, dispatch }) => {
+      const { from, to } = state.selection;
+      let changed = false;
+
+      state.doc.nodesBetween(from, to, (node, pos) => {
+        if (!INDENTABLE.includes(node.type.name)) return true;
+        const current = node.attrs.indent || 0;
+        const next = Math.min(Math.max(current + delta, 0), MAX_INDENT);
+        if (next !== current) {
+          tr.setNodeMarkup(pos, undefined, { ...node.attrs, indent: next });
+          changed = true;
+        }
+        return false;
+      });
+
+      if (changed && dispatch) dispatch(tr);
+      return changed;
+    };
+
     return {
-      indent:
-        () =>
-        ({ editor, state }) => {
-          const { $from } = state.selection;
-          const node = $from.parent;
-          const currentIndent = node.attrs.indent || 0;
+      indent: shiftIndent(1),
+      outdent: shiftIndent(-1),
+    };
+  },
 
-          return editor
-            .chain()
-            .focus()
-            .updateAttributes(node.type.name, { indent: currentIndent + 1 })
-            .run();
-        },
+  addKeyboardShortcuts() {
+    const inList = (editor) =>
+      editor.isActive("listItem") || editor.isActive("taskItem");
+    const listType = (editor) =>
+      editor.isActive("taskItem") ? "taskItem" : "listItem";
 
-      outdent:
-        () =>
-        ({ editor, state }) => {
-          const { $from } = state.selection;
-          const node = $from.parent;
-          const currentIndent = node.attrs.indent || 0;
-
-          return editor
-            .chain()
-            .focus()
-            .updateAttributes(node.type.name, {
-              indent: Math.max(currentIndent - 1, 0),
-            })
-            .run();
-        },
+    return {
+      // Tab inside a table moves between cells, so leave it to the table.
+      Tab: ({ editor }) => {
+        if (editor.isActive("table")) return false;
+        if (inList(editor)) {
+          editor.commands.sinkListItem(listType(editor));
+          return true;
+        }
+        return editor.commands.indent() || true;
+      },
+      "Shift-Tab": ({ editor }) => {
+        if (editor.isActive("table")) return false;
+        if (inList(editor)) {
+          editor.commands.liftListItem(listType(editor));
+          return true;
+        }
+        return editor.commands.outdent() || true;
+      },
     };
   },
 });
@@ -386,8 +494,27 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    editorProps: {},
+    editorProps: {
+      transformPastedHTML: convertWordLists,
+    },
   });
+
+  // Lists nest/un-nest their items; everything else shifts its left margin.
+  const handleIndent = () => {
+    if (!editor) return;
+    const chain = editor.chain().focus();
+    if (editor.isActive("taskItem")) chain.sinkListItem("taskItem").run();
+    else if (editor.isActive("listItem")) chain.sinkListItem("listItem").run();
+    else chain.indent().run();
+  };
+
+  const handleOutdent = () => {
+    if (!editor) return;
+    const chain = editor.chain().focus();
+    if (editor.isActive("taskItem")) chain.liftListItem("taskItem").run();
+    else if (editor.isActive("listItem")) chain.liftListItem("listItem").run();
+    else chain.outdent().run();
+  };
 
   const editorState = useEditorState({
     editor,
@@ -897,22 +1024,22 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              editor.chain().focus().indent().run();
+              handleOutdent();
             }}
-            title="Indent"
+            title="Decrease indent (Shift+Tab)"
           >
-            ➡️
+            <IndentDecrease size={16} />
           </button>
 
           <button
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              editor.chain().focus().outdent().run();
+              handleIndent();
             }}
-            title="Outdent"
+            title="Increase indent (Tab)"
           >
-            ⬅️
+            <IndentIncrease size={16} />
           </button>
         </div>
 
