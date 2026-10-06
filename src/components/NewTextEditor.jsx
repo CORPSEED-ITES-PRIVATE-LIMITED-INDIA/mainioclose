@@ -38,6 +38,8 @@ import {
   Minimize2,
   IndentIncrease,
   IndentDecrease,
+  FileUp,
+  Loader2,
 } from "lucide-react";
 
 const FontSize = Extension.create({
@@ -82,6 +84,58 @@ const FontSize = Extension.create({
             .removeEmptyTextStyle()
             .run();
         },
+    };
+  },
+});
+
+// Inline CSS on elements produced by the Word import (tagged data-docx), minus
+// the properties another extension already owns. Untagged HTML (pastes, old
+// content) is left to the normal rules, so pasting doesn't start keeping
+// arbitrary styles.
+const readDocxStyle = (el, skip) => {
+  if (!el.hasAttribute("data-docx")) return null;
+  const css = [];
+  for (let i = 0; i < el.style.length; i++) {
+    const prop = el.style[i];
+    if (skip.some((s) => prop === s || prop.startsWith(`${s}-`))) continue;
+    css.push(`${prop}: ${el.style.getPropertyValue(prop)}`);
+  }
+  return css.length ? css.join("; ") : null;
+};
+
+const docxStyleAttribute = (skip) => ({
+  default: null,
+  parseHTML: (el) => readDocxStyle(el, skip),
+  renderHTML: (attrs) =>
+    attrs.docxStyle ? { "data-docx": "", style: attrs.docxStyle } : {},
+});
+
+const DocxStyles = Extension.create({
+  name: "docxStyles",
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: {
+          docxStyle: docxStyleAttribute(["margin-left", "text-align"]),
+        },
+      },
+      {
+        types: ["textStyle"],
+        attributes: {
+          docxStyle: docxStyleAttribute(["color", "font-size"]),
+        },
+      },
+    ];
+  },
+});
+
+const DocxTableCell = TableCell.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      docxStyle: docxStyleAttribute(["width", "min-width"]),
     };
   },
 });
@@ -502,6 +556,7 @@ const WordImage = Image.extend({
 const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
   const [menu, setMenu] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -531,7 +586,8 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
-      TableCell,
+      DocxTableCell,
+      DocxStyles,
       TaskList,
       TaskItem.configure({ nested: true }),
       WordImage.configure({ inline: false, allowBase64: true }),
@@ -688,6 +744,51 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
           .run();
       };
       reader.readAsDataURL(file);
+    };
+
+    input.click();
+  };
+
+  const importWordFile = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept =
+      ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!/\.docx$/i.test(file.name)) {
+        window.alert(
+          "Only .docx files can be imported. Open the file in Word and use Save As → Word Document (.docx).",
+        );
+        return;
+      }
+
+      setIsImporting(true);
+      try {
+        const { default: docxToHtml } = await import("./docxToHtml");
+        const html = await docxToHtml(file);
+
+        const replace =
+          editor.isEmpty ||
+          window.confirm(
+            "Replace the current content with this Word document?\n\nOK = replace, Cancel = insert at the cursor.",
+          );
+
+        if (replace) {
+          editor.chain().focus().setContent(html).run();
+          onChange(editor.getHTML());
+        } else {
+          editor.chain().focus().insertContent(html).run();
+        }
+      } catch (err) {
+        console.error(err);
+        window.alert(err?.message || "Could not read this Word file.");
+      } finally {
+        setIsImporting(false);
+      }
     };
 
     input.click();
@@ -1064,6 +1165,22 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
             title="Insert Image"
           >
             <ImageIcon size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              importWordFile();
+            }}
+            disabled={isImporting}
+            title="Import Word (.docx)"
+          >
+            {isImporting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <FileUp size={16} />
+            )}
           </button>
 
           <button

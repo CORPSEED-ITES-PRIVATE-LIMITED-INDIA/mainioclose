@@ -797,6 +797,23 @@
   background: #fafafa;
 }
 
+/* Tables imported from Word carry their own borders, shading and padding
+   inline; drop the editor's ring, rounding and zebra rows around them. */
+.ProseMirror table:has(td[data-docx]),
+.proposal-content table:has(td[data-docx]),
+.tiptap-preview table:has(td[data-docx]),
+.preview-container table:has(td[data-docx]) {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  font-size: inherit;
+}
+
+.ProseMirror .tableWrapper:has(td[data-docx]) {
+  margin: 0;
+}
+
 /* =========================================================
    LINKS
 ========================================================= */
