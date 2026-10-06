@@ -204,6 +204,19 @@ export const getAllDocumentsForProduct = createAsyncThunk(
     }
   },
 );
+export const getAllActiveDocumentsForProduct = createAsyncThunk(
+  "getAllActiveDocumentsForProduct",
+  async ({ userId }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/operationService/api/product-required-documents/active-all/${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data);
+    }
+  },
+);
 
 export const mapDocumentToProduct = createAsyncThunk(
   "mapDocumentToProduct",
@@ -285,6 +298,7 @@ const ProductSlice = createSlice({
     allDocumentCheckListForProduct: [],
     solutionServiceFeeDetails: [],
     solutionListByUserId: [],
+    allActiveDocuments:[],
   },
   extraReducers: (builder) => {
     builder.addCase(getAllProductCategoryById.pending, (state) => {
@@ -387,6 +401,17 @@ const ProductSlice = createSlice({
     builder.addCase(getAllSolutionsByUserId.rejected, (state, action) => {
       state.loading = "rejected";
       state.solutionListByUserId = [];
+    });
+    builder.addCase(getAllActiveDocumentsForProduct.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllActiveDocumentsForProduct.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.allActiveDocuments = action?.payload;
+    });
+    builder.addCase(getAllActiveDocumentsForProduct.rejected, (state, action) => {
+      state.loading = "rejected";
+      state.allActiveDocuments = [];
     });
   },
 });

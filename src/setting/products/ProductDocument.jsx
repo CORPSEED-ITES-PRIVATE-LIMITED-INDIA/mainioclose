@@ -44,7 +44,7 @@ import FileUploader from "../../components/FileUploader";
 import {
   deleteDocumentFromProduct,
   getAllDocumentCheckListByProductId,
-  getAllDocumentsForProduct,
+  getAllActiveDocumentsForProduct,
   mapDocumentToProduct,
   updateDocumentsInProduct,
 } from "../../toolkit/slices/productSlice";
@@ -61,7 +61,7 @@ const ProductDocument = () => {
     (state) => state.setting.applicantTypeList,
   );
   const allDocumentList = useSelector(
-    (state) => state?.product?.allDocumentList || [],
+    (state) => state?.product?.allActiveDocuments || [],
   );
   const data = useSelector(
     (state) => state?.product?.allDocumentCheckListForProduct || [],
@@ -89,7 +89,7 @@ const ProductDocument = () => {
     dispatch(getAllCountries());
     dispatch(getAllStatesByCountryName("India"));
     dispatch(getApplicantTypeList({ page: 0, size: 1000 }));
-    dispatch(getAllDocumentsForProduct({ page: 1, size: 1000, userId }));
+    dispatch(getAllActiveDocumentsForProduct({ userId }));
   }, [dispatch, applicantTypeId]);
 
   const handleSubmit = useCallback(
