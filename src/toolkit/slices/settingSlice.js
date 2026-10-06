@@ -1386,13 +1386,18 @@ export const getServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
 );
 export const updateServiceBrouchersServiceDetailBySolutionId = createAsyncThunk(
   "updateServiceBrouchersServiceDetailBySolutionId",
-  async ({ subCategoryId, solutionId, payload }) => {
-    const response = await api.put(
-      `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
-      payload,
-    );
-
-    return response.data;
+  async ({ subCategoryId, solutionId, payload }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(
+        `/leadService/api/v1/subcategories/${subCategoryId}/solutions/${solutionId}/brochure`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || error?.response?.data || error.message,
+      );
+    }
   },
 );
 export const getSolutionById = createAsyncThunk(

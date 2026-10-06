@@ -52,6 +52,26 @@ const initialForm = {
   brochureDescription: "",
 };
 
+// Builds the form state from the loaded solution detail. Used both when the
+// detail loads and when the user presses Reset on an existing solution, so
+// Reset restores the saved values instead of wiping the locked mapping.
+const buildFormFromDetail = (detail) => {
+  const brochure = detail?.solution?.brochure;
+  const template = detail?.solution?.emailTemplate;
+
+  return {
+    menuId: detail?.menu?.id ? String(detail.menu.id) : "",
+    categoryId: detail?.menuCategory?.id ? String(detail.menuCategory.id) : "",
+    subCategoryId: detail?.subCategory?.id ? String(detail.subCategory.id) : "",
+    emailBody: template?.emailBody || "<p></p>",
+    emailSubject: template?.emailSubject || "",
+    scopeOfWork: template?.scopeOfWork || "<p></p>",
+    brochurePath: brochure?.filePath || "",
+    brochureMeta: brochure || null,
+    brochureDescription: brochure?.description || "",
+  };
+};
+
 const getSelectedKey = (keys) => {
   if (!keys || keys === "all") return "";
   const selected = Array.from(keys)[0];
@@ -90,6 +110,16 @@ const getSubCategories = (category) => {
   if (Array.isArray(category?.subcategories)) return category.subcategories;
   if (Array.isArray(category?.children)) return category.children;
   return [];
+};
+
+// Makes sure the saved Menu / Category / Subcategory is always an option, even
+// when the list endpoints don't nest it under the expected keys, so the
+// dropdowns never render empty for a solution that already has a mapping.
+const withCurrent = (list, current, enabled = true) => {
+  if (!enabled || !current?.id) return list;
+  return list.some((item) => String(item?.id) === String(current.id))
+    ? list
+    : [current, ...list];
 };
 
 const getFileNameFromUrl = (url = "") => {
@@ -320,6 +350,11 @@ const ProductServiceDetails = () => {
   const [formData, setFormData] = useState(initialForm);
   const [fieldErrors, setFieldErrors] = useState({});
 
+  const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
+  const isSolutionExists = Boolean(
+    serviceBrouchersDetail?.solution?.brochure?.id,
+  );
+
   useEffect(() => {
     dispatch(getAllMenus());
 
@@ -331,36 +366,31 @@ const ProductServiceDetails = () => {
   useEffect(() => {
     if (!serviceBrouchersDetail) return;
 
-    const brochure = serviceBrouchersDetail?.solution?.brochure;
-    const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
-
-    setFormData({
-      menuId: serviceBrouchersDetail?.menu?.id
-        ? String(serviceBrouchersDetail.menu.id)
-        : "",
-      categoryId: serviceBrouchersDetail?.menuCategory?.id
-        ? String(serviceBrouchersDetail.menuCategory.id)
-        : "",
-      subCategoryId: serviceBrouchersDetail?.subCategory?.id
-        ? String(serviceBrouchersDetail.subCategory.id)
-        : "",
-      emailBody: emailTemplate?.emailBody || "<p></p>",
-      emailSubject: emailTemplate?.emailSubject || "",
-      scopeOfWork: emailTemplate?.scopeOfWork || "<p></p>",
-      brochurePath: brochure?.filePath || "",
-      brochureMeta: brochure || null,
-      brochureDescription: brochure?.description || "",
-    });
+    setFormData(buildFormFromDetail(serviceBrouchersDetail));
 
     setUploaderKey((prev) => prev + 1);
   }, [serviceBrouchersDetail]);
 
-  const selectedMenu = useMemo(
-    () => menus.find((menu) => String(menu?.id) === String(formData.menuId)),
-    [menus, formData.menuId],
+  const menuOptions = useMemo(
+    () => withCurrent(menus, serviceBrouchersDetail?.menu),
+    [menus, serviceBrouchersDetail],
   );
 
-  const categories = useMemo(() => getCategories(selectedMenu), [selectedMenu]);
+  const selectedMenu = useMemo(
+    () =>
+      menuOptions.find((menu) => String(menu?.id) === String(formData.menuId)),
+    [menuOptions, formData.menuId],
+  );
+
+  const categories = useMemo(
+    () =>
+      withCurrent(
+        getCategories(selectedMenu),
+        serviceBrouchersDetail?.menuCategory,
+        String(serviceBrouchersDetail?.menu?.id) === String(formData.menuId),
+      ),
+    [selectedMenu, serviceBrouchersDetail, formData.menuId],
+  );
 
   const selectedCategory = useMemo(
     () =>
@@ -371,8 +401,14 @@ const ProductServiceDetails = () => {
   );
 
   const subCategories = useMemo(
-    () => getSubCategories(selectedCategory),
-    [selectedCategory],
+    () =>
+      withCurrent(
+        getSubCategories(selectedCategory),
+        serviceBrouchersDetail?.subCategory,
+        String(serviceBrouchersDetail?.menuCategory?.id) ===
+          String(formData.categoryId),
+      ),
+    [selectedCategory, serviceBrouchersDetail, formData.categoryId],
   );
 
   const selectedSubCategory = useMemo(
@@ -384,8 +420,14 @@ const ProductServiceDetails = () => {
     [subCategories, formData.subCategoryId],
   );
 
+  // Reset restores the saved values for an existing solution and clears the
+  // form only for a brand new one.
   const resetForm = () => {
-    setFormData(initialForm);
+    setFormData(
+      isSolutionExists && serviceBrouchersDetail
+        ? buildFormFromDetail(serviceBrouchersDetail)
+        : initialForm,
+    );
     setFieldErrors({});
     setUploaderKey((prev) => prev + 1);
   };
@@ -403,6 +445,8 @@ const ProductServiceDetails = () => {
     return Object.keys(errors).length === 0;
   };
 
+  // Changing the mapping on an existing solution must not wipe its brochure
+  // (the brochure belongs to the solution, not to the sub-category).
   const handleMenuChange = (keys) => {
     const selected = getSelectedKey(keys);
 
@@ -411,12 +455,12 @@ const ProductServiceDetails = () => {
       menuId: selected,
       categoryId: "",
       subCategoryId: "",
-      brochurePath: "",
-      brochureMeta: null,
-      brochureDescription: "",
+      ...(isSolutionExists
+        ? {}
+        : { brochurePath: "", brochureMeta: null, brochureDescription: "" }),
     }));
 
-    setUploaderKey((prev) => prev + 1);
+    if (!isSolutionExists) setUploaderKey((prev) => prev + 1);
     setFieldErrors((prev) => ({
       ...prev,
       menuId: "",
@@ -433,12 +477,12 @@ const ProductServiceDetails = () => {
       ...prev,
       categoryId: selected,
       subCategoryId: "",
-      brochurePath: "",
-      brochureMeta: null,
-      brochureDescription: "",
+      ...(isSolutionExists
+        ? {}
+        : { brochurePath: "", brochureMeta: null, brochureDescription: "" }),
     }));
 
-    setUploaderKey((prev) => prev + 1);
+    if (!isSolutionExists) setUploaderKey((prev) => prev + 1);
     setFieldErrors((prev) => ({
       ...prev,
       categoryId: "",
@@ -453,12 +497,12 @@ const ProductServiceDetails = () => {
     setFormData((prev) => ({
       ...prev,
       subCategoryId: selected,
-      brochurePath: "",
-      brochureMeta: null,
-      brochureDescription: "",
+      ...(isSolutionExists
+        ? {}
+        : { brochurePath: "", brochureMeta: null, brochureDescription: "" }),
     }));
 
-    setUploaderKey((prev) => prev + 1);
+    if (!isSolutionExists) setUploaderKey((prev) => prev + 1);
     setFieldErrors((prev) => ({
       ...prev,
       subCategoryId: "",
@@ -466,10 +510,6 @@ const ProductServiceDetails = () => {
     }));
   };
 
-  const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
-  const isSolutionExists = Boolean(
-    serviceBrouchersDetail?.solution?.brochure?.id,
-  );
   useEffect(() => {
     if (!isSolutionExists) return;
     if (!solutionId || !userId) return;
@@ -790,7 +830,7 @@ const ProductServiceDetails = () => {
                               trigger: "rounded-xl bg-background",
                             }}
                           >
-                            {menus.map((menu) => (
+                            {menuOptions.map((menu) => (
                               <SelectItem key={String(menu?.id)}>
                                 {getName(menu)}
                               </SelectItem>
