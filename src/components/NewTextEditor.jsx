@@ -752,24 +752,17 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
   const importWordFile = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept =
-      ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    // Extensions only: MIME types in `accept` can hide files in the Windows picker.
+    input.accept = ".doc,.docx,.docm,.dot,.dotx,.dotm";
 
     input.onchange = async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      if (!/\.docx$/i.test(file.name)) {
-        window.alert(
-          "Only .docx files can be imported. Open the file in Word and use Save As → Word Document (.docx).",
-        );
-        return;
-      }
-
       setIsImporting(true);
       try {
-        const { default: docxToHtml } = await import("./docxToHtml");
-        const html = await docxToHtml(file);
+        const { wordFileToHtml } = await import("./docxToHtml");
+        const html = await wordFileToHtml(file);
 
         const replace =
           editor.isEmpty ||
@@ -1174,7 +1167,7 @@ const NewTextEditor = ({ data = "<p></p>", onChange = () => {} }) => {
               importWordFile();
             }}
             disabled={isImporting}
-            title="Import Word (.docx)"
+            title="Import Word file (.doc / .docx)"
           >
             {isImporting ? (
               <Loader2 size={16} className="animate-spin" />

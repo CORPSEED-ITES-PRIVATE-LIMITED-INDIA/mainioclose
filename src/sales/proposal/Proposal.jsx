@@ -46,6 +46,7 @@ import {
   getGstListByCompanyId,
 } from "../../toolkit/slices/companySlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { api } from "../../httpRequest";
 import { getEstimatesByLeadId } from "../../toolkit/slices/accountSlice";
 import NewTextEditor from "../../components/NewTextEditor";
 import {
@@ -859,7 +860,40 @@ const Proposal = () => {
     onSubmit(valuesToSubmit);
   };
 
-  const onSubmit = (values) => {
+  // Every document the solution requires (applicantTypeId -1 = all applicant
+  // types), sent as the proposal's document checklist for the PDF. No picker:
+  // the full list is always sent, de-duplicated by requiredDocumentId.
+  const fetchDocumentChecklist = async (solutionId) => {
+    if (!solutionId) return [];
+
+    try {
+      const { data } = await api.get(
+        `/operationService/api/products/${solutionId}/documents`,
+        { params: { applicantTypeId: -1 } },
+      );
+
+      const seen = new Set();
+      return (Array.isArray(data) ? data : [])
+        .slice()
+        .sort((a, b) => (a?.displayOrder ?? 0) - (b?.displayOrder ?? 0))
+        .filter((doc) => {
+          const id = doc?.requiredDocumentId;
+          const name = String(doc?.documentName || "").trim();
+          if (id == null || !name || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        })
+        .map((doc) => ({
+          documentId: Number(doc.requiredDocumentId),
+          documentName: String(doc.documentName).trim(),
+        }));
+    } catch (error) {
+      console.error("Failed to load the document checklist", error);
+      return [];
+    }
+  };
+
+  const onSubmit = async (values) => {
     console.log("Proposal company check", {
       companyId: company?.id,
       units: company?.units,
@@ -912,6 +946,8 @@ const Proposal = () => {
 
     const antValues = proposalAntForm.getFieldsValue();
 
+    const documentChecklist = await fetchDocumentChecklist(solutionDetail?.id);
+
     const finalValues = {
       leadId: Number(leadId),
       createdById: Number(userId),
@@ -936,6 +972,8 @@ const Proposal = () => {
 
       emailBody: values?.emailBody || "<p></p>",
       scopeOfWork: values?.scopeOfWork || "<p></p>",
+
+      documentChecklist,
 
       mailTo: Array.isArray(values?.mailTo) ? values.mailTo : [],
       mailCc: Array.isArray(values?.mailCc) ? values.mailCc : [],

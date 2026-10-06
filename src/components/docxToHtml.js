@@ -832,6 +832,32 @@ function formatNumber(n, fmt) {
   }
 }
 
+// Same sign-off removal as removeSignature(), for HTML that didn't come from
+// this converter (legacy .doc files converted by the backend).
+function removeSignatureFromHtml(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const blocks = Array.from(doc.body.children);
+  const text = (el) => el.textContent.replace(/\s+/g, " ").trim();
+
+  let start = -1;
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    if (blocks[i].tagName === "P" && SIGN_OFF.test(text(blocks[i]))) {
+      start = i;
+      break;
+    }
+  }
+  if (start < 0) return html;
+
+  let end = start + 1;
+  while (end < blocks.length && blocks[end].tagName === "P") {
+    const line = text(blocks[end]);
+    if (line && !(line.length <= 160 && SIGNATURE_LINE.test(line))) break;
+    end += 1;
+  }
+  blocks.slice(start, end).forEach((el) => el.remove());
+  return doc.body.innerHTML;
+}
+
 export default async function docxToHtml(file) {
   const buffer = new Uint8Array(await file.arrayBuffer());
   let files;
@@ -841,4 +867,46 @@ export default async function docxToHtml(file) {
     throw new Error("This file is not a valid Word (.docx) document.");
   }
   return new DocxConverter(files).convert();
+}
+
+// Word 97-2003 (.doc/.dot) is a binary format the browser can't read; the
+// backend converts it to the same tagged HTML this module produces.
+async function legacyDocToHtml(file) {
+  const { api } = await import("../httpRequest");
+  const form = new FormData();
+  form.append("file", file);
+
+  try {
+    const { data } = await api.post("/leadService/api/v1/documents/convert-word", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return removeSignatureFromHtml(data?.html || "");
+  } catch (error) {
+    throw new Error(
+      error?.response?.data?.message || "Could not convert this Word file. Please try again.",
+    );
+  }
+}
+
+/**
+ * Any Word file → editor HTML. The format is detected from the file's first
+ * bytes rather than its extension, since files are often renamed.
+ */
+export async function wordFileToHtml(file) {
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  const startsWith = (...bytes) => bytes.every((b, i) => head[i] === b);
+
+  // .docx / .docm / .dotx / .dotm are zip packages ("PK")
+  if (startsWith(0x50, 0x4b)) return docxToHtml(file);
+
+  // .doc / .dot: OLE compound file
+  if (startsWith(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1)) return legacyDocToHtml(file);
+
+  if (startsWith(0x7b, 0x5c, 0x72, 0x74, 0x66)) {
+    throw new Error(
+      "This is an RTF file, not a Word document. Open it in Word and save it as .docx, then import again.",
+    );
+  }
+
+  throw new Error("This file is not a Word document (.doc or .docx).");
 }
