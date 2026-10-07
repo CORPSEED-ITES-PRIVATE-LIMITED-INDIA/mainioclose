@@ -33,6 +33,10 @@ const paymentTypeColorMap = {
   PURCHASE_ORDER: "secondary",
 };
 
+// Descriptions come from the rich-text editor, so an "empty" one is often "<p></p>".
+const hasHtmlContent = (html) =>
+  Boolean(html?.replace(/<[^>]*>|&nbsp;/g, "").trim());
+
 const ServicePaymentTerm = () => {
   const dispatch = useDispatch();
   const { leadId, userId } = useParams();
@@ -126,7 +130,7 @@ const ServicePaymentTerm = () => {
 
       <div className="space-y-3 p-4">
         {activePaymentTypes.length > 0 ? (
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
             {activePaymentTypes.map((item) => {
               const color = paymentTypeColorMap[item?.code] || "default";
 
@@ -145,9 +149,14 @@ const ServicePaymentTerm = () => {
                     </Chip>
                   </div>
 
-                  <p className="line-clamp-2 text-[11px] leading-4 text-default-500">
-                    {item?.description || "-"}
-                  </p>
+                  {hasHtmlContent(item?.description) ? (
+                    <div
+                      className="tiptap-preview max-h-72 overflow-auto rounded-xl bg-background p-4 !text-sm text-default-700 [&_ol]:list-decimal [&_ul]:list-disc"
+                      dangerouslySetInnerHTML={{ __html: item.description.trim() }}
+                    />
+                  ) : (
+                    <p className="text-[11px] leading-4 text-default-500">-</p>
+                  )}
                 </div>
               );
             })}
