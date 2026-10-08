@@ -42,6 +42,7 @@ const getNavItemsByDepartment = (department, admin) => {
   const items = {
     sales: salesNavItems,
     "quality team": qualityNavItems,
+    quality: qualityNavItems,
     accounts: accountNavItems,
     procurement: procurementItems,
     "human resource": hrItems,
