@@ -66,7 +66,7 @@ const Layoutpage = () => {
 
   useIdleLogout(userId);
 
-  const adminRole = userRole.includes("ADMIN");
+  const adminRole = Boolean(userRole?.includes("ADMIN"));
   const department = useSelector((state) => state?.auth?.getDepartmentDetail);
   const hasDepartment = !!department?.department;
 

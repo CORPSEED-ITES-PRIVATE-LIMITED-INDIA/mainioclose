@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { AliveScope } from "react-activation";
 
 // Layout/route-guard shells stay eager — they wrap every page, so lazily
@@ -7,6 +7,7 @@ import { AliveScope } from "react-activation";
 import ProtectedRoute from "./ProtectedRoute";
 import Layoutpage from "./layouts/Layoutpage";
 import LoadingSpinner from "./components/LoadingSpinner";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 
 import SalesModuleRouting from "./routings/SalesModuleRouting";
 import IndustryModuleRouting from "./routings/IndustryModuleRouting";
@@ -93,8 +94,11 @@ const AdminVendorRestrictionApproval = lazy(
 const ForceCloserAndReopen = lazy(() => import("./admin/ForceCloserAndReopen"));
 
 function App() {
+  const location = useLocation();
+
   return (
-    <AliveScope>
+    <AppErrorBoundary resetKey={location.pathname}>
+      <AliveScope>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -184,7 +188,8 @@ function App() {
           <Route path="/test-gst-select" element={<TestGstSelectHarness />} />
         </Routes>
       </Suspense>
-    </AliveScope>
+      </AliveScope>
+    </AppErrorBoundary>
   );
 }
 

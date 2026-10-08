@@ -242,7 +242,10 @@ export const AuthSlice = createSlice({
   reducers: {
     logoutFun: (state) => {
       state.isAuth = false;
-      state.currentUser = {};
+      // Pages that are still mounted for one more render read
+      // currentUser.roles.includes(...); a bare {} made that throw and blanked
+      // the whole app before the login page could show.
+      state.currentUser = { roles: [] };
       state.roles = [];
       state.jwt = "";
 

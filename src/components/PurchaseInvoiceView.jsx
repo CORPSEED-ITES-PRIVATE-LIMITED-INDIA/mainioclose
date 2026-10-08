@@ -695,7 +695,9 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Mode/Terms of Payment
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="min-h-4 break-words text-[11px] font-bold leading-snug">
+                      {inv?.paymentTerm || <>&nbsp;</>}
+                    </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
@@ -714,7 +716,7 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Other References
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="min-h-4 break-words text-[11px] font-bold leading-snug">&nbsp;</div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
@@ -730,7 +732,7 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Terms of Delivery
                     </div>
-                    <div className="h-4 text-[11px] font-bold">&nbsp;</div>
+                    <div className="min-h-4 break-words text-[11px] font-bold leading-snug">&nbsp;</div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
