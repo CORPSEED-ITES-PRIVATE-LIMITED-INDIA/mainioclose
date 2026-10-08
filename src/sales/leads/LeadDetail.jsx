@@ -153,7 +153,7 @@ const LeadDetail = () => {
       .then((resp) => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
-            title: "Lead rejected. Reassigned to admin.",
+            title: "Lead rejected",
             color: "success",
           });
           setApproveRejectLoading("success");

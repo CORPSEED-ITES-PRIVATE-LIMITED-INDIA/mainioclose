@@ -22,14 +22,23 @@ import {
   addToast,
   useDisclosure,
 } from "@heroui/react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { Controller, useForm } from "react-hook-form";
+
 import * as z from "zod";
+
 import { useDispatch, useSelector } from "react-redux";
+
 import { ChevronDown, EllipsisVertical, Plus, Search } from "lucide-react";
+
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+
 import dayjs from "dayjs";
+
 import {
   allocateCompaniesToSubDepartment,
   createSubDepartment,
@@ -41,36 +50,52 @@ import {
   updateSubDepartment,
   updateSubDepartmentSolutions,
 } from "../../toolkit/slices/settingSlice";
+
 import { getUsersListByDepartmentId } from "../../toolkit/slices/commonSlice";
+
 import NewSelect from "../../components/NewSelect";
 
 const columns = [
   { name: "ID", uid: "id" },
+
   { name: "SUB DEPARTMENT", uid: "fullName" },
+
   { name: "DESCRIPTION", uid: "description" },
+
   { name: "SOLUTIONS", uid: "solutions" },
+
   { name: "COMPANIES", uid: "companies" },
+
   { name: "HEAD", uid: "head" },
+
   { name: "STATUS", uid: "active" },
+
   { name: "CREATED BY", uid: "createdBy" },
+
   { name: "ACTIONS", uid: "actions" },
 ];
 
 const STATUS_FILTER_OPTIONS = [
   { label: "ALL", value: "" },
+
   { label: "ACTIVE", value: "true" },
+
   { label: "INACTIVE", value: "false" },
 ];
 
 const formSchema = z.object({
   fullName: z.string().min(1, "please enter the sub department name"),
+
   description: z.string().optional(),
+
   headUserId: z.string().optional(),
 });
 
 const defaultValues = {
   fullName: "",
+
   description: "",
+
   headUserId: "",
 };
 
@@ -84,24 +109,33 @@ const mapSolutionsDefaultValues = {
 
 const mapCompaniesFormSchema = z.object({
   companyIds: z.array(z.string()).min(1, "please select at least one company"),
+
   reason: z.string().optional(),
 });
 
 const mapCompaniesDefaultValues = {
   companyIds: [],
+
   reason: "",
 };
 
 const SubDepartment = () => {
   const dispatch = useDispatch();
+
   const { departmentId } = useParams();
+
   const location = useLocation();
+
   const navigate = useNavigate();
+
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
   const mapCompaniesModal = useDisclosure();
+
   const mapSolutionsModal = useDisclosure();
 
   const currentUser = useSelector((state) => state.auth.currentUser);
+
   const createdByUserId = currentUser?.id || currentUser?.userId;
 
   const subDepartmentList = useSelector(
@@ -109,15 +143,21 @@ const SubDepartment = () => {
   );
 
   // Normalized here, once, so every row is guaranteed an `id` and `fullName`
+
   // regardless of whether the backend sends those or subDepartmentId/
+
   // subDepartmentName — everything below just uses `.id`/`.fullName`.
+
   const data = useMemo(
     () =>
       (subDepartmentList || []).map((item) => ({
         ...item,
+
         id: item?.id ?? item?.subDepartmentId,
+
         fullName: item?.fullName ?? item?.subDepartmentName,
       })),
+
     [subDepartmentList],
   );
 
@@ -129,38 +169,50 @@ const SubDepartment = () => {
   );
 
   // Company-wide solution list, used as the pick-list for "Map Solutions" —
+
   // a sub-department can be mapped to any solution, not just ones it
+
   // already has.
+
   const allSolutionList = useSelector((state) => state.setting.allSolutionList);
 
   const approvedCompaniesList = useSelector(
     (state) => state.setting.approvedCompaniesList,
   );
+
   const isCompaniesLoading =
     useSelector((state) => state.setting.approvedCompaniesLoading) ===
     "pending";
 
   const [filterValue, setFilterValue] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("");
+
   const [rowItem, setRowItem] = useState(null);
+
   const [viewingSubDepartment, setViewingSubDepartment] = useState(null);
+
   const [filteration, setFilteration] = useState({
     page: 1,
+
     size: 50,
   });
 
   const { control, handleSubmit, reset } = useForm({
     resolver: zodResolver(formSchema),
+
     defaultValues,
   });
 
   const mapSolutionsForm = useForm({
     resolver: zodResolver(mapSolutionsFormSchema),
+
     defaultValues: mapSolutionsDefaultValues,
   });
 
   const mapCompaniesForm = useForm({
     resolver: zodResolver(mapCompaniesFormSchema),
+
     defaultValues: mapCompaniesDefaultValues,
   });
 
@@ -175,8 +227,11 @@ const SubDepartment = () => {
   const hasSearchFilter = Boolean(filterValue);
 
   // The backend endpoint has no search/active/page/size query params, so
+
   // filtering and pagination happen client-side over the full array it
+
   // returns.
+
   const filteredItems = useMemo(() => {
     let filtered = [...data];
 
@@ -186,6 +241,7 @@ const SubDepartment = () => {
       filtered = filtered.filter((item) =>
         Object.values(item || {}).some((val) => {
           if (val === null || typeof val === "object") return false;
+
           return String(val).toLowerCase().includes(needle);
         }),
       );
@@ -193,6 +249,7 @@ const SubDepartment = () => {
 
     if (statusFilter !== "") {
       const wantActive = statusFilter === "true";
+
       filtered = filtered.filter(
         (item) => Boolean(item?.active) === wantActive,
       );
@@ -202,27 +259,36 @@ const SubDepartment = () => {
   }, [data, filterValue, hasSearchFilter, statusFilter]);
 
   const count = filteredItems.length;
+
   const pages = Math.ceil(count / filteration?.size) || 1;
 
   const pagedItems = useMemo(() => {
     const start = (filteration?.page - 1) * filteration?.size;
+
     const end = start + filteration?.size;
+
     return filteredItems.slice(start, end);
   }, [filteredItems, filteration]);
 
   const handleOpenCreateModal = () => {
     setRowItem(null);
+
     reset(defaultValues);
+
     onOpen();
   };
 
   const handleOpenUpdateModal = (rowData) => {
     setRowItem(rowData);
+
     reset({
       fullName: rowData?.fullName || "",
+
       description: rowData?.description || "",
+
       headUserId: rowData?.head?.id ? String(rowData.head.id) : "",
     });
+
     onOpen();
   };
 
@@ -234,8 +300,11 @@ const SubDepartment = () => {
 
   const handleOpenMapSolutionsModal = (rowData) => {
     setViewingSubDepartment(rowData);
+
     mapSolutionsForm.reset(mapSolutionsDefaultValues);
+
     dispatch(getAllSolutionList(createdByUserId));
+
     dispatch(getSolutionsBySubDepartmentId(rowData?.id)).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         mapSolutionsForm.reset({
@@ -245,6 +314,7 @@ const SubDepartment = () => {
         });
       }
     });
+
     mapSolutionsModal.onOpen();
   };
 
@@ -255,35 +325,48 @@ const SubDepartment = () => {
   };
 
   // Pre-selects the companies already allocated to this sub-department so the
+
   // admin edits the current set instead of starting from empty.
+
   const handleOpenMapCompaniesModal = (rowData) => {
     setViewingSubDepartment(rowData);
+
     mapCompaniesForm.reset(mapCompaniesDefaultValues);
+
     // CHANGE 1: surface a failed fetch instead of leaving the list silently empty
+
     dispatch(getApprovedCompaniesList()).then((resp) => {
       if (resp.meta.requestStatus !== "fulfilled") {
         addToast({
           title: "Could not load companies",
+
           description: resp?.payload?.data?.message || resp?.payload?.message,
+
           color: "danger",
         });
       }
     });
+
     dispatch(
       getSubDepartmentCompanies({
         subDepartmentId: rowData?.id,
+
         requestingUserId: createdByUserId,
       }),
     ).then((resp) => {
       if (resp.meta.requestStatus === "fulfilled") {
         mapCompaniesForm.reset({
           ...mapCompaniesDefaultValues,
+
           companyIds: (resp.payload || [])
+
             .filter((assignment) => assignment?.active !== false)
+
             .map((assignment) => String(assignment.companyId)),
         });
       }
     });
+
     mapCompaniesModal.onOpen();
   };
 
@@ -291,9 +374,12 @@ const SubDepartment = () => {
     dispatch(
       allocateCompaniesToSubDepartment({
         subDepartmentId: viewingSubDepartment?.id,
+
         data: {
           companyIds: (values?.companyIds || []).map(Number),
+
           adminUserId: Number(createdByUserId),
+
           reason: values?.reason || "",
         },
       }),
@@ -302,18 +388,24 @@ const SubDepartment = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Companies mapped successfully !.",
+
             color: "success",
           });
+
           mapCompaniesModal.onOpenChange(false);
+
           mapCompaniesForm.reset(mapCompaniesDefaultValues);
         } else {
           addToast({
             title: "Something went wrong !.",
+
             description: resp?.payload?.message,
+
             color: "danger",
           });
         }
       })
+
       .catch(() =>
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
@@ -323,8 +415,10 @@ const SubDepartment = () => {
     dispatch(
       updateSubDepartmentSolutions({
         subDepartmentId: viewingSubDepartment?.id,
+
         data: {
           solutionIds: (values?.solutionIds || []).map(Number),
+
           updatedByUserId: Number(createdByUserId),
         },
       }),
@@ -333,14 +427,18 @@ const SubDepartment = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "Solutions mapped successfully !.",
+
             color: "success",
           });
+
           mapSolutionsModal.onOpenChange(false);
+
           dispatch(getSolutionsBySubDepartmentId(viewingSubDepartment?.id));
         } else {
           addToast({ title: "Something went wrong !.", color: "danger" });
         }
       })
+
       .catch(() =>
         addToast({ title: "Something went wrong !.", color: "danger" }),
       );
@@ -408,6 +506,7 @@ const SubDepartment = () => {
             <span className="font-normal">
               {rowData?.createdBy?.fullName || "-"}
             </span>
+
             <span className="text-xs text-default-400">
               {rowData?.createdAt
                 ? dayjs(rowData.createdAt).format("DD-MM-YYYY, hh:mm a")
@@ -425,23 +524,29 @@ const SubDepartment = () => {
                   <EllipsisVertical />
                 </Button>
               </DropdownTrigger>
+
               <DropdownMenu
                 selectionMode="single"
                 onSelectionChange={(e) => {
                   let key = Array.from(e)[0];
+
                   if (key === "edit") {
                     handleOpenUpdateModal(rowData);
                   }
+
                   if (key === "mapSolutions") {
                     handleOpenMapSolutionsModal(rowData);
                   }
+
                   if (key === "mapCompanies") {
                     handleOpenMapCompaniesModal(rowData);
                   }
                 }}
               >
                 {/* <DropdownItem key="edit">Edit</DropdownItem> */}
+
                 <DropdownItem key="mapSolutions">Map Solutions</DropdownItem>
+
                 <DropdownItem key="mapCompanies">Map Companies</DropdownItem>
               </DropdownMenu>
             </Dropdown>
@@ -454,10 +559,13 @@ const SubDepartment = () => {
   }, []);
 
   // Options for the "Map Solutions" multi-select — normalizes
+
   // getAllSolutionList's id/name/type into the displayLabel NewSelect wants.
+
   const solutionOptions = useMemo(() => {
     return (allSolutionList || []).map((solution) => ({
       ...solution,
+
       displayLabel: solution?.type
         ? `${solution?.name} (${solution?.type})`
         : solution?.name,
@@ -465,8 +573,11 @@ const SubDepartment = () => {
   }, [allSolutionList]);
 
   // CHANGE 2: approvedCompaniesList may be the raw API body
+
   // ({ success, data: [...] }) or a plain array, depending on how the slice
+
   // stores it, so handle both. Labels come from `companyName`.
+
   const companyOptions = useMemo(() => {
     const list = Array.isArray(approvedCompaniesList)
       ? approvedCompaniesList
@@ -474,6 +585,7 @@ const SubDepartment = () => {
 
     return list.map((company) => ({
       ...company,
+
       displayLabel: company?.companyName ?? company?.name ?? "-",
     }));
   }, [approvedCompaniesList]);
@@ -493,18 +605,22 @@ const SubDepartment = () => {
   const onRowsPerPageChange = useCallback((e) => {
     setFilteration((prev) => ({
       ...prev,
+
       size: Number(e.target.value),
+
       page: 1,
     }));
   }, []);
 
   const onSearchChange = useCallback((value) => {
     setFilterValue(value || "");
+
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const onClear = useCallback(() => {
     setFilterValue("");
+
     setFilteration((prev) => ({ ...prev, page: 1 }));
   }, []);
 
@@ -513,10 +629,14 @@ const SubDepartment = () => {
       dispatch(
         updateSubDepartment({
           id: rowItem?.id,
+
           data: {
             fullName: values?.fullName,
+
             description: values?.description,
+
             headUserId: values?.headUserId || null,
+
             updatedByUserId: createdByUserId,
           },
         }),
@@ -525,28 +645,40 @@ const SubDepartment = () => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Sub department updated successfully",
+
               color: "success",
             });
+
             onOpenChange(false);
+
             dispatch(getSubDepartmentList({ departmentId }));
+
             setRowItem(null);
+
             reset(defaultValues);
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
+
         .catch(() =>
           addToast({ title: "Something went wrong !.", color: "danger" }),
         );
     } else {
       // Backend assigns its own `code`, so it is intentionally left out of
+
       // the create payload.
+
       dispatch(
         createSubDepartment({
           departmentId: Number(departmentId),
+
           fullName: values?.fullName,
+
           description: values?.description,
+
           headUserId: values?.headUserId || null,
+
           createdByUserId,
         }),
       )
@@ -554,15 +686,20 @@ const SubDepartment = () => {
           if (resp.meta.requestStatus === "fulfilled") {
             addToast({
               title: "Sub department added successfully !.",
+
               color: "success",
             });
+
             onOpenChange(false);
+
             dispatch(getSubDepartmentList({ departmentId }));
+
             reset(defaultValues);
           } else {
             addToast({ title: "Something went wrong !.", color: "danger" });
           }
         })
+
         .catch(() =>
           addToast({ title: "Something went wrong !.", color: "danger" }),
         );
@@ -571,27 +708,30 @@ const SubDepartment = () => {
 
   const topContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between gap-2 items-center flex-wrap">
+      <div className="flex min-w-0 flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Input
             isClearable
             size="sm"
-            className="w-full sm:max-w-[280px]"
-            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            className="w-full min-w-0 sm:max-w-[320px]"
+            classNames={{ inputWrapper: "h-9 min-h-9" }}
             placeholder="Search sub departments..."
-            startContent={<Search className="w-4 h-4 text-default-400" />}
+            startContent={
+              <Search className="h-4 w-4 shrink-0 text-default-400" />
+            }
             value={filterValue}
             onClear={onClear}
             onValueChange={onSearchChange}
           />
 
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <Dropdown>
               <DropdownTrigger>
                 <Button
                   size="sm"
                   variant="flat"
-                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  className="w-full sm:w-auto"
+                  endContent={<ChevronDown className="h-3.5 w-3.5 shrink-0" />}
                 >
                   {STATUS_FILTER_OPTIONS.find(
                     (option) => option.value === statusFilter,
@@ -604,7 +744,7 @@ const SubDepartment = () => {
                 selectedKeys={[statusFilter || "__all__"]}
                 selectionMode="single"
                 onSelectionChange={(e) => {
-                  let key = Array.from(e)[0];
+                  const key = Array.from(e)[0];
                   setStatusFilter(key === "__all__" ? "" : key);
                   setFilteration((prev) => ({ ...prev, page: 1 }));
                 }}
@@ -620,23 +760,25 @@ const SubDepartment = () => {
             <Button
               size="sm"
               color="primary"
+              className="w-full sm:w-auto"
               onPress={handleOpenCreateModal}
-              endContent={<Plus className="w-3.5 h-3.5" />}
+              endContent={<Plus className="h-3.5 w-3.5 shrink-0" />}
             >
               Add Sub Department
             </Button>
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-[12.5px]">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span className="text-[12.5px] text-default-400">
             Total {count} sub departments
           </span>
 
-          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
-            Rows per page:
+          <label className="flex shrink-0 items-center gap-1 text-[12.5px] text-default-400">
+            <span className="hidden min-[390px]:inline">Rows per page:</span>
+            <span className="min-[390px]:hidden">Rows:</span>
             <select
-              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              className="cursor-pointer bg-transparent text-[12.5px] text-default-400 outline-none"
               onChange={onRowsPerPageChange}
               value={filteration?.size}
             >
@@ -661,25 +803,27 @@ const SubDepartment = () => {
 
   const bottomContent = useMemo(() => {
     return (
-      <div className="py-1.5 px-1 flex justify-between items-center">
-        <span className="w-[30%] text-[12.5px] text-default-400">
+      <div className="flex min-w-0 flex-col gap-2 px-1 py-1.5 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-center text-[12.5px] text-default-400 sm:w-[30%] sm:text-left">
           Page {filteration?.page} of {pages}
         </span>
 
-        <Pagination
-          isCompact
-          showControls
-          color="primary"
-          page={filteration?.page}
-          total={pages}
-          onChange={(e) => {
-            setFilteration((prev) => ({ ...prev, page: e }));
-          }}
-        />
+        <div className="flex min-w-0 justify-center overflow-x-auto">
+          <Pagination
+            isCompact
+            showControls
+            color="primary"
+            page={filteration?.page}
+            total={pages}
+            onChange={(e) => {
+              setFilteration((prev) => ({ ...prev, page: e }));
+            }}
+          />
+        </div>
 
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+        <div className="hidden w-[30%] justify-end gap-2 md:flex">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration?.page <= 1}
             size="sm"
             variant="flat"
             onPress={onPreviousPage}
@@ -687,7 +831,7 @@ const SubDepartment = () => {
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={filteration?.page >= pages}
             size="sm"
             variant="flat"
             onPress={onNextPage}
@@ -699,11 +843,21 @@ const SubDepartment = () => {
     );
   }, [filteration?.page, pages, onPreviousPage, onNextPage]);
 
+  const responsiveModalClassNames = {
+    wrapper: "p-2 sm:p-4",
+    base: "m-0 w-full max-w-[calc(100vw-1rem)] overflow-hidden sm:max-w-xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)]",
+    header:
+      "shrink-0 break-words border-b border-default-200 px-4 py-3 pr-10 text-base sm:px-6 sm:py-4 sm:text-lg",
+    body: "min-h-0 overflow-y-auto px-4 py-4 sm:px-6",
+    footer: "shrink-0 border-t border-default-200 px-4 py-3 sm:px-6 sm:py-4",
+  };
+
   return (
-    <div className="flex flex-col gap-2">
-      <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
+    <div className="flex w-full min-w-0 flex-col gap-2 overflow-hidden">
+      <h1 className="mb-2 shrink-0 font-sans text-lg font-semibold">
         Sub departments
       </h1>
+
       <Table
         isHeaderSticky
         removeWrapper={false}
@@ -711,13 +865,18 @@ const SubDepartment = () => {
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          base: "gap-2.5",
+          base: "min-w-0 gap-2.5 overflow-hidden",
+
           wrapper:
-            "max-h-[calc(100vh-320px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
-          table: "w-full",
+            "max-h-[calc(100dvh-300px)] min-h-[240px] w-full max-w-full overflow-auto overscroll-contain rounded-lg border border-gray-200 p-0 shadow-none dark:border-white/10 sm:max-h-[calc(100dvh-320px)]",
+
+          table: "min-w-[1050px] w-full",
+
           thead: "[&>tr]:first:rounded-none",
-          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
-          td: "py-1.5 text-[12.5px]",
+
+          th: "sticky top-0 z-10 h-8 whitespace-nowrap border-b border-gray-200 bg-gray-50 py-0 text-[11.5px] tracking-wide text-default-500 first:rounded-none last:rounded-none dark:border-white/10 dark:bg-neutral-900",
+
+          td: "max-w-[260px] break-words py-1.5 text-[12.5px] align-middle",
         }}
         topContent={topContent}
         topContentPlacement="outside"
@@ -756,53 +915,56 @@ const SubDepartment = () => {
             reset(defaultValues);
           }
         }}
-        placement="top-center"
+        placement="center"
+        scrollBehavior="inside"
+        classNames={responsiveModalClassNames}
       >
         <ModalContent>
           {(onClose) => (
-            <>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex max-h-full min-h-0 flex-col overflow-hidden"
+            >
               <ModalHeader>
                 {rowItem ? "Update sub department" : "Add sub department"}
               </ModalHeader>
+
               <ModalBody>
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="flex flex-col gap-4"
-                >
-                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="fullName"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          isRequired
-                          label="Sub department name"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                      )}
-                    />
+                <div className="grid min-w-0 gap-4">
+                  <Controller
+                    name="fullName"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        isRequired
+                        label="Sub department name"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
 
-                    <Controller
-                      name="description"
-                      control={control}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input
-                          label="Description"
-                          errorMessage={error?.message}
-                          isInvalid={!!error}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                      )}
-                    />
+                  <Controller
+                    name="description"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <Input
+                        label="Description"
+                        errorMessage={error?.message}
+                        isInvalid={!!error}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
 
-                    <Controller
-                      name="headUserId"
-                      control={control}
-                      render={({ field }) => (
+                  <Controller
+                    name="headUserId"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="w-full min-w-0">
                         <NewSelect
                           label="Head"
                           placeholder="Select head"
@@ -813,19 +975,25 @@ const SubDepartment = () => {
                           value={field.value}
                           onChange={(value) => field.onChange(value)}
                         />
-                      )}
-                    />
-                  </div>
-
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
+                      </div>
+                    )}
+                  />
+                </div>
               </ModalBody>
-            </>
+
+              <ModalFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button className="w-full sm:w-auto" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  color="primary"
+                  type="submit"
+                >
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
           )}
         </ModalContent>
       </Modal>
@@ -841,26 +1009,27 @@ const SubDepartment = () => {
             mapSolutionsForm.reset(mapSolutionsDefaultValues);
           }
         }}
-        placement="top-center"
+        placement="center"
         scrollBehavior="inside"
+        classNames={responsiveModalClassNames}
       >
         <ModalContent>
           {(onClose) => (
-            <>
+            <form
+              onSubmit={mapSolutionsForm.handleSubmit(handleMapSolutions)}
+              className="flex max-h-full min-h-0 flex-col overflow-hidden"
+            >
               <ModalHeader>
                 Map Solutions — {viewingSubDepartment?.fullName || "-"}
               </ModalHeader>
 
               <ModalBody>
-                <form
-                  onSubmit={mapSolutionsForm.handleSubmit(handleMapSolutions)}
-                  className="flex flex-col gap-4"
-                >
-                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="solutionIds"
-                      control={mapSolutionsForm.control}
-                      render={({ field }) => (
+                <div className="w-full min-w-0">
+                  <Controller
+                    name="solutionIds"
+                    control={mapSolutionsForm.control}
+                    render={({ field }) => (
+                      <div className="w-full min-w-0 overflow-hidden">
                         <NewSelect
                           selectionMode="multiple"
                           label="Solutions"
@@ -871,19 +1040,25 @@ const SubDepartment = () => {
                           value={field.value}
                           onChange={(value) => field.onChange(value)}
                         />
-                      )}
-                    />
-                  </div>
-
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
+                      </div>
+                    )}
+                  />
+                </div>
               </ModalBody>
-            </>
+
+              <ModalFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button className="w-full sm:w-auto" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  color="primary"
+                  type="submit"
+                >
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
           )}
         </ModalContent>
       </Modal>
@@ -899,26 +1074,27 @@ const SubDepartment = () => {
             mapCompaniesForm.reset(mapCompaniesDefaultValues);
           }
         }}
-        placement="top-center"
+        placement="center"
         scrollBehavior="inside"
+        classNames={responsiveModalClassNames}
       >
         <ModalContent>
           {(onClose) => (
-            <>
+            <form
+              onSubmit={mapCompaniesForm.handleSubmit(handleMapCompanies)}
+              className="flex max-h-full min-h-0 flex-col overflow-hidden"
+            >
               <ModalHeader>
                 Map Companies — {viewingSubDepartment?.fullName || "-"}
               </ModalHeader>
 
               <ModalBody>
-                <form
-                  onSubmit={mapCompaniesForm.handleSubmit(handleMapCompanies)}
-                  className="flex flex-col gap-4"
-                >
-                  <div className="grid gap-4 max-h-[60vh] p-2 overflow-auto">
-                    <Controller
-                      name="companyIds"
-                      control={mapCompaniesForm.control}
-                      render={({ field, fieldState: { error } }) => (
+                <div className="grid min-w-0 gap-4">
+                  <Controller
+                    name="companyIds"
+                    control={mapCompaniesForm.control}
+                    render={({ field, fieldState: { error } }) => (
+                      <div className="w-full min-w-0 overflow-hidden">
                         <NewSelect
                           isRequired
                           selectionMode="multiple"
@@ -928,7 +1104,6 @@ const SubDepartment = () => {
                               ? "Loading companies..."
                               : "Select companies to map"
                           }
-                          // CHANGE 3: use the normalized options + companyName label
                           data={companyOptions}
                           labelKey="displayLabel"
                           valueKey="id"
@@ -937,32 +1112,39 @@ const SubDepartment = () => {
                           value={field.value}
                           onChange={(value) => field.onChange(value)}
                         />
-                      )}
-                    />
+                      </div>
+                    )}
+                  />
 
-                    <Controller
-                      name="reason"
-                      control={mapCompaniesForm.control}
-                      render={({ field }) => (
-                        <Textarea
-                          label="Reason"
-                          minRows={2}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <ModalFooter className="flex justify-end">
-                    <Button onPress={onClose}>Cancel</Button>
-                    <Button color="primary" type="submit">
-                      Submit
-                    </Button>
-                  </ModalFooter>
-                </form>
+                  <Controller
+                    name="reason"
+                    control={mapCompaniesForm.control}
+                    render={({ field }) => (
+                      <Textarea
+                        label="Reason"
+                        minRows={2}
+                        maxRows={6}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
               </ModalBody>
-            </>
+
+              <ModalFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button className="w-full sm:w-auto" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  color="primary"
+                  type="submit"
+                >
+                  Submit
+                </Button>
+              </ModalFooter>
+            </form>
           )}
         </ModalContent>
       </Modal>

@@ -259,9 +259,10 @@ const AllInvoice = () => {
         }),
       );
     } catch (error) {
+      console.log("Error", error);
       addToast({
         title: "ERROR",
-        description: "Failed to confirm E-Invoice",
+        description: error.message,
         color: "danger",
       });
     } finally {
