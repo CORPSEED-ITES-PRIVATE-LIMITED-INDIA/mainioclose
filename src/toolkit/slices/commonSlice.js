@@ -98,6 +98,33 @@ export const getAllSecondaryStatesBySecondaryCountryName = createAsyncThunk(
     return response.data;
   },
 );
+export const createCountry = createAsyncThunk(
+  "createCountry",
+  async ({data}) => {
+    const response = await api.post(
+      `/leadService/api/v1/country/create-full`,data
+    );
+    return response.data;
+  },
+);
+export const addState = createAsyncThunk(
+  "addState",
+  async ({countryId ,data}) => {
+    const response = await api.post(
+      `/leadService/api/v1/country/add-states?countryId=${countryId}`,data
+    );
+    return response.data;
+  },
+);
+export const addCity = createAsyncThunk(
+  "addCity",
+  async ({stateId,data}) => {
+    const response = await api.post(
+      `/leadService/api/v1/state/add-cities?stateId=${stateId}`,data
+    );
+    return response.data;
+  },
+);
 
 export const getAllCitiesByStateId = createAsyncThunk(
   "getAllCitiesByStateId",

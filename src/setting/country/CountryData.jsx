@@ -13,11 +13,20 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@heroui/react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Plus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAllCountries } from "../../toolkit/slices/commonSlice";
+import {
+  getAllCountries,
+  createCountry,
+} from "../../toolkit/slices/commonSlice";
 
 const columns = [
   { name: "#", uid: "id" },
@@ -35,12 +44,354 @@ const INITIAL_VISIBLE_COLUMNS = [
   "currencyCode",
 ];
 
+/* ---------------- Add Country modal (same file) ---------------- */
+
+const emptyCountry = {
+  name: "",
+  iso2Code: "",
+  iso3Code: "",
+  phoneCode: "",
+  currencyCode: "",
+  currencyName: "",
+  defaultTimezone: "",
+};
+const emptyCity = { name: "", cityCode: "", postalCode: "", timezone: "" };
+const emptyState = {
+  name: "",
+  stateCode: "",
+  gstCode: "",
+  defaultTimezone: "",
+  cities: [],
+};
+
+// drop blank optional strings so backend gets them as missing instead of ""
+const clean = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => typeof v !== "string" || v.trim()),
+  );
+
+const AddCountryModal = ({ isOpen, onOpenChange, onSuccess }) => {
+  const dispatch = useDispatch();
+
+  const [country, setCountry] = useState(emptyCountry);
+  const [states, setStates] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const reset = () => {
+    setCountry(emptyCountry);
+    setStates([]);
+    setError("");
+  };
+
+  const setCountryField = (key) => (value) =>
+    setCountry((prev) => ({ ...prev, [key]: value }));
+
+  const setStateField = (si, key, value) =>
+    setStates((prev) =>
+      prev.map((s, i) => (i === si ? { ...s, [key]: value } : s)),
+    );
+
+  const setCityField = (si, ci, key, value) =>
+    setStates((prev) =>
+      prev.map((s, i) =>
+        i === si
+          ? {
+              ...s,
+              cities: s.cities.map((c, j) =>
+                j === ci ? { ...c, [key]: value } : c,
+              ),
+            }
+          : s,
+      ),
+    );
+
+  const addState = () => setStates((prev) => [...prev, { ...emptyState }]);
+  const removeState = (si) =>
+    setStates((prev) => prev.filter((_, i) => i !== si));
+
+  const addCity = (si) =>
+    setStates((prev) =>
+      prev.map((s, i) =>
+        i === si ? { ...s, cities: [...s.cities, { ...emptyCity }] } : s,
+      ),
+    );
+
+  const removeCity = (si, ci) =>
+    setStates((prev) =>
+      prev.map((s, i) =>
+        i === si ? { ...s, cities: s.cities.filter((_, j) => j !== ci) } : s,
+      ),
+    );
+
+  const handleSubmit = async (onClose) => {
+    setError("");
+
+    if (
+      !country.name.trim() ||
+      !country.iso2Code.trim() ||
+      !country.iso3Code.trim()
+    ) {
+      setError("Country name, ISO2 code and ISO3 code are required");
+      return;
+    }
+
+    for (const s of states) {
+      if (!s.name.trim()) {
+        setError("Every state needs a name (remove empty state rows)");
+        return;
+      }
+      for (const c of s.cities) {
+        if (!c.name.trim()) {
+          setError(`Every city needs a name (state: ${s.name})`);
+          return;
+        }
+      }
+    }
+
+    const payload = {
+      ...clean(country),
+      ...(states.length > 0 && {
+        states: states.map((s) => ({
+          ...clean({ ...s, cities: undefined }),
+          ...(s.cities.length > 0 && { cities: s.cities.map(clean) }),
+        })),
+      }),
+    };
+
+    try {
+      setSaving(true);
+      await dispatch(createCountry({ data: payload })).unwrap();
+      reset();
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(
+        typeof err === "string"
+          ? err
+          : err?.message || "Failed to create country",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      onClose={reset}
+      size="3xl"
+      scrollBehavior="inside"
+      isDismissable={!saving}
+    >
+      <ModalContent>
+        {(onClose) => (
+          <>
+            <ModalHeader className="text-base">Add Country</ModalHeader>
+
+            <ModalBody className="gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Input
+                  size="sm"
+                  isRequired
+                  label="Country name"
+                  value={country.name}
+                  onValueChange={setCountryField("name")}
+                />
+                <Input
+                  size="sm"
+                  isRequired
+                  label="ISO2 code"
+                  maxLength={2}
+                  value={country.iso2Code}
+                  onValueChange={setCountryField("iso2Code")}
+                />
+                <Input
+                  size="sm"
+                  isRequired
+                  label="ISO3 code"
+                  maxLength={3}
+                  value={country.iso3Code}
+                  onValueChange={setCountryField("iso3Code")}
+                />
+                <Input
+                  size="sm"
+                  label="Phone code"
+                  placeholder="+91"
+                  value={country.phoneCode}
+                  onValueChange={setCountryField("phoneCode")}
+                />
+                <Input
+                  size="sm"
+                  label="Currency code"
+                  maxLength={3}
+                  value={country.currencyCode}
+                  onValueChange={setCountryField("currencyCode")}
+                />
+                <Input
+                  size="sm"
+                  label="Currency name"
+                  value={country.currencyName}
+                  onValueChange={setCountryField("currencyName")}
+                />
+                <Input
+                  size="sm"
+                  label="Default timezone"
+                  placeholder="Asia/Kolkata"
+                  value={country.defaultTimezone}
+                  onValueChange={setCountryField("defaultTimezone")}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">States (optional)</span>
+                <Button
+                  size="sm"
+                  variant="flat"
+                  startContent={<Plus className="w-4 h-4" />}
+                  onPress={addState}
+                >
+                  Add state
+                </Button>
+              </div>
+
+              {states.map((s, si) => (
+                <div
+                  key={si}
+                  className="rounded-lg border border-default-200 p-3 flex flex-col gap-2"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+                    <Input
+                      size="sm"
+                      isRequired
+                      label="State name"
+                      value={s.name}
+                      onValueChange={(v) => setStateField(si, "name", v)}
+                    />
+                    <Input
+                      size="sm"
+                      label="State code"
+                      value={s.stateCode}
+                      onValueChange={(v) => setStateField(si, "stateCode", v)}
+                    />
+                    <Input
+                      size="sm"
+                      label="GST code"
+                      maxLength={5}
+                      value={s.gstCode}
+                      onValueChange={(v) => setStateField(si, "gstCode", v)}
+                    />
+                    <Input
+                      size="sm"
+                      label="Timezone"
+                      value={s.defaultTimezone}
+                      onValueChange={(v) =>
+                        setStateField(si, "defaultTimezone", v)
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="light"
+                      startContent={<Trash2 className="w-4 h-4" />}
+                      onPress={() => removeState(si)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+
+                  {s.cities.map((c, ci) => (
+                    <div
+                      key={ci}
+                      className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center pl-4 border-l-2 border-default-200"
+                    >
+                      <Input
+                        size="sm"
+                        isRequired
+                        label="City name"
+                        value={c.name}
+                        onValueChange={(v) => setCityField(si, ci, "name", v)}
+                      />
+                      <Input
+                        size="sm"
+                        label="City code"
+                        value={c.cityCode}
+                        onValueChange={(v) =>
+                          setCityField(si, ci, "cityCode", v)
+                        }
+                      />
+                      <Input
+                        size="sm"
+                        label="Postal code"
+                        value={c.postalCode}
+                        onValueChange={(v) =>
+                          setCityField(si, ci, "postalCode", v)
+                        }
+                      />
+                      <Input
+                        size="sm"
+                        label="Timezone"
+                        value={c.timezone}
+                        onValueChange={(v) =>
+                          setCityField(si, ci, "timezone", v)
+                        }
+                      />
+                      <Button
+                        size="sm"
+                        isIconOnly
+                        color="danger"
+                        variant="light"
+                        onPress={() => removeCity(si, ci)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    size="sm"
+                    variant="light"
+                    className="self-start"
+                    startContent={<Plus className="w-4 h-4" />}
+                    onPress={() => addCity(si)}
+                  >
+                    Add city
+                  </Button>
+                </div>
+              ))}
+
+              {error && <p className="text-danger text-sm">{error}</p>}
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="flat" onPress={onClose} isDisabled={saving}>
+                Cancel
+              </Button>
+              <Button
+                color="primary"
+                isLoading={saving}
+                onPress={() => handleSubmit(onClose)}
+              >
+                Create Country
+              </Button>
+            </ModalFooter>
+          </>
+        )}
+      </ModalContent>
+    </Modal>
+  );
+};
+
+/* ---------------- Country list ---------------- */
+
 const CountryData = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { countriesList, loading } = useSelector((state) => state.common);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const [filterValue, setFilterValue] = useState("");
 
@@ -181,6 +532,15 @@ const CountryData = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              color="primary"
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={onOpen}
+            >
+              Add Country
+            </Button>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -239,6 +599,7 @@ const CountryData = () => {
     filteredItems.length,
     onRowsPerPageChange,
     initialFilteration.size,
+    onOpen,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -345,6 +706,12 @@ const CountryData = () => {
           )}
         </TableBody>
       </Table>
+
+      <AddCountryModal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        onSuccess={() => dispatch(getAllCountries())}
+      />
     </div>
   );
 };

@@ -13,11 +13,21 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@heroui/react";
-import { ArrowLeft, ChevronDown, Search } from "lucide-react";
+import { ArrowLeft, ChevronDown, Search, Plus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAllCitiesByStateName } from "../../toolkit/slices/commonSlice";
+import {
+  getAllCitiesByStateName,
+  getAllStatesByCountryName,
+  addCity,
+} from "../../toolkit/slices/commonSlice";
 
 const columns = [
   { name: "#", uid: "id" },
@@ -25,6 +35,173 @@ const columns = [
 ];
 
 const INITIAL_VISIBLE_COLUMNS = ["id", "name"];
+
+/* ---------------- Add City modal (same file) ---------------- */
+
+const emptyCity = { name: "", cityCode: "", postalCode: "", timezone: "" };
+
+// drop blank optional strings so backend gets them as missing instead of ""
+const clean = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => typeof v !== "string" || v.trim()),
+  );
+
+const AddCityModal = ({
+  isOpen,
+  onOpenChange,
+  stateId,
+  stateName,
+  onSuccess,
+}) => {
+  const dispatch = useDispatch();
+
+  const [cities, setCities] = useState([{ ...emptyCity }]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const reset = () => {
+    setCities([{ ...emptyCity }]);
+    setError("");
+  };
+
+  const setCityField = (ci, key, value) =>
+    setCities((prev) =>
+      prev.map((c, i) => (i === ci ? { ...c, [key]: value } : c)),
+    );
+
+  const addRow = () => setCities((prev) => [...prev, { ...emptyCity }]);
+  const removeRow = (ci) =>
+    setCities((prev) => prev.filter((_, i) => i !== ci));
+
+  const handleSubmit = async (onClose) => {
+    setError("");
+
+    if (!stateId) {
+      setError("State id not found");
+      return;
+    }
+
+    if (cities.length === 0) {
+      setError("Add at least one city");
+      return;
+    }
+
+    if (cities.some((c) => !c.name.trim())) {
+      setError("Every city needs a name (remove empty rows)");
+      return;
+    }
+
+    // backend expects a plain array of cities
+    const payload = cities.map(clean);
+
+    try {
+      setSaving(true);
+      await dispatch(addCity({ stateId, data: payload })).unwrap();
+      reset();
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(
+        typeof err === "string" ? err : err?.message || "Failed to add cities",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      onClose={reset}
+      size="3xl"
+      scrollBehavior="inside"
+      isDismissable={!saving}
+    >
+      <ModalContent>
+        {(onClose) => (
+          <>
+            <ModalHeader className="text-base">
+              Add Cities to {stateName}
+            </ModalHeader>
+
+            <ModalBody className="gap-3">
+              {cities.map((c, ci) => (
+                <div
+                  key={ci}
+                  className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center"
+                >
+                  <Input
+                    size="sm"
+                    isRequired
+                    label="City name"
+                    value={c.name}
+                    onValueChange={(v) => setCityField(ci, "name", v)}
+                  />
+                  <Input
+                    size="sm"
+                    label="City code"
+                    value={c.cityCode}
+                    onValueChange={(v) => setCityField(ci, "cityCode", v)}
+                  />
+                  <Input
+                    size="sm"
+                    label="Postal code"
+                    value={c.postalCode}
+                    onValueChange={(v) => setCityField(ci, "postalCode", v)}
+                  />
+                  <Input
+                    size="sm"
+                    label="Timezone"
+                    value={c.timezone}
+                    onValueChange={(v) => setCityField(ci, "timezone", v)}
+                  />
+                  <Button
+                    size="sm"
+                    color="danger"
+                    variant="light"
+                    isDisabled={cities.length === 1}
+                    startContent={<Trash2 className="w-4 h-4" />}
+                    onPress={() => removeRow(ci)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                size="sm"
+                variant="flat"
+                className="self-start"
+                startContent={<Plus className="w-4 h-4" />}
+                onPress={addRow}
+              >
+                Add another city
+              </Button>
+
+              {error && <p className="text-danger text-sm">{error}</p>}
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="flat" onPress={onClose} isDisabled={saving}>
+                Cancel
+              </Button>
+              <Button
+                color="primary"
+                isLoading={saving}
+                onPress={() => handleSubmit(onClose)}
+              >
+                Save Cities
+              </Button>
+            </ModalFooter>
+          </>
+        )}
+      </ModalContent>
+    </Modal>
+  );
+};
+
+/* ---------------- City list ---------------- */
 
 const CityData = () => {
   const dispatch = useDispatch();
@@ -36,7 +213,20 @@ const CityData = () => {
 
   const decodedStateName = decodeURIComponent(stateName || "");
 
-  const { citiesList, loading } = useSelector((state) => state.common);
+  const { citiesList, statesList, loading } = useSelector(
+    (state) => state.common,
+  );
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  // stateId: from states list (matched by name), else from loaded cities
+  const stateId = useMemo(() => {
+    const fromStates = (statesList || []).find(
+      (s) => s?.name?.toLowerCase() === decodedStateName.toLowerCase(),
+    )?.id;
+    if (fromStates) return fromStates;
+
+    return (citiesList || []).find((c) => c?.stateId)?.stateId;
+  }, [statesList, citiesList, decodedStateName]);
 
   const [filterValue, setFilterValue] = useState("");
 
@@ -54,6 +244,13 @@ const CityData = () => {
       dispatch(getAllCitiesByStateName(decodedStateName));
     }
   }, [dispatch, decodedStateName]);
+
+  // needed to resolve stateId (also works when the state has no cities yet)
+  useEffect(() => {
+    if (decodedCountryName) {
+      dispatch(getAllStatesByCountryName(decodedCountryName));
+    }
+  }, [dispatch, decodedCountryName]);
 
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") {
@@ -132,6 +329,16 @@ const CityData = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              color="primary"
+              isDisabled={!stateId}
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={onOpen}
+            >
+              Add City
+            </Button>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -189,6 +396,11 @@ const CityData = () => {
     onSearchChange,
     navigate,
     decodedCountryName,
+    onOpen,
+    stateId,
+    filteredItems.length,
+    onRowsPerPageChange,
+    initialFilteration.size,
   ]);
 
   const bottomContent = useMemo(() => {
@@ -304,6 +516,14 @@ const CityData = () => {
           )}
         </TableBody>
       </Table>
+
+      <AddCityModal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        stateId={stateId}
+        stateName={decodedStateName}
+        onSuccess={() => dispatch(getAllCitiesByStateName(decodedStateName))}
+      />
     </div>
   );
 };
