@@ -8,6 +8,7 @@ import logo from "../assets/CORPSEED.webp";
 import signature from "../assets/signature.png";
 import { inrCurrency } from "../common";
 import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
+import { swapRemoteLogos, useOrgLogoSrc } from "./orgLogo";
 
 /**
  * DebitNoteView
@@ -331,6 +332,8 @@ Corpseed Team`,
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const logoSrc = useOrgLogoSrc(org.logoUrl);
+
   const downloadPDF = async () => {
     const node = printRef.current;
     if (!node) return;
@@ -340,7 +343,7 @@ Corpseed Team`,
     const canvas = await html2canvas(node, {
       scale: 3,
       useCORS: true,
-      allowTaint: true,
+      onclone: (clonedDoc) => swapRemoteLogos(clonedDoc, logo),
       backgroundColor: "#ffffff",
       logging: false,
       windowWidth: node.scrollWidth,
@@ -456,13 +459,12 @@ Corpseed Team`,
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
                   <img
-                    src={org.logoUrl || logo}
+                    src={logoSrc || logo}
                     alt={org.name || "Organization logo"}
                     className="h-10 max-w-[120px] object-contain"
-                    crossOrigin="anonymous"
+                    data-org-logo
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.crossOrigin = null;
                       e.currentTarget.src = logo;
                     }}
                   />

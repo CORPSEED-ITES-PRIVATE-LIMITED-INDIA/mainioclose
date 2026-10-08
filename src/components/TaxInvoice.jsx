@@ -9,6 +9,7 @@ import { inrCurrency } from "../common";
 import { Image } from "@heroui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
+import { swapRemoteLogos, useOrgLogoSrc } from "./orgLogo";
 
 /** -------------------------
  * PDF / Layout constants
@@ -692,6 +693,8 @@ Corpseed Team`,
   };
 
   /** ✅ Single-page PDF + Real margins + smoother text */
+  const logoSrc = useOrgLogoSrc(seller.logoUrl);
+
   const downloadPDF = async () => {
     const node = printRef.current;
     if (!node) return;
@@ -702,7 +705,7 @@ Corpseed Team`,
     const canvas = await html2canvas(node, {
       scale: 3, // ✅ smoother text (higher DPI)
       useCORS: true,
-      allowTaint: true,
+      onclone: (clonedDoc) => swapRemoteLogos(clonedDoc, logo),
       backgroundColor: "#ffffff",
       logging: false,
       // Helps if any width calculations happen due to scrolling:
@@ -822,10 +825,10 @@ Corpseed Team`,
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
                   <Image
-                    src={seller.logoUrl || logo}
+                    src={logoSrc || logo}
                     alt={seller.name || "Organization logo"}
                     className="h-10 max-w-[120px] object-contain"
-                    crossOrigin="anonymous"
+                    data-org-logo
                   />
                 </div>
 

@@ -6,6 +6,7 @@ import logo from "../../../assets/CORPSEED.webp";
 import dayjs from "dayjs";
 import { inrCurrency, numberToWords } from "../../../common";
 import { getOrganizationByName } from "../../../toolkit/slices/organizationSlice";
+import { swapRemoteLogos, useOrgLogoSrc } from "../../../components/orgLogo";
 
 const toNumber = (value) => {
   if (value === null || value === undefined || value === "") return 0;
@@ -184,6 +185,7 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
   useEffect(() => {
     dispatch(getOrganizationByName());
   }, [dispatch]);
+
 
   const lineItems = useMemo(() => {
     const items = Array.isArray(details?.lineItems) ? details.lineItems : [];
@@ -544,6 +546,8 @@ Corpseed Team`,
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const logoSrc = useOrgLogoSrc(seller.logoUrl);
+
   const downloadPDF = async () => {
     const element = contentRef.current;
     if (!element) return;
@@ -552,9 +556,9 @@ Corpseed Team`,
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
         logging: false,
         backgroundColor: "#ffffff",
+        onclone: (clonedDoc) => swapRemoteLogos(clonedDoc, logo),
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -590,9 +594,9 @@ Corpseed Team`,
             <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-gray-200 pb-4">
               <div>
                 <img
-                  src={seller.logoUrl}
+                  src={logoSrc || seller.logoUrl}
                   alt={seller.name || "organization logo"}
-                  crossOrigin="anonymous"
+                  data-org-logo
                   className="w-22 md:w-28 max-h-16 object-contain"
                   onError={(event) => {
                     event.currentTarget.onerror = null;

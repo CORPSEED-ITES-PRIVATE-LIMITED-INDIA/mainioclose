@@ -317,14 +317,14 @@ const UserMailConfig = () => {
             }}
           />
 
-          <Button
+          {/* <Button
             color="primary"
             size="sm"
             endContent={<Plus className="w-4 h-4" />}
             onPress={openCreateModal}
           >
             Add New
-          </Button>
+          </Button> */}
         </div>
 
         <div className="flex justify-between items-center">

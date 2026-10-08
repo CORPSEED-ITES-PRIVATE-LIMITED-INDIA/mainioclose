@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import numWords from "num-words";
 import { inrCurrency } from "../common";
 import { Image } from "@heroui/react";
+import { swapRemoteLogos, useOrgLogoSrc } from "../components/orgLogo";
 
 /** -------------------------
  * PDF / Layout constants
@@ -523,6 +524,8 @@ Corpseed Team`,
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const logoSrc = useOrgLogoSrc(seller?.logoUrl);
+
   /** ✅ Single-page PDF + Real margins + smoother text */
   const downloadPDF = async () => {
     const node = printRef.current;
@@ -534,7 +537,7 @@ Corpseed Team`,
     const canvas = await html2canvas(node, {
       scale: 3, // ✅ smoother text (higher DPI)
       useCORS: true,
-      allowTaint: true,
+      onclone: (clonedDoc) => swapRemoteLogos(clonedDoc, logo),
       backgroundColor: "#ffffff",
       logging: false,
       // Helps if any width calculations happen due to scrolling:
@@ -664,10 +667,8 @@ Corpseed Team`,
                     alt="company logo"
                     height={60}
                     radius="sm"
-                    src={seller?.logoUrl}
-                    // src={
-                    //   "https://erp-corpseed.s3.ap-south-1.amazonaws.com/1784271691022CORPSEED.webp"
-                    // }
+                    src={logoSrc || logo}
+                    data-org-logo
                     width={90}
                   />
                 </div>
@@ -731,7 +732,9 @@ Corpseed Team`,
                     <div className="text-[10px] text-gray-500">
                       Other References
                     </div>
-                    <div className="min-h-4 break-words text-[11px] font-bold leading-snug">&nbsp;</div>
+                    <div className="min-h-4 break-words text-[11px] font-bold leading-snug">
+                      &nbsp;
+                    </div>
                   </div>
                   <div className="p-2.5">
                     <div className="text-[10px] text-gray-500">
@@ -786,7 +789,9 @@ Corpseed Team`,
                   <div className="text-[10px] text-gray-500">
                     Terms of Delivery
                   </div>
-                  <div className="min-h-4 break-words text-[11px] font-bold leading-snug">&nbsp;</div>
+                  <div className="min-h-4 break-words text-[11px] font-bold leading-snug">
+                    &nbsp;
+                  </div>
                 </div>
               </div>
             </div>
@@ -1191,7 +1196,9 @@ Corpseed Team`,
 
             {/* ✅ Keep authorised signatory image */}
             <div className="px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {seller.name.toLowerCase()}</div>
+              <div className="capitalize">
+                For {seller?.name?.toLowerCase()}
+              </div>
               <div className="mt-1 flex justify-end">
                 <img
                   src={signature}

@@ -92,6 +92,29 @@ const PAYMENT_TERM_OPTIONS = [
   },
 ];
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const normalizeEmail = (email) =>
+  String(email || "")
+    .trim()
+    .toLowerCase();
+
+// Splits "a@x.com, b@x.com" entries, drops invalid values (e.g. "NA", "-")
+// and keeps only the first occurrence of each address (case-insensitive).
+export const cleanEmails = (list = []) => {
+  const seen = new Set();
+
+  return (Array.isArray(list) ? list : [list])
+    .flatMap((e) => String(e || "").split(/[,;]/))
+    .map((e) => e.trim())
+    .filter((e) => {
+      const key = e.toLowerCase();
+      if (!emailRegex.test(e) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
 export function TagsInput({
   value = [],
   onChange,
@@ -101,11 +124,7 @@ export function TagsInput({
   lockedValues = [],
 }) {
   const [inputValue, setInputValue] = useState("");
-
-  const normalizeEmail = (email) =>
-    String(email || "")
-      .trim()
-      .toLowerCase();
+  const [inputError, setInputError] = useState("");
 
   const isLocked = (tag) =>
     lockedValues.some(
@@ -113,14 +132,12 @@ export function TagsInput({
     );
 
   const safeOnChange = (nextValue = []) => {
-    const finalValue = [
-      ...lockedValues,
-      ...nextValue.filter((email) => !isLocked(email)),
-    ].filter(Boolean);
-
-    const uniqueValue = [...new Set(finalValue)];
-
-    onChange(uniqueValue);
+    onChange(
+      cleanEmails([
+        ...lockedValues,
+        ...nextValue.filter((email) => !isLocked(email)),
+      ]),
+    );
   };
 
   const addTag = (val) => {
@@ -128,12 +145,19 @@ export function TagsInput({
 
     if (!trimmed) return;
 
+    // Invalid entries (e.g. "NA") are not added; the text stays so it can be fixed
+    if (!emailRegex.test(trimmed)) {
+      setInputError(`"${trimmed}" is not a valid email`);
+      return;
+    }
+
     if (
       !value.some((email) => normalizeEmail(email) === normalizeEmail(trimmed))
     ) {
       safeOnChange([...value, trimmed]);
     }
 
+    setInputError("");
     setInputValue("");
   };
 
@@ -153,10 +177,11 @@ export function TagsInput({
   };
 
   return (
+    <>
     <div
       className={`flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 bg-white border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 dark:bg-zinc-900 dark:border-zinc-700 ${className}`}
     >
-      {value.map((tag, index) => (
+      {(value || []).map((tag, index) => (
         <div
           key={index}
           className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm ${
@@ -181,17 +206,22 @@ export function TagsInput({
 
       <input
         value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          if (inputError) setInputError("");
+        }}
         onKeyDown={handleKeyDown}
         onBlur={() => addTag(inputValue)}
         placeholder={placeholder}
         className={`flex-1 min-w-[180px] border-none outline-none text-sm bg-transparent text-gray-900 placeholder-gray-400 ${inputClassName}`}
       />
     </div>
+    {inputError && (
+      <p className="mt-1 text-xs text-red-500">{inputError}</p>
+    )}
+    </>
   );
 }
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const validateEmailArray = (required = false) => ({
   validator: (_, value = []) => {
@@ -344,15 +374,9 @@ const Proposal = () => {
      CHANGED: autofill helpers
      ============================================================ */
 
-  // "a@x.com, b@x.com" -> ["a@x.com", "b@x.com"]
-  const splitEmails = (list = []) =>
-    list
-      .flatMap((e) => String(e || "").split(","))
-      .map((e) => e.trim())
-      .filter(Boolean);
-
+  // Valid, de-duplicated emails only ("NA", blanks and repeats are dropped)
   const getUnitContactEmails = () =>
-    splitEmails((company?.units?.[0]?.unitContacts || []).map((c) => c.emails));
+    cleanEmails((company?.units?.[0]?.unitContacts || []).map((c) => c.emails));
 
   const buildCreateFormValues = () => {
     const emailTemplate = serviceBrouchersDetail?.solution?.emailTemplate;
@@ -360,12 +384,10 @@ const Proposal = () => {
       solutionDetail?.name || serviceBrouchersDetail?.solution?.name;
 
     return {
-      mailTo: [
-        ...new Set([
-          ...getUnitContactEmails(),
-          ...splitEmails((leadData?.clients || []).map((c) => c.emails)),
-        ]),
-      ],
+      mailTo: cleanEmails([
+        ...getUnitContactEmails(),
+        ...(leadData?.clients || []).map((c) => c.emails),
+      ]),
       emailSubject:
         emailTemplate?.emailSubject ||
         (solutionName ? `Corpseed Proposal for - ${solutionName}` : ""),
@@ -523,14 +545,14 @@ const Proposal = () => {
     setData(finalScopeOfWork);
     setMailBody(finalMailBody);
 
-    const existingMailTo = proposal?.mailTo || [];
+    const existingMailTo = cleanEmails(proposal?.mailTo || []);
 
     setLockedMailTo(existingMailTo);
 
     proposalAntForm.setFieldsValue({
-      mailTo: proposal?.mailTo || [],
-      mailCc: proposal?.mailCc || [],
-      mailBcc: proposal?.mailBcc || [],
+      mailTo: existingMailTo,
+      mailCc: cleanEmails(proposal?.mailCc || []),
+      mailBcc: cleanEmails(proposal?.mailBcc || []),
       emailSubject: proposal?.emailSubject || "",
       paymentTerm: proposal?.paymentTerm || "",
       paymentTermDescription: proposal?.paymentTermDescription || "",
