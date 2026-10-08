@@ -1078,7 +1078,9 @@ const LeadInfo = () => {
                           {leadData?.lead?.name}
                         </h6>
                         <div className="flex shrink-0 items-center gap-1.5">
-                          {(adminRole || department === "Quality Team") && (
+                          {(adminRole ||
+                            department === "Quality Team" ||
+                            department === "Quality") && (
                             <Button
                               size="sm"
                               color="primary"
