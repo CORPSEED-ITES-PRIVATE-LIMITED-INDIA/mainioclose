@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logoutFun, toggleAutoOffFeature } from "../toolkit/slices/authSlice";
+import {
+  logoutFun,
+  toggleAutoOffFeature,
+  toggleAutoOnFeature,
+} from "../toolkit/slices/authSlice";
 
 // Logout is tied to the machine being locked or asleep — never to the user
 // simply not touching the mouse while reading a page.
@@ -16,10 +20,36 @@ import { logoutFun, toggleAutoOffFeature } from "../toolkit/slices/authSlice";
 //     out. Skipped once (1) is running, otherwise alt-tabbing would log out too.
 //
 // Shutdown needs no signal of its own — the session lives in sessionStorage, so
-// closing the browser already ends it.
+// closing the browser already ends it on this side. The server side is what a
+// plain close leaves behind (the user stays "present" and keeps getting auto
+// assigned leads), so closing the tab/browser also sends the same "off" call a
+// logout does. `pagehide` is the only event that fires reliably for that.
+//
+// pagehide fires on reload too, and a reload keeps the session. A marker in
+// sessionStorage tells the next load to switch presence back on; after a real
+// close sessionStorage is gone, so nothing is switched back on.
 const LOCK_GRACE_MS = 60 * 1000;
 const SUSPEND_TICK_MS = 5 * 1000;
 const GESTURE_EVENTS = ["click", "keydown", "touchstart"];
+const CLOSING_MARKER = "presenceOffOnUnload";
+
+// fetch + keepalive survives the page being torn down and, unlike
+// navigator.sendBeacon, can be a PUT carrying the Authorization header.
+const sendPresenceOff = (userId) => {
+  try {
+    const jwt = JSON.parse(sessionStorage.getItem("userDetail") || "{}")?.jwt;
+    if (!userId || !jwt) return;
+
+    fetch(`/leadService/api/v1/users/autoPresentOff?userId=${userId}&flag=false`, {
+      method: "PUT",
+      keepalive: true,
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    sessionStorage.setItem(CLOSING_MARKER, "1");
+  } catch {
+    // Nothing more can be done while the page is closing.
+  }
+};
 
 export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) {
   const dispatch = useDispatch();
@@ -153,6 +183,22 @@ export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) 
       startSuspendTicks();
     };
 
+    // Browser / tab closing (also hits on reload — see the marker note above).
+    const onPageHide = () => sendPresenceOff(userId);
+
+    // Reload, or back/forward restored from the cache: the session survived, so
+    // undo the "off" sent by onPageHide.
+    const restorePresence = () => {
+      if (userId && sessionStorage.getItem(CLOSING_MARKER)) {
+        sessionStorage.removeItem(CLOSING_MARKER);
+        dispatch(toggleAutoOnFeature({ userId, flag: true }));
+      }
+    };
+
+    restorePresence();
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", restorePresence);
+
     document.addEventListener("visibilitychange", onVisibility);
     GESTURE_EVENTS.forEach((evt) =>
       window.addEventListener(evt, onGesture, { passive: true }),
@@ -162,6 +208,8 @@ export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) 
     if (!document.hidden) startSuspendTicks();
 
     return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", restorePresence);
       document.removeEventListener("visibilitychange", onVisibility);
       GESTURE_EVENTS.forEach((evt) =>
         window.removeEventListener(evt, onGesture),
@@ -170,5 +218,5 @@ export default function useIdleLogout(userId, { graceMs = LOCK_GRACE_MS } = {}) 
       stopSuspendTicks();
       controller.abort();
     };
-  }, [doLogout, graceMs]);
+  }, [doLogout, dispatch, graceMs, userId]);
 }
