@@ -1093,17 +1093,21 @@ const LeadInfo = () => {
                               Auto quality submit
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            color="secondary"
-                            variant="flat"
-                            className="h-7 px-2.5 text-xs"
-                            isDisabled={helperLoading === "pending"}
-                            isLoading={helperLoading === "pending"}
-                            onPress={handleAutoAssignHelper}
-                          >
-                            Auto assign helper
-                          </Button>
+                          {(adminRole ||
+                            department === "Sales Team" ||
+                            department === "Sales") && (
+                            <Button
+                              size="sm"
+                              color="secondary"
+                              variant="flat"
+                              className="h-7 px-2.5 text-xs"
+                              isDisabled={helperLoading === "pending"}
+                              isLoading={helperLoading === "pending"}
+                              onPress={handleAutoAssignHelper}
+                            >
+                              Auto assign helper
+                            </Button>
+                          )}
                           <Button
                             onPress={() => {
                               if (
