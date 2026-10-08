@@ -126,6 +126,56 @@ export const addCity = createAsyncThunk(
   },
 );
 
+export const autoMapPostalCodes = createAsyncThunk(
+  "autoMapPostalCodes",
+  async ({ stateId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/city/postal-codes/auto-map`,
+        null,
+        { params: { stateId } },
+      );
+      return response.data; // { mapped, unmatched }
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || "Failed to map postal codes");
+    }
+  },
+);
+
+export const assignPostalCodesToCity = createAsyncThunk(
+  "assignPostalCodesToCity",
+  async ({ cityId, postalIds }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/leadService/api/v1/city/postal-codes/assign`,
+        postalIds,
+        { params: { cityId } },
+      );
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message || err?.message || "Failed to assign postal codes");
+    }
+  },
+);
+export const searchPostalCodes = createAsyncThunk(
+  "searchPostalCodes",
+  async ({ stateId, q }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/leadService/api/v1/city/postal-codes/search`,
+        { params: { stateId, q: q || "", limit: 50 } },
+      );
+      return response.data; // [{ id, postalCode, locality }]
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load postal codes",
+      );
+    }
+  },
+);
+
 export const getAllCitiesByStateId = createAsyncThunk(
   "getAllCitiesByStateId",
   async (id) => {

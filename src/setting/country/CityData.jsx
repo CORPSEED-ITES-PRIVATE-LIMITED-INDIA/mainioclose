@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -19,26 +19,153 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Chip,
+  addToast,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@heroui/react";
-import { ArrowLeft, ChevronDown, Search, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Search, Plus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllCitiesByStateName,
   getAllStatesByCountryName,
   addCity,
+  autoMapPostalCodes,
+  searchPostalCodes,
 } from "../../toolkit/slices/commonSlice";
 
 const columns = [
   { name: "#", uid: "id" },
   { name: "CITY", uid: "name" },
+  { name: "POSTAL CODE", uid: "postalCodes" },
 ];
 
-const INITIAL_VISIBLE_COLUMNS = ["id", "name"];
+const INITIAL_VISIBLE_COLUMNS = ["id", "name", "postalCodes"];
+
+/* ---------------- Postal code picker (search + single select) ---------------- */
+
+const PostalCodePicker = ({ stateId, selected, takenIds, onChange }) => {
+  const dispatch = useDispatch();
+
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // debounced search, only while the dropdown is open
+  useEffect(() => {
+    if (!open || !stateId) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const res = await dispatch(
+          searchPostalCodes({ stateId, q: query.trim() }),
+        ).unwrap();
+        setOptions(Array.isArray(res) ? res : []);
+      } catch {
+        setOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [open, query, stateId, dispatch]);
+
+  // hide codes already picked in other city rows
+  const visible = options.filter((p) => !takenIds.has(p.id));
+
+  const pick = (p) => {
+    onChange(p);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Popover isOpen={open} onOpenChange={setOpen} placement="bottom-start">
+        <PopoverTrigger>
+          <Button
+            size="sm"
+            variant="bordered"
+            endContent={<ChevronDown className="w-4 h-4" />}
+            isDisabled={!stateId}
+          >
+            {selected ? "Change postal code" : "Select postal code"}
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-[320px] p-2 items-stretch gap-2">
+          <Input
+            size="sm"
+            isClearable
+            autoFocus
+            placeholder="Search postal code or locality..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
+            value={query}
+            onValueChange={setQuery}
+            onClear={() => setQuery("")}
+          />
+
+          <div className="max-h-56 overflow-y-auto flex flex-col">
+            {loading && (
+              <span className="text-default-400 text-xs p-2">Searching...</span>
+            )}
+
+            {!loading && visible.length === 0 && (
+              <span className="text-default-400 text-xs p-2">
+                No unmapped postal codes found
+              </span>
+            )}
+
+            {visible.map((p) => (
+              <button
+                type="button"
+                key={p.id}
+                onClick={() => pick(p)}
+                className={`flex items-center justify-between text-left text-xs px-2 py-1.5 rounded-md hover:bg-default-100 ${
+                  selected?.id === p.id ? "bg-primary-50" : ""
+                }`}
+              >
+                <span>
+                  <span className="font-medium">{p.postalCode}</span>
+                  {p.locality && (
+                    <span className="text-default-400"> · {p.locality}</span>
+                  )}
+                </span>
+                {selected?.id === p.id && (
+                  <span className="text-primary">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-[11px] text-default-400">
+            Showing up to 50 results. Type to narrow down.
+          </p>
+        </PopoverContent>
+      </Popover>
+
+      {selected && (
+        <Chip
+          size="sm"
+          variant="flat"
+          title={selected.locality}
+          onClose={() => onChange(null)}
+        >
+          {selected.postalCode}
+        </Chip>
+      )}
+    </div>
+  );
+};
 
 /* ---------------- Add City modal (same file) ---------------- */
 
-const emptyCity = { name: "", cityCode: "", postalCode: "", timezone: "" };
+const emptyCity = { name: "", cityCode: "", timezone: "", postal: null };
 
 // drop blank optional strings so backend gets them as missing instead of ""
 const clean = (obj) =>
@@ -73,6 +200,12 @@ const AddCityModal = ({
   const removeRow = (ci) =>
     setCities((prev) => prev.filter((_, i) => i !== ci));
 
+  // postal ids picked in rows other than `ci`
+  const takenIdsFor = (ci) =>
+    new Set(
+      cities.flatMap((c, i) => (i === ci || !c.postal ? [] : [c.postal.id])),
+    );
+
   const handleSubmit = async (onClose) => {
     setError("");
 
@@ -91,8 +224,11 @@ const AddCityModal = ({
       return;
     }
 
-    // backend expects a plain array of cities
-    const payload = cities.map(clean);
+    // backend expects a plain array of cities; one postal code per city
+    const payload = cities.map(({ postal, ...rest }) => ({
+      ...clean(rest),
+      ...(postal && { postalId: postal.id }),
+    }));
 
     try {
       setSaving(true);
@@ -129,43 +265,46 @@ const AddCityModal = ({
               {cities.map((c, ci) => (
                 <div
                   key={ci}
-                  className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center"
+                  className="rounded-lg border border-default-200 p-3 flex flex-col gap-2"
                 >
-                  <Input
-                    size="sm"
-                    isRequired
-                    label="City name"
-                    value={c.name}
-                    onValueChange={(v) => setCityField(ci, "name", v)}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                    <Input
+                      size="sm"
+                      isRequired
+                      label="City name"
+                      value={c.name}
+                      onValueChange={(v) => setCityField(ci, "name", v)}
+                    />
+                    <Input
+                      size="sm"
+                      label="City code"
+                      value={c.cityCode}
+                      onValueChange={(v) => setCityField(ci, "cityCode", v)}
+                    />
+                    <Input
+                      size="sm"
+                      label="Timezone"
+                      value={c.timezone}
+                      onValueChange={(v) => setCityField(ci, "timezone", v)}
+                    />
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="light"
+                      isDisabled={cities.length === 1}
+                      startContent={<Trash2 className="w-4 h-4" />}
+                      onPress={() => removeRow(ci)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+
+                  <PostalCodePicker
+                    stateId={stateId}
+                    selected={c.postal}
+                    takenIds={takenIdsFor(ci)}
+                    onChange={(p) => setCityField(ci, "postal", p)}
                   />
-                  <Input
-                    size="sm"
-                    label="City code"
-                    value={c.cityCode}
-                    onValueChange={(v) => setCityField(ci, "cityCode", v)}
-                  />
-                  <Input
-                    size="sm"
-                    label="Postal code"
-                    value={c.postalCode}
-                    onValueChange={(v) => setCityField(ci, "postalCode", v)}
-                  />
-                  <Input
-                    size="sm"
-                    label="Timezone"
-                    value={c.timezone}
-                    onValueChange={(v) => setCityField(ci, "timezone", v)}
-                  />
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="light"
-                    isDisabled={cities.length === 1}
-                    startContent={<Trash2 className="w-4 h-4" />}
-                    onPress={() => removeRow(ci)}
-                  >
-                    Remove
-                  </Button>
                 </div>
               ))}
 
@@ -218,6 +357,8 @@ const CityData = () => {
   );
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
+  const [mapping, setMapping] = useState(false);
+
   // stateId: from states list (matched by name), else from loaded cities
   const stateId = useMemo(() => {
     const fromStates = (statesList || []).find(
@@ -252,6 +393,27 @@ const CityData = () => {
     }
   }, [dispatch, decodedCountryName]);
 
+  const handleAutoMap = useCallback(async () => {
+    if (!stateId) return;
+
+    try {
+      setMapping(true);
+      const res = await dispatch(autoMapPostalCodes({ stateId })).unwrap();
+      addToast({
+        title: `Mapped ${res?.mapped ?? 0} postal codes (${res?.unmatched ?? 0} unmatched)`,
+        color: "success",
+      });
+      dispatch(getAllCitiesByStateName(decodedStateName));
+    } catch (err) {
+      addToast({
+        title: typeof err === "string" ? err : "Mapping failed",
+        color: "danger",
+      });
+    } finally {
+      setMapping(false);
+    }
+  }, [dispatch, stateId, decodedStateName]);
+
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") {
       return columns;
@@ -266,11 +428,21 @@ const CityData = () => {
     let filteredData = [...(citiesList || [])];
 
     if (filterValue) {
-      filteredData = filteredData.filter((item) =>
-        Object.values(item || {}).some((value) =>
-          String(value).toLowerCase().includes(filterValue.toLowerCase()),
-        ),
-      );
+      const q = filterValue.toLowerCase();
+
+      filteredData = filteredData.filter((item) => {
+        // postalCodes is an array of objects, so flatten it for searching
+        const postalText = (item?.postalCodes || [])
+          .map((p) => `${p?.postalCode ?? ""} ${p?.locality ?? ""}`)
+          .join(" ");
+
+        return (
+          Object.entries(item || {})
+            .filter(([key]) => key !== "postalCodes")
+            .some(([, value]) => String(value).toLowerCase().includes(q)) ||
+          postalText.toLowerCase().includes(q)
+        );
+      });
     }
 
     return filteredData;
@@ -286,7 +458,7 @@ const CityData = () => {
     return filteredItems.slice(start, end);
   }, [filteredItems, initialFilteration.page, initialFilteration.size]);
 
-  const onSearchChange = React.useCallback((value) => {
+  const onSearchChange = useCallback((value) => {
     setFilterValue(value);
 
     setInitialFilteration((prev) => ({
@@ -295,7 +467,7 @@ const CityData = () => {
     }));
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
 
     setInitialFilteration((prev) => ({
@@ -304,12 +476,38 @@ const CityData = () => {
     }));
   }, []);
 
-  const onRowsPerPageChange = React.useCallback((e) => {
+  const onRowsPerPageChange = useCallback((e) => {
     setInitialFilteration((prev) => ({
       ...prev,
       size: Number(e.target.value),
       page: 1,
     }));
+  }, []);
+
+  const renderCell = useCallback((item, columnKey) => {
+    switch (columnKey) {
+      case "id":
+        return item?.id;
+
+      case "postalCodes": {
+        const list = item?.postalCodes || [];
+
+        if (list.length === 0) return "-";
+
+        return (
+          <div className="flex flex-wrap gap-1 items-center">
+            {list.map((p) => (
+              <Chip key={p.id} size="sm" variant="flat" title={p.locality}>
+                {p.postalCode}
+              </Chip>
+            ))}
+          </div>
+        );
+      }
+
+      default:
+        return item?.name;
+    }
   }, []);
 
   const topContent = useMemo(() => {
@@ -321,7 +519,7 @@ const CityData = () => {
             size="sm"
             className="w-full sm:max-w-[280px]"
             classNames={{ inputWrapper: "h-8 min-h-8" }}
-            placeholder="Search city..."
+            placeholder="Search city or postal code..."
             startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={onClear}
@@ -329,6 +527,16 @@ const CityData = () => {
           />
 
           <div className="flex gap-1.5 flex-wrap">
+            <Button
+              size="sm"
+              variant="flat"
+              isLoading={mapping}
+              isDisabled={!stateId}
+              onPress={handleAutoMap}
+            >
+              Map Postal Codes
+            </Button>
+
             <Button
               size="sm"
               color="primary"
@@ -394,10 +602,10 @@ const CityData = () => {
     visibleColumns,
     onClear,
     onSearchChange,
-    navigate,
-    decodedCountryName,
     onOpen,
     stateId,
+    mapping,
+    handleAutoMap,
     filteredItems.length,
     onRowsPerPageChange,
     initialFilteration.size,
@@ -508,9 +716,7 @@ const CityData = () => {
           {(item) => (
             <TableRow key={item?.id}>
               {(columnKey) => (
-                <TableCell>
-                  {columnKey === "id" ? item?.id : item?.name}
-                </TableCell>
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
             </TableRow>
           )}
