@@ -39,11 +39,15 @@ import {
   getInvoiceDetailById,
   confirmEInvoice,
   getAllAdvanceInvoice,
+  sendInvoiceToClient,
 } from "../../toolkit/slices/accountSlice";
 import TaxInvoice from "../../components/TaxInvoice";
 import NewEstimatePreview from "../../sales/leads/leadEstimate/NewEstimatePreview";
 import FileUploader from "../../components/FileUploader";
 import { getEstimateByEstimateId } from "../../toolkit/slices/leadSlice";
+
+const isUnregisteredInvoice = (invoice) =>
+  invoice?.gstRegistrationType?.toLowerCase() === "unregistered";
 
 export const columns = [
   { name: "DATE", uid: "date" },
@@ -83,6 +87,7 @@ const AllInvoice = () => {
   const viewModal = useDisclosure();
   const confirmEInvoiceModal = useDisclosure();
   const advanceTaxInvoiceModal = useDisclosure();
+  const sendInvoiceModal = useDisclosure();
 
   const data = useSelector((state) => state.organization.allInvoiceList);
 
@@ -127,6 +132,8 @@ const AllInvoice = () => {
   const [viewType, setViewType] = useState("ESTIMATE");
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [invoiceToSend, setInvoiceToSend] = useState(null);
+  const [isSendingInvoice, setIsSendingInvoice] = useState(false);
   const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
 
   const [confirmEInvoiceForm, setConfirmEInvoiceForm] = useState({
@@ -175,6 +182,46 @@ const AllInvoice = () => {
     });
 
     confirmEInvoiceModal.onOpen();
+  };
+
+  const openSendInvoiceModal = (rowData) => {
+    setInvoiceToSend(rowData);
+    sendInvoiceModal.onOpen();
+  };
+
+  const handleSendInvoiceToClient = async () => {
+    if (isSendingInvoice || !invoiceToSend?.id) return;
+
+    setIsSendingInvoice(true);
+
+    try {
+      const response = await dispatch(
+        sendInvoiceToClient({ invoiceId: invoiceToSend.id }),
+      ).unwrap();
+
+      const sentTo = Array.isArray(response?.sentTo) ? response.sentTo : [];
+
+      addToast({
+        title: "SUCCESS",
+        description: sentTo.length
+          ? `Invoice sent to ${sentTo.join(", ")}`
+          : response?.message || "Invoice email sent successfully",
+        color: "success",
+      });
+
+      sendInvoiceModal.onClose();
+      setInvoiceToSend(null);
+    } catch (error) {
+      addToast({
+        title: "ERROR",
+        description:
+          error?.message ||
+          (typeof error === "string" ? error : "Failed to send invoice"),
+        color: "danger",
+      });
+    } finally {
+      setIsSendingInvoice(false);
+    }
   };
 
   const handleSubmitConfirmEInvoice = async () => {
@@ -507,6 +554,13 @@ const AllInvoice = () => {
                     if (key === "confirmEInvoice") {
                       openConfirmEInvoiceModal(rowData);
                     }
+
+                    if (
+                      key === "sendInvoiceToClient" ||
+                      key === "approveInvoice"
+                    ) {
+                      openSendInvoiceModal(rowData);
+                    }
                   }}
                 >
                   <DropdownItem key="viewTaxInvoice">Tax Invoice</DropdownItem>
@@ -527,6 +581,24 @@ const AllInvoice = () => {
                       Confirm E Invoice
                     </DropdownItem>
                   )}
+
+                  {/* Registered companies: email the invoice to the client.
+                      The API asks for a confirmed e-invoice (IRN) first. */}
+                  {!isUnregisteredInvoice(rowData) &&
+                    rowData?.status?.toLowerCase() !== "cancelled" && (
+                      <DropdownItem key="sendInvoiceToClient">
+                        Send Invoice to Client
+                      </DropdownItem>
+                    )}
+
+                  {/* Unregistered companies have no e-invoice step:
+                      approving sends the invoice to the client. */}
+                  {isUnregisteredInvoice(rowData) &&
+                    rowData?.status?.toLowerCase() !== "cancelled" && (
+                      <DropdownItem key="approveInvoice">
+                        Approve Invoice
+                      </DropdownItem>
+                    )}
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -1292,6 +1364,58 @@ const AllInvoice = () => {
                   onPress={handleSubmitConfirmEInvoice}
                 >
                   {isAttachmentUploading ? "Uploading..." : "Confirm E Invoice"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        isOpen={sendInvoiceModal.isOpen}
+        onOpenChange={sendInvoiceModal.onOpenChange}
+        size="md"
+        isDismissable={!isSendingInvoice}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>
+                {isUnregisteredInvoice(invoiceToSend)
+                  ? "Approve Invoice"
+                  : "Send Invoice to Client"}
+              </ModalHeader>
+              <ModalBody>
+                <p className="text-sm text-default-700">
+                  {isUnregisteredInvoice(invoiceToSend)
+                    ? "Approve and email invoice"
+                    : "Email invoice"}{" "}
+                  <span className="font-semibold">
+                    {invoiceToSend?.invoiceNumber || ""}
+                  </span>{" "}
+                  with the PDF attached to the contacts of{" "}
+                  <span className="font-semibold">
+                    {invoiceToSend?.companyName || "the client"}
+                  </span>
+                  ?
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  variant="flat"
+                  onPress={onClose}
+                  isDisabled={isSendingInvoice}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={isSendingInvoice}
+                  onPress={handleSendInvoiceToClient}
+                >
+                  {isUnregisteredInvoice(invoiceToSend)
+                    ? "Approve & Send"
+                    : "Send"}
                 </Button>
               </ModalFooter>
             </>

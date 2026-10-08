@@ -606,6 +606,23 @@ export const confirmEInvoice = createAsyncThunk(
     }
   },
 );
+// Emails the invoice PDF to the invoice contact and the unit's active contacts.
+// Registered/SEZ invoices need a confirmed e-invoice (IRN) first; the API
+// rejects them otherwise. Resolves with { invoiceId, sentTo: [...], message }.
+export const sendInvoiceToClient = createAsyncThunk(
+  "sendInvoiceToClient",
+  async ({ invoiceId }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        `/accountService/api/invoices/${invoiceId}/send-email`,
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
 export const getAllVendorDetails = createAsyncThunk(
   "getAllVendorDetails",
   async () => {
