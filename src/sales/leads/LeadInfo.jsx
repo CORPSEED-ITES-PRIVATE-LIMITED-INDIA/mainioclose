@@ -99,7 +99,6 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { allowOnlyNumbers, formatEmail, leadSource } from "../../common";
 import BasicCompany from "../company/BasicCompany";
 import CompanyAndUnitsInLead from "../company/CompanyAndUnitsInLead";
-import { getAllSolutionsByUserId } from "../../toolkit/slices/productSlice";
 const iconClass = "h-4 w-4";
 
 // Pulls the backend's own error message out of a failed thunk's `resp`
@@ -192,7 +191,6 @@ const LeadInfo = () => {
   const deleteModal = useDisclosure();
   const remarkModal = useDisclosure();
   const deleteRemarkModal = useDisclosure();
-  const helperModal = useDisclosure();
   const leadData = useSelector((state) => state.leads.singleLeadData);
   const leadDetailLoading = useSelector(
     (state) => state.leads.leadDetailLoading,
@@ -203,9 +201,6 @@ const LeadInfo = () => {
   );
   const solutionEligibleUsers = useSelector(
     (state) => state.setting.salesQualityAdmin,
-  );
-  const solutionList = useSelector(
-    (state) => state.product.solutionListByUserId,
   );
   const slugList = useSelector((state) => state.setting.slugList);
   const statusList = useSelector((state) => state.setting.statusList);
@@ -250,7 +245,6 @@ const LeadInfo = () => {
   const [assignLoading, setAssignLoading] = useState("");
   const [qualitySubmitLoading, setQualitySubmitLoading] = useState("");
   const [helperLoading, setHelperLoading] = useState("");
-  const [helperSolutionId, setHelperSolutionId] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [chatLoading, setChatLoading] = useState("");
   const [chatDeleteLoading, setChatDeleteLoading] = useState("");
@@ -347,28 +341,27 @@ const LeadInfo = () => {
       });
   };
 
-  // ─── Auto assign helper: pick a solution in the modal, then submit ───
-  const openHelperModal = () => {
-    setHelperSolutionId("");
-    dispatch(getAllSolutionsByUserId(userId));
-    helperModal.onOpen();
-  };
-
+  // Assign a helper to the lead's current resolved solution directly.
   const handleAutoAssignHelper = () => {
-    if (!helperSolutionId) {
+    const solutionId = solutionDetail?.id;
+
+    if (!solutionId) {
       addToast({
-        title: "Warning",
-        description: "Please select a solution to proceed",
+        title: "Solution unavailable",
+        description:
+          "The current lead solution could not be resolved. Please check the lead service and try again.",
         color: "warning",
       });
       return;
     }
 
+    if (helperLoading === "pending") return;
+
     setHelperLoading("pending");
     dispatch(
       autoAssignHelperLead({
         leadId,
-        solutionId: helperSolutionId,
+        solutionId,
         data: { requestedByUserId: Number(userId) },
       }),
     )
@@ -376,19 +369,16 @@ const LeadInfo = () => {
         if (resp.meta.requestStatus === "fulfilled") {
           addToast({
             title: "SUCCESS",
-            description: "Helper assigned successfully !.",
+            description: "Helper assigned successfully!",
             color: "success",
           });
           setHelperLoading("success");
-          setHelperSolutionId("");
-          helperModal.onOpenChange(false);
           dispatch(getSingleLeadDataByLeadId({ leadId, userId }));
         } else {
           setHelperLoading("rejected");
           addToast({
             title: resp?.payload?.data?.errorCode || "Error",
-            description:
-              resp?.payload?.data?.message || getApiErrorMessage(resp),
+            description: resp?.payload?.data?.message,
             color: "danger",
           });
         }
@@ -1108,7 +1098,7 @@ const LeadInfo = () => {
                             className="h-7 px-2.5 text-xs"
                             isDisabled={helperLoading === "pending"}
                             isLoading={helperLoading === "pending"}
-                            onPress={openHelperModal}
+                            onPress={handleAutoAssignHelper}
                           >
                             Auto assign helper
                           </Button>
@@ -2121,51 +2111,6 @@ const LeadInfo = () => {
                         </ModalFooter>
                       </form>
                     </ModalBody>
-                  </>
-                )}
-              </ModalContent>
-            </Modal>
-
-            <Modal
-              isDismissable={false}
-              isKeyboardDismissDisabled={true}
-              isOpen={helperModal.isOpen}
-              onOpenChange={helperModal.onOpenChange}
-              placement="top-center"
-            >
-              <ModalContent>
-                {(onClose) => (
-                  <>
-                    <ModalHeader className="flex flex-col gap-1">
-                      Auto assign helper
-                    </ModalHeader>
-                    <ModalBody>
-                      <NewSelect
-                        isRequired={true}
-                        data={(solutionList || []).filter(
-                          (item) => item?.active,
-                        )}
-                        label="Select solution"
-                        placeholder="Select solution..."
-                        labelKey="name"
-                        valueKey="id"
-                        value={helperSolutionId}
-                        onChange={(e) => setHelperSolutionId(e)}
-                      />
-                    </ModalBody>
-                    <ModalFooter className="w-full flex justify-end">
-                      <Button onPress={onClose}>Cancel</Button>
-                      <Button
-                        color="primary"
-                        isDisabled={
-                          !helperSolutionId || helperLoading === "pending"
-                        }
-                        isLoading={helperLoading === "pending"}
-                        onPress={handleAutoAssignHelper}
-                      >
-                        Submit
-                      </Button>
-                    </ModalFooter>
                   </>
                 )}
               </ModalContent>
