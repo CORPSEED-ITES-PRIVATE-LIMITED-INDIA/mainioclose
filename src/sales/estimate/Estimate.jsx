@@ -876,13 +876,13 @@ const Estimate = () => {
                 {(rowData?.company?.onboardingStatus !== "APPROVED" ||
                   rowData?.unit?.onboardingStatus !== "APPROVED") && (
                   <DropdownItem key="updateCompanyDetail">
-                    Update company detail
+                    Update Company Detail
                   </DropdownItem>
                 )}
 
                 {rowData?.status !== "CANCELLED" && (
                   <DropdownItem key="paymentRegister">
-                    Add payment register
+                    Add Payment Register
                   </DropdownItem>
                 )}
 
@@ -892,9 +892,11 @@ const Estimate = () => {
                   </DropdownItem>
                 )}
 
-                <DropdownItem key="viewEstimate">View estimate</DropdownItem>
+                <DropdownItem key="viewEstimate">View Estimate</DropdownItem>
                 <DropdownItem key="viewPI">View PI</DropdownItem>
-                <DropdownItem key="SENT_TO_CLIENT">SENT_TO_CLIENT</DropdownItem>
+                <DropdownItem key="SENT_TO_CLIENT">
+                  Sent Estimate To Client
+                </DropdownItem>
                 {/* <DropdownItem key="delete" color="danger">
                   Delete
                 </DropdownItem>  */}

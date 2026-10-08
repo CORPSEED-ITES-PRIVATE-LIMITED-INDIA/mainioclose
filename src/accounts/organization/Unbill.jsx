@@ -1615,12 +1615,12 @@ const Unbill = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {isAdvanceInvoice ? "Tax Invoice" : "Unbill"}
+                {isAdvanceInvoice ? "TAX INVOICE" : "UNBILLED"}
               </ModalHeader>
               <ModalBody className="max-h-[75vh] overflow-auto">
                 <UnbilledView
                   invoiceData={invoiceDetail}
-                  heading={isAdvanceInvoice ? "Tax Invoice" : "Unbilled"}
+                  heading={isAdvanceInvoice ? "TAX INVOICE" : "UNBILLED"}
                 />
               </ModalBody>
               <ModalFooter>

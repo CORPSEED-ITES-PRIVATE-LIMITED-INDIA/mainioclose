@@ -433,6 +433,22 @@ const NewEstimatePreview = ({ details = {}, due, viewType }) => {
       seller.paymentPageLink,
   );
 
+  // Bank details are listed in two halves: the first half on the left, the
+  // rest on the right, so the block stays short instead of one long column.
+  const bankRows = [
+    ["Account Holder", seller.accountHolderName],
+    ["Bank", seller.bankName],
+    ["Account No.", seller.accountNo],
+    ["IFSC", seller.ifscCode],
+    ["Branch", seller.bankBranch],
+    ["SWIFT", seller.swiftCode],
+    ["UPI ID", seller.upiId],
+    ["Payment Link", seller.paymentPageLink],
+  ].filter(([, value]) => Boolean(value));
+  const bankSplitAt = Math.ceil(bankRows.length / 2);
+  const bankLeftRows = bankRows.slice(0, bankSplitAt);
+  const bankRightRows = bankRows.slice(bankSplitAt);
+
   const getShareUrl = () => window.location.href;
 
   const handleCopyUrl = async () => {
@@ -571,7 +587,7 @@ Corpseed Team`,
       <div className="w-full mx-auto flex flex-col gap-8 border rounded-xl p-3 md:p-4 shadow-md bg-white">
         <div ref={contentRef} className="relative">
           <div className="bg-white rounded-xl p-4 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-gray-200 pb-4">
               <div>
                 <img
                   src={seller.logoUrl}
@@ -640,14 +656,6 @@ Corpseed Team`,
                       {details.unbilledNumber}
                     </p>
                   )}
-
-                  {/* Client PO Number */}
-                  {details?.clientPoNumber && (
-                    <p className="whitespace-nowrap">
-                      <span className="font-semibold">Client PO No.:</span>{" "}
-                      {details.clientPoNumber}
-                    </p>
-                  )}
                 </div>
 
                 {due !== null && due !== undefined && (
@@ -665,7 +673,7 @@ Corpseed Team`,
 
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="md:max-w-[45%] text-wrap text-xs">
-                <p className="font-semibold text-gray-400 mb-1">Bill To</p>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Bill To</p>
                 <p className="font-medium">{buyer.name}</p>
                 {buyer.gstNo && <p>GSTIN: {buyer.gstNo}</p>}
                 {buyer.contactName && <p>Contact: {buyer.contactName}</p>}
@@ -673,7 +681,7 @@ Corpseed Team`,
               </div>
 
               <div className="md:max-w-[45%] text-wrap text-xs md:text-right">
-                <p className="font-semibold text-gray-400 mb-1">Ship To</p>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Ship To</p>
                 <p className="font-medium">{buyer.name}</p>
                 {buyer.gstNo && <p>GSTIN: {buyer.gstNo}</p>}
                 {buyer.contactName && <p>Contact: {buyer.contactName}</p>}
@@ -952,20 +960,32 @@ Corpseed Team`,
               )}
 
               {showBankDetails && (
-                <div className="mt-5 border rounded-lg p-3 text-xs text-gray-700">
-                  <p className="font-semibold text-sm mb-2">Bank Details</p>
-                  {seller.accountHolderName && (
-                    <p>Account Holder: {seller.accountHolderName}</p>
-                  )}
-                  {seller.bankName && <p>Bank: {seller.bankName}</p>}
-                  {seller.accountNo && <p>Account No.: {seller.accountNo}</p>}
-                  {seller.ifscCode && <p>IFSC: {seller.ifscCode}</p>}
-                  {seller.bankBranch && <p>Branch: {seller.bankBranch}</p>}
-                  {seller.swiftCode && <p>SWIFT: {seller.swiftCode}</p>}
-                  {seller.upiId && <p>UPI ID: {seller.upiId}</p>}
-                  {seller.paymentPageLink && (
-                    <p>Payment Link: {seller.paymentPageLink}</p>
-                  )}
+                <div className="mt-5 rounded-lg border bg-gray-50/60 p-3 text-xs text-gray-700">
+                  <p className="mb-2 border-b pb-1.5 text-sm font-semibold text-gray-900">
+                    Bank Details
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      {bankLeftRows.map(([label, value]) => (
+                        <p key={label} className="break-words">
+                          <span className="font-semibold">{label}:</span>{" "}
+                          {value}
+                        </p>
+                      ))}
+                    </div>
+
+                    {bankRightRows.length > 0 && (
+                      <div className="space-y-1 sm:text-right">
+                        {bankRightRows.map(([label, value]) => (
+                          <p key={label} className="break-words">
+                            <span className="font-semibold">{label}:</span>{" "}
+                            {value}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

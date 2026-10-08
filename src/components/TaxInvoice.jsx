@@ -1317,7 +1317,9 @@ Corpseed Team`,
 
             {/* ✅ Keep authorised signatory image */}
             <div className="px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {(seller.name || "").toLowerCase()}</div>
+              <div className="capitalize">
+                For {(seller.name || "").toLowerCase()}
+              </div>
               <div className="mt-1 flex justify-end">
                 <img
                   src={signature}

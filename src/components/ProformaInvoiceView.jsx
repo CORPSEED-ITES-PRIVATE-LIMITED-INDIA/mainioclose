@@ -762,7 +762,7 @@ Corpseed Team`,
             <div className="grid grid-cols-2 border-b border-gray-300">
               <div className="border-r border-gray-300 p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Consignee (Ship to)
+                  Consignee (Bill to)
                 </div>
                 <div className="text-[11px]">{shipTo.name}</div>
                 {shipTo.gstin ? (
@@ -783,7 +783,7 @@ Corpseed Team`,
 
               <div className="p-2.5">
                 <div className="mb-1 text-[11px] font-bold">
-                  Buyer (Bill to)
+                  Buyer (Ship to)
                 </div>
                 <div className="text-[11px]">{billTo.name}</div>
                 {billTo.gstin ? (
@@ -1139,7 +1139,9 @@ Corpseed Team`,
 
             {/* Authorised signatory */}
             <div className="px-2.5 pb-2 pt-3 text-right text-[11px]">
-              <div>for {(seller.name || "").toLowerCase()}</div>
+              <div className="capitalize">
+                For {(seller.name || "").toLowerCase()}
+              </div>
               <div className="mt-1 flex justify-end">
                 <img
                   src={signature}
