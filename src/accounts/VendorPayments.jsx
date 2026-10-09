@@ -339,7 +339,7 @@ const VendorPayments = () => {
                 </DropdownItem>
                 <DropdownItem
                   key="history"
-                  href={`erp/${userId}/accounts/vendorsPayment/${rowData?.id}/paymentHistory`}
+                  href={`/erp/${userId}/accounts/vendorsPayment/${rowData?.id}/paymentHistory`}
                 >
                   History
                 </DropdownItem>

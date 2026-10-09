@@ -385,13 +385,13 @@ const CompanyGstList = () => {
               <DropdownMenu>
                 <DropdownItem
                   key="leads"
-                  href={`erp/${userId}/sales/company/${companyId}/gstDetails/leads`}
+                  href={`/erp/${userId}/sales/company/${companyId}/gstDetails/leads`}
                 >
                   View Leads
                 </DropdownItem>
                 <DropdownItem
                   key="projects"
-                  href={`erp/${userId}/sales/company/${companyId}/gstDetails/${company?.id}/projects`}
+                  href={`/erp/${userId}/sales/company/${companyId}/gstDetails/${company?.id}/projects`}
                 >
                   View Projects
                 </DropdownItem>

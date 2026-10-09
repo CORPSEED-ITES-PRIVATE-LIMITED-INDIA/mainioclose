@@ -76,7 +76,10 @@ const Login = () => {
                       navigate(`/erp/${resp?.payload?.id}/accounts/dashboard`);
                       return;
                     }
-                    if (department === "liasoning") {
+                    if (
+                      department === "liasoning" ||
+                      department === "liaisoning"
+                    ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
                       navigate(`/erp/${resp?.payload?.id}/liasoning/dashboard`);
                       return;
@@ -95,12 +98,10 @@ const Login = () => {
                       department === "filing"
                     ) {
                       console.log("dsjkhgkjsgkjdghj 44444", response);
+                      // No second tab here: the session lives in
+                      // sessionStorage, which a new tab does not share, so it
+                      // could only ever land on the login page.
                       navigate(`/erp/${resp?.payload?.id}/operation/dashboard`);
-                      window.open(
-                        `/erp/${resp?.payload?.id}/operation/projects`,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
                       return;
                     }
                   }

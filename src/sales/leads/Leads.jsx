@@ -677,14 +677,14 @@ const Leads = () => {
                   {department?.department === "Quality Team" ? (
                     <DropdownItem
                       key="history"
-                      href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                      href={`/erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
                     >
                       History
                     </DropdownItem>
                   ) : (
                     <DropdownItem
                       key="history"
-                      href={`erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
+                      href={`/erp/${userId}/sales/leads/${lead?.id}/leadHistory`}
                     >
                       History
                     </DropdownItem>
@@ -692,7 +692,7 @@ const Leads = () => {
 
                   {/* <DropdownItem
                   key="tasks"
-                  href={`erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
+                  href={`/erp/${userId}/sales/leads/${lead?.id}/leadTasks`}
                 >
                   Lead tasks
                 </DropdownItem> */}
@@ -1192,7 +1192,7 @@ const Leads = () => {
               >
                 <DropdownItem
                   key="allTask"
-                  href={`erp/${userId}/sales/allTask`}
+                  href={`/erp/${userId}/sales/allTask`}
                 >
                   All task
                 </DropdownItem>

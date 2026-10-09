@@ -203,7 +203,7 @@ const LeadSearch = () => {
                 >
                   <DropdownItem
                     key="history"
-                    href={`erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
+                    href={`/erp/${userId}/quality/leads/${lead?.id}/leadHistory`}
                   >
                     History
                   </DropdownItem>
