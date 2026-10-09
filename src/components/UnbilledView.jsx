@@ -8,6 +8,7 @@ import numWords from "num-words";
 import { inrCurrency } from "../common";
 import { getOrganizationByName } from "../toolkit/slices/organizationSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { swapRemoteLogos, useOrgLogoSrc } from "./orgLogo";
 
 /** -------------------------
  * PDF / Layout constants
@@ -20,6 +21,11 @@ const CONTENT_W_MM = A4_W_MM - PDF_MARGIN_MM * 2; // 190mm
 /** -------------------------
  * Helpers
  * ------------------------- */
+const pick = (...values) =>
+  values.find(
+    (v) => v !== null && v !== undefined && String(v).trim() !== "",
+  ) ?? "";
+
 const toNumber = (v) => {
   if (v === null || v === undefined || v === "") return 0;
   const n = typeof v === "string" ? Number(v) : v;
@@ -170,7 +176,6 @@ const UnbilledView = ({ invoiceData, heading }) => {
   const organizationDetail = useSelector(
     (state) => state.organization.organizationDetail,
   );
-  console.log(invoiceData);
 
   useEffect(() => {
     dispatch(getOrganizationByName());
@@ -190,28 +195,84 @@ const UnbilledView = ({ invoiceData, heading }) => {
     return invoiceData;
   }, [invoiceData]);
 
+  // Seller details, same rules as TaxInvoice:
+  // - Identity (name, address, GST, PAN, CIN): invoice snapshot if present,
+  //   otherwise the organization API.
+  // - Contact, bank and logo: field by field (snapshot first, then API).
   const seller = useMemo(() => {
-    if (!organizationDetail) return null;
+    const org = organizationDetail || {};
+    const hasSnapshot = Boolean(inv?.organizationName);
 
-    const bankBranch = inv?.organizationBankBranch || "";
-    const ifscCode =
-      inv?.organizationIfscCode || organizationDetail?.ifscCode || "";
+    const src = hasSnapshot
+      ? {
+          name: inv.organizationName,
+          addressLine1: inv.organizationAddressLine1,
+          addressLine2: inv.organizationAddressLine2,
+          city: inv.organizationCity,
+          state: inv.organizationState,
+          country: inv.organizationCountry,
+          pinCode: inv.organizationPinCode,
+          gstNo: inv.organizationGstNo || inv.sellerGstin,
+          panNo: inv.organizationPanNo,
+          cinNumber: inv.organizationCinNumber,
+        }
+      : {
+          name: org.name,
+          addressLine1: org.addressLine1,
+          addressLine2: org.addressLine2,
+          city: org.city,
+          state: org.state,
+          country: org.country,
+          pinCode: org.pinCode,
+          gstNo: org.gstNo,
+          panNo: org.panNo,
+          cinNumber: org.cinNumber,
+        };
+
+    const address = [
+      src.addressLine1,
+      src.addressLine2,
+      src.city,
+      src.state,
+      src.country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const gstin = src.gstNo || "";
+
+    const branch = pick(
+      inv?.organizationBankBranch,
+      inv?.organizationBranchName,
+      org.branch,
+    );
+    const ifsc = pick(inv?.organizationIfscCode, org.ifscCode);
 
     return {
-      name: organizationDetail?.name || "",
-      addressLine1:
-        `${organizationDetail?.addressLine1}, ${organizationDetail?.city}, ${organizationDetail?.state}, ${organizationDetail?.country} - ${organizationDetail?.pinCode}` ||
-        "",
-      gstin: organizationDetail?.gstNo || "",
-      stateName: organizationDetail?.state || "",
-      stateCode: organizationDetail?.gstNo?.slice(0, 2) || "",
-      email: organizationDetail?.email || "",
-      bankName: inv?.organizationBankName || organizationDetail?.bankName || "",
-      accountNo:
-        inv?.organizationAccountNumber || organizationDetail?.accountNo || "",
-      branchIfsc: [bankBranch, ifscCode].filter(Boolean).join(" & "),
+      name: src.name || "",
+      addressLine1: `${address}${src.pinCode ? ` - ${src.pinCode}` : ""}`,
+      gstin,
+      stateName: src.state || "",
+      stateCode: gstin.slice(0, 2),
+      panNo: src.panNo || "",
+      cinNumber: src.cinNumber || "",
+
+      email: pick(inv?.organizationEmail, org.email),
+      phone: pick(inv?.organizationPhone, org.phone),
+      website: pick(inv?.organizationWebsite, org.website),
+      logoUrl: pick(inv?.organizationLogoUrl, org.logoUrl),
+
+      bankName: pick(inv?.organizationBankName, org.bankName),
+      accountNo: pick(
+        inv?.organizationAccountNumber,
+        inv?.organizationAccountNo,
+        org.accountNo,
+      ),
+      branchIfsc: [branch, ifsc].filter(Boolean).join(" & "),
     };
   }, [organizationDetail, inv]);
+
+  const logoSrc = useOrgLogoSrc(seller.logoUrl);
 
   // lineItems safe + sort
   const items = useMemo(() => {
@@ -263,12 +324,12 @@ const UnbilledView = ({ invoiceData, heading }) => {
     const canvas = await html2canvas(node, {
       scale: 3, // ✅ smoother text (higher DPI)
       useCORS: true,
-      allowTaint: true,
       backgroundColor: "#ffffff",
       logging: false,
       // Helps if any width calculations happen due to scrolling:
       windowWidth: node.scrollWidth,
       windowHeight: node.scrollHeight,
+      onclone: (clonedDoc) => swapRemoteLogos(clonedDoc, logo),
     });
 
     const imgData = canvas.toDataURL("image/png", 1.0);
@@ -350,7 +411,12 @@ const UnbilledView = ({ invoiceData, heading }) => {
             <div className="grid grid-cols-[1.2fr_1fr] border-b border-gray-300">
               <div className="border-r border-gray-300 p-3">
                 <div className="mb-1 flex items-center gap-2">
-                  <img src={logo} alt="corpseed" className="h-10" />
+                  <img
+                    src={logoSrc || logo}
+                    alt={seller.name || "Organization logo"}
+                    className="h-10 max-w-[120px] object-contain"
+                    data-org-logo
+                  />
                 </div>
 
                 <div className="mb-0.5 text-[12px] font-bold">
@@ -366,6 +432,18 @@ const UnbilledView = ({ invoiceData, heading }) => {
                   State name : {seller.stateName} , code : {seller.stateCode}
                 </div>
                 <div className="text-[11px]">E-mail : {seller.email}</div>
+                {seller.phone ? (
+                  <div className="text-[11px]">Phone : {seller.phone}</div>
+                ) : null}
+                {seller.website ? (
+                  <div className="text-[11px]">Web : {seller.website}</div>
+                ) : null}
+                {seller.panNo ? (
+                  <div className="text-[11px]">PAN : {seller.panNo}</div>
+                ) : null}
+                {seller.cinNumber ? (
+                  <div className="text-[11px]">CIN : {seller.cinNumber}</div>
+                ) : null}
               </div>
 
               <div className="grid auto-rows-min">
