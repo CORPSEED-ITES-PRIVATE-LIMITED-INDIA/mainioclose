@@ -1,6 +1,7 @@
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 import { KeepAlive } from "react-activation";
+import LoadingSpinner from "../components/LoadingSpinner";
 // eslint-disable-next-line no-unused-vars -- pre-existing unused import, left as-is
 import Projects from "../sales/leads/Projects";
 // Leads is the single most-visited page in the app (kept alive via
@@ -62,11 +63,16 @@ const SalesAdvanceInvoice = lazy(
 const SalesModuleRouting = () => {
   return (
     <>
+      {/* KeepAlive renders its children up at <AliveScope>, outside App's
+          <Suspense>, so a lazy page needs a boundary of its own here -
+          without it the route just stays blank. */}
       <Route
         path="sales/allTask"
         element={
           <KeepAlive>
-            <AllTasks />
+            <Suspense fallback={<LoadingSpinner />}>
+              <AllTasks />
+            </Suspense>
           </KeepAlive>
         }
       />
