@@ -44,7 +44,6 @@ const LeadHistory = () => {
   const dispatch = useDispatch();
   const { leadId } = useParams();
   const data = useSelector((state) => state.leads.allLeadHistory);
-  const count = useSelector((state) => state.leads.allLeadHistory?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -60,7 +59,7 @@ const LeadHistory = () => {
 
   useEffect(() => {
     dispatch(getAllHistory(leadId));
-  }, [dispatch]);
+  }, [dispatch, leadId]);
 
   const headerColumns = React.useMemo(() => {
     if (visibleColumns === "all") return columns;
@@ -84,7 +83,7 @@ const LeadHistory = () => {
     return filteredUsers;
   }, [data, filterValue]);
 
-  const pages = Math.ceil(count / rowsPerPage) || 1;
+  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -109,8 +108,17 @@ const LeadHistory = () => {
       case "createdDate":
         return (
           <div className="flex flex-col">
-            <p>{dayjs(rowData?.createdDate).format("DD-MM-YYYY, HH:mm A")}</p>
+            <span className="font-normal text-[12.5px]">
+              {dayjs(rowData?.createdDate).format("DD-MM-YYYY")}
+            </span>
+            <span className="font-normal text-[11.5px] text-default-500">
+              {dayjs(rowData?.createdDate).format("hh:mm A")}
+            </span>
           </div>
+        );
+      case "event":
+        return (
+          <span className="font-semibold text-[12.5px]">{rowData?.event}</span>
         );
       default:
         return cellValue;
@@ -150,21 +158,27 @@ const LeadHistory = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
-            placeholder="Search..."
-            startContent={<Search />}
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
+            placeholder="Search ..."
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
+          <div className="flex gap-1.5 flex-wrap">
             <Dropdown>
-              <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -186,13 +200,13 @@ const LeadHistory = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {count} lead history
+          <span className="text-default-400 text-[12.5px]">
+            Total {filteredItems.length} lead history
           </span>
-          <label className="flex items-center text-default-400 text-small">
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
             Rows per page:
             <select
-              className="bg-transparent outline-hidden text-default-400 text-small"
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
               onChange={onRowsPerPageChange}
               value={rowsPerPage}
             >
@@ -208,23 +222,21 @@ const LeadHistory = () => {
     filterValue,
     visibleColumns,
     onRowsPerPageChange,
-    count,
+    filteredItems.length,
+    rowsPerPage,
     onSearchChange,
     hasSearchFilter,
   ]);
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {page} of {pages}
         </span>
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -250,21 +262,27 @@ const LeadHistory = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages, hasSearchFilter]);
+  }, [page, pages, onPreviousPage, onNextPage]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         Lead history list
       </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="Lead history table with pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "2xl:max-h-[48vh] md:max-h-[43vh] w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -293,7 +311,7 @@ const LeadHistory = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 

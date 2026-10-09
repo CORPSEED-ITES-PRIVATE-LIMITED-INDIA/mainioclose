@@ -38,7 +38,6 @@ const AllTasks = () => {
   const dispatch = useDispatch();
   const { userId } = useParams();
   const data = useSelector((state) => state.leads.allLeadsTaskList);
-  const count = useSelector((state) => state.leads.allLeadsTaskList?.length);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -115,23 +114,32 @@ const AllTasks = () => {
     switch (columnKey) {
       case "date":
         return (
-          <p className="text-sm capitalize">
-            {dayjs(rowData?.expectedDate).format("DD-MM-YYYY, HH:mm A")}
-          </p>
+          <div className="flex flex-col">
+            <span className="font-normal text-[12.5px]">
+              {dayjs(rowData?.expectedDate).format("DD-MM-YYYY")}
+            </span>
+            <span className="font-normal text-[11.5px] text-default-500">
+              {dayjs(rowData?.expectedDate).format("hh:mm A")}
+            </span>
+          </div>
         );
       case "name":
         return (
           <Link
             to={`${rowData?.leadId}/leadDetail`}
-            className="text-sm capitalize"
+            className="font-semibold text-[12.5px] capitalize truncate"
           >
             {rowData?.name}
           </Link>
         );
       case "description":
-        return <p className="text-sm">{rowData?.description}</p>;
+        return <span className="text-[12.5px]">{rowData?.description}</span>;
       case "statusName":
-        return <p className="text-sm capitalize">{rowData?.statusName}</p>;
+        return (
+          <span className="text-[12.5px] capitalize">
+            {rowData?.statusName}
+          </span>
+        );
       default:
         return cellValue;
     }
@@ -182,26 +190,32 @@ const AllTasks = () => {
 
   const topContent = React.useMemo(() => {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between gap-2 items-center flex-wrap">
           <Input
             isClearable
-            className="w-full sm:max-w-[35%]"
+            size="sm"
+            className="w-full sm:max-w-[280px]"
+            classNames={{ inputWrapper: "h-8 min-h-8" }}
             placeholder="Search ..."
-            startContent={<Search />}
+            startContent={<Search className="w-4 h-4 text-default-400" />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
-          <div className="flex gap-3">
-            <div>
-              <DatePicker
-                showMonthAndYearPickers
-                variant="flat"
-                onChange={handleDateChange}
-              />
-            </div>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <DatePicker
+              aria-label="Task date"
+              size="sm"
+              variant="flat"
+              className="w-[170px]"
+              classNames={{ inputWrapper: "h-8 min-h-8" }}
+              showMonthAndYearPickers
+              value={selectedDate}
+              onChange={handleDateChange}
+            />
             <Button
+              size="sm"
               color={isTodayFilter ? "primary" : "default"}
               onPress={toggleTodayFilter}
               variant="flat"
@@ -209,8 +223,12 @@ const AllTasks = () => {
               Today's tasks
             </Button>
             <Dropdown>
-              <DropdownTrigger>
-                <Button endContent={<ChevronDown />} variant="flat">
+              <DropdownTrigger className="hidden sm:flex">
+                <Button
+                  size="sm"
+                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
+                  variant="flat"
+                >
                   Columns
                 </Button>
               </DropdownTrigger>
@@ -232,23 +250,21 @@ const AllTasks = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
+          <span className="text-default-400 text-[12.5px]">
             Total {filteredItems.length} tasks
           </span>
-          <div className="flex gap-4">
-            <label className="flex items-center text-default-400 text-small">
-              Rows per page:
-              <select
-                className="bg-transparent outline-hidden text-default-400 text-small"
-                onChange={onRowsPerPageChange}
-                value={rowsPerPage}
-              >
-                <option value="15">15</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </label>
-          </div>
+          <label className="flex items-center gap-1 text-default-400 text-[12.5px]">
+            Rows per page:
+            <select
+              className="bg-transparent outline-hidden text-default-400 text-[12.5px] cursor-pointer"
+              onChange={onRowsPerPageChange}
+              value={rowsPerPage}
+            >
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </label>
         </div>
       </div>
     );
@@ -266,16 +282,13 @@ const AllTasks = () => {
 
   const bottomContent = React.useMemo(() => {
     return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${count} selected`}
+      <div className="py-1.5 px-1 flex justify-between items-center">
+        <span className="w-[30%] text-[12.5px] text-default-400">
+          Page {page} of {pages}
         </span>
         <Pagination
           isCompact
           showControls
-          showShadow
           color="primary"
           page={page}
           total={pages}
@@ -301,21 +314,27 @@ const AllTasks = () => {
         </div>
       </div>
     );
-  }, [selectedKeys, count, page, pages]);
+  }, [page, pages, onPreviousPage, onNextPage]);
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <h1 className="font-sans text-lg font-semibold mb-2 shrink-0">
         All tasks
       </h1>
       <Table
         isHeaderSticky
-        aria-label="Example table with custom cells, pagination and sorting"
+        removeWrapper={false}
+        aria-label="All tasks table with pagination and sorting"
         bottomContent={bottomContent}
         bottomContentPlacement="outside"
         classNames={{
-          wrapper: "max-h-[55vh] overflow-scroll w-full",
+          base: "gap-2.5",
+          wrapper:
+            "max-h-[calc(100vh-280px)] w-full overflow-y-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-none p-0",
           table: "w-full",
+          thead: "[&>tr]:first:rounded-none",
+          th: "h-8 py-0 text-[11.5px] tracking-wide bg-gray-50 dark:bg-neutral-900 text-default-500 first:rounded-none last:rounded-none border-b border-gray-200 dark:border-white/10",
+          td: "py-1.5 text-[12.5px]",
         }}
         sortDescriptor={sortDescriptor}
         topContent={topContent}
@@ -344,7 +363,7 @@ const AllTasks = () => {
           )}
         </TableBody>
       </Table>
-    </>
+    </div>
   );
 };
 
